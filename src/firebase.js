@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, setDoc, doc, writeBatch } from "firebase/firestore";
 
 // Firebase 配置
 const firebaseConfig = {
@@ -34,12 +34,23 @@ export const writeTaskData = async (task) => {
 
 // 写入任务数据（批量）
 export const writeTasksData = async (tasks) => {
-  const batch = db.batch();
+  if (!Array.isArray(tasks)) {
+    console.error("Expected tasks to be an array"); // 输出错误信息
+    return;
+  }
+
+  const batch = writeBatch(db);  // 使用 `writeBatch` 创建批量操作
   tasks.forEach(task => {
     const taskRef = doc(db, "tasks", task.id.toString());  // 使用任务的id作为文档ID
     batch.set(taskRef, task);  // 批量写入任务
   });
-  await batch.commit();  // 提交批量操作
+  
+  try {
+    await batch.commit();  // 提交批量操作
+    console.log("批量写入成功");
+  } catch (error) {
+    console.error("批量写入任务数据失败:", error);
+  }
 };
 
 export { db };
