@@ -1,3 +1,4 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
@@ -10,8 +11,5 @@ const firebaseConfig = {
   appId: "1:486766303015:web:e1f8ef025340f23162fb02"
 };
 
-// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
-
-// 获取 Firestore 实例
 export const db = getFirestore(app);
