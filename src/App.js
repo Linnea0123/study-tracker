@@ -24,7 +24,7 @@ const getWeekDates = (monday) => {
     d.setDate(monday.getDate() + i);
     weekDates.push({
       date: d.toISOString().split("T")[0],
-      label: `周${"一二三四五六日"[i]}`
+      label: `周${"一二三四五六日"[i]}`,
     });
   }
   return weekDates;
@@ -46,7 +46,6 @@ function App() {
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
-
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
   const touchStateRef = useRef({});
@@ -76,7 +75,7 @@ function App() {
       timeSpent: 0,
       note: "",
     };
-    setTasksByDate(prev => {
+    setTasksByDate((prev) => {
       const copy = { ...prev };
       if (!copy[selectedDate]) copy[selectedDate] = [];
       copy[selectedDate].push(newTask);
@@ -88,9 +87,8 @@ function App() {
 
   const handleImportTasks = () => {
     if (!bulkText.trim()) return;
-    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+    const lines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
-
     // 第一行识别类别
     let category = categories[0].name;
     for (const c of categories) {
@@ -99,10 +97,9 @@ function App() {
         break;
       }
     }
-
     // 后面每行生成任务
     const taskLines = lines.slice(1);
-    const newTasks = taskLines.map(line => ({
+    const newTasks = taskLines.map((line) => ({
       id: Date.now().toString() + Math.random(),
       text: line,
       category,
@@ -110,36 +107,40 @@ function App() {
       timeSpent: 0,
       note: "",
     }));
-
-    setTasksByDate(prev => {
+    setTasksByDate((prev) => {
       const copy = { ...prev };
       if (!copy[selectedDate]) copy[selectedDate] = [];
       copy[selectedDate] = [...copy[selectedDate], ...newTasks];
       return copy;
     });
-
     setBulkText("");
     setShowBulkInput(false);
   };
 
   const toggleDone = (task) => {
-    setTasksByDate(prev => {
+    setTasksByDate((prev) => {
       const copy = { ...prev };
-      copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, done: !t.done } : t);
+      copy[selectedDate] = copy[selectedDate].map((t) =>
+        t.id === task.id ? { ...t, done: !t.done } : t
+      );
       return copy;
     });
   };
 
   const deleteTask = (task) => {
-    setTasksByDate(prev => {
+    setTasksByDate((prev) => {
       const copy = { ...prev };
-      copy[selectedDate] = copy[selectedDate].filter(t => t.id !== task.id);
+      copy[selectedDate] = copy[selectedDate].filter((t) => t.id !== task.id);
       return copy;
     });
     if (runningRefs.current[task.id]) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
-      setRunningState(prev => { const n = { ...prev }; delete n[task.id]; return n; });
+      setRunningState((prev) => {
+        const n = { ...prev };
+        delete n[task.id];
+        return n;
+      });
     }
     if (swipedTask === task.id) setSwipedTask(null);
   };
@@ -148,9 +149,11 @@ function App() {
   const editTaskText = (task) => {
     const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
-      setTasksByDate(prev => {
+      setTasksByDate((prev) => {
         const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, text: newText } : t);
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id ? { ...t, text: newText } : t
+        );
         return copy;
       });
     }
@@ -159,9 +162,11 @@ function App() {
   const editTaskNote = (task) => {
     const newNote = window.prompt("编辑备注", task.note || "");
     if (newNote !== null) {
-      setTasksByDate(prev => {
+      setTasksByDate((prev) => {
         const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, note: newNote } : t);
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id ? { ...t, note: newNote } : t
+        );
         return copy;
       });
     }
@@ -173,41 +178,48 @@ function App() {
     if (isRunning) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
-      setRunningState(prev => ({ ...prev, [task.id]: false }));
+      setRunningState((prev) => ({ ...prev, [task.id]: false }));
     } else {
       runningRefs.current[task.id] = setInterval(() => {
-        setTasksByDate(prev => {
+        setTasksByDate((prev) => {
           const copy = { ...prev };
-          copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t);
+          copy[selectedDate] = copy[selectedDate].map((t) =>
+            t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
+          );
           return copy;
         });
       }, 1000);
-      setRunningState(prev => ({ ...prev, [task.id]: true }));
+      setRunningState((prev) => ({ ...prev, [task.id]: true }));
     }
   };
 
   const manualAddTime = (task) => {
     const minutes = parseInt(window.prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
-      setTasksByDate(prev => {
+      setTasksByDate((prev) => {
         const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t);
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t
+        );
         return copy;
       });
     }
   };
 
-  const getCategoryTasks = (catName) => tasks.filter(t => t.category === catName);
+  const getCategoryTasks = (catName) => tasks.filter((t) => t.category === catName);
+
   const calcProgress = (catName) => {
     const catTasks = getCategoryTasks(catName);
     if (catTasks.length === 0) return 0;
-    const doneCount = catTasks.filter(t => t.done).length;
+    const doneCount = catTasks.filter((t) => t.done).length;
     return Math.round((doneCount / catTasks.length) * 100);
   };
+
   const totalTime = (catName) => {
     const catTasks = getCategoryTasks(catName);
     return catTasks.reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   };
+
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 
   const prevWeek = () => {
@@ -216,6 +228,7 @@ function App() {
     setCurrentMonday(monday);
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
+
   const nextWeek = () => {
     const monday = new Date(currentMonday);
     monday.setDate(monday.getDate() + 7);
@@ -262,119 +275,150 @@ function App() {
   // 统计量计算
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = todayTasks
-    .filter(t => t.category !== "体育")
+    .filter((t) => t.category !== "体育")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const sportTime = todayTasks
-    .filter(t => t.category === "体育")
+    .filter((t) => t.category === "体育")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const totalTasks = todayTasks.length;
-  const completionRate = totalTasks === 0
-    ? 0
-    : Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
+  const completionRate = totalTasks === 0 ? 0 : Math.round((todayTasks.filter((t) => t.done).length / totalTasks) * 100);
 
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
-      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 24 }}>📚 汤圆学习计划和打卡</h1>
-      <div style={{ textAlign: "center", fontSize: 14, marginBottom: 10 }}>
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
+      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 汤圆学习计划和打卡</h1>
+      <div style={{ textAlign: "center", fontSize: 13, marginBottom: 10 }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
-
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 10 }}>
-        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10, fontSize: 18 }}>⬅️</button>
-        <span style={{ fontWeight: "bold", margin: "0 6px", fontSize: 16 }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
-        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 10, fontSize: 18 }}>➡️</button>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 5 }}>
+        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10 }}>⬅️</button>
+        <span style={{ fontWeight: "bold", margin: "0 6px" }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
+        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 6 }}>➡️</button>
       </div>
-
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        {weekDates.map(d => {
+        {weekDates.map((d) => {
           const todayStr = new Date().toISOString().split("T")[0];
           return (
-            <div key={d.date} onClick={() => setSelectedDate(d.date)}
+            <div
+              key={d.date}
+              onClick={() => setSelectedDate(d.date)}
               style={{
-                padding: "6px 10px",
+                padding: "4px 6px",
                 borderBottom: d.date === selectedDate ? "2px solid #0b52b0" : "1px solid #ccc",
                 textAlign: "center",
                 flex: 1,
                 margin: "0 2px",
-                fontSize: 14,
+                fontSize: 12,
                 cursor: "pointer",
                 backgroundColor: d.date === todayStr ? "#1a73e8" : "transparent",
-                color: d.date === todayStr ? "#fff" : "#000"
-              }}>
+                color: d.date === todayStr ? "#fff" : "#000",
+              }}
+            >
               <div>{d.label}</div>
-              <div style={{ fontSize: 12 }}>{d.date.slice(5)}</div>
+              <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
             </div>
           );
         })}
       </div>
 
-      {categories.map(c => {
+      {categories.map((c) => {
         const catTasks = getCategoryTasks(c.name);
         if (catTasks.length === 0) return null;
         const progress = calcProgress(c.name);
         return (
           <div key={c.name} style={{ marginBottom: 12, borderRadius: 10, overflow: "hidden", border: `2px solid ${c.color}`, backgroundColor: "#fff" }}>
-            <div style={{ backgroundColor: c.color, color: "#fff", padding: "8px 12px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ backgroundColor: c.color, color: "#fff", padding: "6px 10px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{c.name} ({progress}%)</span>
-              <span style={{ fontSize: 14 }}>{formatTime(totalTime(c.name))}</span>
+              <span style={{ fontSize: 12 }}>{formatTime(totalTime(c.name))}</span>
             </div>
-
             <ul style={{ listStyle: "none", padding: 10, margin: 0 }}>
-              {catTasks.map(task => {
+              {catTasks.map((task) => {
                 const isSwiped = swipedTask === task.id;
                 return (
-                  <li key={task.id}
-                      className={isSwiped ? "task-li-swiped" : ""}
-                      onTouchStart={(e) => onTouchStart(e, task.id)}
-                      onTouchMove={(e) => onTouchMove(e, task.id)}
-                      onTouchEnd={(e) => onTouchEnd(e, task.id)}
-                      style={{
-                        position: "relative",
-                        overflow: "hidden",
-                        background: "#fff",
-                        borderRadius: 6,
-                        marginBottom: 10,
-                      }}>
-                    <div style={{
-                      transform: isSwiped ? "translateX(-80px)" : "translateX(0)",
-                      transition: "transform .18s ease",
-                      padding: "12px 16px",
-                    }}>
-                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
+                  <li
+                    key={task.id}
+                    className={isSwiped ? "task-li-swiped" : ""}
+                    onTouchStart={(e) => onTouchStart(e, task.id)}
+                    onTouchMove={(e) => onTouchMove(e, task.id)}
+                    onTouchEnd={(e) => onTouchEnd(e, task.id)}
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      background: "#fff",
+                      borderRadius: 6,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div style={{ transform: isSwiped ? "translateX(-80px)" : "translateX(0)", transition: "transform .18s ease", padding: "8px" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <input
+                          type="checkbox"
+                          checked={task.done}
+                          onChange={() => toggleDone(task)}
+                          style={{ marginTop: 6 }}
+                        />
                         <div style={{ flex: 1 }}>
-                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none",color: task.done ? "#999" : "#000", fontSize: 16 }}>
+                          <div
+                            onClick={() => editTaskText(task)}
+                            style={{
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                              cursor: "pointer",
+                              textDecoration: task.done ? "line-through" : "none",
+                              color: task.done ? "#999" : "#000",
+                            }}
+                          >
                             {task.text}
                           </div>
-                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 14, color: "#555", marginTop: 6, cursor: "pointer" }}>{task.note}</div>}
+                          {task.note && (
+                            <div
+                              onClick={() => editTaskNote(task)}
+                              style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}
+                            >
+                              {task.note}
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 10, alignItems: "center" }}>
-                        <div style={{ fontSize: 14, color: "#333", marginRight: 10 }}>{formatTime(task.timeSpent)}</div>
-                        <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
+                        <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>
+                          {formatTime(task.timeSpent)}
+                        </div>
+                        <button
+                          onClick={() => toggleTimer(task)}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
+                        >
                           {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
-                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>➕</button>
-                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>📝</button>
+                        <button
+                          onClick={() => manualAddTime(task)}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
+                        >
+                          ➕
+                        </button>
+                        <button
+                          onClick={() => editTaskNote(task)}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
+                        >
+                          📝
+                        </button>
                       </div>
                     </div>
-
-                    <div style={{
-                      position: "absolute",
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 80,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "#cde9ff",
-                      color: "#fff",
-                      transform: isSwiped ? "translateX(0)" : "translateX(80px)",
-                      transition: "transform .18s ease",
-                      cursor: "pointer",
-                    }}
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 80,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#cde9ff",
+                        color: "#fff",
+                        transform: isSwiped ? "translateX(0)" : "translateX(80px)",
+                        transition: "transform .18s ease",
+                        cursor: "pointer",
+                      }}
                       onClick={() => deleteTask(task)}
                     >
                       ❌
@@ -387,54 +431,119 @@ function App() {
         );
       })}
 
-      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-        <button onClick={() => setShowAddInput(!showAddInput)} style={{ flex: 1, padding: 12, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>添加任务</button>
-        <button onClick={() => setShowBulkInput(!showBulkInput)} style={{ flex: 1, padding: 12, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>批量导入</button>
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <button
+          onClick={() => setShowAddInput(!showAddInput)}
+          style={{
+            flex: 1,
+            padding: 8,
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+          }}
+        >
+          添加任务
+        </button>
+        <button
+          onClick={() => setShowBulkInput(!showBulkInput)}
+          style={{
+            flex: 1,
+            padding: 8,
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+          }}
+        >
+          批量导入
+        </button>
       </div>
 
       {showAddInput && (
-        <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-          <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)}
-            placeholder="输入任务" style={{ flex: 1, padding: 8, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }} />
-          <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} style={{ padding: 8, fontSize: 16 }}>
-            {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          <input
+            type="text"
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            placeholder="输入任务"
+            style={{ flex: 1, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
+          />
+          <select
+            value={newTaskCategory}
+            onChange={(e) => setNewTaskCategory(e.target.value)}
+            style={{ padding: 6 }}
+          >
+            {categories.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
           </select>
-          <button onClick={handleAddTask} style={{ padding: "8px 12px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>确认</button>
+          <button
+            onClick={handleAddTask}
+            style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}
+          >
+            确认
+          </button>
         </div>
       )}
 
       {showBulkInput && (
-        <div style={{ marginTop: 12 }}>
-          <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
-            placeholder="第一行写类别，其余每行一条任务" style={{ width: "100%", minHeight: 120, padding: 8, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }} />
-          <button onClick={handleImportTasks} style={{ marginTop: 10, padding: 12, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>导入任务</button>
+        <div style={{ marginTop: 8 }}>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder="第一行写类别，其余每行一条任务"
+            style={{ width: "100%", minHeight: 80, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
+          />
+          <button
+            onClick={handleImportTasks}
+            style={{
+              marginTop: 6,
+              padding: 6,
+              width: "100%",
+              backgroundColor: "#1a73e8",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+            }}
+          >
+            导入任务
+          </button>
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "12px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
-        {[{
-            label: "📘 学习时间",
-            value: formatTime(learningTime)
-          },{
-            label: "🏃‍♂️ 运动时间",
-            value: formatTime(sportTime)
-          },{
-            label: "📝 任务数量",
-            value: totalTasks
-          },{
-            label: "✅ 完成率",
-            value: `${completionRate}%`
-          }].map((item, idx) => (
-            <div key={idx} style={{
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 20,
+          padding: "8px 0",
+          backgroundColor: "#e8f0fe",
+          borderRadius: 10,
+        }}
+      >
+        {[
+          { label: "📘 学习时间", value: formatTime(learningTime) },
+          { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
+          { label: "📝 任务数量", value: totalTasks },
+          { label: "✅ 完成率", value: `${completionRate}%` },
+        ].map((item, idx) => (
+          <div
+            key={idx}
+            style={{
               flex: 1,
               textAlign: "center",
-              fontSize: 14,
-              borderRight: idx < 3 ? "1px solid #cce0ff" : "none", // 每个中间加分割线
-              padding: "6px 0"
-            }}>
-              <div>{item.label}</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
-            </div>
+              fontSize: 12,
+              borderRight: idx < 3 ? "1px solid #cce0ff" : "none",
+              // 每个中间加分割线
+              padding: "4px 0",
+            }}
+          >
+            <div>{item.label}</div>
+            <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
+          </div>
         ))}
       </div>
     </div>
