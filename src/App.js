@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
-import { db } from "./firebase";
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const categories = [
   { name: "语文", color: "#4a90e2" },
@@ -54,111 +52,122 @@ function App() {
   const touchStateRef = useRef({});
   const [swipedTask, setSwipedTask] = useState(null);
 
+  // === 本地存储相关 ===
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "tasks"), snapshot => {
-      const temp = {};
-      snapshot.docs.forEach(docSnap => {
-        const data = docSnap.data();
-        if (!temp[data.date]) temp[data.date] = [];
-        temp[data.date].push({ ...data, id: docSnap.id });
-      });
-      setTasksByDate(temp);
-    });
-    return () => unsubscribe();
+    const saved = localStorage.getItem("tasksByDate");
+    if (saved) setTasksByDate(JSON.parse(saved));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
+  }, [tasksByDate]);
 
   const tasks = tasksByDate[selectedDate] || [];
   const weekDates = getWeekDates(currentMonday);
 
-  const handleAddTask = async () => {
+  const handleAddTask = () => {
     const text = newTaskText.trim();
     if (!text) return;
     const newTask = {
+      id: Date.now().toString(),
       text,
       category: newTaskCategory,
       done: false,
       timeSpent: 0,
       note: "",
-      date: selectedDate,
-      createdAt: new Date()
     };
-    try {
-      await addDoc(collection(db, "tasks"), newTask);
-      setNewTaskText("");
-      setShowAddInput(false);
-    } catch (err) {
-      console.error(err);
-    }
+    setTasksByDate(prev => {
+      const copy = { ...prev };
+      if (!copy[selectedDate]) copy[selectedDate] = [];
+      copy[selectedDate].push(newTask);
+      return copy;
+    });
+    setNewTaskText("");
+    setShowAddInput(false);
   };
 
-  // ✅ 修改部分：批量导入自动识别类别
-  const handleImportTasks = async () => {
+  const handleImportTasks = () => {
     if (!bulkText.trim()) return;
     const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
 
-    // 第一行用于识别类别
-    const firstLine = lines[0];
-    const detectedCategories = categories.filter(c => firstLine.includes(c.name)).map(c => c.name);
-
-    try {
-      // 从第二行开始逐行添加
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        // 如果任务里包含任一类别名称，就用对应类别，否则默认第一个
-        const matchedCat = detectedCategories.find(c => line.includes(c)) || newTaskCategory;
-        const cleanText = line.replace(/语文|数学|英语|科学|体育/g, "").trim();
-
-        const newTask = {
-          text: cleanText || line,
-          category: matchedCat,
-          done: false,
-          timeSpent: 0,
-          note: "",
-          date: selectedDate,
-          createdAt: new Date()
-        };
-        await addDoc(collection(db, "tasks"), newTask);
+    // 第一行识别类别
+    let category = categories[0].name;
+    for (const c of categories) {
+      if (lines[0].includes(c.name)) {
+        category = c.name;
+        break;
       }
-      setBulkText("");
-      setShowBulkInput(false);
-    } catch (err) {
-      console.error(err);
     }
+
+    // 后面每行生成任务
+    const taskLines = lines.slice(1);
+    const newTasks = taskLines.map(line => ({
+      id: Date.now().toString() + Math.random(),
+      text: line,
+      category,
+      done: false,
+      timeSpent: 0,
+      note: "",
+    }));
+
+    setTasksByDate(prev => {
+      const copy = { ...prev };
+      if (!copy[selectedDate]) copy[selectedDate] = [];
+      copy[selectedDate] = [...copy[selectedDate], ...newTasks];
+      return copy;
+    });
+
+    setBulkText("");
+    setShowBulkInput(false);
   };
 
-  const toggleDone = async (task) => {
-    try {
-      await updateDoc(doc(db, "tasks", task.id), { done: !task.done });
-    } catch (err) { console.error(err); }
+  const toggleDone = (task) => {
+    setTasksByDate(prev => {
+      const copy = { ...prev };
+      copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, done: !t.done } : t);
+      return copy;
+    });
   };
 
-  const deleteTask = async (task) => {
-    try {
-      await deleteDoc(doc(db, "tasks", task.id));
-      if (runningRefs.current[task.id]) {
-        clearInterval(runningRefs.current[task.id]);
-        delete runningRefs.current[task.id];
-        setRunningState(prev => { const n = { ...prev }; delete n[task.id]; return n; });
-      }
-      if (swipedTask === task.id) setSwipedTask(null);
-    } catch (err) { console.error(err); }
+  const deleteTask = (task) => {
+    setTasksByDate(prev => {
+      const copy = { ...prev };
+      copy[selectedDate] = copy[selectedDate].filter(t => t.id !== task.id);
+      return copy;
+    });
+    if (runningRefs.current[task.id]) {
+      clearInterval(runningRefs.current[task.id]);
+      delete runningRefs.current[task.id];
+      setRunningState(prev => { const n = { ...prev }; delete n[task.id]; return n; });
+    }
+    if (swipedTask === task.id) setSwipedTask(null);
   };
 
-  const toggleEdit = async (task) => {
-    const newText = prompt("编辑任务", task.text);
+  // === 编辑任务与备注，使用 prompt，手机不会放大界面 ===
+  const editTaskText = (task) => {
+    const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
-      try { await updateDoc(doc(db, "tasks", task.id), { text: newText }); } catch (err) { console.error(err); }
+      setTasksByDate(prev => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, text: newText } : t);
+        return copy;
+      });
     }
   };
 
-  const editNote = async (task) => {
-    const newNote = prompt("编辑备注", task.note || "");
+  const editTaskNote = (task) => {
+    const newNote = window.prompt("编辑备注", task.note || "");
     if (newNote !== null) {
-      try { await updateDoc(doc(db, "tasks", task.id), { note: newNote }); } catch (err) { console.error(err); }
+      setTasksByDate(prev => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, note: newNote } : t);
+        return copy;
+      });
     }
   };
 
+  // === 计时器 ===
   const toggleTimer = (task) => {
     const isRunning = !!runningRefs.current[task.id];
     if (isRunning) {
@@ -166,23 +175,25 @@ function App() {
       delete runningRefs.current[task.id];
       setRunningState(prev => ({ ...prev, [task.id]: false }));
     } else {
-      runningRefs.current[task.id] = setInterval(async () => {
-        try {
-          await updateDoc(doc(db, "tasks", task.id), { timeSpent: (task.timeSpent || 0) + 1 });
-        } catch (err) {
-          console.error(err);
-        }
+      runningRefs.current[task.id] = setInterval(() => {
+        setTasksByDate(prev => {
+          const copy = { ...prev };
+          copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t);
+          return copy;
+        });
       }, 1000);
       setRunningState(prev => ({ ...prev, [task.id]: true }));
     }
   };
 
-  const manualAddTime = async (task) => {
-    const minutes = parseInt(prompt("输入已完成的时间（分钟）"), 10);
+  const manualAddTime = (task) => {
+    const minutes = parseInt(window.prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
-      try {
-        await updateDoc(doc(db, "tasks", task.id), { timeSpent: (task.timeSpent || 0) + minutes * 60 });
-      } catch (err) { console.error(err); }
+      setTasksByDate(prev => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map(t => t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t);
+        return copy;
+      });
     }
   };
 
@@ -212,6 +223,7 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
+  // === 滑动删除（手机） ===
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
     touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
@@ -223,28 +235,21 @@ function App() {
     if (!state) return;
     const dx = touch.clientX - state.startX;
     state.currentX = touch.clientX;
-    if (dx < -10) {
-      state.swiping = true;
-    }
+    if (dx < -10) state.swiping = true;
   };
 
   const onTouchEnd = (e, taskId) => {
     const state = touchStateRef.current[taskId];
     if (!state) return;
     const dx = state.currentX - state.startX;
-    if (dx < -70) {
-      setSwipedTask(taskId);
-    } else {
-      if (swipedTask === taskId) setSwipedTask(null);
-    }
+    if (dx < -70) setSwipedTask(taskId);
+    else if (swipedTask === taskId) setSwipedTask(null);
     delete touchStateRef.current[taskId];
   };
 
   useEffect(() => {
     const onDocClick = (e) => {
-      if (!e.target.closest(".task-li-swiped")) {
-        setSwipedTask(null);
-      }
+      if (!e.target.closest(".task-li-swiped")) setSwipedTask(null);
     };
     document.addEventListener("touchstart", onDocClick);
     document.addEventListener("mousedown", onDocClick);
@@ -325,22 +330,19 @@ function App() {
                       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
                         <div style={{ flex: 1 }}>
-                          <div onClick={() => toggleEdit(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none" }}>
+                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none" }}>
                             {task.text}
                           </div>
-                          {task.note && <div style={{ fontSize: 12, color: "#555", marginTop: 6 }}>备注: {task.note}</div>}
+                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>备注: {task.note}</div>}
                         </div>
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
                         <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>{formatTime(task.timeSpent)}</div>
-
                         <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
                           {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
-
                         <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>📝</button>
-                        <button onClick={() => editNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>💬</button>
                       </div>
                     </div>
 
@@ -383,17 +385,15 @@ function App() {
           <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} style={{ padding: 6 }}>
             {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
-          <button onClick={handleAddTask} style={{ padding: "6px 10px", borderRadius: 6, backgroundColor: "#1a73e8", color: "#fff", border: "none" }}>提交</button>
+          <button onClick={handleAddTask} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>确认</button>
         </div>
       )}
 
       {showBulkInput && (
         <div style={{ marginTop: 8 }}>
           <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
-            placeholder="第一行写类别（如：语文 数学 英语），后面每行一个任务" style={{ width: "100%", height: 80, padding: 8, borderRadius: 6, border: "1px solid #ccc" }} />
-          <div style={{ textAlign: "right", marginTop: 4 }}>
-            <button onClick={handleImportTasks} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入</button>
-          </div>
+            placeholder="第一行写类别，其余每行一条任务" style={{ width: "100%", minHeight: 80, padding: 6, borderRadius: 6, border: "1px solid #ccc" }} />
+          <button onClick={handleImportTasks} style={{ marginTop: 6, padding: 6, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入任务</button>
         </div>
       )}
     </div>
