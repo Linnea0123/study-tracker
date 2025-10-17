@@ -208,7 +208,7 @@ function App() {
     const catTasks = getCategoryTasks(catName);
     return catTasks.reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   };
-  const formatTime = (seconds) => `${Math.floor(seconds/60)}m ${seconds%60}s`;
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 
   const prevWeek = () => {
     const monday = new Date(currentMonday);
@@ -258,7 +258,8 @@ function App() {
       document.removeEventListener("mousedown", onDocClick);
     };
   }, []);
-// 统计量计算
+
+  // 统计量计算
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = todayTasks
     .filter(t => t.category !== "体育")
@@ -271,18 +272,17 @@ function App() {
     ? 0
     : Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
 
-
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
-      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 汤圆学习计划和打卡</h1>
-      <div style={{ textAlign: "center", fontSize: 13, marginBottom: 10 }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
+      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 24 }}>📚 汤圆学习计划和打卡</h1>
+      <div style={{ textAlign: "center", fontSize: 14, marginBottom: 10 }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 5 }}>
-        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10 }}>⬅️</button>
-        <span style={{ fontWeight: "bold", margin: "0 6px" }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
-        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 6 }}>➡️</button>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 10 }}>
+        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10, fontSize: 18 }}>⬅️</button>
+        <span style={{ fontWeight: "bold", margin: "0 6px", fontSize: 16 }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
+        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 10, fontSize: 18 }}>➡️</button>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
@@ -291,18 +291,18 @@ function App() {
           return (
             <div key={d.date} onClick={() => setSelectedDate(d.date)}
               style={{
-                padding: "4px 6px",
+                padding: "6px 10px",
                 borderBottom: d.date === selectedDate ? "2px solid #0b52b0" : "1px solid #ccc",
                 textAlign: "center",
                 flex: 1,
                 margin: "0 2px",
-                fontSize: 12,
+                fontSize: 14,
                 cursor: "pointer",
                 backgroundColor: d.date === todayStr ? "#1a73e8" : "transparent",
                 color: d.date === todayStr ? "#fff" : "#000"
               }}>
               <div>{d.label}</div>
-              <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+              <div style={{ fontSize: 12 }}>{d.date.slice(5)}</div>
             </div>
           );
         })}
@@ -314,9 +314,9 @@ function App() {
         const progress = calcProgress(c.name);
         return (
           <div key={c.name} style={{ marginBottom: 12, borderRadius: 10, overflow: "hidden", border: `2px solid ${c.color}`, backgroundColor: "#fff" }}>
-            <div style={{ backgroundColor: c.color, color: "#fff", padding: "6px 10px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ backgroundColor: c.color, color: "#fff", padding: "8px 12px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{c.name} ({progress}%)</span>
-              <span style={{ fontSize: 12 }}>{formatTime(totalTime(c.name))}</span>
+              <span style={{ fontSize: 14 }}>{formatTime(totalTime(c.name))}</span>
             </div>
 
             <ul style={{ listStyle: "none", padding: 10, margin: 0 }}>
@@ -333,30 +333,30 @@ function App() {
                         overflow: "hidden",
                         background: "#fff",
                         borderRadius: 6,
-                        marginBottom: 8,
+                        marginBottom: 10,
                       }}>
                     <div style={{
                       transform: isSwiped ? "translateX(-80px)" : "translateX(0)",
                       transition: "transform .18s ease",
-                      padding: "8px",
+                      padding: "12px 16px",
                     }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
                         <div style={{ flex: 1 }}>
-                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none",color: task.done ? "#999" : "#000" }}>
+                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none",color: task.done ? "#999" : "#000", fontSize: 16 }}>
                             {task.text}
                           </div>
-                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>{task.note}</div>}
+                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 14, color: "#555", marginTop: 6, cursor: "pointer" }}>{task.note}</div>}
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
-                        <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>{formatTime(task.timeSpent)}</div>
-                        <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 10, alignItems: "center" }}>
+                        <div style={{ fontSize: 14, color: "#333", marginRight: 10 }}>{formatTime(task.timeSpent)}</div>
+                        <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>
                           {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
-                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>➕</button>
-                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>📝</button>
+                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>➕</button>
+                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}>📝</button>
                       </div>
                     </div>
 
@@ -387,56 +387,56 @@ function App() {
         );
       })}
 
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-        <button onClick={() => setShowAddInput(!showAddInput)} style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>添加任务</button>
-        <button onClick={() => setShowBulkInput(!showBulkInput)} style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>批量导入</button>
+      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+        <button onClick={() => setShowAddInput(!showAddInput)} style={{ flex: 1, padding: 12, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>添加任务</button>
+        <button onClick={() => setShowBulkInput(!showBulkInput)} style={{ flex: 1, padding: 12, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>批量导入</button>
       </div>
 
       {showAddInput && (
-        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
           <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)}
-            placeholder="输入任务" style={{ flex: 1, padding: 6, borderRadius: 6, border: "1px solid #ccc" }} />
-          <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} style={{ padding: 6 }}>
+            placeholder="输入任务" style={{ flex: 1, padding: 8, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }} />
+          <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} style={{ padding: 8, fontSize: 16 }}>
             {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
-          <button onClick={handleAddTask} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>确认</button>
+          <button onClick={handleAddTask} style={{ padding: "8px 12px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>确认</button>
         </div>
       )}
 
       {showBulkInput && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 12 }}>
           <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
-            placeholder="第一行写类别，其余每行一条任务" style={{ width: "100%", minHeight: 80, padding: 6, borderRadius: 6, border: "1px solid #ccc" }} />
-          <button onClick={handleImportTasks} style={{ marginTop: 6, padding: 6, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入任务</button>
+            placeholder="第一行写类别，其余每行一条任务" style={{ width: "100%", minHeight: 120, padding: 8, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }} />
+          <button onClick={handleImportTasks} style={{ marginTop: 10, padding: 12, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 10, fontSize: 16 }}>导入任务</button>
         </div>
       )}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "8px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
-    {[{
-        label: "📘 学习时间",
-        value: formatTime(learningTime)
-      },{
-        label: "🏃‍♂️ 运动时间",
-        value: formatTime(sportTime)
-      },{
-        label: "📝 任务数量",
-        value: totalTasks
-      },{
-        label: "✅ 完成率",
-        value: `${completionRate}%`
-      }].map((item, idx) => (
-        <div key={idx} style={{
-          flex: 1,
-          textAlign: "center",
-          fontSize: 12,
-          borderRight: idx < 3 ? "1px solid #cce0ff" : "none", // 每个中间加分割线
-          padding: "4px 0"
-        }}>
-          <div>{item.label}</div>
-          <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
-        </div>
-    ))}
-</div>
 
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "12px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
+        {[{
+            label: "📘 学习时间",
+            value: formatTime(learningTime)
+          },{
+            label: "🏃‍♂️ 运动时间",
+            value: formatTime(sportTime)
+          },{
+            label: "📝 任务数量",
+            value: totalTasks
+          },{
+            label: "✅ 完成率",
+            value: `${completionRate}%`
+          }].map((item, idx) => (
+            <div key={idx} style={{
+              flex: 1,
+              textAlign: "center",
+              fontSize: 14,
+              borderRight: idx < 3 ? "1px solid #cce0ff" : "none", // 每个中间加分割线
+              padding: "6px 0"
+            }}>
+              <div>{item.label}</div>
+              <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
+            </div>
+        ))}
+      </div>
     </div>
   );
 }
