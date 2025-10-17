@@ -49,13 +49,11 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
 
-  // 本地运行状态与滑动状态
-  const runningRefs = useRef({}); // interval refs keyed by task.id
-  const [runningState, setRunningState] = useState({}); // local boolean map taskId -> running
-  const touchStateRef = useRef({}); // temp touch data
-  const [swipedTask, setSwipedTask] = useState(null); // task id currently swiped open
+  const runningRefs = useRef({});
+  const [runningState, setRunningState] = useState({});
+  const touchStateRef = useRef({});
+  const [swipedTask, setSwipedTask] = useState(null);
 
-  // Firestore 实时监听
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "tasks"), snapshot => {
       const temp = {};
@@ -72,7 +70,6 @@ function App() {
   const tasks = tasksByDate[selectedDate] || [];
   const weekDates = getWeekDates(currentMonday);
 
-  // add task
   const handleAddTask = async () => {
     const text = newTaskText.trim();
     if (!text) return;
@@ -94,7 +91,6 @@ function App() {
     }
   };
 
-  // batch import (each line a task; if a line equals a category name we could switch category - keep simple: use selected category)
   const handleImportTasks = async () => {
     if (!bulkText.trim()) return;
     const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
@@ -118,29 +114,24 @@ function App() {
     }
   };
 
-  // toggle done
   const toggleDone = async (task) => {
     try {
       await updateDoc(doc(db, "tasks", task.id), { done: !task.done });
     } catch (err) { console.error(err); }
   };
 
-  // delete
   const deleteTask = async (task) => {
     try {
       await deleteDoc(doc(db, "tasks", task.id));
-      // stop any running timer
       if (runningRefs.current[task.id]) {
         clearInterval(runningRefs.current[task.id]);
         delete runningRefs.current[task.id];
         setRunningState(prev => { const n = { ...prev }; delete n[task.id]; return n; });
       }
-      // if swiped open, close
       if (swipedTask === task.id) setSwipedTask(null);
     } catch (err) { console.error(err); }
   };
 
-  // edit text (prompt to keep consistent with your current behavior)
   const toggleEdit = async (task) => {
     const newText = prompt("编辑任务", task.text);
     if (newText !== null) {
@@ -155,21 +146,16 @@ function App() {
     }
   };
 
-  // start / pause toggle (single button)
   const toggleTimer = (task) => {
     const isRunning = !!runningRefs.current[task.id];
     if (isRunning) {
-      // stop
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
       setRunningState(prev => ({ ...prev, [task.id]: false }));
     } else {
-      // start: create interval that updates firestore each second (跟你之前行为一致)
       runningRefs.current[task.id] = setInterval(async () => {
         try {
-          // increment timeSpent by 1 second
           await updateDoc(doc(db, "tasks", task.id), { timeSpent: (task.timeSpent || 0) + 1 });
-          // note: task.timeSpent is stale here, but realtime onSnapshot will update it; this keeps behavior same as earlier
         } catch (err) {
           console.error(err);
         }
@@ -178,7 +164,6 @@ function App() {
     }
   };
 
-  // manual add time
   const manualAddTime = async (task) => {
     const minutes = parseInt(prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
@@ -214,7 +199,6 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
-  // ---------- touch swipe handlers for mobile left-swipe to reveal delete ----------
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
     touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
@@ -226,11 +210,8 @@ function App() {
     if (!state) return;
     const dx = touch.clientX - state.startX;
     state.currentX = touch.clientX;
-    // start swiping when moved left more than 10px
     if (dx < -10) {
       state.swiping = true;
-      // set transform style via DOM: store swipedTask id when pass threshold
-      // but we only set swipedTask on end to avoid flicker
     }
   };
 
@@ -238,20 +219,16 @@ function App() {
     const state = touchStateRef.current[taskId];
     if (!state) return;
     const dx = state.currentX - state.startX;
-    // left swipe threshold -70 px
     if (dx < -70) {
       setSwipedTask(taskId);
     } else {
-      // if previously swiped open and user tapped, close
       if (swipedTask === taskId) setSwipedTask(null);
     }
     delete touchStateRef.current[taskId];
   };
 
-  // close swiped when tapping elsewhere
   useEffect(() => {
     const onDocClick = (e) => {
-      // if clicked outside a swiped item, close
       if (!e.target.closest(".task-li-swiped")) {
         setSwipedTask(null);
       }
@@ -264,7 +241,6 @@ function App() {
     };
   }, []);
 
-  // render
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
       <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 学习打卡</h1>
@@ -272,14 +248,12 @@ function App() {
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
 
-      {/* week switch (aligned right as you wanted) */}
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 5 }}>
         <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10 }}>⬅️</button>
         <span style={{ fontWeight: "bold", margin: "0 6px" }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
         <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 6 }}>➡️</button>
       </div>
 
-      {/* week dates */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
         {weekDates.map(d => {
           const todayStr = new Date().toISOString().split("T")[0];
@@ -303,7 +277,6 @@ function App() {
         })}
       </div>
 
-      {/* categories */}
       {categories.map(c => {
         const catTasks = getCategoryTasks(c.name);
         if (catTasks.length === 0) return null;
@@ -331,13 +304,11 @@ function App() {
                         borderRadius: 6,
                         marginBottom: 8,
                       }}>
-                    {/* content wrapper that shifts left when swiped */}
                     <div style={{
                       transform: isSwiped ? "translateX(-80px)" : "translateX(0)",
                       transition: "transform .18s ease",
                       padding: "8px",
                     }}>
-                      {/* first row: checkbox + text */}
                       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
                         <div style={{ flex: 1 }}>
@@ -348,11 +319,9 @@ function App() {
                         </div>
                       </div>
 
-                      {/* actions row: time + merged toggle button + manual + note(edit) */}
                       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
                         <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>{formatTime(task.timeSpent)}</div>
 
-                        {/* merged start/pause button */}
                         <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
                           {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
@@ -362,7 +331,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* delete button on right, visible when swiped or always tappable (overlay) */}
+                    {/* ✅ 改浅蓝色背景 */}
                     <div style={{
                       position: "absolute",
                       right: 0,
@@ -372,7 +341,7 @@ function App() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: "#ff4d4f",
+                      background: "#cde9ff",
                       color: "#fff",
                       transform: isSwiped ? "translateX(0)" : "translateX(80px)",
                       transition: "transform .18s ease",
@@ -390,7 +359,6 @@ function App() {
         );
       })}
 
-      {/* add / bulk UI (keep at bottom for convenience) */}
       <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
         <button onClick={() => setShowAddInput(!showAddInput)} style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>添加任务</button>
         <button onClick={() => setShowBulkInput(!showBulkInput)} style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>批量导入</button>
@@ -410,8 +378,10 @@ function App() {
       {showBulkInput && (
         <div style={{ marginTop: 8 }}>
           <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
-            placeholder="每行一个任务" style={{ width: "100%", height: 80, padding: 8, borderRadius: 6, border: "1px solid #ccc", backgroundColor: "#eaf4ff" }} />
-          <button onClick={handleImportTasks} style={{ marginTop: 6, padding: "6px 10px", borderRadius: 6, backgroundColor: "#1a73e8", color: "#fff", border: "none" }}>提交</button>
+            placeholder="每行一个任务" style={{ width: "100%", height: 80, padding: 8, borderRadius: 6, border: "1px solid #ccc" }} />
+          <div style={{ textAlign: "right", marginTop: 4 }}>
+            <button onClick={handleImportTasks} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入</button>
+          </div>
         </div>
       )}
     </div>
