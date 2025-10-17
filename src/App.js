@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, collection } from "firebase/firestore";
 import { db } from "./firebase";
 import "./App.css";
 
@@ -54,6 +54,7 @@ function App() {
   const [swipedTask, setSwipedTask] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // 初始化用户ID
   useEffect(() => {
@@ -69,17 +70,40 @@ function App() {
   useEffect(() => {
     if (!userId) return;
 
-    const unsubscribe = onSnapshot(doc(db, "userTasks", userId), (doc) => {
-      if (doc.exists()) {
-        setTasksByDate(doc.data().tasks || {});
-      } else {
-        // 如果文档不存在，创建一个空的
-        setDoc(doc(db, "userTasks", userId), { tasks: {} });
-      }
+    setLoading(true);
+    setError(null);
+    
+    const timeout = setTimeout(() => {
       setLoading(false);
-    });
+      setError("连接超时，请检查网络后刷新");
+    }, 10000);
 
-    return () => unsubscribe();
+    const userDocRef = doc(db, "userTasks", userId);
+    
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (doc) => {
+        clearTimeout(timeout);
+        if (doc.exists()) {
+          setTasksByDate(doc.data().tasks || {});
+        } else {
+          setDoc(userDocRef, { tasks: {} })
+            .catch(e => console.error("初始化文档失败:", e));
+        }
+        setLoading(false);
+      },
+      (error) => {
+        clearTimeout(timeout);
+        console.error("数据监听错误:", error);
+        setError("数据加载失败，请刷新重试");
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, [userId]);
 
   const saveTasksToFirebase = async (updatedTasks) => {
@@ -88,12 +112,14 @@ function App() {
       await setDoc(doc(db, "userTasks", userId), {
         tasks: updatedTasks
       }, { merge: true });
+      setError(null);
     } catch (error) {
       console.error("保存数据出错:", error);
+      setError("保存数据失败，请检查网络连接");
     }
   };
 
-  // 滑动删除相关函数
+  // 滑动删除处理
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
     touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
@@ -261,19 +287,24 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
+  const reloadPage = () => {
+    window.location.reload();
+  };
+
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "center", 
-        alignItems: "center", 
-        height: "100vh",
-        backgroundColor: "#f5faff"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <h2>加载中...</h2>
-          <p>正在同步你的学习数据</p>
-        </div>
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>正在加载你的学习数据...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-screen">
+        <p>{error}</p>
+        <button onClick={reloadPage}>刷新页面</button>
       </div>
     );
   }
