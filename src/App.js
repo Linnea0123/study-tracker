@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
+import { writeTasksData, readTasksData } from './firebase'; // 引入 Firebase 方法
 
 const categories = [
   { name: "语文", color: "#4a90e2" },
@@ -51,14 +52,17 @@ function App() {
   const touchStateRef = useRef({});
   const [swipedTask, setSwipedTask] = useState(null);
 
-  // === 本地存储相关 ===
+  // === 本地存储和 Firebase 相关 ===
   useEffect(() => {
-    const saved = localStorage.getItem("tasksByDate");
-    if (saved) setTasksByDate(JSON.parse(saved));
+    const fetchData = async () => {
+      const saved = await readTasksData();
+      setTasksByDate(saved || {});
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
+    writeTasksData(tasksByDate); // 每次任务数据更改时同步到 Firebase
   }, [tasksByDate]);
 
   const tasks = tasksByDate[selectedDate] || [];
@@ -89,7 +93,6 @@ function App() {
     if (!bulkText.trim()) return;
     const lines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
-    // 第一行识别类别
     let category = categories[0].name;
     for (const c of categories) {
       if (lines[0].includes(c.name)) {
@@ -97,7 +100,6 @@ function App() {
         break;
       }
     }
-    // 后面每行生成任务
     const taskLines = lines.slice(1);
     const newTasks = taskLines.map((line) => ({
       id: Date.now().toString() + Math.random(),
@@ -145,7 +147,6 @@ function App() {
     if (swipedTask === task.id) setSwipedTask(null);
   };
 
-  // === 编辑任务与备注，使用 prompt，手机不会放大界面 ===
   const editTaskText = (task) => {
     const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
@@ -172,7 +173,6 @@ function App() {
     }
   };
 
-  // === 计时器 ===
   const toggleTimer = (task) => {
     const isRunning = !!runningRefs.current[task.id];
     if (isRunning) {
@@ -236,7 +236,6 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
-  // === 滑动删除（手机） ===
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
     touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
@@ -272,7 +271,6 @@ function App() {
     };
   }, []);
 
-  // 统计量计算
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = todayTasks
     .filter((t) => t.category !== "体育")
@@ -528,7 +526,7 @@ function App() {
           { label: "📘 学习时间", value: formatTime(learningTime) },
           { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
           { label: "📝 任务数量", value: totalTasks },
-          { label: "✅ 完成率", value: `${completionRate}%` },
+          { label: "✅ 完成22率", value: `${completionRate}%` },
         ].map((item, idx) => (
           <div
             key={idx}
