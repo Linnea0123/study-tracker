@@ -7,7 +7,7 @@ const categories = [
   { name: "语文", color: "#4a90e2" },
   { name: "数学", color: "#357ABD" },
   { name: "英语", color: "#1e73be" },
-  { name: "阅读", color: "#00aaff" },
+  { name: "科学", color: "#00aaff" },
   { name: "运动", color: "#3399ff" },
 ];
 
@@ -243,7 +243,7 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
-      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 学习打卡</h1>
+      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 汤圆学习计划和打卡</h1>
       <div style={{ textAlign: "center", fontSize: 13, marginBottom: 10 }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
