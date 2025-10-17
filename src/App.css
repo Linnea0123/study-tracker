@@ -1,214 +1,103 @@
-/* ===================== 基础布局 ===================== */
-
-body {
-  margin: 0;
+.App {
   font-family: "Microsoft YaHei", sans-serif;
-  background-color: #f5f7fa;
-}
-
-.app-container {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 20px;
+  background-color: #f4f6fa;
+  min-height: 100vh;
 }
 
-/* 学习打卡标题和统计 */
-h1 {
-  font-size: 22px;
-  text-align: center;
-  margin-bottom: 6px;
-}
-
-.stats {
-  text-align: center;
-  color: #555;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-/* ===================== 周数导航 ===================== */
-.week-number-container {
+.header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
 }
 
-.week-number-container button {
-  background: transparent;
+.add-btn {
+  background-color: #4f8ef7;
   border: none;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 18px;
-  margin: 0 5px;
 }
 
-/* ===================== 星期栏 ===================== */
-.week-days {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 10px;
+.category-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
 }
 
-.week-day {
-  flex: 1;
-  text-align: center;
-  padding: 8px 0;
-  font-weight: 500;
-  border-bottom: 1px solid #ccc;
-}
-
-/* ===================== 类别外框 ===================== */
-.category-section {
-  background-color: #fff;
+.category-block {
+  background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  margin-bottom: 18px;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.category-header {
+.category-block h2 {
+  background-color: #dce8ff;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.task {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #eaf1fb;
-  padding: 10px 14px;
-  font-weight: bold;
-  font-size: 16px;
-  border-bottom: 1px solid #ddd;
+  background-color: #fefefe;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-top: 6px;
+  transition: 0.2s;
 }
 
-/* 总时间 + 按钮区域 */
-.category-header-right {
+.task.done {
+  background-color: #e0ffe0;
+  text-decoration: line-through;
+}
+
+.actions {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* ===================== 任务列表 ===================== */
-.task-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  background-color: #fff;
-  transition: transform 0.3s ease;
-}
-
-.task-item:hover {
-  background-color: #f7faff;
-}
-
-.task-item.swiped {
-  background-color: #e0f0ff; /* 右滑删除背景：浅蓝色 */
-  transform: translateX(-60px);
-}
-
-.task-left {
-  flex: 1;
-  overflow-wrap: anywhere;
-  font-size: 15px;
-}
-
-/* 右侧按钮和时间 */
-.task-right {
-  display: flex;
-  align-items: center;
   gap: 8px;
 }
 
-.task-right button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-}
-
 .delete-btn {
-  color: #007bff;
-  cursor: pointer;
-  font-size: 18px;
-}
-
-/* ===================== 备注样式 ===================== */
-.task-note {
-  font-size: 13px;
-  color: #666;
-  padding-left: 12px;
-  padding-bottom: 8px;
-}
-
-.note-edit {
-  width: calc(100% - 24px);
-  margin-left: 12px;
-  margin-bottom: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 13px;
-  outline: none;
-}
-
-/* ===================== 按钮 ===================== */
-button.add-btn,
-button.import-btn {
-  background-color: #1a73e8;
-  color: white;
+  background-color: #e6f0ff;
   border: none;
-  border-radius: 8px;
-  padding: 6px 10px;
   cursor: pointer;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 4px;
 }
 
-button.add-btn:hover,
-button.import-btn:hover {
-  background-color: #155acb;
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 批量导入输入框 */
-.import-box {
-  padding: 12px;
-  background-color: #f9fbff;
-  border-top: 1px solid #e2e6ef;
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 350px;
 }
 
-.import-box textarea {
-  width: 100%;
-  height: 80px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  resize: none;
-  padding: 8px;
-  font-size: 14px;
+.input-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
-/* ===================== 计时器文本 ===================== */
-.time-text {
-  color: #444;
-  font-size: 13px;
-}
-
-/* ===================== 响应式 ===================== */
-@media (max-width: 600px) {
-  .task-right {
-    gap: 4px;
-  }
-
-  .task-item {
-    padding: 6px 8px;
-  }
-
-  h1 {
-    font-size: 18px;
-  }
-
-  .category-header {
-    font-size: 14px;
-  }
-
-  .task-left {
-    font-size: 14px;
-  }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
 }

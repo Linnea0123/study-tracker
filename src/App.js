@@ -8,7 +8,7 @@ const categories = [
   { name: "数学", color: "#357ABD" },
   { name: "英语", color: "#1e73be" },
   { name: "科学", color: "#00aaff" },
-  { name: "运动", color: "#3399ff" },
+  { name: "体育", color: "#3399ff" },
 ];
 
 const getMonday = (date) => {
@@ -91,14 +91,27 @@ function App() {
     }
   };
 
+  // ✅ 修改部分：批量导入自动识别类别
   const handleImportTasks = async () => {
     if (!bulkText.trim()) return;
     const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    // 第一行用于识别类别
+    const firstLine = lines[0];
+    const detectedCategories = categories.filter(c => firstLine.includes(c.name)).map(c => c.name);
+
     try {
-      for (const line of lines) {
+      // 从第二行开始逐行添加
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        // 如果任务里包含任一类别名称，就用对应类别，否则默认第一个
+        const matchedCat = detectedCategories.find(c => line.includes(c)) || newTaskCategory;
+        const cleanText = line.replace(/语文|数学|英语|科学|体育/g, "").trim();
+
         const newTask = {
-          text: line,
-          category: newTaskCategory,
+          text: cleanText || line,
+          category: matchedCat,
           done: false,
           timeSpent: 0,
           note: "",
@@ -331,7 +344,6 @@ function App() {
                       </div>
                     </div>
 
-                    {/* ✅ 改浅蓝色背景 */}
                     <div style={{
                       position: "absolute",
                       right: 0,
@@ -378,7 +390,7 @@ function App() {
       {showBulkInput && (
         <div style={{ marginTop: 8 }}>
           <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
-            placeholder="每行一个任务" style={{ width: "100%", height: 80, padding: 8, borderRadius: 6, border: "1px solid #ccc" }} />
+            placeholder="第一行写类别（如：语文 数学 英语），后面每行一个任务" style={{ width: "100%", height: 80, padding: 8, borderRadius: 6, border: "1px solid #ccc" }} />
           <div style={{ textAlign: "right", marginTop: 4 }}>
             <button onClick={handleImportTasks} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入</button>
           </div>
