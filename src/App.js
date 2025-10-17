@@ -1,3 +1,6 @@
+import { db } from "./firebase"; // 上一步创建的 firebase.js
+import { collection, addDoc, getDocs, updateDoc, doc, onSnapshot } from "firebase/firestore";
+
 import React, { useState, useEffect, useRef } from "react";
 
 const categories = [
