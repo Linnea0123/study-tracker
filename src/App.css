@@ -1,73 +1,228 @@
-.App {
-  font-family: "Microsoft YaHei", sans-serif;
-  padding: 10px;
-  background-color: #f7f9fb;
+/* 全局样式 */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans', sans-serif;
+  background-color: #f6f8fb;
+  color: #333;
 }
 
-.category {
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 12px;
+/* 主容器 */
+.app-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 顶部标题 */
+h1 {
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+
+/* 分类块 */
+.category-block {
+  background-color: #e9f1ff;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .category-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
   margin-bottom: 6px;
 }
 
-.category-time {
-  color: #555;
-  font-size: 14px;
+.category-title {
+  font-weight: 600;
+  font-size: 1.2rem;
 }
 
-.task {
-  background-color: #fff;
+.add-btn {
+  background-color: #5b8def;
+  border: none;
+  color: white;
+  padding: 6px 14px;
   border-radius: 10px;
-  padding: 8px;
-  margin-bottom: 8px;
-  position: relative;
-  transition: transform 0.2s ease-in-out;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
 }
 
-.task-content {
+.add-btn:hover {
+  background-color: #457be0;
+}
+
+/* 任务卡片 */
+.task-item {
+  position: relative;
+  background-color: white;
+  border-radius: 12px;
+  margin: 8px 0;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  transition: transform 0.2s;
 }
 
+.task-item:hover {
+  transform: translateY(-2px);
+}
+
+/* 任务文字自动换行 */
 .task-text {
   flex: 1;
-  margin-right: 10px;
   word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
+/* 右侧按钮区 */
 .task-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  margin-left: 10px;
 }
 
-.delete-button {
-  background-color: #a7d8ff; /* 浅蓝背景 */
-  color: white;
+/* 计时/暂停按钮 */
+.timer-btn {
+  background-color: #6ecb63;
   border: none;
-  border-radius: 6px;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
-  padding: 2px 8px;
-  transition: background-color 0.3s ease;
+  font-size: 0.85rem;
+  transition: background 0.2s;
 }
 
-.delete-button:hover {
-  background-color: #7cc2ff;
+.timer-btn.pause {
+  background-color: #f5a623;
 }
 
-.task-note {
-  font-size: 13px;
+.timer-btn:hover {
+  opacity: 0.9;
+}
+
+/* 编辑按钮 */
+.edit-btn {
+  background-color: #5b8def;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #457be0;
+}
+
+/* 删除按钮（右滑出现） */
+.delete-swipe {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: #d9e9ff; /* 浅蓝色背景 */
+  width: 60px;
+  border-radius: 0 12px 12px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+}
+
+.task-item.swiped .delete-swipe {
+  transform: translateX(0);
+}
+
+.delete-icon {
+  font-size: 1.2rem;
+  color: #3685ff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.delete-icon:hover {
+  opacity: 0.7;
+}
+
+/* 弹窗（备注/时间修改） */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+}
+
+.modal {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: 85%;
+  max-width: 400px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.modal h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.modal textarea,
+.modal input {
+  width: 100%;
+  font-size: 0.95rem;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.modal-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-btn {
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modal-btn.save {
+  background-color: #5b8def;
+  color: white;
+}
+
+.modal-btn.cancel {
+  background-color: #ddd;
+}
+
+/* 时间显示 */
+.time-display {
+  font-size: 0.85rem;
   color: #666;
-  margin-top: 4px;
-  padding-left: 5px;
 }

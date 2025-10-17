@@ -344,7 +344,7 @@ function App() {
                           <div onClick={() => toggleEdit(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none" }}>
                             {task.text}
                           </div>
-                          {task.note && <div style={{ fontSize: 12, color: "#555", marginTop: 6 }}> {task.note}</div>}
+                          {task.note && <div style={{ fontSize: 12, color: "#555", marginTop: 6 }}>备注: {task.note}</div>}
                         </div>
                       </div>
 
