@@ -131,3 +131,14 @@ body {
   margin-left: 24px;
   margin-top: 2px;
 }
+/* 使任务项换行并垂直堆叠（若你使用内联样式也可以跳过） */
+.task-li-swiped {}
+
+/* 关键：确保 flex 内长文本可以换行 */
+.task-text {
+  word-break: break-word;
+  white-space: normal;
+  min-width: 0;
+}
+
+/* 可根据需要微调删除区的效果 */
