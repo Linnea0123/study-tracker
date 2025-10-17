@@ -258,6 +258,19 @@ function App() {
       document.removeEventListener("mousedown", onDocClick);
     };
   }, []);
+// 统计量计算
+  const todayTasks = tasksByDate[selectedDate] || [];
+  const learningTime = todayTasks
+    .filter(t => t.category !== "体育")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  const sportTime = todayTasks
+    .filter(t => t.category === "体育")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  const totalTasks = todayTasks.length;
+  const completionRate = totalTasks === 0
+    ? 0
+    : Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
+
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
@@ -330,10 +343,10 @@ function App() {
                       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
                         <div style={{ flex: 1 }}>
-                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none" }}>
+                          <div onClick={() => editTaskText(task)} style={{ wordBreak: "break-word", whiteSpace: "normal", cursor: "pointer", textDecoration: task.done ? "line-through" : "none",color: task.done ? "#999" : "#000" }}>
                             {task.text}
                           </div>
-                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>备注: {task.note}</div>}
+                          {task.note && <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>{task.note}</div>}
                         </div>
                       </div>
 
@@ -342,7 +355,8 @@ function App() {
                         <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
                           {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
-                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>📝</button>
+                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>➕</button>
+                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>📝</button>
                       </div>
                     </div>
 
@@ -396,6 +410,33 @@ function App() {
           <button onClick={handleImportTasks} style={{ marginTop: 6, padding: 6, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>导入任务</button>
         </div>
       )}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "8px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
+    {[{
+        label: "📘 学习时间",
+        value: formatTime(learningTime)
+      },{
+        label: "🏃‍♂️ 运动时间",
+        value: formatTime(sportTime)
+      },{
+        label: "📝 任务数量",
+        value: totalTasks
+      },{
+        label: "✅ 完成率",
+        value: `${completionRate}%`
+      }].map((item, idx) => (
+        <div key={idx} style={{
+          flex: 1,
+          textAlign: "center",
+          fontSize: 12,
+          borderRight: idx < 3 ? "1px solid #cce0ff" : "none", // 每个中间加分割线
+          padding: "4px 0"
+        }}>
+          <div>{item.label}</div>
+          <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
+        </div>
+    ))}
+</div>
+
     </div>
   );
 }
