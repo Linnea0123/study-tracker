@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
+// 获取周数
+const getWeekNumber = (date) => {
+  const d = new Date(date);
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const days = Math.floor((d - jan1) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + jan1.getDay() + 1) / 7);
+};
+
 const categories = [
   { name: "语文", color: "#4a90e2" },
   { name: "数学", color: "#357ABD" },
@@ -10,6 +18,7 @@ const categories = [
   { name: "体育", color: "#3399ff" },
 ];
 
+// 获取本周一的日期
 const getMonday = (date) => {
   const d = new Date(date);
   const day = d.getDay();
@@ -18,6 +27,7 @@ const getMonday = (date) => {
   return monday;
 };
 
+// 获取一周的日期
 const getWeekDates = (monday) => {
   const weekDates = [];
   for (let i = 0; i < 7; i++) {
@@ -31,13 +41,7 @@ const getWeekDates = (monday) => {
   return weekDates;
 };
 
-const getWeekNumber = (date) => {
-  const d = new Date(date);
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  const days = Math.floor((d - jan1) / (24 * 60 * 60 * 1000));
-  return Math.ceil((days + jan1.getDay() + 1) / 7);
-};
-
+// 格式化时间显示
 const formatTime = (seconds) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 
 function App() {
@@ -50,6 +54,8 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+  const [taskImages, setTaskImages] = useState({});
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
   const touchStateRef = useRef({});
@@ -104,19 +110,19 @@ function App() {
     return weekStats;
   };
 
-  // 生成图表数据
+  // 生成图表数据（分钟取整）
   const generateChartData = () => {
     const weekStats = calculateWeekStats();
     
     return {
       dailyStudyData: Object.entries(weekStats.byDay).map(([date, time]) => ({
         name: `${new Date(date).getDate()}日`,
-        time: time / 60, // 转换为分钟
+        time: Math.round(time / 60),
         date: date.slice(5)
       })),
       categoryData: categories.map(cat => ({
         name: cat.name,
-        time: (weekStats.byCategory[cat.name] || 0) / 60,
+        time: Math.round((weekStats.byCategory[cat.name] || 0) / 60),
         color: cat.color
       })),
       dailyTasksData: Object.entries(weekStats.tasksByDay).map(([date, count]) => ({
@@ -127,9 +133,11 @@ function App() {
     };
   };
 
+  // 添加任务
   const handleAddTask = () => {
     const text = newTaskText.trim();
     if (!text) return;
+    
     const newTask = {
       id: Date.now().toString(),
       text,
@@ -137,20 +145,23 @@ function App() {
       done: false,
       timeSpent: 0,
       note: "",
+      image: null
     };
-    setTasksByDate((prev) => {
-      const copy = { ...prev };
-      if (!copy[selectedDate]) copy[selectedDate] = [];
-      copy[selectedDate].push(newTask);
-      return copy;
-    });
+    
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), newTask]
+    }));
+    
     setNewTaskText("");
     setShowAddInput(false);
   };
 
+  // 批量导入任务
   const handleImportTasks = () => {
     if (!bulkText.trim()) return;
-    const lines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean);
+    
+    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
 
     let category = categories[0].name;
@@ -161,127 +172,153 @@ function App() {
       }
     }
 
-    const taskLines = lines.slice(1);
-    const newTasks = taskLines.map((line) => ({
+    const newTasks = lines.slice(1).map(line => ({
       id: Date.now().toString() + Math.random(),
       text: line,
       category,
       done: false,
       timeSpent: 0,
       note: "",
+      image: null
     }));
 
-    setTasksByDate((prev) => {
-      const copy = { ...prev };
-      if (!copy[selectedDate]) copy[selectedDate] = [];
-      copy[selectedDate] = [...copy[selectedDate], ...newTasks];
-      return copy;
-    });
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
+    }));
+    
     setBulkText("");
     setShowBulkInput(false);
   };
 
+  // 切换任务完成状态
   const toggleDone = (task) => {
-    setTasksByDate((prev) => {
-      const copy = { ...prev };
-      copy[selectedDate] = copy[selectedDate].map((t) =>
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t => 
         t.id === task.id ? { ...t, done: !t.done } : t
-      );
-      return copy;
-    });
+      )
+    }));
   };
 
+  // 删除任务
   const deleteTask = (task) => {
-    setTasksByDate((prev) => {
-      const copy = { ...prev };
-      copy[selectedDate] = copy[selectedDate].filter((t) => t.id !== task.id);
-      return copy;
-    });
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].filter(t => t.id !== task.id)
+    }));
+    
     if (runningRefs.current[task.id]) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
-      setRunningState((prev) => {
-        const n = { ...prev };
-        delete n[task.id];
-        return n;
-      });
+      setRunningState(prev => ({ ...prev, [task.id]: false }));
     }
+    
     if (swipedTask === task.id) setSwipedTask(null);
   };
 
+  // 编辑任务文本
   const editTaskText = (task) => {
     const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
-      setTasksByDate((prev) => {
-        const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map((t) =>
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t => 
           t.id === task.id ? { ...t, text: newText } : t
-        );
-        return copy;
-      });
+        )
+      }));
     }
   };
 
+  // 编辑任务备注
   const editTaskNote = (task) => {
     const newNote = window.prompt("编辑备注", task.note || "");
     if (newNote !== null) {
-      setTasksByDate((prev) => {
-        const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map((t) =>
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t => 
           t.id === task.id ? { ...t, note: newNote } : t
-        );
-        return copy;
-      });
+        )
+      }));
     }
   };
 
+  // 上传任务图片
+  const handleImageUpload = (e, task) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t => 
+          t.id === task.id ? { ...t, image: event.target.result } : t
+        )
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 删除任务图片
+  const removeImage = (task) => {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t => 
+        t.id === task.id ? { ...t, image: null } : t
+      )
+    }));
+  };
+
+  // 切换计时器
   const toggleTimer = (task) => {
-    const isRunning = !!runningRefs.current[task.id];
-    if (isRunning) {
+    if (runningRefs.current[task.id]) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
-      setRunningState((prev) => ({ ...prev, [task.id]: false }));
+      setRunningState(prev => ({ ...prev, [task.id]: false }));
     } else {
       runningRefs.current[task.id] = setInterval(() => {
-        setTasksByDate((prev) => {
-          const copy = { ...prev };
-          copy[selectedDate] = copy[selectedDate].map((t) =>
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t => 
             t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
-          );
-          return copy;
-        });
+          )
+        }));
       }, 1000);
-      setRunningState((prev) => ({ ...prev, [task.id]: true }));
+      setRunningState(prev => ({ ...prev, [task.id]: true }));
     }
   };
 
+  // 手动添加时间
   const manualAddTime = (task) => {
     const minutes = parseInt(window.prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
-      setTasksByDate((prev) => {
-        const copy = { ...prev };
-        copy[selectedDate] = copy[selectedDate].map((t) =>
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t => 
           t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t
-        );
-        return copy;
-      });
+        )
+      }));
     }
   };
 
-  const getCategoryTasks = (catName) => tasks.filter((t) => t.category === catName);
+  // 获取分类任务
+  const getCategoryTasks = (catName) => 
+    tasks.filter(t => t.category === catName);
 
+  // 计算分类完成进度
   const calcProgress = (catName) => {
     const catTasks = getCategoryTasks(catName);
     if (catTasks.length === 0) return 0;
-    const doneCount = catTasks.filter((t) => t.done).length;
+    const doneCount = catTasks.filter(t => t.done).length;
     return Math.round((doneCount / catTasks.length) * 100);
   };
 
-  const totalTime = (catName) => {
-    const catTasks = getCategoryTasks(catName);
-    return catTasks.reduce((sum, t) => sum + (t.timeSpent || 0), 0);
-  };
+  // 计算分类总时间
+  const totalTime = (catName) => 
+    getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
+  // 切换到上一周
   const prevWeek = () => {
     const monday = new Date(currentMonday);
     monday.setDate(monday.getDate() - 7);
@@ -289,6 +326,7 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
+  // 切换到下一周
   const nextWeek = () => {
     const monday = new Date(currentMonday);
     monday.setDate(monday.getDate() + 7);
@@ -296,18 +334,22 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
+  // 触摸事件处理
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
-    touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
+    touchStateRef.current[taskId] = { 
+      startX: touch.clientX, 
+      currentX: touch.clientX, 
+      swiping: false 
+    };
   };
 
   const onTouchMove = (e, taskId) => {
     const touch = e.touches[0];
     const state = touchStateRef.current[taskId];
     if (!state) return;
-    const dx = touch.clientX - state.startX;
     state.currentX = touch.clientX;
-    if (dx < -10) state.swiping = true;
+    if (touch.clientX - state.startX < -10) state.swiping = true;
   };
 
   const onTouchEnd = (e, taskId) => {
@@ -319,6 +361,7 @@ function App() {
     delete touchStateRef.current[taskId];
   };
 
+  // 点击文档关闭滑动删除
   useEffect(() => {
     const onDocClick = (e) => {
       if (!e.target.closest(".task-li-swiped")) setSwipedTask(null);
@@ -331,19 +374,21 @@ function App() {
     };
   }, []);
 
+  // 计算今日统计数据
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = todayTasks
-    .filter((t) => t.category !== "体育")
+    .filter(t => t.category !== "体育")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const sportTime = todayTasks
-    .filter((t) => t.category === "体育")
+    .filter(t => t.category === "体育")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const totalTasks = todayTasks.length;
-  const completionRate = totalTasks === 0 ? 0 : Math.round((todayTasks.filter((t) => t.done).length / totalTasks) * 100);
+  const completionRate = totalTasks === 0 ? 0 : 
+    Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
 
   const { dailyStudyData, categoryData, dailyTasksData } = generateChartData();
 
-  // 仅修改统计弹窗组件
+  // 统计弹窗组件
   const StatsModal = ({ onClose }) => {
     const chartHeight = window.innerWidth <= 768 ? 200 : 300;
     const fontSize = window.innerWidth <= 768 ? 10 : 12;
@@ -372,9 +417,11 @@ function App() {
         }}>
           <h2 style={{ textAlign: "center", marginBottom: 15 }}>📊 本周学习统计</h2>
           
-          {/* 1. 每日学习时间图表 */}
+          {/* 1. 每日学习时间柱状图 */}
           <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>每日学习时间（分钟）</h3>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+              每日学习时间
+            </h3>
             <ResponsiveContainer width="100%" height="80%">
               <BarChart data={dailyStudyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -390,9 +437,11 @@ function App() {
             </ResponsiveContainer>
           </div>
           
-          {/* 2. 各科目学习时间图表 */}
+          {/* 2. 各科目学习时间柱状图 */}
           <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>各科目学习时间（分钟）</h3>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+              各科目学习时间
+            </h3>
             <ResponsiveContainer width="100%" height="80%">
               <BarChart data={categoryData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -408,9 +457,11 @@ function App() {
             </ResponsiveContainer>
           </div>
           
-          {/* 3. 每日完成任务数图表 */}
+          {/* 3. 每日完成任务数柱状图 */}
           <div style={{ height: chartHeight }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>每日完成任务数</h3>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+              每日完成任务数
+            </h3>
             <ResponsiveContainer width="100%" height="80%">
               <BarChart data={dailyTasksData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -431,13 +482,12 @@ function App() {
             style={{
               display: "block",
               margin: "20px auto 0",
-              padding: "10px 20px",
+              padding: "8px 16px",
               backgroundColor: "#1a73e8",
               color: "white",
               border: "none",
               borderRadius: 5,
-              cursor: "pointer",
-              fontSize: fontSize + 2
+              cursor: "pointer"
             }}
           >
             关闭
@@ -447,20 +497,250 @@ function App() {
     );
   };
 
+  // 任务项组件
+  const TaskItem = ({ task }) => {
+    const [showImage, setShowImage] = useState(false);
+    
+    return (
+      <li
+        className={swipedTask === task.id ? "task-li-swiped" : ""}
+        onTouchStart={(e) => onTouchStart(e, task.id)}
+        onTouchMove={(e) => onTouchMove(e, task.id)}
+        onTouchEnd={(e) => onTouchEnd(e, task.id)}
+        style={{ 
+          position: "relative", 
+          overflow: "hidden", 
+          background: "#fff", 
+          borderRadius: 6, 
+          marginBottom: 8 
+        }}
+      >
+        <div style={{ 
+          transform: swipedTask === task.id ? "translateX(-80px)" : "translateX(0)", 
+          transition: "transform .18s ease", 
+          padding: "8px" 
+        }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <input 
+              type="checkbox" 
+              checked={task.done} 
+              onChange={() => toggleDone(task)} 
+              style={{ marginTop: 6 }} 
+            />
+            <div style={{ flex: 1 }}>
+              <div
+                onClick={() => editTaskText(task)}
+                style={{
+                  wordBreak: "break-word",
+                  whiteSpace: "normal",
+                  cursor: "pointer",
+                  textDecoration: task.done ? "line-through" : "none",
+                  color: task.done ? "#999" : "#000",
+                }}
+              >
+                {task.text}
+              </div>
+              {task.note && (
+                <div 
+                  onClick={() => editTaskNote(task)} 
+                  style={{ 
+                    fontSize: 12, 
+                    color: "#555", 
+                    marginTop: 4,
+                    marginBottom: 4,
+                    cursor: "pointer"
+                  }}
+                >
+                  {task.note}
+                </div>
+              )}
+              {task.image && showImage && (
+                <div style={{ marginTop: 8 }}>
+                  <img 
+                    src={task.image} 
+                    alt="任务图片" 
+                    style={{ 
+                      maxWidth: "100%",
+                      maxHeight: 150,
+                      borderRadius: 4
+                    }} 
+                  />
+                  <button 
+                    onClick={() => removeImage(task)}
+                    style={{
+                      marginTop: 4,
+                      padding: "2px 6px",
+                      backgroundColor: "#ff4d4f",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      cursor: "pointer"
+                    }}
+                  >
+                    删除图片
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "flex-end", 
+            gap: 6, 
+            marginTop: 8, 
+            alignItems: "center",
+            flexWrap: "wrap"
+          }}>
+            <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>
+              {formatTime(task.timeSpent)}
+            </div>
+            <button 
+              onClick={() => toggleTimer(task)} 
+              style={{ 
+                background: "transparent", 
+                border: "none", 
+                cursor: "pointer", 
+                padding: 6 
+              }}
+            >
+              {runningState[task.id] ? "⏸️" : "▶️"}
+            </button>
+            <button 
+              onClick={() => manualAddTime(task)} 
+              style={{ 
+                background: "transparent", 
+                border: "none", 
+                cursor: "pointer", 
+                padding: 6 
+              }}
+            >
+              ➕
+            </button>
+            {task.image ? (
+              <button 
+                onClick={() => setShowImage(!showImage)} 
+                style={{ 
+                  background: "transparent", 
+                  border: "none", 
+                  cursor: "pointer", 
+                  padding: 6 
+                }}
+              >
+                {showImage ? "🖼️▲" : "🖼️▼"}
+              </button>
+            ) : (
+              <label style={{ cursor: "pointer", padding: 6 }}>
+                📷
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, task)}
+                  style={{ display: "none" }} 
+                />
+              </label>
+            )}
+            <button 
+              onClick={() => editTaskNote(task)} 
+              style={{ 
+                background: "transparent", 
+                border: "none", 
+                cursor: "pointer", 
+                padding: 6 
+              }}
+            >
+              📝
+            </button>
+          </div>
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 80,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#cde9ff",
+            color: "#fff",
+            transform: swipedTask === task.id ? "translateX(0)" : "translateX(80px)",
+            transition: "transform .18s ease",
+            cursor: "pointer",
+          }}
+          onClick={() => deleteTask(task)}
+        >
+          ❌
+        </div>
+      </li>
+    );
+  };
+
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
-      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 学习计划和打卡</h1>
-      <div style={{ textAlign: "center", fontSize: 13, marginBottom: 10 }}>
+    <div style={{ 
+      maxWidth: 600, 
+      margin: "0 auto", 
+      padding: 15, 
+      fontFamily: "sans-serif", 
+      backgroundColor: "#f5faff" 
+    }}>
+      <h1 style={{ 
+        textAlign: "center", 
+        color: "#1a73e8", 
+        fontSize: 20 
+      }}>
+        📚 学习打卡系统
+      </h1>
+      <div style={{ 
+        textAlign: "center", 
+        fontSize: 13, 
+        marginBottom: 10 
+      }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
       
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 5 }}>
-        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10 }}>⬅️</button>
-        <span style={{ fontWeight: "bold", margin: "0 6px" }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
-        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 6 }}>➡️</button>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "flex-end", 
+        alignItems: "center", 
+        marginBottom: 5 
+      }}>
+        <button 
+          onClick={prevWeek} 
+          style={{ 
+            backgroundColor: "transparent", 
+            border: "none", 
+            cursor: "pointer", 
+            marginRight: 10 
+          }}
+        >
+          ⬅️
+        </button>
+        <span style={{ 
+          fontWeight: "bold", 
+          margin: "0 6px" 
+        }}>
+          {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
+        </span>
+        <button 
+          onClick={nextWeek} 
+          style={{ 
+            backgroundColor: "transparent", 
+            border: "none", 
+            cursor: "pointer", 
+            marginLeft: 6 
+          }}
+        >
+          ➡️
+        </button>
       </div>
       
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        marginBottom: 10 
+      }}>
         {weekDates.map((d) => {
           const todayStr = new Date().toISOString().split("T")[0];
           return (
@@ -490,111 +770,106 @@ function App() {
         const catTasks = getCategoryTasks(c.name);
         if (catTasks.length === 0) return null;
         const progress = calcProgress(c.name);
+        const isCollapsed = collapsedCategories[c.name];
+        
         return (
-          <div key={c.name} style={{ marginBottom: 12, borderRadius: 10, overflow: "hidden", border: `2px solid ${c.color}`, backgroundColor: "#fff" }}>
-            <div style={{ backgroundColor: c.color, color: "#fff", padding: "6px 10px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div 
+            key={c.name} 
+            style={{ 
+              marginBottom: 12, 
+              borderRadius: 10, 
+              overflow: "hidden", 
+              border: `2px solid ${c.color}`, 
+              backgroundColor: "#fff" 
+            }}
+          >
+            <div 
+              onClick={() => setCollapsedCategories(prev => ({ 
+                ...prev, 
+                [c.name]: !prev[c.name] 
+              }))}
+              style={{ 
+                backgroundColor: c.color,
+                color: "#fff",
+                padding: "6px 10px",
+                fontWeight: "bold",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                cursor: "pointer"
+              }}
+            >
               <span>{c.name} ({progress}%)</span>
-              <span style={{ fontSize: 12 }}>{formatTime(totalTime(c.name))}</span>
+              <span style={{ fontSize: 12 }}>
+                {formatTime(totalTime(c.name))} {isCollapsed ? "⬇️" : "⬆️"}
+              </span>
             </div>
-            <ul style={{ listStyle: "none", padding: 10, margin: 0 }}>
-              {catTasks.map((task) => {
-                const isSwiped = swipedTask === task.id;
-                return (
-                  <li
-                    key={task.id}
-                    className={isSwiped ? "task-li-swiped" : ""}
-                    onTouchStart={(e) => onTouchStart(e, task.id)}
-                    onTouchMove={(e) => onTouchMove(e, task.id)}
-                    onTouchEnd={(e) => onTouchEnd(e, task.id)}
-                    style={{ position: "relative", overflow: "hidden", background: "#fff", borderRadius: 6, marginBottom: 8 }}
-                  >
-                    <div style={{ transform: isSwiped ? "translateX(-80px)" : "translateX(0)", transition: "transform .18s ease", padding: "8px" }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                        <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
-                        <div style={{ flex: 1 }}>
-                          <div
-                            onClick={() => editTaskText(task)}
-                            style={{
-                              wordBreak: "break-word",
-                              whiteSpace: "normal",
-                              cursor: "pointer",
-                              textDecoration: task.done ? "line-through" : "none",
-                              color: task.done ? "#999" : "#000",
-                            }}
-                          >
-                            {task.text}
-                          </div>
-                          {task.note && (
-                            <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>
-                              {task.note}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
-                        <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>{formatTime(task.timeSpent)}</div>
-                        <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
-                          {runningState[task.id] ? "⏸️" : "▶️"}
-                        </button>
-                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
-                          ➕
-                        </button>
-                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
-                          📝
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 80,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "#cde9ff",
-                        color: "#fff",
-                        transform: isSwiped ? "translateX(0)" : "translateX(80px)",
-                        transition: "transform .18s ease",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => deleteTask(task)}
-                    >
-                      ❌
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            
+            {!isCollapsed && (
+              <ul style={{ 
+                listStyle: "none", 
+                padding: 10, 
+                margin: 0 
+              }}>
+                {catTasks.map((task) => (
+                  <TaskItem key={task.id} task={task} />
+                ))}
+              </ul>
+            )}
           </div>
         );
       })}
       
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+      <div style={{ 
+        display: "flex", 
+        gap: 10, 
+        marginTop: 10 
+      }}>
         <button
           onClick={() => setShowAddInput(!showAddInput)}
-          style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}
+          style={{ 
+            flex: 1, 
+            padding: 8, 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6 
+          }}
         >
           添加任务
         </button>
         <button
           onClick={() => setShowBulkInput(!showBulkInput)}
-          style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}
+          style={{ 
+            flex: 1, 
+            padding: 8, 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6 
+          }}
         >
           批量导入
         </button>
       </div>
       
       {showAddInput && (
-        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+        <div style={{ 
+          display: "flex", 
+          gap: 6, 
+          marginTop: 8 
+        }}>
           <input
             type="text"
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
             placeholder="输入任务"
-            style={{ flex: 1, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
+            style={{ 
+              flex: 1, 
+              padding: 6, 
+              borderRadius: 6, 
+              border: "1px solid #ccc" 
+            }}
           />
           <select
             value={newTaskCategory}
@@ -605,27 +880,62 @@ function App() {
               <option key={c.name} value={c.name}>{c.name}</option>
             ))}
           </select>
-          <button onClick={handleAddTask} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>
+          <button 
+            onClick={handleAddTask} 
+            style={{ 
+              padding: "6px 10px", 
+              backgroundColor: "#1a73e8", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 6 
+            }}
+          >
             确认
           </button>
         </div>
       )}
       
       {showBulkInput && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ 
+          marginTop: 8 
+        }}>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             placeholder="第一行写类别，其余每行一条任务"
-            style={{ width: "100%", minHeight: 80, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
+            style={{ 
+              width: "100%", 
+              minHeight: 80, 
+              padding: 6, 
+              borderRadius: 6, 
+              border: "1px solid #ccc" 
+            }}
           />
-          <button onClick={handleImportTasks} style={{ marginTop: 6, padding: 6, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>
+          <button 
+            onClick={handleImportTasks} 
+            style={{ 
+              marginTop: 6, 
+              padding: 6, 
+              width: "100%", 
+              backgroundColor: "#1a73e8", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 6 
+            }}
+          >
             导入任务
           </button>
         </div>
       )}
       
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "8px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        marginTop: 20, 
+        padding: "8px 0", 
+        backgroundColor: "#e8f0fe", 
+        borderRadius: 10 
+      }}>
         {[
           { label: "📘 学习时间", value: formatTime(learningTime) },
           { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
@@ -655,7 +965,6 @@ function App() {
         ))}
       </div>
       
-      {/* 导入导出按钮 */}
       <div style={{ 
         display: "flex", 
         justifyContent: "center", 
@@ -692,43 +1001,42 @@ function App() {
           color: "#fff", 
           border: "none", 
           borderRadius: 6,
-          fontSize: 14,
-          cursor: "pointer"
-        }}>
-          导入数据
-          <input 
-            type="file" 
-            accept=".json" 
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-              
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                try {
-                  const data = JSON.parse(event.target.result);
-                  if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
-                    setTasksByDate(data);
-                    alert('数据导入成功！');
+            fontSize: 14,
+            cursor: "pointer"
+          }}>
+            导入数据
+            <input 
+              type="file" 
+              accept=".json" 
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  try {
+                    const data = JSON.parse(event.target.result);
+                    if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
+                      setTasksByDate(data);
+                      alert('数据导入成功！');
+                    }
+                  } catch (error) {
+                    alert('导入失败：文件格式不正确');
                   }
-                } catch (error) {
-                  alert('导入失败：文件格式不正确');
-                }
-              };
-              reader.readAsText(file);
-              e.target.value = '';
-            }} 
-            style={{ display: "none" }} 
-          />
-        </label>
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }} 
+              style={{ display: "none" }} 
+            />
+          </label>
+        </div>
+        
+        {showStatsModal && (
+          <StatsModal onClose={() => setShowStatsModal(false)} />
+        )}
       </div>
-      
-      {/* 统计弹窗 */}
-      {showStatsModal && (
-        <StatsModal onClose={() => setShowStatsModal(false)} />
-      )}
-    </div>
-  );
-}
-
-export default App;
+    );
+  }
+  
+  export default App;
