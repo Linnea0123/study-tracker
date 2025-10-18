@@ -1,24 +1,43 @@
-.task-li-swiped {
-  transform: translateX(-80px);
-  transition: transform 0.18s ease;
+/* 完全禁用所有按钮的悬浮效果 */
+button, [role="button"], label, [type="button"], [type="submit"], .btn {
+  background-color: transparent !important; /* 背景透明 */
+  border: none !important;                  /* 去掉边框 */
+  box-shadow: none !important;              /* 去除阴影 */
+  color: inherit !important;                /* 保持文字颜色不变 */
+  cursor: pointer !important;              /* 保持鼠标指针 */
+  transition: none !important;              /* 禁用过渡效果 */
 }
 
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .task-li-swiped {
-    transform: translateX(-60px);
-  }
-  
-  /* 在小屏幕上调整统计方块的大小 */
-  .stats-container {
-    flex-direction: column;
-  }
-  
-  .stats-box {
-    width: 100%;
-    margin-bottom: 10px;
-  }
+/* 针对 hover、active 和 focus 状态的彻底禁用 */
+button:hover, button:active, button:focus,
+[role="button"]:hover, [role="button"]:active, [role="button"]:focus,
+label:hover, label:active, label:focus,
+[type="button"]:hover, [type="button"]:active, [type="button"]:focus,
+[type="submit"]:hover, [type="submit"]:active, [type="submit"]:focus,
+.btn:hover, .btn:active, .btn:focus {
+  background-color: transparent !important; /* 保证背景透明 */
+  border: none !important;                  /* 去掉边框 */
+  color: inherit !important;                /* 保持文字颜色不变 */
+  transform: none !important;               /* 禁用任何变换 */
+  filter: none !important;                  /* 禁用滤镜效果 */
+  box-shadow: none !important;              /* 不使用阴影 */
+  outline: none !important;                 /* 禁用任何轮廓 */
 }
+
+/* 彻底禁用删除按钮类的悬浮效果 */
+[class*="delete"]:hover, [class*="delete"]:active, [class*="delete"]:focus,
+[class*="remove"]:hover, [class*="remove"]:active, [class*="remove"]:focus,
+[class*="clear"]:hover, [class*="clear"]:active, [class*="clear"]:focus {
+  background-color: transparent !important; /* 背景透明 */
+  border: none !important;                  /* 去掉边框 */
+  box-shadow: none !important;              /* 去除阴影 */
+  color: inherit !important;                /* 保持文字颜色不变 */
+  cursor: pointer !important;              /* 保持鼠标指针 */
+  transform: none !important;               /* 禁用任何变换 */
+  filter: none !important;                  /* 禁用滤镜效果 */
+  outline: none !important;                 /* 禁用任何轮廓 */
+}
+
 
 /* 基础样式重置 */
 * {
@@ -32,61 +51,36 @@ body {
   background-color: #f5faff;
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 6px;
+/* 任务滑动效果 */
+.task-li-swiped {
+  transform: translateX(-80px);
+  transition: transform 0.18s ease;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+/* 彻底禁用所有交互元素的悬停效果 */
+button, [role="button"], label, [type="button"], [type="submit"], .btn {
+  transition: none !important;
+  
+  &:hover, &:active, &:focus {
+    opacity: 1 !important;
+    background-color: inherit !important;
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+/* 特定按钮修复 */
+.task-actions button {
+  &:hover, &:active {
+    background-color: transparent !important;
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* 树状图样式 */
-.recharts-treemap {
-  font-size: 12px;
-}
-
-.recharts-treemap-depth-0 {
-  stroke: #fff;
-  stroke-width: 2px;
-}
-
-/* 弹窗动画 */
-.modal-enter {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
-.modal-enter-active {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.modal-exit {
-  opacity: 1;
-}
-
-.modal-exit-active {
-  opacity: 0;
-  transform: scale(0.9);
-  transition: opacity 300ms, transform 300ms;
-}
-
-/* 按钮悬停效果 */
-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
+.task-delete-btn {
+  &:hover, &:active {
+    background-color: #ff4d4f !important;
+  }
 }
 
 /* 输入框焦点效果 */
@@ -96,44 +90,87 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
-/* 移动端优化 */
+/* 响应式设计 */
 @media (max-width: 768px) {
   body {
     font-size: 14px;
   }
   
-  /* 调整统计弹窗大小 */
-  .stats-modal {
-    width: 95% !important;
-    margin: 10px !important;
+  .task-li-swiped {
+    transform: translateX(-60px);
   }
   
-  /* 调整树状图大小 */
+  .stats-modal {
+    width: 95%;
+    margin: 10px;
+    padding: 10px;
+    
+    h2 { font-size: 1.2rem; }
+    h3 { 
+      font-size: 1rem;
+      margin-bottom: 5px;
+    }
+  }
+  
   .recharts-wrapper {
-    width: 100% !important;
-  }
-}
-/* 移动端适配 */
-@media screen and (max-width: 480px) {
-  .stats-modal {
-    width: 95% !important;
-    padding: 10px !important;
-  }
-  
-  .stats-modal h2 {
-    font-size: 1.2rem !important;
-  }
-  
-  .stats-modal h3 {
-    font-size: 1rem !important;
-    margin-bottom: 5px !important;
-  }
-  
-  .recharts-surface {
-    overflow: visible !important;
+    width: 100%;
   }
   
   .recharts-legend-wrapper {
-    display: none !important;
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    flex-direction: column;
+  }
+  
+  .stats-box {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+/* 彻底防止所有删除类按钮的悬停效果 */
+[class*="delete"], [class*="remove"], [class*="clear"] {
+  &:hover, &:active, &:focus {
+    background-color: inherit !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+/* 彻底禁用所有按钮的悬浮效果 */
+button, [role="button"], label, [type="button"], [type="submit"], .btn {
+  background-color: transparent !important;  /* 背景透明 */
+  border: none !important;                   /* 去掉边框 */
+  box-shadow: none !important;               /* 去除阴影 */
+  color: inherit !important;                 /* 保持文字颜色不变 */
+  cursor: pointer;                          /* 保持鼠标指针 */
+  transition: none !important;               /* 禁用过渡效果 */
+
+  &:hover, &:active, &:focus {
+    background-color: transparent !important; /* 保证背景透明 */
+    color: inherit !important;               /* 保持文字颜色不变 */
+    transform: none !important;              /* 禁用任何变换 */
+    filter: none !important;                 /* 禁用滤镜效果 */
+    box-shadow: none !important;             /* 不使用阴影 */
+  }
+}
+
+/* 其他特定按钮的悬浮效果完全去除 */
+.task-actions button,
+[class*="delete"], [class*="remove"], [class*="clear"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+
+  &:hover, &:active, &:focus {
+    background-color: transparent !important;
+    color: inherit !important;
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
   }
 }
