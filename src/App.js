@@ -343,10 +343,10 @@ function App() {
   // 触摸事件处理
   const onTouchStart = (e, taskId) => {
     const touch = e.touches[0];
-    touchStateRef.current[taskId] = {
-      startX: touch.clientX,
-      currentX: touch.clientX,
-      swiping: false
+    touchStateRef.current[taskId] = { 
+      startX: touch.clientX, 
+      currentX: touch.clientX, 
+      swiping: false 
     };
   };
 
@@ -389,7 +389,7 @@ function App() {
     .filter(t => t.category === "体育")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const totalTasks = todayTasks.length;
-  const completionRate = totalTasks === 0 ? 0 :
+  const completionRate = totalTasks === 0 ? 0 : 
     Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
 
   const { dailyStudyData, categoryData, dailyTasksData } = generateChartData();
@@ -433,16 +433,16 @@ function App() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" tick={{ fontSize }} />
                 <YAxis tick={{ fontSize }} />
-                <Bar
-                  dataKey="time"
-                  fill="#1a73e8"
+                <Bar 
+                  dataKey="time" 
+                  fill="#1a73e8" 
                   radius={[4, 4, 0, 0]}
                   label={{ position: "top", fontSize }}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
-
+          
           {/* 2. 各科目学习时间柱状图 */}
           <div style={{ height: chartHeight, marginBottom: 30 }}>
             <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
@@ -453,8 +453,8 @@ function App() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" tick={{ fontSize }} />
                 <YAxis tick={{ fontSize }} />
-                <Bar
-                  dataKey="time"
+                <Bar 
+                  dataKey="time" 
                   fill="#4a90e2"
                   radius={[4, 4, 0, 0]}
                   label={{ position: "top", fontSize }}
@@ -462,7 +462,7 @@ function App() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
+          
           {/* 3. 每日完成任务数柱状图 */}
           <div style={{ height: chartHeight }}>
             <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
@@ -473,17 +473,17 @@ function App() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" tick={{ fontSize }} />
                 <YAxis tick={{ fontSize }} />
-                <Bar
-                  dataKey="tasks"
-                  fill="#00a854"
+                <Bar 
+                  dataKey="tasks" 
+                  fill="#00a854" 
                   radius={[4, 4, 0, 0]}
                   label={{ position: "top", fontSize }}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
-
-          <button
+          
+          <button 
             onClick={onClose}
             style={{
               display: "block",
@@ -522,16 +522,16 @@ function App() {
           padding: "8px"
         }}
       >
-        <div style={{
+        <div style={{ 
           transform: swipedTask === task.id ? "translateX(-80px)" : "translateX(0)",
           transition: "transform .18s ease"
         }}>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: 6 }}
+            <input 
+              type="checkbox" 
+              checked={task.done} 
+              onChange={() => toggleDone(task)} 
+              style={{ marginTop: 6 }} 
             />
             <div style={{ flex: 1 }}>
               <div
@@ -547,11 +547,11 @@ function App() {
                 {task.text}
               </div>
               {task.note && (
-                <div
-                  onClick={() => editTaskNote(task)}
-                  style={{
-                    fontSize: 12,
-                    color: "#555",
+                <div 
+                  onClick={() => editTaskNote(task)} 
+                  style={{ 
+                    fontSize: 12, 
+                    color: "#555", 
                     marginTop: 4,
                     marginBottom: 4,
                     cursor: "pointer"
@@ -625,49 +625,37 @@ function App() {
             </div>
             <button
               onClick={() => toggleTimer(task)}
-              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
             >
               {runningState[task.id] ? "⏸️" : "▶️"}
             </button>
             <button
               onClick={() => manualAddTime(task)}
-              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6, fontSize: 16 }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
             >
               ➕
             </button>
             {task.image ? (
               <button
                 onClick={() => setShowImage(!showImage)}
-                style={{
-                  background: "transparent", border: "none", cursor: "pointer", padding: 6,
-                  fontSize: 16, lineHeight: 1
-                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
               >
                 {showImage ? "🖼️▲" : "🖼️▼"}
               </button>
             ) : (
-              <label style={{
-                cursor: "pointer", padding: 6,
-                fontSize: 16,
-                lineHeight: 1,
-                display: "flex", // 修复对齐
-                alignItems: "center"
-              }}>
+              <label style={{ cursor: "pointer", padding: 6 }}>
                 📷
-                <input
-                  type="file"
+                <input 
+                  type="file" 
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, task)}
-                  style={{ display: "none" }}
+                  style={{ display: "none" }} 
                 />
               </label>
             )}
             <button
               onClick={() => editTaskNote(task)}
-              style={{
-                background: "transparent", border: "none", cursor: "pointer", padding: 6,
-                fontSize: 16
-              }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
             >
               📝
             </button>
@@ -698,33 +686,33 @@ function App() {
   };
 
   return (
-    <div style={{
-      maxWidth: 600,
-      margin: "0 auto",
-      padding: 15,
-      fontFamily: "sans-serif",
-      backgroundColor: "#f5faff"
+    <div style={{ 
+      maxWidth: 600, 
+      margin: "0 auto", 
+      padding: 15, 
+      fontFamily: "sans-serif", 
+      backgroundColor: "#f5faff" 
     }}>
-      <h1 style={{
-        textAlign: "center",
-        color: "#1a73e8",
-        fontSize: 20
+      <h1 style={{ 
+        textAlign: "center", 
+        color: "#1a73e8", 
+        fontSize: 20 
       }}>
         📚 学习打卡系统
       </h1>
-      <div style={{
-        textAlign: "center",
-        fontSize: 13,
-        marginBottom: 10
+      <div style={{ 
+        textAlign: "center", 
+        fontSize: 13, 
+        marginBottom: 10 
       }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
 
-      <div style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        marginBottom: 5
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "flex-end", 
+        alignItems: "center", 
+        marginBottom: 5 
       }}>
         <button
           onClick={prevWeek}
@@ -737,9 +725,9 @@ function App() {
         >
           ⬅️
         </button>
-        <span style={{
-          fontWeight: "bold",
-          margin: "0 6px"
+        <span style={{ 
+          fontWeight: "bold", 
+          margin: "0 6px" 
         }}>
           {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
         </span>
@@ -756,10 +744,10 @@ function App() {
         </button>
       </div>
 
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginBottom: 10
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        marginBottom: 10 
       }}>
         {weekDates.map((d) => {
           const todayStr = new Date().toISOString().split("T")[0];
@@ -794,9 +782,9 @@ function App() {
         const isCollapsed = collapsedCategories[c.name];
 
         return (
-          <div
+          <div 
             key={c.name}
-            style={{
+            style={{ 
               marginBottom: 12,
               borderRadius: 10,
               overflow: "hidden",
@@ -809,7 +797,7 @@ function App() {
                 ...prev,
                 [c.name]: !prev[c.name]
               }))}
-              style={{
+              style={{ 
                 backgroundColor: isComplete ? "#f0f0f0" : c.color,
                 color: isComplete ? "#888" : "#fff",
                 padding: "6px 10px",
@@ -818,7 +806,7 @@ function App() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 cursor: "pointer",
-
+                transition: "all 0.3s ease"
               }}
             >
               <span>
@@ -830,10 +818,10 @@ function App() {
               </span>
             </div>
             {!isCollapsed && (
-              <ul style={{
-                listStyle: "none",
-                padding: 10,
-                margin: 0
+              <ul style={{ 
+                listStyle: "none", 
+                padding: 10, 
+                margin: 0 
               }}>
                 {catTasks.map((task) => (
                   <TaskItem key={task.id} task={task} />
@@ -844,61 +832,55 @@ function App() {
         );
       })}
 
-      <div style={{
-        display: "flex",
-        gap: 10,
-        marginTop: 10
+      <div style={{ 
+        display: "flex", 
+        gap: 10, 
+        marginTop: 10 
       }}>
         <button
           onClick={() => setShowAddInput(!showAddInput)}
-          style={{
-            flex: 1,
-            padding: 8,
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6
+          style={{ 
+            flex: 1, 
+            padding: 8, 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6 
           }}
         >
           添加任务
         </button>
         <button
           onClick={() => setShowBulkInput(!showBulkInput)}
-          className="no-hover-effect"
-          style={{
-            flex: 1,
-            padding: 8,
-            backgroundColor: "#1a73e8", setShowAddInput
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer",
-            // 强制不透明
-            opacity: "1 !important",
-            background: "#1a73e8 !important"
+          style={{ 
+            flex: 1, 
+            padding: 8, 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6 
           }}
-
         >
           批量导入
         </button>
       </div>
 
       {showAddInput && (
-        <div style={{
-          display: "flex",
-          gap: 6,
-          marginTop: 8
+        <div style={{ 
+          display: "flex", 
+          gap: 6, 
+          marginTop: 8 
         }}>
           <input
             type="text"
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
             placeholder="输入任务"
-            style={{
-              flex: 1,
-              padding: 6,
-              borderRadius: 6,
-              border: "1px solid #ccc"
+            style={{ 
+              flex: 1, 
+              padding: 6, 
+              borderRadius: 6, 
+              border: "1px solid #ccc" 
             }}
           />
           <select
@@ -910,14 +892,14 @@ function App() {
               <option key={c.name} value={c.name}>{c.name}</option>
             ))}
           </select>
-          <button
+          <button 
             onClick={handleAddTask}
-            style={{
-              padding: "6px 10px",
-              backgroundColor: "#1a73e8",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6
+            style={{ 
+              padding: "6px 10px", 
+              backgroundColor: "#1a73e8", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 6 
             }}
           >
             确认
@@ -926,31 +908,31 @@ function App() {
       )}
 
       {showBulkInput && (
-        <div style={{
-          marginTop: 8
+        <div style={{ 
+          marginTop: 8 
         }}>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             placeholder="第一行写类别，其余每行一条任务"
-            style={{
-              width: "100%",
-              minHeight: 80,
-              padding: 6,
-              borderRadius: 6,
-              border: "1px solid #ccc"
+            style={{ 
+              width: "100%", 
+              minHeight: 80, 
+              padding: 6, 
+              borderRadius: 6, 
+              border: "1px solid #ccc" 
             }}
           />
-          <button
+          <button 
             onClick={handleImportTasks}
-            style={{
-              marginTop: 6,
-              padding: 6,
-              width: "100%",
-              backgroundColor: "#1a73e8",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6
+            style={{ 
+              marginTop: 6, 
+              padding: 6, 
+              width: "100%", 
+              backgroundColor: "#1a73e8", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 6 
             }}
           >
             导入任务
@@ -958,21 +940,21 @@ function App() {
         </div>
       )}
 
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginTop: 20,
-        padding: "8px 0",
-        backgroundColor: "#e8f0fe",
-        borderRadius: 10
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        marginTop: 20, 
+        padding: "8px 0", 
+        backgroundColor: "#e8f0fe", 
+        borderRadius: 10 
       }}>
         {[
           { label: "📘 学习时间", value: formatTime(learningTime) },
           { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
           { label: "📝 任务数量", value: totalTasks },
           { label: "✅ 完成率", value: `${completionRate}%` },
-          {
-            label: "📊 统计",
+          { 
+            label: "📊 统计", 
             value: "",
             onClick: () => setShowStatsModal(true)
           }
@@ -990,8 +972,8 @@ function App() {
             }}
           >
             <div>{item.label}</div>
-            <div style={{
-              fontWeight: "bold",
+            <div style={{ 
+              fontWeight: "bold", 
               marginTop: 2,
               display: "flex",
               justifyContent: "center" // 确保数值居中
@@ -1002,29 +984,29 @@ function App() {
         ))}
       </div>
 
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 10,
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        gap: 10, 
         marginTop: 20,
         marginBottom: 20
       }}>
         <button
           onClick={() => {
             const dataStr = JSON.stringify(tasksByDate);
-            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-            const exportFileDefaultName = `学习打卡数据_${new Date().toISOString().slice(0, 10)}.json`;
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = `学习打卡数据_${new Date().toISOString().slice(0,10)}.json`;
 
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', exportFileDefaultName);
             linkElement.click();
           }}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
+          style={{ 
+            padding: "8px 16px", 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
             borderRadius: 6,
             fontSize: 14,
             cursor: "pointer"
@@ -1032,18 +1014,18 @@ function App() {
         >
           导出数据
         </button>
-        <label style={{
-          padding: "8px 16px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          border: "none",
+        <label style={{ 
+          padding: "8px 16px", 
+          backgroundColor: "#1a73e8", 
+          color: "#fff", 
+          border: "none", 
           borderRadius: 6,
           fontSize: 14,
           cursor: "pointer"
         }}>
           导入数据
-          <input
-            type="file"
+          <input 
+            type="file" 
             accept=".json"
             onChange={(e) => {
               const file = e.target.files[0];
@@ -1063,8 +1045,8 @@ function App() {
               };
               reader.readAsText(file);
               e.target.value = '';
-            }}
-            style={{ display: "none" }}
+            }} 
+            style={{ display: "none" }} 
           />
         </label>
       </div>
