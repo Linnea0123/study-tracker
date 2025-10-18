@@ -1,292 +1,115 @@
-.app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fff;
-  min-height: 100vh;
+.task-li-swiped {
+  transform: translateX(-80px);
+  transition: transform 0.18s ease;
 }
 
-.app-title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #2c3e50;
-  font-size: 24px;
-}
-
-.stats-summary {
-  text-align: center;
-  background-color: #e8f4fd;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #3498db;
-}
-
-.week-navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.nav-button {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.week-title {
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.date-selector {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  overflow-x: auto;
-}
-
-.date-item {
-  text-align: center;
-  padding: 10px 5px;
-  border-radius: 8px;
-  cursor: pointer;
-  flex: 1;
-  min-width: 70px;
-  transition: all 0.3s;
-}
-
-.date-item.today {
-  background-color: #ffeaa7;
-}
-
-.date-item.selected {
-  background-color: #3498db;
-  color: white;
-}
-
-.day-label {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.date-number {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.category-container {
-  border-left: 4px solid;
-  margin-bottom: 20px;
-  border-radius: 0 8px 8px 0;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.category-header {
-  padding: 10px 15px;
-  color: white;
-  font-weight: bold;
-}
-
-.task-list {
-  list-style: none;
-}
-
-.task-item {
-  border-bottom: 1px solid #eee;
-  position: relative;
-  overflow: hidden;
-}
-
-.task-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  transition: transform 0.3s;
-}
-
-.task-main {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-.task-checkbox {
-  margin-right: 10px;
-  width: 18px;
-  height: 18px;
-}
-
-.task-text-container {
-  flex: 1;
-}
-
-.task-text {
-  font-size: 16px;
-  margin-bottom: 5px;
-  cursor: pointer;
-}
-
-.task-text.completed {
-  text-decoration: line-through;
-  color: #95a5a6;
-}
-
-.task-note {
-  font-size: 12px;
-  color: #7f8c8d;
-  cursor: pointer;
-}
-
-.task-time {
-  font-size: 12px;
-  color: #3498db;
-  margin-top: 5px;
-}
-
-.task-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.task-actions button {
-  background: #ecf0f1;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.new-task-input, .bulk-input {
-  background: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.new-task-input input, .bulk-input textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.new-task-input select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.new-task-input button, .bulk-input button {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  margin-right: 10px;
-  cursor: pointer;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.action-buttons button {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.loading-screen, .error-screen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  text-align: center;
-}
-
-.spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 2s linear infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.test-connection-button {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.data-source {
-  text-align: center;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.data-source button {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-/* 确保媒体查询正确闭合 */
-@media (max-width: 600px) {
-  .app-container {
-    padding: 10px;
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .task-li-swiped {
+    transform: translateX(-60px);
   }
   
-  .task-actions {
+  /* 在小屏幕上调整统计方块的大小 */
+  .stats-container {
     flex-direction: column;
   }
   
-  .date-selector {
-    flex-wrap: nowrap;
-    overflow-x: auto;
+  .stats-box {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* 基础样式重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: #f5faff;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 树状图样式 */
+.recharts-treemap {
+  font-size: 12px;
+}
+
+.recharts-treemap-depth-0 {
+  stroke: #fff;
+  stroke-width: 2px;
+}
+
+/* 弹窗动画 */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.modal-exit {
+  opacity: 1;
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* 按钮悬停效果 */
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* 输入框焦点效果 */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
   }
   
-  .date-item {
-    min-width: 60px;
+  /* 调整统计弹窗大小 */
+  .stats-modal {
+    width: 95% !important;
+    margin: 10px !important;
   }
   
+  /* 调整树状图大小 */
+  .recharts-wrapper {
+    width: 100% !important;
+  }
 }

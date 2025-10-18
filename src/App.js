@@ -1,30 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
-// 直接引入LeanCloud
-const { init, Object: LCObject, Query, User } = require('leancloud-storage');
-
-// 初始化LeanCloud
-try {
-  init({
-    appId: 'H2FWFi8F2AVzuk5TQl3jhFeU-gzGzoHsz',
-    appKey: '4VRNjN9fEpzORScMIPbbKviZ',
-    serverURLs: 'https://h2fwfi8f.lc-cn-n1-shared.com',
-    debug: true // 开启调试模式
-  });
-  console.log('LeanCloud初始化成功');
-} catch (error) {
-  console.error('LeanCloud初始化失败:', error);
-}
-
-// 定义Task类
-class Task extends LCObject {
-  constructor() {
-    super('Task');
-  }
-}
-
-// 学科分类配置
 const categories = [
   { name: "语文", color: "#4a90e2" },
   { name: "数学", color: "#357ABD" },
@@ -33,7 +10,6 @@ const categories = [
   { name: "体育", color: "#3399ff" },
 ];
 
-// 获取当前周的周一日期
 const getMonday = (date) => {
   const d = new Date(date);
   const day = d.getDay();
@@ -42,7 +18,6 @@ const getMonday = (date) => {
   return monday;
 };
 
-// 获取一周的日期数组
 const getWeekDates = (monday) => {
   const weekDates = [];
   for (let i = 0; i < 7; i++) {
@@ -56,7 +31,6 @@ const getWeekDates = (monday) => {
   return weekDates;
 };
 
-// 计算当前是第几周
 const getWeekNumber = (date) => {
   const d = new Date(date);
   const jan1 = new Date(d.getFullYear(), 0, 1);
@@ -64,16 +38,9 @@ const getWeekNumber = (date) => {
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
-// 格式化时间显示
-const formatTime = (seconds) => {
-  if (!seconds) return "0m 0s";
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m ${remainingSeconds}s`;
-};
+const formatTime = (seconds) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 
 function App() {
-  // 状态管理
   const [tasksByDate, setTasksByDate] = useState({});
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -82,168 +49,115 @@ function App() {
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
   const touchStateRef = useRef({});
   const [swipedTask, setSwipedTask] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [dataSource, setDataSource] = useState("本地存储");
-  const [connectionStatus, setConnectionStatus] = useState("检测中...");
 
-  // 初始化用户ID
+  // 初始化数据
   useEffect(() => {
-    const initUser = async () => {
-      try {
-        // 先尝试从本地存储获取用户ID
-        const savedUserId = localStorage.getItem('studyTrackerUserId');
-        if (savedUserId) {
-          setUserId(savedUserId);
-          setLoading(false);
-          return;
-        }
-        
-        // 创建新的用户ID
-        const newUserId = `user_${Date.now()}`;
-        setUserId(newUserId);
-        localStorage.setItem('studyTrackerUserId', newUserId);
-        setLoading(false);
-      } catch (err) {
-        console.error("用户初始化失败:", err);
-        const localUserId = `local_${Date.now()}`;
-        setUserId(localUserId);
-        localStorage.setItem('studyTrackerUserId', localUserId);
-        setLoading(false);
-      }
-    };
-    
-    initUser();
+    const saved = localStorage.getItem("tasksByDate");
+    if (saved) setTasksByDate(JSON.parse(saved));
   }, []);
 
-  // 测试LeanCloud连接
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const query = new Query('Task');
-        query.limit(1);
-        await query.find();
-        setConnectionStatus("已连接云端");
-        setDataSource("云端服务器");
-      } catch (error) {
-        console.log("LeanCloud连接失败，使用本地存储");
-        setConnectionStatus("本地模式");
-        setDataSource("本地存储");
-      }
-    };
-
-    if (userId) {
-      testConnection();
-    }
-  }, [userId]);
-
-  // 从本地存储加载数据
-  useEffect(() => {
-    if (!userId) return;
-
-    const loadTasks = () => {
-      try {
-        const saved = localStorage.getItem(`studyTrackerData_${userId}`);
-        if (saved) {
-          setTasksByDate(JSON.parse(saved));
-        }
-        setError(null);
-      } catch (error) {
-        console.error("加载数据失败:", error);
-      }
-    };
-
-    loadTasks();
-  }, [userId]);
-
   // 保存数据到本地存储
-  const saveTasksToLocal = (updatedTasks) => {
-    if (!userId) return;
-    
-    try {
-      localStorage.setItem(`studyTrackerData_${userId}`, JSON.stringify(updatedTasks));
-      setTasksByDate(updatedTasks);
-    } catch (error) {
-      console.error("保存数据出错:", error);
-      setError("保存失败");
-    }
+  useEffect(() => {
+    localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
+  }, [tasksByDate]);
+
+  const tasks = tasksByDate[selectedDate] || [];
+  const weekDates = getWeekDates(currentMonday);
+
+  // 计算本周统计数据
+  const calculateWeekStats = () => {
+    const weekStats = {
+      totalTime: 0,
+      byCategory: {},
+      byDay: {},
+      tasksByDay: {}
+    };
+
+    const weekDays = weekDates.map(d => d.date);
+
+    weekDays.forEach(date => {
+      const dayTasks = tasksByDate[date] || [];
+      let dayTotal = 0;
+      let completedTasks = 0;
+      
+      dayTasks.forEach(task => {
+        weekStats.totalTime += task.timeSpent || 0;
+        dayTotal += task.timeSpent || 0;
+        
+        if (!weekStats.byCategory[task.category]) {
+          weekStats.byCategory[task.category] = 0;
+        }
+        weekStats.byCategory[task.category] += task.timeSpent || 0;
+        
+        if (task.done) completedTasks++;
+      });
+      
+      weekStats.byDay[date] = dayTotal;
+      weekStats.tasksByDay[date] = completedTasks;
+    });
+
+    return weekStats;
   };
 
-  // 触摸事件处理函数
-  const onTouchStart = (e, taskId) => {
-    const touch = e.touches[0];
-    touchStateRef.current[taskId] = { 
-      startX: touch.clientX,
-      currentX: touch.clientX,
-      swiping: false
+  // 生成图表数据
+  const generateChartData = () => {
+    const weekStats = calculateWeekStats();
+    
+    return {
+      // 每日学习时间数据
+      dailyStudyData: Object.entries(weekStats.byDay).map(([date, time]) => ({
+        name: `${new Date(date).getDate()}日`,
+        time: time / 60, // 转换为分钟
+        date: date.slice(5)
+      })),
+      
+      // 各科目学习时间数据
+      categoryData: categories.map(cat => ({
+        name: cat.name,
+        time: (weekStats.byCategory[cat.name] || 0) / 60,
+        color: cat.color
+      })),
+      
+      // 每日完成任务数数据
+      dailyTasksData: Object.entries(weekStats.tasksByDay).map(([date, count]) => ({
+        name: `${new Date(date).getDate()}日`,
+        tasks: count,
+        date: date.slice(5)
+      }))
     };
   };
 
-  const onTouchMove = (e, taskId) => {
-    const touch = e.touches[0];
-    const state = touchStateRef.current[taskId];
-    if (!state) return;
-    
-    const dx = touch.clientX - state.startX;
-    state.currentX = touch.clientX;
-    if (dx < -10) state.swiping = true;
-  };
-
-  const onTouchEnd = (e, taskId) => {
-    const state = touchStateRef.current[taskId];
-    if (!state) return;
-    
-    const dx = state.currentX - state.startX;
-    if (dx < -70) {
-      setSwipedTask(taskId);
-    } else if (swipedTask === taskId) {
-      setSwipedTask(null);
-    }
-    delete touchStateRef.current[taskId];
-  };
-
-  // 添加新任务
   const handleAddTask = () => {
     const text = newTaskText.trim();
     if (!text) return;
-    
     const newTask = {
-      id: `task_${Date.now()}`,
+      id: Date.now().toString(),
       text,
       category: newTaskCategory,
       done: false,
       timeSpent: 0,
       note: "",
-      createdAt: new Date().toISOString()
     };
-
-    const updatedTasks = { ...tasksByDate };
-    if (!updatedTasks[selectedDate]) {
-      updatedTasks[selectedDate] = [];
-    }
-    updatedTasks[selectedDate].push(newTask);
-    
-    saveTasksToLocal(updatedTasks);
+    setTasksByDate((prev) => {
+      const copy = { ...prev };
+      if (!copy[selectedDate]) copy[selectedDate] = [];
+      copy[selectedDate].push(newTask);
+      return copy;
+    });
     setNewTaskText("");
     setShowAddInput(false);
   };
 
-  // 批量导入任务
   const handleImportTasks = () => {
     if (!bulkText.trim()) return;
-    
-    const lines = bulkText.split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-      
+    const lines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
 
-    // 从第一行识别类别
     let category = categories[0].name;
     for (const c of categories) {
       if (lines[0].includes(c.name)) {
@@ -252,122 +166,131 @@ function App() {
       }
     }
 
-    // 生成任务列表
     const taskLines = lines.slice(1);
-    const newTasks = taskLines.map((line, index) => ({
-      id: `task_${Date.now()}_${index}`,
+    const newTasks = taskLines.map((line) => ({
+      id: Date.now().toString() + Math.random(),
       text: line,
       category,
       done: false,
       timeSpent: 0,
       note: "",
-      createdAt: new Date().toISOString()
     }));
 
-    const updatedTasks = { ...tasksByDate };
-    if (!updatedTasks[selectedDate]) {
-      updatedTasks[selectedDate] = [];
-    }
-    updatedTasks[selectedDate] = [...updatedTasks[selectedDate], ...newTasks];
-    
-    saveTasksToLocal(updatedTasks);
+    setTasksByDate((prev) => {
+      const copy = { ...prev };
+      if (!copy[selectedDate]) copy[selectedDate] = [];
+      copy[selectedDate] = [...copy[selectedDate], ...newTasks];
+      return copy;
+    });
     setBulkText("");
     setShowBulkInput(false);
   };
 
-  // 切换任务完成状态
   const toggleDone = (task) => {
-    const updatedTasks = { ...tasksByDate };
-    updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-      t.id === task.id ? { ...t, done: !t.done } : t
-    );
-    saveTasksToLocal(updatedTasks);
+    setTasksByDate((prev) => {
+      const copy = { ...prev };
+      copy[selectedDate] = copy[selectedDate].map((t) =>
+        t.id === task.id ? { ...t, done: !t.done } : t
+      );
+      return copy;
+    });
   };
 
-  // 删除任务
   const deleteTask = (task) => {
-    const updatedTasks = { ...tasksByDate };
-    updatedTasks[selectedDate] = updatedTasks[selectedDate].filter(
-      (t) => t.id !== task.id
-    );
-    
-    // 停止相关计时器
+    setTasksByDate((prev) => {
+      const copy = { ...prev };
+      copy[selectedDate] = copy[selectedDate].filter((t) => t.id !== task.id);
+      return copy;
+    });
     if (runningRefs.current[task.id]) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
       setRunningState((prev) => {
-        const newState = { ...prev };
-        delete newState[task.id];
-        return newState;
+        const n = { ...prev };
+        delete n[task.id];
+        return n;
       });
     }
-    
-    saveTasksToLocal(updatedTasks);
+    if (swipedTask === task.id) setSwipedTask(null);
   };
 
-  // 编辑任务文本
   const editTaskText = (task) => {
-    const newText = window.prompt("编辑任务内容", task.text);
-    if (newText !== null && newText.trim() !== "") {
-      const updatedTasks = { ...tasksByDate };
-      updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-        t.id === task.id ? { ...t, text: newText } : t
-      );
-      saveTasksToLocal(updatedTasks);
+    const newText = window.prompt("编辑任务", task.text);
+    if (newText !== null) {
+      setTasksByDate((prev) => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id ? { ...t, text: newText } : t
+        );
+        return copy;
+      });
     }
   };
 
-  // 编辑任务备注
   const editTaskNote = (task) => {
     const newNote = window.prompt("编辑备注", task.note || "");
     if (newNote !== null) {
-      const updatedTasks = { ...tasksByDate };
-      updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-        t.id === task.id ? { ...t, note: newNote } : t
-      );
-      saveTasksToLocal(updatedTasks);
+      setTasksByDate((prev) => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id ? { ...t, note: newNote } : t
+        );
+        return copy;
+      });
     }
   };
 
-  // 启动/停止计时器
   const toggleTimer = (task) => {
     const isRunning = !!runningRefs.current[task.id];
-    
     if (isRunning) {
-      // 停止计时
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
       setRunningState((prev) => ({ ...prev, [task.id]: false }));
     } else {
-      // 开始计时
       runningRefs.current[task.id] = setInterval(() => {
-        setTasksByDate(prev => {
-          const updatedTasks = { ...prev };
-          updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-            t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
+        setTasksByDate((prev) => {
+          const copy = { ...prev };
+          copy[selectedDate] = copy[selectedDate].map((t) =>
+            t.id === task.id
+              ? { ...t, timeSpent: (t.timeSpent || 0) + 1 }
+              : t
           );
-          // 立即保存到本地存储
-          localStorage.setItem(`studyTrackerData_${userId}`, JSON.stringify(updatedTasks));
-          return updatedTasks;
+          return copy;
         });
       }, 1000);
       setRunningState((prev) => ({ ...prev, [task.id]: true }));
     }
   };
 
-  // 手动添加时间
   const manualAddTime = (task) => {
     const minutes = parseInt(window.prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
-      const updatedTasks = { ...tasksByDate };
-      updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-        t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t
-      );
-      saveTasksToLocal(updatedTasks);
+      setTasksByDate((prev) => {
+        const copy = { ...prev };
+        copy[selectedDate] = copy[selectedDate].map((t) =>
+          t.id === task.id
+            ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 }
+            : t
+        );
+        return copy;
+      });
     }
   };
 
-  // 切换到上一周
+  const getCategoryTasks = (catName) => tasks.filter((t) => t.category === catName);
+
+  const calcProgress = (catName) => {
+    const catTasks = getCategoryTasks(catName);
+    if (catTasks.length === 0) return 0;
+    const doneCount = catTasks.filter((t) => t.done).length;
+    return Math.round((doneCount / catTasks.length) * 100);
+  };
+
+  const totalTime = (catName) => {
+    const catTasks = getCategoryTasks(catName);
+    return catTasks.reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  };
+
   const prevWeek = () => {
     const monday = new Date(currentMonday);
     monday.setDate(monday.getDate() - 7);
@@ -375,7 +298,6 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
-  // 切换到下一周
   const nextWeek = () => {
     const monday = new Date(currentMonday);
     monday.setDate(monday.getDate() + 7);
@@ -383,204 +305,169 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
-  // 重新加载页面
-  const reloadPage = () => {
-    window.location.reload();
+  const onTouchStart = (e, taskId) => {
+    const touch = e.touches[0];
+    touchStateRef.current[taskId] = { startX: touch.clientX, currentX: touch.clientX, swiping: false };
   };
 
-  // 测试连接按钮功能
-  const testConnection = async () => {
-    try {
-      const query = new Query('Task');
-      query.limit(1);
-      const result = await query.find();
-      setConnectionStatus("已连接云端");
-      setDataSource("云端服务器");
-      alert('✅ LeanCloud连接成功！');
-    } catch (error) {
-      setConnectionStatus("本地模式");
-      setDataSource("本地存储");
-      alert('❌ LeanCloud连接失败，使用本地存储模式');
-    }
+  const onTouchMove = (e, taskId) => {
+    const touch = e.touches[0];
+    const state = touchStateRef.current[taskId];
+    if (!state) return;
+    const dx = touch.clientX - state.startX;
+    state.currentX = touch.clientX;
+    if (dx < -10) state.swiping = true;
   };
 
-  // 导出数据
-  const exportData = () => {
-    const dataStr = JSON.stringify(tasksByDate, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `学习数据_${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  const onTouchEnd = (e, taskId) => {
+    const state = touchStateRef.current[taskId];
+    if (!state) return;
+    const dx = state.currentX - state.startX;
+    if (dx < -70) setSwipedTask(taskId);
+    else if (swipedTask === taskId) setSwipedTask(null);
+    delete touchStateRef.current[taskId];
   };
 
-  // 导入数据
-  const importData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        setTasksByDate(data);
-        saveTasksToLocal(data);
-        alert('数据导入成功！');
-      } catch (error) {
-        alert('数据导入失败，请检查文件格式');
-      }
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!e.target.closest(".task-li-swiped")) setSwipedTask(null);
     };
-    reader.readAsText(file);
-  };
+    document.addEventListener("touchstart", onDocClick);
+    document.addEventListener("mousedown", onDocClick);
+    return () => {
+      document.removeEventListener("touchstart", onDocClick);
+      document.removeEventListener("mousedown", onDocClick);
+    };
+  }, []);
 
-  // 加载状态显示
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>正在加载你的学习数据...</p>
-      </div>
-    );
-  }
+  const todayTasks = tasksByDate[selectedDate] || [];
+  const learningTime = todayTasks
+    .filter((t) => t.category !== "体育")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  const sportTime = todayTasks
+    .filter((t) => t.category === "体育")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  const totalTasks = todayTasks.length;
+  const completionRate = totalTasks === 0 ? 0 : Math.round((todayTasks.filter((t) => t.done).length / totalTasks) * 100);
 
-  // 获取当前周日期和选中日期的任务
-  const weekDates = getWeekDates(currentMonday);
-  const tasks = tasksByDate[selectedDate] || [];
+  const { dailyStudyData, categoryData, dailyTasksData } = generateChartData();
 
   return (
-    <div className="app-container">
-      {/* 连接状态显示 */}
-      <div className="connection-status">
-        <span>连接状态: {connectionStatus}</span>
-        <button onClick={testConnection} className="retry-button">
-          测试连接
-        </button>
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
+      <h1 style={{ textAlign: "center", color: "#1a73e8", fontSize: 20 }}>📚 学习计划和打卡</h1>
+      <div style={{ textAlign: "center", fontSize: 13, marginBottom: 10 }}>
+        你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().length} 个学习计划
       </div>
-
-      {/* 数据来源提示 */}
-      <div className="data-source">
-        数据状态: {dataSource}
-      </div>
-
-      <h1 className="app-title">📚 学习计划打卡</h1>
       
-      <div className="stats-summary">
-        已打卡 {Object.keys(tasksByDate).length} 天，累计完成{" "}
-        {Object.values(tasksByDate).flat().filter((t) => t.done).length} 个任务
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 5 }}>
+        <button onClick={prevWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginRight: 10 }}>⬅️</button>
+        <span style={{ fontWeight: "bold", margin: "0 6px" }}>{currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周</span>
+        <button onClick={nextWeek} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", marginLeft: 6 }}>➡️</button>
       </div>
-
-      {/* 周导航 */}
-      <div className="week-navigation">
-        <button className="nav-button" onClick={prevWeek}>
-          ⬅️
-        </button>
-        <span className="week-title">
-          {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
-        </span>
-        <button className="nav-button" onClick={nextWeek}>
-          ➡️
-        </button>
-      </div>
-
-      {/* 日期选择器 */}
-      <div className="date-selector">
+      
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
         {weekDates.map((d) => {
           const todayStr = new Date().toISOString().split("T")[0];
-          const isToday = d.date === todayStr;
-          const isSelected = d.date === selectedDate;
-          
           return (
             <div
               key={d.date}
               onClick={() => setSelectedDate(d.date)}
-              className={`date-item ${isToday ? "today" : ""} ${
-                isSelected ? "selected" : ""
-              }`}
+              style={{
+                padding: "4px 6px",
+                borderBottom: d.date === selectedDate ? "2px solid #0b52b0" : "1px solid #ccc",
+                textAlign: "center",
+                flex: 1,
+                margin: "0 2px",
+                fontSize: 12,
+                cursor: "pointer",
+                backgroundColor: d.date === todayStr ? "#1a73e8" : "transparent",
+                color: d.date === todayStr ? "#fff" : "#000",
+              }}
             >
-              <div className="day-label">{d.label}</div>
-              <div className="date-number">{d.date.slice(5)}</div>
+              <div>{d.label}</div>
+              <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
             </div>
           );
         })}
       </div>
-
-      {/* 按学科分类显示任务 */}
+      
       {categories.map((c) => {
-        const catTasks = tasks.filter((t) => t.category === c.name);
+        const catTasks = getCategoryTasks(c.name);
         if (catTasks.length === 0) return null;
-        
-        const doneCount = catTasks.filter((t) => t.done).length;
-        const progress = Math.round((doneCount / catTasks.length) * 100);
-        
+        const progress = calcProgress(c.name);
         return (
-          <div
-            key={c.name}
-            className="category-container"
-            style={{ borderColor: c.color }}
-          >
-            <div className="category-header" style={{ backgroundColor: c.color }}>
-              <span>
-                {c.name} ({progress}%)
-              </span>
+          <div key={c.name} style={{ marginBottom: 12, borderRadius: 10, overflow: "hidden", border: `2px solid ${c.color}`, backgroundColor: "#fff" }}>
+            <div style={{ backgroundColor: c.color, color: "#fff", padding: "6px 10px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>{c.name} ({progress}%)</span>
+              <span style={{ fontSize: 12 }}>{formatTime(totalTime(c.name))}</span>
             </div>
-            
-            <ul className="task-list">
+            <ul style={{ listStyle: "none", padding: 10, margin: 0 }}>
               {catTasks.map((task) => {
                 const isSwiped = swipedTask === task.id;
-                
                 return (
                   <li
                     key={task.id}
-                    className={`task-item ${isSwiped ? "swiped" : ""}`}
+                    className={isSwiped ? "task-li-swiped" : ""}
                     onTouchStart={(e) => onTouchStart(e, task.id)}
                     onTouchMove={(e) => onTouchMove(e, task.id)}
                     onTouchEnd={(e) => onTouchEnd(e, task.id)}
+                    style={{ position: "relative", overflow: "hidden", background: "#fff", borderRadius: 6, marginBottom: 8 }}
                   >
-                    <div
-                      className="task-content"
-                      style={{ transform: isSwiped ? "translateX(-80px)" : "none" }}
-                    >
-                      <div className="task-main">
-                        <input
-                          type="checkbox"
-                          checked={task.done}
-                          onChange={() => toggleDone(task)}
-                          className="task-checkbox"
-                        />
-                        
-                        <div className="task-text-container">
+                    <div style={{ transform: isSwiped ? "translateX(-80px)" : "translateX(0)", transition: "transform .18s ease", padding: "8px" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <input type="checkbox" checked={task.done} onChange={() => toggleDone(task)} style={{ marginTop: 6 }} />
+                        <div style={{ flex: 1 }}>
                           <div
                             onClick={() => editTaskText(task)}
-                            className={`task-text ${task.done ? "completed" : ""}`}
+                            style={{
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                              cursor: "pointer",
+                              textDecoration: task.done ? "line-through" : "none",
+                              color: task.done ? "#999" : "#000",
+                            }}
                           >
                             {task.text}
                           </div>
-                          
                           {task.note && (
-                            <div
-                              onClick={() => editTaskNote(task)}
-                              className="task-note"
-                            >
+                            <div onClick={() => editTaskNote(task)} style={{ fontSize: 12, color: "#555", marginTop: 6, cursor: "pointer" }}>
                               {task.note}
                             </div>
                           )}
-                          
-                          <div className="task-time">
-                            {formatTime(task.timeSpent)}
-                          </div>
                         </div>
                       </div>
-
-                      {/* 编辑任务功能 */}
-                      <div className="task-actions">
-                        <button onClick={() => toggleTimer(task)}>
-                          {runningState[task.id] ? "停止计时" : "开始计时"}
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, alignItems: "center" }}>
+                        <div style={{ fontSize: 12, color: "#333", marginRight: 6 }}>{formatTime(task.timeSpent)}</div>
+                        <button onClick={() => toggleTimer(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
+                          {runningState[task.id] ? "⏸️" : "▶️"}
                         </button>
-                        <button onClick={() => manualAddTime(task)}>添加时间</button>
-                        <button onClick={() => deleteTask(task)}>删除</button>
+                        <button onClick={() => manualAddTime(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
+                          ➕
+                        </button>
+                        <button onClick={() => editTaskNote(task)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}>
+                          📝
+                        </button>
                       </div>
+                    </div>
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 80,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#cde9ff",
+                        color: "#fff",
+                        transform: isSwiped ? "translateX(0)" : "translateX(80px)",
+                        transition: "transform .18s ease",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => deleteTask(task)}
+                    >
+                      ❌
                     </div>
                   </li>
                 );
@@ -589,66 +476,271 @@ function App() {
           </div>
         );
       })}
-
-      {/* 新任务输入 */}
+      
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <button
+          onClick={() => setShowAddInput(!showAddInput)}
+          style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}
+        >
+          添加任务
+        </button>
+        <button
+          onClick={() => setShowBulkInput(!showBulkInput)}
+          style={{ flex: 1, padding: 8, backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}
+        >
+          批量导入
+        </button>
+      </div>
+      
       {showAddInput && (
-        <div className="new-task-input">
+        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
           <input
             type="text"
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
-            placeholder="输入新任务"
-            autoFocus
+            placeholder="输入任务"
+            style={{ flex: 1, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
           />
           <select
             value={newTaskCategory}
             onChange={(e) => setNewTaskCategory(e.target.value)}
+            style={{ padding: 6 }}
           >
-            {categories.map((cat) => (
-              <option key={cat.name} value={cat.name}>
-                {cat.name}
+            {categories.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
               </option>
             ))}
           </select>
-          <button onClick={handleAddTask}>添加任务</button>
-          <button onClick={() => setShowAddInput(false)}>取消</button>
+          <button onClick={handleAddTask} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>
+            确认
+          </button>
         </div>
       )}
-
-      {/* 批量导入任务 */}
+      
       {showBulkInput && (
-        <div className="bulk-input">
+        <div style={{ marginTop: 8 }}>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
-            placeholder="每行一个任务，第一行可以是学科名称"
-            rows={5}
+            placeholder="第一行写类别，其余每行一条任务"
+            style={{ width: "100%", minHeight: 80, padding: 6, borderRadius: 6, border: "1px solid #ccc" }}
           />
-          <button onClick={handleImportTasks}>导入任务</button>
-          <button onClick={() => setShowBulkInput(false)}>取消</button>
+          <button onClick={handleImportTasks} style={{ marginTop: 6, padding: 6, width: "100%", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>
+            导入任务
+          </button>
+        </div>
+      )}
+      
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, padding: "8px 0", backgroundColor: "#e8f0fe", borderRadius: 10 }}>
+        {[
+          { label: "📘 学习时间", value: formatTime(learningTime) },
+          { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
+          { label: "📝 任务数量", value: totalTasks },
+          { label: "✅ 完成率", value: `${completionRate}%` },
+          { 
+            label: "📊 统计", 
+            value: "",
+            onClick: () => setShowStatsModal(true)
+          }
+        ].map((item, idx) => (
+          <div 
+            key={idx} 
+            onClick={item.onClick}
+            style={{ 
+              flex: 1, 
+              textAlign: "center", 
+              fontSize: 12, 
+              borderRight: idx < 4 ? "1px solid #cce0ff" : "none", 
+              padding: "4px 0",
+              cursor: item.onClick ? "pointer" : "default"
+            }}
+          >
+            <div>{item.label}</div>
+            <div style={{ fontWeight: "bold", marginTop: 2 }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* 统计弹窗 */}
+      {showStatsModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            padding: 20,
+            borderRadius: 10,
+            width: "90%",
+            maxWidth: 500,
+            maxHeight: "90vh",
+            overflow: "auto"
+          }}>
+            <h2 style={{ textAlign: "center", marginBottom: 15 }}>📊 本周学习统计</h2>
+            
+            {/* 1. 每日学习时间柱状图 */}
+            <div style={{ height: 300, marginBottom: 30 }}>
+              <h3 style={{ textAlign: "center", marginBottom: 10 }}>每日学习时间（分钟）</h3>
+              <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={dailyStudyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Bar 
+                    dataKey="time" 
+                    fill="#1a73e8" 
+                    radius={[4, 4, 0, 0]}
+                    label={{
+                      position: "top",
+                      formatter: (v) => `${v}分钟`,
+                      fill: "#666",
+                      fontSize: 12
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* 2. 各科目学习时间柱状图 */}
+            <div style={{ height: 300, marginBottom: 30 }}>
+              <h3 style={{ textAlign: "center", marginBottom: 10 }}>各科目学习时间（分钟）</h3>
+              <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={categoryData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Bar 
+                    dataKey="time" 
+                    fill="#4a90e2"
+                    radius={[4, 4, 0, 0]}
+                    label={{
+                      position: "top",
+                      formatter: (v) => `${v}分钟`,
+                      fill: "#666",
+                      fontSize: 12
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* 3. 每日完成任务数柱状图 */}
+            <div style={{ height: 300 }}>
+              <h3 style={{ textAlign: "center", marginBottom: 10 }}>每日完成任务数</h3>
+              <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={dailyTasksData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Bar 
+                    dataKey="tasks" 
+                    fill="#00a854" 
+                    radius={[4, 4, 0, 0]}
+                    label={{
+                      position: "top",
+                      formatter: (v) => `${v}个`,
+                      fill: "#666",
+                      fontSize: 12
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <button 
+              onClick={() => setShowStatsModal(false)}
+              style={{
+                display: "block",
+                margin: "20px auto 0",
+                padding: "8px 16px",
+                backgroundColor: "#1a73e8",
+                color: "white",
+                border: "none",
+                borderRadius: 5,
+                cursor: "pointer"
+              }}
+            >
+              关闭
+            </button>
+          </div>
         </div>
       )}
 
-      {/* 数据导入导出 */}
-      <div className="data-actions">
-        <button onClick={exportData} className="export-button">导出数据</button>
-        <label htmlFor="import-file" className="import-button">
+      {/* 导入导出按钮 */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        gap: 10, 
+        marginTop: 20,
+        marginBottom: 20
+      }}>
+        <button
+          onClick={() => {
+            const dataStr = JSON.stringify(tasksByDate);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = `学习打卡数据_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+          }}
+          style={{ 
+            padding: "8px 16px", 
+            backgroundColor: "#1a73e8", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6,
+            fontSize: 14,
+            cursor: "pointer"
+          }}
+        >
+          导出数据
+        </button>
+        <label style={{ 
+          padding: "8px 16px", 
+          backgroundColor: "#1a73e8", 
+          color: "#fff", 
+          border: "none", 
+          borderRadius: 6,
+          fontSize: 14,
+          cursor: "pointer"
+        }}>
           导入数据
           <input 
-            id="import-file" 
             type="file" 
             accept=".json" 
-            onChange={importData} 
-            style={{display: 'none'}}
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                try {
+                  const data = JSON.parse(event.target.result);
+                  if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
+                    setTasksByDate(data);
+                    alert('数据导入成功！');
+                  }
+                } catch (error) {
+                  alert('导入失败：文件格式不正确');
+                }
+              };
+              reader.readAsText(file);
+              e.target.value = '';
+            }} 
+            style={{ display: "none" }} 
           />
         </label>
-      </div>
-
-      {/* 底部操作按钮 */}
-      <div className="action-buttons">
-        <button onClick={() => setShowAddInput(true)}>添加新任务</button>
-        <button onClick={() => setShowBulkInput(true)}>批量导入</button>
-        <button onClick={reloadPage}>刷新页面</button>
       </div>
     </div>
   );
