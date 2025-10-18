@@ -109,21 +109,16 @@ function App() {
     const weekStats = calculateWeekStats();
     
     return {
-      // 每日学习时间数据
       dailyStudyData: Object.entries(weekStats.byDay).map(([date, time]) => ({
         name: `${new Date(date).getDate()}日`,
         time: time / 60, // 转换为分钟
         date: date.slice(5)
       })),
-      
-      // 各科目学习时间数据
       categoryData: categories.map(cat => ({
         name: cat.name,
         time: (weekStats.byCategory[cat.name] || 0) / 60,
         color: cat.color
       })),
-      
-      // 每日完成任务数数据
       dailyTasksData: Object.entries(weekStats.tasksByDay).map(([date, count]) => ({
         name: `${new Date(date).getDate()}日`,
         tasks: count,
@@ -251,9 +246,7 @@ function App() {
         setTasksByDate((prev) => {
           const copy = { ...prev };
           copy[selectedDate] = copy[selectedDate].map((t) =>
-            t.id === task.id
-              ? { ...t, timeSpent: (t.timeSpent || 0) + 1 }
-              : t
+            t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
           );
           return copy;
         });
@@ -268,9 +261,7 @@ function App() {
       setTasksByDate((prev) => {
         const copy = { ...prev };
         copy[selectedDate] = copy[selectedDate].map((t) =>
-          t.id === task.id
-            ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 }
-            : t
+          t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t
         );
         return copy;
       });
@@ -351,6 +342,110 @@ function App() {
   const completionRate = totalTasks === 0 ? 0 : Math.round((todayTasks.filter((t) => t.done).length / totalTasks) * 100);
 
   const { dailyStudyData, categoryData, dailyTasksData } = generateChartData();
+
+  // 仅修改统计弹窗组件
+  const StatsModal = ({ onClose }) => {
+    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
+    const fontSize = window.innerWidth <= 768 ? 10 : 12;
+
+    return (
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: "white",
+          padding: 20,
+          borderRadius: 10,
+          width: "90%",
+          maxWidth: 500,
+          maxHeight: "90vh",
+          overflow: "auto"
+        }}>
+          <h2 style={{ textAlign: "center", marginBottom: 15 }}>📊 本周学习统计</h2>
+          
+          {/* 1. 每日学习时间图表 */}
+          <div style={{ height: chartHeight, marginBottom: 30 }}>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>每日学习时间（分钟）</h3>
+            <ResponsiveContainer width="100%" height="80%">
+              <BarChart data={dailyStudyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize }} />
+                <YAxis tick={{ fontSize }} />
+                <Bar 
+                  dataKey="time" 
+                  fill="#1a73e8" 
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: "top", fontSize }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* 2. 各科目学习时间图表 */}
+          <div style={{ height: chartHeight, marginBottom: 30 }}>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>各科目学习时间（分钟）</h3>
+            <ResponsiveContainer width="100%" height="80%">
+              <BarChart data={categoryData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize }} />
+                <YAxis tick={{ fontSize }} />
+                <Bar 
+                  dataKey="time" 
+                  fill="#4a90e2"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: "top", fontSize }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* 3. 每日完成任务数图表 */}
+          <div style={{ height: chartHeight }}>
+            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>每日完成任务数</h3>
+            <ResponsiveContainer width="100%" height="80%">
+              <BarChart data={dailyTasksData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize }} />
+                <YAxis tick={{ fontSize }} />
+                <Bar 
+                  dataKey="tasks" 
+                  fill="#00a854" 
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: "top", fontSize }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <button 
+            onClick={onClose}
+            style={{
+              display: "block",
+              margin: "20px auto 0",
+              padding: "10px 20px",
+              backgroundColor: "#1a73e8",
+              color: "white",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+              fontSize: fontSize + 2
+            }}
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 15, fontFamily: "sans-serif", backgroundColor: "#f5faff" }}>
@@ -507,9 +602,7 @@ function App() {
             style={{ padding: 6 }}
           >
             {categories.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
+              <option key={c.name} value={c.name}>{c.name}</option>
             ))}
           </select>
           <button onClick={handleAddTask} style={{ padding: "6px 10px", backgroundColor: "#1a73e8", color: "#fff", border: "none", borderRadius: 6 }}>
@@ -562,120 +655,6 @@ function App() {
         ))}
       </div>
       
-      {/* 统计弹窗 */}
-      {/* 统计弹窗 */}
-{showStatsModal && (
-  <div style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000
-  }}>
-    <div style={{
-      backgroundColor: "white",
-      padding: 20,
-      borderRadius: 10,
-      width: "90%",
-      maxWidth: 500,
-      maxHeight: "90vh",
-      overflow: "auto"
-    }}>
-      <h2 style={{ textAlign: "center", marginBottom: 15 }}>📊 本周学习统计</h2>
-      
-      {/* 1. 每日学习时间柱状图 */}
-      <div style={{ height: '250px', marginBottom: 30 }}>
-        <h3 style={{ textAlign: "center", marginBottom: 10 }}>每日学习时间（分钟）</h3>
-        <div style={{ height: '200px' }}>
-          <BarChart data={dailyStudyData} width={300} height={200}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Bar 
-              dataKey="time" 
-              fill="#1a73e8" 
-              radius={[4, 4, 0, 0]}
-              label={{
-                position: "top",
-                formatter: (v) => `${v}分钟`,
-                fill: "#666",
-                fontSize: 12
-              }}
-            />
-          </BarChart>
-        </div>
-      </div>
-      
-      {/* 2. 各科目学习时间柱状图 */}
-      <div style={{ height: '250px', marginBottom: 30 }}>
-        <h3 style={{ textAlign: "center", marginBottom: 10 }}>各科目学习时间（分钟）</h3>
-        <div style={{ height: '200px' }}>
-          <BarChart data={categoryData} width={300} height={200}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Bar 
-              dataKey="time" 
-              fill="#4a90e2"
-              radius={[4, 4, 0, 0]}
-              label={{
-                position: "top",
-                formatter: (v) => `${v}分钟`,
-                fill: "#666",
-                fontSize: 12
-              }}
-            />
-          </BarChart>
-        </div>
-      </div>
-      
-      {/* 3. 每日完成任务数柱状图 */}
-      <div style={{ height: '250px' }}>
-        <h3 style={{ textAlign: "center", marginBottom: 10 }}>每日完成任务数</h3>
-        <div style={{ height: '200px' }}>
-          <BarChart data={dailyTasksData} width={300} height={200}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Bar 
-              dataKey="tasks" 
-              fill="#00a854" 
-              radius={[4, 4, 0, 0]}
-              label={{
-                position: "top",
-                formatter: (v) => `${v}个`,
-                fill: "#666",
-                fontSize: 12
-              }}
-            />
-          </BarChart>
-        </div>
-      </div>
-      
-      <button 
-        onClick={() => setShowStatsModal(false)}
-        style={{
-          display: "block",
-          margin: "20px auto 0",
-          padding: "8px 16px",
-          backgroundColor: "#1a73e8",
-          color: "white",
-          border: "none",
-          borderRadius: 5,
-          cursor: "pointer"
-        }}
-      >
-        关闭
-      </button>
-    </div>
-  </div>
-)}
-
       {/* 导入导出按钮 */}
       <div style={{ 
         display: "flex", 
@@ -743,6 +722,11 @@ function App() {
           />
         </label>
       </div>
+      
+      {/* 统计弹窗 */}
+      {showStatsModal && (
+        <StatsModal onClose={() => setShowStatsModal(false)} />
+      )}
     </div>
   );
 }
