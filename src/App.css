@@ -113,3 +113,27 @@ input:focus, textarea:focus, select:focus {
     width: 100% !important;
   }
 }
+/* 移动端适配 */
+@media screen and (max-width: 480px) {
+  .stats-modal {
+    width: 95% !important;
+    padding: 10px !important;
+  }
+  
+  .stats-modal h2 {
+    font-size: 1.2rem !important;
+  }
+  
+  .stats-modal h3 {
+    font-size: 1rem !important;
+    margin-bottom: 5px !important;
+  }
+  
+  .recharts-surface {
+    overflow: visible !important;
+  }
+  
+  .recharts-legend-wrapper {
+    display: none !important;
+  }
+}
