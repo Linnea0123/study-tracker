@@ -83,10 +83,13 @@ function App() {
   const [showBulkInput, setShowBulkInput] = useState(false);
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
+  const touchStateRef = useRef({});
+  const [swipedTask, setSwipedTask] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dataSource, setDataSource] = useState("本地存储");
+  const [connectionStatus, setConnectionStatus] = useState("检测中...");
 
   // 初始化用户ID
   useEffect(() => {
@@ -117,6 +120,27 @@ function App() {
     initUser();
   }, []);
 
+  // 测试LeanCloud连接
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const query = new Query('Task');
+        query.limit(1);
+        await query.find();
+        setConnectionStatus("已连接云端");
+        setDataSource("云端服务器");
+      } catch (error) {
+        console.log("LeanCloud连接失败，使用本地存储");
+        setConnectionStatus("本地模式");
+        setDataSource("本地存储");
+      }
+    };
+
+    if (userId) {
+      testConnection();
+    }
+  }, [userId]);
+
   // 从本地存储加载数据
   useEffect(() => {
     if (!userId) return;
@@ -127,11 +151,9 @@ function App() {
         if (saved) {
           setTasksByDate(JSON.parse(saved));
         }
-        setDataSource("本地存储");
         setError(null);
       } catch (error) {
         console.error("加载数据失败:", error);
-        setDataSource("初始状态");
       }
     };
 
@@ -149,6 +171,39 @@ function App() {
       console.error("保存数据出错:", error);
       setError("保存失败");
     }
+  };
+
+  // 触摸事件处理函数
+  const onTouchStart = (e, taskId) => {
+    const touch = e.touches[0];
+    touchStateRef.current[taskId] = { 
+      startX: touch.clientX,
+      currentX: touch.clientX,
+      swiping: false
+    };
+  };
+
+  const onTouchMove = (e, taskId) => {
+    const touch = e.touches[0];
+    const state = touchStateRef.current[taskId];
+    if (!state) return;
+    
+    const dx = touch.clientX - state.startX;
+    state.currentX = touch.clientX;
+    if (dx < -10) state.swiping = true;
+  };
+
+  const onTouchEnd = (e, taskId) => {
+    const state = touchStateRef.current[taskId];
+    if (!state) return;
+    
+    const dx = state.currentX - state.startX;
+    if (dx < -70) {
+      setSwipedTask(taskId);
+    } else if (swipedTask === taskId) {
+      setSwipedTask(null);
+    }
+    delete touchStateRef.current[taskId];
   };
 
   // 添加新任务
@@ -187,6 +242,7 @@ function App() {
       
     if (lines.length === 0) return;
 
+    // 从第一行识别类别
     let category = categories[0].name;
     for (const c of categories) {
       if (lines[0].includes(c.name)) {
@@ -195,6 +251,7 @@ function App() {
       }
     }
 
+    // 生成任务列表
     const taskLines = lines.slice(1);
     const newTasks = taskLines.map((line, index) => ({
       id: `task_${Date.now()}_${index}`,
@@ -336,8 +393,12 @@ function App() {
       const query = new Query('Task');
       query.limit(1);
       const result = await query.find();
+      setConnectionStatus("已连接云端");
+      setDataSource("云端服务器");
       alert('✅ LeanCloud连接成功！');
     } catch (error) {
+      setConnectionStatus("本地模式");
+      setDataSource("本地存储");
       alert('❌ LeanCloud连接失败，使用本地存储模式');
     }
   };
@@ -389,33 +450,17 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 测试连接按钮 */}
-      <button 
-        onClick={testConnection}
-        className="test-connection-button"
-      >
-        测试LeanCloud连接
-      </button>
+      {/* 连接状态显示 */}
+      <div className="connection-status">
+        <span>连接状态: {connectionStatus}</span>
+        <button onClick={testConnection} className="retry-button">
+          测试连接
+        </button>
+      </div>
 
       {/* 数据来源提示 */}
       <div className="data-source">
         数据状态: {dataSource}
-        {error && <span style={{color: 'red', marginLeft: '10px'}}>{error}</span>}
-      </div>
-
-      {/* 数据导入导出 */}
-      <div className="data-actions">
-        <button onClick={exportData} className="export-button">导出数据</button>
-        <label htmlFor="import-file" className="import-button">
-          导入数据
-          <input 
-            id="import-file" 
-            type="file" 
-            accept=".json" 
-            onChange={importData} 
-            style={{display: 'none'}}
-          />
-        </label>
       </div>
 
       <h1 className="app-title">📚 学习计划打卡</h1>
@@ -481,51 +526,64 @@ function App() {
             </div>
             
             <ul className="task-list">
-              {catTasks.map((task) => (
-                <li key={task.id} className="task-item">
-                  <div className="task-content">
-                    <div className="task-main">
-                      <input
-                        type="checkbox"
-                        checked={task.done}
-                        onChange={() => toggleDone(task)}
-                        className="task-checkbox"
-                      />
-                      
-                      <div className="task-text-container">
-                        <div
-                          onClick={() => editTaskText(task)}
-                          className={`task-text ${task.done ? "completed" : ""}`}
-                        >
-                          {task.text}
-                        </div>
+              {catTasks.map((task) => {
+                const isSwiped = swipedTask === task.id;
+                
+                return (
+                  <li
+                    key={task.id}
+                    className={`task-item ${isSwiped ? "swiped" : ""}`}
+                    onTouchStart={(e) => onTouchStart(e, task.id)}
+                    onTouchMove={(e) => onTouchMove(e, task.id)}
+                    onTouchEnd={(e) => onTouchEnd(e, task.id)}
+                  >
+                    <div
+                      className="task-content"
+                      style={{ transform: isSwiped ? "translateX(-80px)" : "none" }}
+                    >
+                      <div className="task-main">
+                        <input
+                          type="checkbox"
+                          checked={task.done}
+                          onChange={() => toggleDone(task)}
+                          className="task-checkbox"
+                        />
                         
-                        {task.note && (
+                        <div className="task-text-container">
                           <div
-                            onClick={() => editTaskNote(task)}
-                            className="task-note"
+                            onClick={() => editTaskText(task)}
+                            className={`task-text ${task.done ? "completed" : ""}`}
                           >
-                            {task.note}
+                            {task.text}
                           </div>
-                        )}
-                        
-                        <div className="task-time">
-                          {formatTime(task.timeSpent)}
+                          
+                          {task.note && (
+                            <div
+                              onClick={() => editTaskNote(task)}
+                              className="task-note"
+                            >
+                              {task.note}
+                            </div>
+                          )}
+                          
+                          <div className="task-time">
+                            {formatTime(task.timeSpent)}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* 编辑任务功能 */}
-                    <div className="task-actions">
-                      <button onClick={() => toggleTimer(task)}>
-                        {runningState[task.id] ? "停止计时" : "开始计时"}
-                      </button>
-                      <button onClick={() => manualAddTime(task)}>添加时间</button>
-                      <button onClick={() => deleteTask(task)}>删除</button>
+                      {/* 编辑任务功能 */}
+                      <div className="task-actions">
+                        <button onClick={() => toggleTimer(task)}>
+                          {runningState[task.id] ? "停止计时" : "开始计时"}
+                        </button>
+                        <button onClick={() => manualAddTime(task)}>添加时间</button>
+                        <button onClick={() => deleteTask(task)}>删除</button>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );
@@ -569,6 +627,21 @@ function App() {
           <button onClick={() => setShowBulkInput(false)}>取消</button>
         </div>
       )}
+
+      {/* 数据导入导出 */}
+      <div className="data-actions">
+        <button onClick={exportData} className="export-button">导出数据</button>
+        <label htmlFor="import-file" className="import-button">
+          导入数据
+          <input 
+            id="import-file" 
+            type="file" 
+            accept=".json" 
+            onChange={importData} 
+            style={{display: 'none'}}
+          />
+        </label>
+      </div>
 
       {/* 底部操作按钮 */}
       <div className="action-buttons">
