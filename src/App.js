@@ -1,7 +1,27 @@
-import React, { useState, useRef, useEffect } from "react";
-import { doc, setDoc, onSnapshot, collection } from "firebase/firestore";
-import { db } from "./firebase";
-import "./App.css";
+import React, { useState, useRef, useEffect } from 'react';
+import './App.css';
+
+// 直接引入LeanCloud
+const { init, Object: LCObject, Query, User } = require('leancloud-storage');
+
+// 初始化LeanCloud
+try {
+  init({
+    appId: 'H2FWFi8F2AVzuk5TQl3jhFeU-gzGzoHsz',
+    appKey: '4VRNjN9fEpzORScMIPbbKviZ',
+    serverURLs: 'https://h2fwfi8f.lc-cn-n1-shared.com'
+  });
+  console.log('LeanCloud初始化成功');
+} catch (error) {
+  console.error('LeanCloud初始化失败:', error);
+}
+
+// 定义Task类
+class Task extends LCObject {
+  constructor() {
+    super('Task');
+  }
+}
 
 // 学科分类配置
 const categories = [
@@ -63,115 +83,73 @@ function App() {
   const [showBulkInput, setShowBulkInput] = useState(false);
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
-  const touchStateRef = useRef({});
-  const [swipedTask, setSwipedTask] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dataSource, setDataSource] = useState("服务器");
+  const [dataSource, setDataSource] = useState("本地存储");
 
   // 初始化用户ID
   useEffect(() => {
-    let id = localStorage.getItem("userId");
-    if (!id) {
-      // 生成固定格式的用户ID确保跨浏览器一致
-      id = `user_${Math.random().toString(36).substring(2, 11)}`;
-      localStorage.setItem("userId", id);
-    }
-    setUserId(id);
+    const initUser = async () => {
+      try {
+        // 先尝试从本地存储获取用户ID
+        const savedUserId = localStorage.getItem('studyTrackerUserId');
+        if (savedUserId) {
+          setUserId(savedUserId);
+          setLoading(false);
+          return;
+        }
+        
+        // 创建新的用户ID
+        const newUserId = `user_${Date.now()}`;
+        setUserId(newUserId);
+        localStorage.setItem('studyTrackerUserId', newUserId);
+        setLoading(false);
+      } catch (err) {
+        console.error("用户初始化失败:", err);
+        const localUserId = `local_${Date.now()}`;
+        setUserId(localUserId);
+        localStorage.setItem('studyTrackerUserId', localUserId);
+        setLoading(false);
+      }
+    };
+    
+    initUser();
   }, []);
 
-  // 实时数据监听
+  // 从本地存储加载数据
   useEffect(() => {
     if (!userId) return;
 
-    setLoading(true);
-    setError(null);
-    
-    const userDocRef = doc(db, "userTasks", userId);
-    
-    const unsubscribe = onSnapshot(
-      userDocRef,
-      { includeMetadataChanges: true }, // 包含元数据变化
-      (doc) => {
-        // 更新数据来源显示
-        setDataSource(doc.metadata.fromCache ? "本地缓存" : "服务器");
-        
-        if (doc.exists()) {
-          setTasksByDate(doc.data().tasks || {});
-        } else {
-          // 如果文档不存在，创建初始文档
-          setDoc(userDocRef, { tasks: {} })
-            .catch(e => console.error("初始化文档失败:", e));
+    const loadTasks = () => {
+      try {
+        const saved = localStorage.getItem(`studyTrackerData_${userId}`);
+        if (saved) {
+          setTasksByDate(JSON.parse(saved));
         }
-        setLoading(false);
-      },
-      (error) => {
-        console.error("数据监听错误:", error);
-        setError("数据同步失败，请检查网络连接");
-        setLoading(false);
+        setDataSource("本地存储");
+        setError(null);
+      } catch (error) {
+        console.error("加载数据失败:", error);
+        setDataSource("初始状态");
       }
-    );
+    };
 
-    return () => unsubscribe();
+    loadTasks();
   }, [userId]);
 
-  // 保存数据到Firebase
-  const saveTasksToFirebase = async (updatedTasks) => {
+  // 保存数据到本地存储
+  const saveTasksToLocal = (updatedTasks) => {
     if (!userId) return;
     
     try {
-      await setDoc(
-        doc(db, "userTasks", userId),
-        { 
-          tasks: updatedTasks,
-          lastUpdated: new Date().toISOString() 
-        },
-        { merge: true } // 合并更新而不覆盖整个文档
-      );
-      setError(null);
+      localStorage.setItem(`studyTrackerData_${userId}`, JSON.stringify(updatedTasks));
+      setTasksByDate(updatedTasks);
     } catch (error) {
       console.error("保存数据出错:", error);
-      setError("保存失败，请检查网络后重试");
+      setError("保存失败");
     }
   };
-
-  // 滑动删除相关处理函数
-  const onTouchStart = (e, taskId) => {
-    const touch = e.touches[0];
-    touchStateRef.current[taskId] = { 
-      startX: touch.clientX, 
-      currentX: touch.clientX, 
-      swiping: false 
-    };
-  };
-
-  const onTouchMove = (e, taskId) => {
-    const touch = e.touches[0];
-    const state = touchStateRef.current[taskId];
-    if (!state) return;
-    
-    const dx = touch.clientX - state.startX;
-    state.currentX = touch.clientX;
-    if (dx < -10) state.swiping = true;
-  };
-
-  const onTouchEnd = (e, taskId) => {
-    const state = touchStateRef.current[taskId];
-    if (!state) return;
-    
-    const dx = state.currentX - state.startX;
-    if (dx < -70) {
-      setSwipedTask(taskId);
-    } else if (swipedTask === taskId) {
-      setSwipedTask(null);
-    }
-    delete touchStateRef.current[taskId];
-  };
-
-  // 获取当前周日期和选中日期的任务
-  const weekDates = getWeekDates(currentMonday);
-  const tasks = tasksByDate[selectedDate] || [];
 
   // 添加新任务
   const handleAddTask = () => {
@@ -179,7 +157,7 @@ function App() {
     if (!text) return;
     
     const newTask = {
-      id: Date.now().toString(),
+      id: `task_${Date.now()}`,
       text,
       category: newTaskCategory,
       done: false,
@@ -194,7 +172,7 @@ function App() {
     }
     updatedTasks[selectedDate].push(newTask);
     
-    saveTasksToFirebase(updatedTasks);
+    saveTasksToLocal(updatedTasks);
     setNewTaskText("");
     setShowAddInput(false);
   };
@@ -209,7 +187,6 @@ function App() {
       
     if (lines.length === 0) return;
 
-    // 从第一行识别类别
     let category = categories[0].name;
     for (const c of categories) {
       if (lines[0].includes(c.name)) {
@@ -218,10 +195,9 @@ function App() {
       }
     }
 
-    // 生成任务列表
     const taskLines = lines.slice(1);
     const newTasks = taskLines.map((line, index) => ({
-      id: `${Date.now()}_${index}`,
+      id: `task_${Date.now()}_${index}`,
       text: line,
       category,
       done: false,
@@ -236,7 +212,7 @@ function App() {
     }
     updatedTasks[selectedDate] = [...updatedTasks[selectedDate], ...newTasks];
     
-    saveTasksToFirebase(updatedTasks);
+    saveTasksToLocal(updatedTasks);
     setBulkText("");
     setShowBulkInput(false);
   };
@@ -247,7 +223,7 @@ function App() {
     updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
       t.id === task.id ? { ...t, done: !t.done } : t
     );
-    saveTasksToFirebase(updatedTasks);
+    saveTasksToLocal(updatedTasks);
   };
 
   // 删除任务
@@ -268,12 +244,7 @@ function App() {
       });
     }
     
-    // 重置滑动状态
-    if (swipedTask === task.id) {
-      setSwipedTask(null);
-    }
-    
-    saveTasksToFirebase(updatedTasks);
+    saveTasksToLocal(updatedTasks);
   };
 
   // 编辑任务文本
@@ -284,7 +255,7 @@ function App() {
       updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
         t.id === task.id ? { ...t, text: newText } : t
       );
-      saveTasksToFirebase(updatedTasks);
+      saveTasksToLocal(updatedTasks);
     }
   };
 
@@ -296,7 +267,7 @@ function App() {
       updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
         t.id === task.id ? { ...t, note: newNote } : t
       );
-      saveTasksToFirebase(updatedTasks);
+      saveTasksToLocal(updatedTasks);
     }
   };
 
@@ -312,11 +283,15 @@ function App() {
     } else {
       // 开始计时
       runningRefs.current[task.id] = setInterval(() => {
-        const updatedTasks = { ...tasksByDate };
-        updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-          t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
-        );
-        saveTasksToFirebase(updatedTasks);
+        setTasksByDate(prev => {
+          const updatedTasks = { ...prev };
+          updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
+            t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + 1 } : t
+          );
+          // 立即保存到本地存储
+          localStorage.setItem(`studyTrackerData_${userId}`, JSON.stringify(updatedTasks));
+          return updatedTasks;
+        });
       }, 1000);
       setRunningState((prev) => ({ ...prev, [task.id]: true }));
     }
@@ -324,19 +299,13 @@ function App() {
 
   // 手动添加时间
   const manualAddTime = (task) => {
-    const input = window.prompt("输入已完成的时间（分钟）");
-    if (!input) return;
-    
-    const minutes = parseInt(input, 10);
+    const minutes = parseInt(window.prompt("输入已完成的时间（分钟）"), 10);
     if (!isNaN(minutes) && minutes > 0) {
       const updatedTasks = { ...tasksByDate };
       updatedTasks[selectedDate] = updatedTasks[selectedDate].map((t) =>
-        t.id === task.id ? { 
-          ...t, 
-          timeSpent: (t.timeSpent || 0) + minutes * 60 
-        } : t
+        t.id === task.id ? { ...t, timeSpent: (t.timeSpent || 0) + minutes * 60 } : t
       );
-      saveTasksToFirebase(updatedTasks);
+      saveTasksToLocal(updatedTasks);
     }
   };
 
@@ -361,6 +330,49 @@ function App() {
     window.location.reload();
   };
 
+  // 测试连接按钮功能
+  const testConnection = async () => {
+    try {
+      const query = new Query('Task');
+      query.limit(1);
+      const result = await query.find();
+      alert('✅ LeanCloud连接成功！');
+    } catch (error) {
+      alert('❌ LeanCloud连接失败，使用本地存储模式');
+    }
+  };
+
+  // 导出数据
+  const exportData = () => {
+    const dataStr = JSON.stringify(tasksByDate, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `学习数据_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  // 导入数据
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        setTasksByDate(data);
+        saveTasksToLocal(data);
+        alert('数据导入成功！');
+      } catch (error) {
+        alert('数据导入失败，请检查文件格式');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // 加载状态显示
   if (loading) {
     return (
@@ -371,25 +383,39 @@ function App() {
     );
   }
 
-  // 错误状态显示
-  if (error) {
-    return (
-      <div className="error-screen">
-        <p>{error}</p>
-        <button onClick={reloadPage}>刷新页面</button>
-      </div>
-    );
-  }
+  // 获取当前周日期和选中日期的任务
+  const weekDates = getWeekDates(currentMonday);
+  const tasks = tasksByDate[selectedDate] || [];
 
-  // 主界面渲染
   return (
     <div className="app-container">
+      {/* 测试连接按钮 */}
+      <button 
+        onClick={testConnection}
+        className="test-connection-button"
+      >
+        测试LeanCloud连接
+      </button>
+
       {/* 数据来源提示 */}
       <div className="data-source">
         数据状态: {dataSource}
-        {dataSource === "本地缓存" && (
-          <button onClick={reloadPage}>刷新获取最新数据</button>
-        )}
+        {error && <span style={{color: 'red', marginLeft: '10px'}}>{error}</span>}
+      </div>
+
+      {/* 数据导入导出 */}
+      <div className="data-actions">
+        <button onClick={exportData} className="export-button">导出数据</button>
+        <label htmlFor="import-file" className="import-button">
+          导入数据
+          <input 
+            id="import-file" 
+            type="file" 
+            accept=".json" 
+            onChange={importData} 
+            style={{display: 'none'}}
+          />
+        </label>
       </div>
 
       <h1 className="app-title">📚 学习计划打卡</h1>
@@ -455,190 +481,100 @@ function App() {
             </div>
             
             <ul className="task-list">
-              {catTasks.map((task) => {
-                const isSwiped = swipedTask === task.id;
-                
-                return (
-                  <li
-                    key={task.id}
-                    className={`task-item ${isSwiped ? "swiped" : ""}`}
-                    onTouchStart={(e) => onTouchStart(e, task.id)}
-                    onTouchMove={(e) => onTouchMove(e, task.id)}
-                    onTouchEnd={(e) => onTouchEnd(e, task.id)}
-                  >
-                    <div
-                      className="task-content"
-                      style={{ transform: isSwiped ? "translateX(-80px)" : "none" }}
-                    >
-                      <div className="task-main">
-                        <input
-                          type="checkbox"
-                          checked={task.done}
-                          onChange={() => toggleDone(task)}
-                          className="task-checkbox"
-                        />
-                        
-                        <div className="task-text-container">
-                          <div
-                            onClick={() => editTaskText(task)}
-                            className={`task-text ${task.done ? "completed" : ""}`}
-                          >
-                            {task.text}
-                          </div>
-                          
-                          {task.note && (
-                            <div
-                              onClick={() => editTaskNote(task)}
-                              className="task-note"
-                            >
-                              {task.note}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+              {catTasks.map((task) => (
+                <li key={task.id} className="task-item">
+                  <div className="task-content">
+                    <div className="task-main">
+                      <input
+                        type="checkbox"
+                        checked={task.done}
+                        onChange={() => toggleDone(task)}
+                        className="task-checkbox"
+                      />
                       
-                      <div className="task-controls">
+                      <div className="task-text-container">
+                        <div
+                          onClick={() => editTaskText(task)}
+                          className={`task-text ${task.done ? "completed" : ""}`}
+                        >
+                          {task.text}
+                        </div>
+                        
+                        {task.note && (
+                          <div
+                            onClick={() => editTaskNote(task)}
+                            className="task-note"
+                          >
+                            {task.note}
+                          </div>
+                        )}
+                        
                         <div className="task-time">
                           {formatTime(task.timeSpent)}
                         </div>
-                        
-                        <button
-                          onClick={() => toggleTimer(task)}
-                          className="control-button"
-                        >
-                          {runningState[task.id] ? "⏸️" : "▶️"}
-                        </button>
-                        
-                        <button
-                          onClick={() => manualAddTime(task)}
-                          className="control-button"
-                        >
-                          ➕
-                        </button>
-                        
-                        <button
-                          onClick={() => editTaskNote(task)}
-                          className="control-button"
-                        >
-                          📝
-                        </button>
                       </div>
                     </div>
-                    
-                    <div
-                      className="delete-button"
-                      onClick={() => deleteTask(task)}
-                    >
-                      ❌
+
+                    {/* 编辑任务功能 */}
+                    <div className="task-actions">
+                      <button onClick={() => toggleTimer(task)}>
+                        {runningState[task.id] ? "停止计时" : "开始计时"}
+                      </button>
+                      <button onClick={() => manualAddTime(task)}>添加时间</button>
+                      <button onClick={() => deleteTask(task)}>删除</button>
                     </div>
-                  </li>
-                );
-              })}
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         );
       })}
 
-      {/* 任务操作按钮 */}
-      <div className="action-buttons">
-        <button
-          onClick={() => setShowAddInput(!showAddInput)}
-          className="action-button"
-        >
-          {showAddInput ? "取消" : "添加任务"}
-        </button>
-        
-        <button
-          onClick={() => setShowBulkInput(!showBulkInput)}
-          className="action-button"
-        >
-          {showBulkInput ? "取消" : "批量导入"}
-        </button>
-      </div>
-
-      {/* 添加任务表单 */}
+      {/* 新任务输入 */}
       {showAddInput && (
-        <div className="add-task-form">
+        <div className="new-task-input">
           <input
             type="text"
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
-            placeholder="输入任务内容"
-            className="task-input"
+            placeholder="输入新任务"
+            autoFocus
           />
-          
           <select
             value={newTaskCategory}
             onChange={(e) => setNewTaskCategory(e.target.value)}
-            className="category-select"
           >
-            {categories.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
+            {categories.map((cat) => (
+              <option key={cat.name} value={cat.name}>
+                {cat.name}
               </option>
             ))}
           </select>
-          
-          <button onClick={handleAddTask} className="submit-button">
-            确认
-          </button>
+          <button onClick={handleAddTask}>添加任务</button>
+          <button onClick={() => setShowAddInput(false)}>取消</button>
         </div>
       )}
 
-      {/* 批量导入表单 */}
+      {/* 批量导入任务 */}
       {showBulkInput && (
-        <div className="bulk-import-form">
+        <div className="bulk-input">
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
-            placeholder="第一行写类别，其余每行一条任务"
-            className="bulk-textarea"
+            placeholder="每行一个任务，第一行可以是学科名称"
+            rows={5}
           />
-          
-          <button onClick={handleImportTasks} className="submit-button">
-            导入任务
-          </button>
+          <button onClick={handleImportTasks}>导入任务</button>
+          <button onClick={() => setShowBulkInput(false)}>取消</button>
         </div>
       )}
 
-      {/* 统计信息 */}
-      <div className="stats-container">
-        {[
-          {
-            label: "📘 学习时间",
-            value: formatTime(
-              tasks
-                .filter((t) => t.category !== "体育")
-                .reduce((sum, t) => sum + (t.timeSpent || 0), 0)
-            ),
-          },
-          {
-            label: "🏃‍♂️ 运动时间",
-            value: formatTime(
-              tasks
-                .filter((t) => t.category === "体育")
-                .reduce((sum, t) => sum + (t.timeSpent || 0), 0)
-            ),
-          },
-          {
-            label: "📝 任务数量",
-            value: tasks.length,
-          },
-          {
-            label: "✅ 完成率",
-            value:
-              tasks.length > 0
-                ? `${Math.round(
-                    (tasks.filter((t) => t.done).length / tasks.length) * 100
-                  )}%`
-                : "0%",
-          },
-        ].map((item, idx) => (
-          <div key={idx} className="stat-item">
-            <div className="stat-label">{item.label}</div>
-            <div className="stat-value">{item.value}</div>
-          </div>
-        ))}
+      {/* 底部操作按钮 */}
+      <div className="action-buttons">
+        <button onClick={() => setShowAddInput(true)}>添加新任务</button>
+        <button onClick={() => setShowBulkInput(true)}>批量导入</button>
+        <button onClick={reloadPage}>刷新页面</button>
       </div>
     </div>
   );
