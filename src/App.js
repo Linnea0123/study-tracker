@@ -1111,10 +1111,6 @@ function App() {
   // 编辑任务备注
   const editTaskNote = (task) => {
     // 添加调试代码
-    console.log('editTaskNote 收到的任务:', task);
-    console.log('任务ID:', task?.id);
-    console.log('任务文本:', task?.text);
-
     const newNote = window.prompt("编辑备注", task.note || "");
 
 
@@ -1311,6 +1307,7 @@ function App() {
           position: "relative",
           background: task.pinned ? "#fff9e6" : "#fff",
           borderRadius: 6,
+          alignItems: "center",
           marginBottom: 4,
           padding: "8px",
           border: "0.5px solid #e0e0e0",
@@ -1341,17 +1338,7 @@ function App() {
                 {task.isWeekTask && " 🌟"}
               </div>
               {/* 修改备注显示部分 */}
-              {/* 强制显示备注测试 */}
-              <div style={{
-                backgroundColor: 'red',
-                color: 'white',
-                padding: '10px',
-                margin: '10px 0',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}>
-                强制测试 - 任务ID: {task.id} | 备注: "{task.note || '空'}"
-              </div>
+          
 
               {task.note && (
                 <div
@@ -1367,7 +1354,7 @@ function App() {
                 >
                   备注: {task.note}
                 </div>
-              )}editTaskNote
+              )}
             </div>
           </div>
 
