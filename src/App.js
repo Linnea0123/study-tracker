@@ -53,12 +53,22 @@ function App() {
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
-  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [statsMode, setStatsMode] = useState("week"); // week/month/custom
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
   const touchStateRef = useRef({});
   const [swipedTask, setSwipedTask] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(null);
+  const [repeatConfig, setRepeatConfig] = useState({
+    frequency: "daily",
+    days: [false, false, false, false, false, false, false],
+    startTime: "",
+    endTime: ""
+  });
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
 
   // 初始化数据
   useEffect(() => {
@@ -81,61 +91,89 @@ function App() {
     return catTasks.every(task => task.done);
   };
 
-  // 计算本周统计数据
-  const calculateWeekStats = () => {
-    const weekStats = {
+  // 计算统计数据
+  const calculateStats = (dateRange) => {
+    const stats = {
       totalTime: 0,
       byCategory: {},
       byDay: {},
-      tasksByDay: {}
+      tasksByDay: {},
+      completionRates: [],
+      dailyTimes: []
     };
 
-    const weekDays = weekDates.map(d => d.date);
-
-    weekDays.forEach(date => {
+    dateRange.forEach(date => {
       const dayTasks = tasksByDate[date] || [];
       let dayTotal = 0;
       let completedTasks = 0;
 
       dayTasks.forEach(task => {
-        weekStats.totalTime += task.timeSpent || 0;
+        stats.totalTime += task.timeSpent || 0;
         dayTotal += task.timeSpent || 0;
 
-        if (!weekStats.byCategory[task.category]) {
-          weekStats.byCategory[task.category] = 0;
+        if (!stats.byCategory[task.category]) {
+          stats.byCategory[task.category] = 0;
         }
-        weekStats.byCategory[task.category] += task.timeSpent || 0;
+        stats.byCategory[task.category] += task.timeSpent || 0;
 
         if (task.done) completedTasks++;
       });
 
-      weekStats.byDay[date] = dayTotal;
-      weekStats.tasksByDay[date] = completedTasks;
+      stats.byDay[date] = dayTotal;
+      stats.tasksByDay[date] = completedTasks;
+      
+      if (dayTasks.length > 0) {
+        stats.completionRates.push((completedTasks / dayTasks.length) * 100);
+      }
+      
+      stats.dailyTimes.push(dayTotal);
     });
 
-    return weekStats;
+    return stats;
   };
 
   // 生成图表数据（分钟取整）
   const generateChartData = () => {
-    const weekStats = calculateWeekStats();
+    let dateRange = [];
+    if (statsMode === "week") {
+      dateRange = weekDates.map(d => d.date);
+    } else if (statsMode === "month") {
+      const firstDay = new Date(currentMonday);
+      firstDay.setDate(1);
+      const lastDay = new Date(firstDay);
+      lastDay.setMonth(lastDay.getMonth() + 1);
+      lastDay.setDate(0);
+      
+      dateRange = [];
+      for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+        dateRange.push(d.toISOString().split("T")[0]);
+      }
+    } else {
+      // Custom date range would be handled here
+    }
+
+    const stats = calculateStats(dateRange);
 
     return {
-      dailyStudyData: Object.entries(weekStats.byDay).map(([date, time]) => ({
+      dailyStudyData: Object.entries(stats.byDay).map(([date, time]) => ({
         name: `${new Date(date).getDate()}日`,
         time: Math.round(time / 60),
         date: date.slice(5)
       })),
       categoryData: categories.map(cat => ({
         name: cat.name,
-        time: Math.round((weekStats.byCategory[cat.name] || 0) / 60),
+        time: Math.round((stats.byCategory[cat.name] || 0) / 60),
         color: cat.color
       })),
-      dailyTasksData: Object.entries(weekStats.tasksByDay).map(([date, count]) => ({
+      dailyTasksData: Object.entries(stats.tasksByDay).map(([date, count]) => ({
         name: `${new Date(date).getDate()}日`,
         tasks: count,
         date: date.slice(5)
-      }))
+      })),
+      avgCompletion: stats.completionRates.length > 0 ? 
+        Math.round(stats.completionRates.reduce((a, b) => a + b, 0) / stats.completionRates.length) : 0,
+      avgDailyTime: stats.dailyTimes.length > 0 ? 
+        Math.round(stats.dailyTimes.reduce((a, b) => a + b, 0) / stats.dailyTimes.length / 60) : 0
     };
   };
 
@@ -151,7 +189,9 @@ function App() {
       done: false,
       timeSpent: 0,
       note: "",
-      image: null
+      image: null,
+      scheduledTime: repeatConfig.startTime && repeatConfig.endTime ? 
+        `${repeatConfig.startTime}-${repeatConfig.endTime}` : ""
     };
 
     setTasksByDate(prev => ({
@@ -185,7 +225,9 @@ function App() {
       done: false,
       timeSpent: 0,
       note: "",
-      image: null
+      image: null,
+      scheduledTime: repeatConfig.startTime && repeatConfig.endTime ? 
+        `${repeatConfig.startTime}-${repeatConfig.endTime}` : ""
     }));
 
     setTasksByDate(prev => ({
@@ -380,6 +422,14 @@ function App() {
     };
   }, []);
 
+  // 清空所有数据
+  const clearAllData = () => {
+    if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
+      setTasksByDate({});
+      localStorage.removeItem("tasksByDate");
+    }
+  };
+
   // 计算今日统计数据
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = todayTasks
@@ -392,121 +442,12 @@ function App() {
   const completionRate = totalTasks === 0 ? 0 : 
     Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
 
-  const { dailyStudyData, categoryData, dailyTasksData } = generateChartData();
-
-  // 统计弹窗组件
-  const StatsModal = ({ onClose }) => {
-    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
-    const fontSize = window.innerWidth <= 768 ? 10 : 12;
-
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000
-      }}>
-        <div style={{
-          backgroundColor: "white",
-          padding: 20,
-          borderRadius: 10,
-          width: "90%",
-          maxWidth: 500,
-          maxHeight: "90vh",
-          overflow: "auto"
-        }}>
-          <h2 style={{ textAlign: "center", marginBottom: 15 }}>📊 本周学习统计</h2>
-
-          {/* 1. 每日学习时间柱状图 */}
-          <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              每日学习时间
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={dailyStudyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} />
-                <Bar 
-                  dataKey="time" 
-                  fill="#1a73e8" 
-                  radius={[4, 4, 0, 0]}
-                  label={{ position: "top", fontSize }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          
-          {/* 2. 各科目学习时间柱状图 */}
-          <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              各科目学习时间
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={categoryData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} />
-                <Bar 
-                  dataKey="time" 
-                  fill="#4a90e2"
-                  radius={[4, 4, 0, 0]}
-                  label={{ position: "top", fontSize }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          
-          {/* 3. 每日完成任务数柱状图 */}
-          <div style={{ height: chartHeight }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              每日完成任务数
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={dailyTasksData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} />
-                <Bar 
-                  dataKey="tasks" 
-                  fill="#00a854" 
-                  radius={[4, 4, 0, 0]}
-                  label={{ position: "top", fontSize }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <button 
-            onClick={onClose}
-            style={{
-              display: "block",
-              margin: "20px auto 0",
-              padding: "8px 16px",
-              backgroundColor: "#1a73e8",
-              color: "white",
-              border: "none",
-              borderRadius: 5,
-              cursor: "pointer"
-            }}
-          >
-            关闭
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   // 任务项组件
   const TaskItem = ({ task }) => {
     const [showImage, setShowImage] = useState(false);
-
+  
     return (
       <li
         className={swipedTask === task.id ? "task-li-swiped" : ""}
@@ -527,11 +468,11 @@ function App() {
           transition: "transform .18s ease"
         }}>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <input 
-              type="checkbox" 
-              checked={task.done} 
-              onChange={() => toggleDone(task)} 
-              style={{ marginTop: 6 }} 
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: 6 }}
             />
             <div style={{ flex: 1 }}>
               <div
@@ -547,11 +488,11 @@ function App() {
                 {task.text}
               </div>
               {task.note && (
-                <div 
-                  onClick={() => editTaskNote(task)} 
-                  style={{ 
-                    fontSize: 12, 
-                    color: "#555", 
+                <div
+                  onClick={() => editTaskNote(task)}
+                  style={{
+                    fontSize: 12,
+                    color: "#555",
                     marginTop: 4,
                     marginBottom: 4,
                     cursor: "pointer"
@@ -560,63 +501,36 @@ function App() {
                   {task.note}
                 </div>
               )}
-              {task.image && (
+              {task.scheduledTime && (
+                <div style={{ 
+                  fontSize: 12,
+                  color: "#888",
+                  marginBottom: 4
+                }}>
+                  ⏰ {task.scheduledTime}
+                </div>
+              )}
+              {task.image && showImage && (
                 <div style={{ marginTop: 8 }}>
                   <img
                     src={task.image}
                     alt="任务图片"
-                    onClick={() => setShowImage(!showImage)}
+                    onClick={() => setShowImageModal(task.image)}
                     style={{
                       maxWidth: "100%",
-                      maxHeight: showImage ? "none" : "150px",
+                      maxHeight: "150px",
                       borderRadius: 4,
-                      cursor: "zoom-in",
-                      border: showImage ? "2px solid #1a73e8" : "none"
+                      cursor: "zoom-in"
                     }}
                   />
-                  {showImage && (
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button
-                        onClick={() => window.open(task.image, '_blank')}
-                        style={{
-                          padding: "4px 8px",
-                          background: "#4a90e2",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer"
-                        }}
-                      >
-                        查看原图
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('确定要删除这张图片吗？')) {
-                            removeImage(task);
-                            setShowImage(false);
-                          }
-                        }}
-                        style={{
-                          padding: "4px 8px",
-                          background: "#ff4d4f",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer"
-                        }}
-                      >
-                        删除图片
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           </div>
-          <div style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 6,
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "flex-end", 
+            gap: 6, 
             marginTop: 8,
             alignItems: "center"
           }}>
@@ -635,21 +549,22 @@ function App() {
             >
               ➕
             </button>
-            {task.image ? (
+            {task.image && (
               <button
                 onClick={() => setShowImage(!showImage)}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: 6 }}
               >
                 {showImage ? "🖼️▲" : "🖼️▼"}
               </button>
-            ) : (
+            )}
+            {!task.image && (
               <label style={{ cursor: "pointer", padding: 6 }}>
                 📷
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, task)}
-                  style={{ display: "none" }} 
+                  style={{ display: "none" }}
                 />
               </label>
             )}
@@ -685,6 +600,452 @@ function App() {
     );
   };
 
+  // 重复设置模态框
+  const RepeatModal = () => (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 10,
+        width: "80%",
+        maxWidth: 350
+      }}>
+        <h3 style={{ textAlign: "center", marginBottom: 15 }}>设置重复</h3>
+        
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8 }}>重复频率:</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={() => setRepeatConfig(prev => ({ ...prev, frequency: "daily" }))}
+              style={{
+                padding: "6px 12px",
+                background: repeatConfig.frequency === "daily" ? "#1a73e8" : "#eee",
+                color: repeatConfig.frequency === "daily" ? "#fff" : "#000",
+                border: "none",
+                borderRadius: 4
+              }}
+            >
+              每天
+            </button>
+            <button
+              onClick={() => setRepeatConfig(prev => ({ ...prev, frequency: "weekly" }))}
+              style={{
+                padding: "6px 12px",
+                background: repeatConfig.frequency === "weekly" ? "#1a73e8" : "#eee",
+                color: repeatConfig.frequency === "weekly" ? "#fff" : "#000",
+                border: "none",
+                borderRadius: 4
+              }}
+            >
+              每周
+            </button>
+            <button
+              onClick={() => setRepeatConfig(prev => ({ ...prev, frequency: "monthly" }))}
+              style={{
+                padding: "6px 12px",
+                background: repeatConfig.frequency === "monthly" ? "#1a73e8" : "#eee",
+                color: repeatConfig.frequency === "monthly" ? "#fff" : "#000",
+                border: "none",
+                borderRadius: 4
+              }}
+            >
+              每月
+            </button>
+          </div>
+        </div>
+        
+        {repeatConfig.frequency === "weekly" && (
+          <div style={{ marginBottom: 15 }}>
+            <div style={{ marginBottom: 8 }}>选择星期:</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["一", "二", "三", "四", "五", "六", "日"].map((day, i) => (
+                <button
+                  key={day}
+                  onClick={() => {
+                    const newDays = [...repeatConfig.days];
+                    newDays[i] = !newDays[i];
+                    setRepeatConfig(prev => ({ ...prev, days: newDays }));
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "6px 0",
+                    background: repeatConfig.days[i] ? "#1a73e8" : "#eee",
+                    color: repeatConfig.days[i] ? "#fff" : "#000",
+                    border: "none",
+                    borderRadius: 4
+                  }}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button
+            onClick={() => setShowRepeatModal(false)}
+            style={{
+              padding: "8px 16px",
+              background: "#ccc",
+              color: "#000",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer"
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={() => setShowRepeatModal(false)}
+            style={{
+              padding: "8px 16px",
+              background: "#1a73e8",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer"
+            }}
+          >
+            确定
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 时间设置模态框
+  const TimeModal = () => (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 10,
+        width: "80%",
+        maxWidth: 350
+      }}>
+        <h3 style={{ textAlign: "center", marginBottom: 15 }}>设置计划时间</h3>
+        
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8 }}>开始时间:</div>
+          <input
+            type="time"
+            value={repeatConfig.startTime}
+            onChange={(e) => setRepeatConfig(prev => ({ ...prev, startTime: e.target.value }))}
+            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8 }}>结束时间:</div>
+          <input
+            type="time"
+            value={repeatConfig.endTime}
+            onChange={(e) => setRepeatConfig(prev => ({ ...prev, endTime: e.target.value }))}
+            style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+          />
+        </div>
+        
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button
+            onClick={() => setShowTimeModal(false)}
+            style={{
+              padding: "8px 16px",
+              background: "#ccc",
+              color: "#000",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer"
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={() => setShowTimeModal(false)}
+            style={{
+              padding: "8px 16px",
+              background: "#1a73e8",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer"
+            }}
+          >
+            确定
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 图片查看模态框
+  const ImageModal = () => (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.9)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000
+    }} onClick={() => setShowImageModal(null)}>
+      <img 
+        src={showImageModal} 
+        alt="预览" 
+        style={{ 
+          maxWidth: "90%", 
+          maxHeight: "90%",
+          objectFit: "contain"
+        }} 
+      />
+    </div>
+  );
+
+  // 统计页面
+  const StatsPage = () => {
+    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
+    const fontSize = window.innerWidth <= 768 ? 10 : 12;
+
+    return (
+      <div style={{ 
+        maxWidth: 600, 
+        margin: "0 auto", 
+        padding: 15, 
+        fontFamily: "sans-serif", 
+        backgroundColor: "#f5faff" 
+      }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: 20 
+        }}>
+          <button
+            onClick={() => setShowStats(false)}
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 20
+            }}
+          >
+            ⬅️
+          </button>
+          <h1 style={{ 
+            textAlign: "center", 
+            color: "#1a73e8", 
+            fontSize: 20 
+          }}>
+            {statsMode === "week" ? "本周统计" : statsMode === "month" ? "本月统计" : "自选统计"}
+          </h1>
+          <div style={{ width: 20 }}></div> {/* 占位 */}
+        </div>
+
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          gap: 10, 
+          marginBottom: 20 
+        }}>
+          <button
+            onClick={() => setStatsMode("week")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "week" ? "#1a73e8" : "#eee",
+              color: statsMode === "week" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            本周
+          </button>
+          <button
+            onClick={() => setStatsMode("month")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "month" ? "#1a73e8" : "#eee",
+              color: statsMode === "month" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            本月
+          </button>
+          <button
+            onClick={() => setStatsMode("custom")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "custom" ? "#1a73e8" : "#eee",
+              color: statsMode === "custom" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            自选
+          </button>
+        </div>
+
+        {statsMode === "custom" && (
+          <div style={{ 
+            backgroundColor: "#fff",
+            padding: 15,
+            borderRadius: 10,
+            marginBottom: 20
+          }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 5 }}>选择日期范围:</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input type="date" style={{ flex: 1, padding: 8 }} />
+                <span style={{ lineHeight: "36px" }}>至</span>
+                <input type="date" style={{ flex: 1, padding: 8 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 5 }}>选择类别:</div>
+              <select style={{ width: "100%", padding: 8 }}>
+                <option value="">全部类别</option>
+                {categories.map(c => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              style={{
+                width: "100%",
+                padding: 10,
+                background: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 5
+              }}
+            >
+              生成统计
+            </button>
+          </div>
+        )}
+
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          marginBottom: 20, 
+          padding: "8px 0", 
+          backgroundColor: "#e8f0fe", 
+          borderRadius: 10 
+        }}>
+          {[
+            { label: "📊 平均完成率", value: `${avgCompletion}%` },
+            { label: "⏱️ 日均时长", value: `${avgDailyTime}m` }
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 12,
+                borderRight: idx < 1 ? "1px solid #cce0ff" : "none",
+                padding: "4px 0"
+              }}
+            >
+              <div>{item.label}</div>
+              <div style={{ fontWeight: "bold", marginTop: 2 }}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 1. 每日学习时间柱状图 */}
+        <div style={{ height: chartHeight, marginBottom: 30 }}>
+          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+            每日学习时间
+          </h3>
+          <ResponsiveContainer width="100%" height="80%">
+            <BarChart data={dailyStudyData} margin={{ left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize }} />
+              <YAxis tick={{ fontSize }} />
+              <Bar 
+                dataKey="time" 
+                fill="#1a73e8" 
+                radius={[4, 4, 0, 0]}
+                label={{ position: "top", fontSize }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* 2. 各科目学习时间柱状图 */}
+        <div style={{ height: chartHeight, marginBottom: 30 }}>
+          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+            各科目学习时间
+          </h3>
+          <ResponsiveContainer width="100%" height="80%">
+            <BarChart data={categoryData} margin={{ left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize }} />
+              <YAxis tick={{ fontSize }} />
+              <Bar 
+                dataKey="time" 
+                fill="#4a90e2"
+                radius={[4, 4, 0, 0]}
+                label={{ position: "top", fontSize }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* 3. 每日完成任务数柱状图 */}
+        <div style={{ height: chartHeight }}>
+          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+            每日完成任务数
+          </h3>
+          <ResponsiveContainer width="100%" height="80%">
+            <BarChart data={dailyTasksData} margin={{ left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize }} />
+              <YAxis tick={{ fontSize }} />
+              <Bar 
+                dataKey="tasks" 
+                fill="#00a854" 
+                radius={[4, 4, 0, 0]}
+                label={{ position: "top", fontSize }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
+
+  if (showStats) {
+    return <StatsPage />;
+  }
+
   return (
     <div style={{ 
       maxWidth: 600, 
@@ -693,6 +1054,10 @@ function App() {
       fontFamily: "sans-serif", 
       backgroundColor: "#f5faff" 
     }}>
+      {showImageModal && <ImageModal />}
+      {showRepeatModal && <RepeatModal />}
+      {showTimeModal && <TimeModal />}
+      
       <h1 style={{ 
         textAlign: "center", 
         color: "#1a73e8", 
@@ -838,7 +1203,10 @@ function App() {
         marginTop: 10 
       }}>
         <button
-          onClick={() => setShowAddInput(!showAddInput)}
+          onClick={() => {
+            setShowAddInput(!showAddInput);
+            setShowBulkInput(false);
+          }}
           style={{ 
             flex: 1, 
             padding: 8, 
@@ -851,7 +1219,10 @@ function App() {
           添加任务
         </button>
         <button
-          onClick={() => setShowBulkInput(!showBulkInput)}
+          onClick={() => {
+            setShowBulkInput(!showBulkInput);
+            setShowAddInput(false);
+          }}
           style={{ 
             flex: 1, 
             padding: 8, 
@@ -866,51 +1237,77 @@ function App() {
       </div>
 
       {showAddInput && (
-        <div style={{ 
-          display: "flex", 
-          gap: 6, 
-          marginTop: 8 
-        }}>
-          <input
-            type="text"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            placeholder="输入任务"
-            style={{ 
-              flex: 1, 
-              padding: 6, 
-              borderRadius: 6, 
-              border: "1px solid #ccc" 
-            }}
-          />
-          <select
-            value={newTaskCategory}
-            onChange={(e) => setNewTaskCategory(e.target.value)}
-            style={{ padding: 6 }}
-          >
-            {categories.map((c) => (
-              <option key={c.name} value={c.name}>{c.name}</option>
-            ))}
-          </select>
-          <button 
-            onClick={handleAddTask}
-            style={{ 
-              padding: "6px 10px", 
-              backgroundColor: "#1a73e8", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 6 
-            }}
-          >
-            确认
-          </button>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ 
+            display: "flex", 
+            gap: 6, 
+            marginBottom: 8 
+          }}>
+            <input
+              type="text"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="输入任务"
+              style={{ 
+                flex: 1, 
+                padding: 6, 
+                borderRadius: 6, 
+                border: "1px solid #ccc" 
+              }}
+            />
+            <select
+              value={newTaskCategory}
+              onChange={(e) => setNewTaskCategory(e.target.value)}
+              style={{ padding: 6 }}
+            >
+              {categories.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <button 
+              onClick={handleAddTask}
+              style={{ 
+                padding: "6px 10px", 
+                backgroundColor: "#1a73e8", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 6 
+              }}
+            >
+              确认
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => setShowRepeatModal(true)}
+              style={{ 
+                padding: "6px 10px", 
+                backgroundColor: "#1a73e8", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 6 
+              }}
+            >
+              重复
+            </button>
+            <button
+              onClick={() => setShowTimeModal(true)}
+              style={{ 
+                padding: "6px 10px", 
+                backgroundColor: "#1a73e8", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 6 
+              }}
+            >
+              计划时间
+            </button>
+          </div>
         </div>
       )}
 
       {showBulkInput && (
-        <div style={{ 
-          marginTop: 8 
-        }}>
+        <div style={{ marginTop: 8 }}>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
@@ -923,6 +1320,34 @@ function App() {
               border: "1px solid #ccc" 
             }}
           />
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <button
+              onClick={() => setShowRepeatModal(true)}
+              style={{ 
+                flex: 1,
+                padding: "6px 10px", 
+                backgroundColor: "#1a73e8", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 6 
+              }}
+            >
+              重复
+            </button>
+            <button
+              onClick={() => setShowTimeModal(true)}
+              style={{ 
+                flex: 1,
+                padding: "6px 10px", 
+                backgroundColor: "#1a73e8", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 6 
+              }}
+            >
+              计划时间
+            </button>
+          </div>
           <button 
             onClick={handleImportTasks}
             style={{ 
@@ -952,11 +1377,11 @@ function App() {
           { label: "📘 学习时间", value: formatTime(learningTime) },
           { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
           { label: "📝 任务数量", value: totalTasks },
-          { label: "✅ 完成率", value: `${completionRate}%` },
+          { label: "✅ 完成率", value: `${completionRate}%" },
           { 
             label: "📊 统计", 
             value: "",
-            onClick: () => setShowStatsModal(true)
+            onClick: () => setShowStats(true)
           }
         ].map((item, idx) => (
           <div
@@ -976,7 +1401,7 @@ function App() {
               fontWeight: "bold", 
               marginTop: 2,
               display: "flex",
-              justifyContent: "center" // 确保数值居中
+              justifyContent: "center"
             }}>
               {item.value}
             </div>
@@ -1003,7 +1428,7 @@ function App() {
             linkElement.click();
           }}
           style={{ 
-            padding: "8px 16px", 
+            padding: "6px 12px", 
             backgroundColor: "#1a73e8", 
             color: "#fff", 
             border: "none", 
@@ -1015,7 +1440,7 @@ function App() {
           导出数据
         </button>
         <label style={{ 
-          padding: "8px 16px", 
+          padding: "6px 12px", 
           backgroundColor: "#1a73e8", 
           color: "#fff", 
           border: "none", 
@@ -1049,11 +1474,21 @@ function App() {
             style={{ display: "none" }} 
           />
         </label>
+        <button
+          onClick={clearAllData}
+          style={{ 
+            padding: "6px 12px", 
+            backgroundColor: "#ff4444", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 6,
+            fontSize: 14,
+            cursor: "pointer"
+          }}
+        >
+          清空数据
+        </button>
       </div>
-
-      {showStatsModal && (
-        <StatsModal onClose={() => setShowStatsModal(false)} />
-      )}
     </div>
   );
 }
