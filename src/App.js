@@ -279,6 +279,125 @@ const TimeModal = ({ config, onSave, onClose }) => {
   );
 };
 
+// 操作菜单模态框
+const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned, onImageUpload, onDelete, position }) => {
+  const fileInputRef = useRef(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'transparent',
+      zIndex: 1000
+    }} onClick={onClose}>
+      <div style={{
+        position: 'absolute',
+        top: position.top,
+        left: position.left,
+        backgroundColor: 'white',
+        borderRadius: 8,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        padding: '8px 0',
+        minWidth: 120,
+        zIndex: 1001
+      }} onClick={e => e.stopPropagation()}>
+        <button
+          onClick={onEditText}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          编辑任务
+        </button>
+        <button
+          onClick={onEditNote}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          编辑备注
+        </button>
+        <button
+          onClick={onTogglePinned}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          {task.pinned ? '取消置顶' : '置顶'}
+        </button>
+        <button
+          onClick={handleImageClick}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          添加图片
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            onImageUpload(e, task);
+            onClose();
+          }}
+          style={{ display: 'none' }}
+        />
+        <div style={{ height: 1, backgroundColor: '#e0e0e0', margin: '4px 0' }}></div>
+        <button
+          onClick={() => {
+            onDelete(task);
+            onClose();
+          }}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14,
+            color: '#d32f2f'
+          }}
+        >
+          删除任务
+        </button>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
@@ -301,11 +420,10 @@ function App() {
   });
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(null);
 
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
-  const longPressTimerRef = useRef({});
-  const [longPressTask, setLongPressTask] = useState(null);
 
   // 初始化数据
   useEffect(() => {
@@ -319,29 +437,23 @@ function App() {
   }, [tasksByDate]);
 
   const tasks = tasksByDate[selectedDate] || [];
-  
-  // 获取本周所有日期的本周任务
+
+  // 获取本周任务 - 从全局任务中筛选出本周任务
   const getWeekTasks = () => {
-    const weekDates = getWeekDates(currentMonday);
-    const allWeekTasks = [];
-    
-    weekDates.forEach(dateObj => {
-      const dateTasks = tasksByDate[dateObj.date] || [];
-      const weekTasksForDate = dateTasks.filter(task => task.category === "本周任务");
-      allWeekTasks.push(...weekTasksForDate);
-    });
-    
-    // 去重，基于任务ID
+    const allTasks = Object.values(tasksByDate).flat();
+    const weekTasks = allTasks.filter(task => task.category === "本周任务");
+
+    // 去重，基于任务文本内容
     const uniqueTasks = [];
-    const seenIds = new Set();
-    
-    allWeekTasks.forEach(task => {
-      if (!seenIds.has(task.id)) {
-        seenIds.add(task.id);
+    const seenTexts = new Set();
+
+    weekTasks.forEach(task => {
+      if (!seenTexts.has(task.text)) {
+        seenTexts.add(task.text);
         uniqueTasks.push(task);
       }
     });
-    
+
     return uniqueTasks;
   };
 
@@ -491,37 +603,41 @@ function App() {
     setShowAddInput(false);
   };
 
-  // 添加本周任务 - 添加到整周
+  // 添加本周任务 - 创建一条任务，在整周的所有日期都显示
   const handleAddWeekTask = (text) => {
     if (!text.trim()) return;
 
     const weekDates = getWeekDates(currentMonday);
+    const taskId = Date.now().toString(); // 使用同一个ID
+
+    const newTask = {
+      id: taskId,
+      text: text.trim(),
+      category: "本周任务",
+      done: false,
+      timeSpent: 0,
+      note: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      isWeekTask: true // 标记为本周任务
+    };
+
     const newTasksByDate = { ...tasksByDate };
 
+    // 为本周的每一天都添加这个任务
     weekDates.forEach(dateObj => {
-      const newTask = {
-        id: Date.now().toString() + dateObj.date, // 为每个日期生成唯一ID
-        text: text.trim(),
-        category: "本周任务",
-        done: false,
-        timeSpent: 0,
-        note: "",
-        image: null,
-        scheduledTime: "",
-        pinned: false
-      };
-
       if (!newTasksByDate[dateObj.date]) {
         newTasksByDate[dateObj.date] = [];
       }
-      
-      // 检查是否已存在相同任务
+
+      // 检查是否已存在相同的本周任务
       const existingTask = newTasksByDate[dateObj.date].find(
-        task => task.category === "本周任务" && task.text === text.trim()
+        task => task.isWeekTask && task.text === text.trim()
       );
-      
+
       if (!existingTask) {
-        newTasksByDate[dateObj.date] = [...newTasksByDate[dateObj.date], newTask];
+        newTasksByDate[dateObj.date] = [...newTasksByDate[dateObj.date], { ...newTask }];
       }
     });
 
@@ -568,18 +684,15 @@ function App() {
   // 切换任务完成状态
   const toggleDone = (task) => {
     // 如果是本周任务，需要在所有日期中更新状态
-    if (task.category === "本周任务") {
-      const weekDates = getWeekDates(currentMonday);
+    if (task.isWeekTask) {
       const updatedTasksByDate = { ...tasksByDate };
-      
-      weekDates.forEach(dateObj => {
-        if (updatedTasksByDate[dateObj.date]) {
-          updatedTasksByDate[dateObj.date] = updatedTasksByDate[dateObj.date].map(t =>
-            t.text === task.text && t.category === "本周任务" ? { ...t, done: !t.done } : t
-          );
-        }
+
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? { ...t, done: !t.done } : t
+        );
       });
-      
+
       setTasksByDate(updatedTasksByDate);
     } else {
       setTasksByDate(prev => ({
@@ -604,18 +717,15 @@ function App() {
   // 删除任务
   const deleteTask = (task) => {
     // 如果是本周任务，从所有日期中删除
-    if (task.category === "本周任务") {
-      const weekDates = getWeekDates(currentMonday);
+    if (task.isWeekTask) {
       const updatedTasksByDate = { ...tasksByDate };
-      
-      weekDates.forEach(dateObj => {
-        if (updatedTasksByDate[dateObj.date]) {
-          updatedTasksByDate[dateObj.date] = updatedTasksByDate[dateObj.date].filter(
-            t => !(t.text === task.text && t.category === "本周任务")
-          );
-        }
+
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].filter(
+          t => !(t.isWeekTask && t.text === task.text)
+        );
       });
-      
+
       setTasksByDate(updatedTasksByDate);
     } else {
       setTasksByDate(prev => ({
@@ -629,8 +739,6 @@ function App() {
       delete runningRefs.current[task.id];
       setRunningState(prev => ({ ...prev, [task.id]: false }));
     }
-
-    setLongPressTask(null);
   };
 
   // 编辑任务文本
@@ -638,18 +746,15 @@ function App() {
     const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
       // 如果是本周任务，需要在所有日期中更新
-      if (task.category === "本周任务") {
-        const weekDates = getWeekDates(currentMonday);
+      if (task.isWeekTask) {
         const updatedTasksByDate = { ...tasksByDate };
-        
-        weekDates.forEach(dateObj => {
-          if (updatedTasksByDate[dateObj.date]) {
-            updatedTasksByDate[dateObj.date] = updatedTasksByDate[dateObj.date].map(t =>
-              t.text === task.text && t.category === "本周任务" ? { ...t, text: newText } : t
-            );
-          }
+
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? { ...t, text: newText } : t
+          );
         });
-        
+
         setTasksByDate(updatedTasksByDate);
       } else {
         setTasksByDate(prev => ({
@@ -766,34 +871,17 @@ function App() {
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
 
-  // 长按事件处理
-  const onLongPressStart = (task) => {
-    longPressTimerRef.current[task.id] = setTimeout(() => {
-      setLongPressTask(task);
-    }, 800); // 800ms长按触发
-  };
-
-  const onLongPressEnd = (task) => {
-    if (longPressTimerRef.current[task.id]) {
-      clearTimeout(longPressTimerRef.current[task.id]);
-      delete longPressTimerRef.current[task.id];
-    }
-  };
-
-  // 点击文档关闭长按删除确认
-  useEffect(() => {
-    const onDocClick = (e) => {
-      if (!e.target.closest(".task-item")) {
-        setLongPressTask(null);
+  // 打开操作菜单
+  const openActionMenu = (task, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setShowActionMenu({
+      task,
+      position: {
+        top: rect.bottom + 5,
+        left: rect.left
       }
-    };
-    document.addEventListener("touchstart", onDocClick);
-    document.addEventListener("mousedown", onDocClick);
-    return () => {
-      document.removeEventListener("touchstart", onDocClick);
-      document.removeEventListener("mousedown", onDocClick);
-    };
-  }, []);
+    });
+  };
 
   // 清空所有数据
   const clearAllData = () => {
@@ -836,25 +924,15 @@ function App() {
     return (
       <li
         className="task-item"
-        onTouchStart={() => onLongPressStart(task)}
-        onTouchEnd={() => onLongPressEnd(task)}
-        onMouseDown={() => onLongPressStart(task)}
-        onMouseUp={() => onLongPressEnd(task)}
-        onMouseLeave={() => onLongPressEnd(task)}
         style={{
           position: "relative",
-          background: longPressTask?.id === task.id ? "#ffebee" : "#fff",
+          background: "#fff",
           borderRadius: 6,
           marginBottom: 8,
-          padding: "8px",
-          transition: "background-color 0.2s ease",
-          border: longPressTask?.id === task.id ? "2px solid #ff4444" : "1px solid #e0e0e0"
+          padding: "8px"
         }}
       >
-        <div style={{
-          opacity: longPressTask?.id === task.id ? 0.6 : 1,
-          transition: "opacity 0.2s ease"
-        }}>
+        <div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
             <input
               type="checkbox"
@@ -875,6 +953,7 @@ function App() {
               >
                 {task.text}
                 {task.pinned && " 📌"}
+                {task.isWeekTask && " 🌟"}
               </div>
               {task.note && (
                 <div
@@ -890,15 +969,7 @@ function App() {
                   {task.note}
                 </div>
               )}
-              {task.scheduledTime && (
-                <div style={{
-                  fontSize: 12,
-                  color: "#888",
-                  marginBottom: 4
-                }}>
-                  ⏰ {task.scheduledTime}
-                </div>
-              )}
+
               {task.image && showImage && (
                 <div style={{ marginTop: 8 }}>
                   <img
@@ -918,57 +989,30 @@ function App() {
           </div>
           <div style={{
             display: "flex",
-            justifyContent: "flex-end",
-            gap: 6,
-            marginTop: 4,
+            justifyContent: "space-between",
             alignItems: "center",
-            height: 32
+            marginTop: 4
           }}>
             <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               fontSize: 12,
-              color: "#333",
-              marginRight: 6,
-              lineHeight: "32px"
+              color: "#666"
             }}>
-              {formatTime(task.timeSpent)}
+              {task.scheduledTime && (
+                <span>⏰ {task.scheduledTime}</span>
+              )}
+              <span>{formatTime(task.timeSpent)}</span>
             </div>
-            <button
-              onClick={() => toggleTimer(task)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                height: 32,
-                width: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16
-              }}
-            >
-              {runningState[task.id] ? "⏸️" : "▶️"}
-            </button>
-            <button
-              onClick={() => manualAddTime(task)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                height: 32,
-                width: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16
-              }}
-            >
-              ➕
-            </button>
-            {task.image && (
+
+            <div style={{
+              display: "flex",
+              gap: 6,
+              alignItems: "center"
+            }}>
               <button
-                onClick={() => setShowImage(!showImage)}
+                onClick={() => toggleTimer(task)}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -982,125 +1026,64 @@ function App() {
                   fontSize: 16
                 }}
               >
-                {showImage ? "🖼️▲" : "🖼️▼"}
+                {runningState[task.id] ? "⏸️" : "▶️"}
               </button>
-            )}
-            {!task.image && (
-              <label style={{
-                cursor: "pointer",
-                padding: 6,
-                height: 32,
-                width: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16
-              }}>
-                📷
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, task)}
-                  style={{ display: "none" }}
-                />
-              </label>
-            )}
-            <button
-              onClick={() => editTaskNote(task)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                height: 32,
-                width: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16
-              }}
-            >
-              📝
-            </button>
-            <button
-              onClick={() => togglePinned(task)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                height: 32,
-                width: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16
-              }}
-            >
-              {task.pinned ? "📌" : "📍"}
-            </button>
+              <button
+                onClick={() => manualAddTime(task)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  height: 32,
+                  width: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16
+                }}
+              >
+                ➕
+              </button>
+              {task.image && (
+                <button
+                  onClick={() => setShowImage(!showImage)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 6,
+                    height: 32,
+                    width: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16
+                  }}
+                >
+                  {showImage ? "🖼️▲" : "🖼️▼"}
+                </button>
+              )}
+              <button
+                onClick={(e) => openActionMenu(task, e)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  height: 32,
+                  width: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16
+                }}
+              >
+                ⚙️
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* 长按删除确认 */}
-        {longPressTask?.id === task.id && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(255, 235, 238, 0.9)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 6,
-              zIndex: 10
-            }}
-          >
-            <div style={{
-              fontSize: 14,
-              fontWeight: "bold",
-              color: "#d32f2f",
-              marginBottom: 10,
-              textAlign: "center"
-            }}>
-              确定要删除这个任务吗？
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => deleteTask(task)}
-                style={{
-                  padding: "6px 12px",
-                  backgroundColor: "#d32f2f",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  fontSize: 12
-                }}
-              >
-                确认删除
-              </button>
-              <button
-                onClick={() => setLongPressTask(null)}
-                style={{
-                  padding: "6px 12px",
-                  backgroundColor: "#757575",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  fontSize: 12
-                }}
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        )}
       </li>
     );
   };
@@ -1423,6 +1406,18 @@ function App() {
           onClose={() => setShowTimeModal(false)}
         />
       )}
+      {showActionMenu && (
+        <ActionMenuModal
+          task={showActionMenu.task}
+          position={showActionMenu.position}
+          onClose={() => setShowActionMenu(null)}
+          onEditText={editTaskText}
+          onEditNote={editTaskNote}
+          onTogglePinned={togglePinned}
+          onImageUpload={handleImageUpload}
+          onDelete={deleteTask}
+        />
+      )}
 
       <h1 style={{
         textAlign: "center",
@@ -1522,7 +1517,7 @@ function App() {
       </div>
 
       {/* 本周任务区域 - 浅蓝色 */}
-      <div style={{ 
+      <div style={{
         marginBottom: 12,
         borderRadius: 10,
         overflow: "hidden",
@@ -1534,7 +1529,7 @@ function App() {
             ...prev,
             "本周任务": !prev["本周任务"]
           }))}
-          style={{ 
+          style={{
             backgroundColor: "#87CEEB",
             color: "#fff",
             padding: "6px 10px",
@@ -1577,13 +1572,13 @@ function App() {
             </button>
           </div>
         </div>
-        
+
         {/* 本周任务列表 - 根据折叠状态显示 */}
         {!collapsedCategories["本周任务"] && weekTasks.length > 0 && (
-          <ul style={{ 
-            listStyle: "none", 
-            padding: 10, 
-            margin: 0 
+          <ul style={{
+            listStyle: "none",
+            padding: 10,
+            margin: 0
           }}>
             {weekTasks.map((task) => (
               <TaskItem key={task.id} task={task} />
@@ -1704,7 +1699,7 @@ function App() {
             color: "#fff",
             border: "none",
             borderRadius: 6,
-            transition: "none"
+            cursor: "pointer"
           }}
         >
           {showAddInput ? "取消添加" : "添加任务"}
@@ -1721,7 +1716,7 @@ function App() {
             color: "#fff",
             border: "none",
             borderRadius: 6,
-            transition: "none"
+            cursor: "pointer"
           }}
         >
           {showBulkInput ? "取消批量" : "批量导入"}
@@ -1763,7 +1758,8 @@ function App() {
                 backgroundColor: "#1a73e8",
                 color: "#fff",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor: "pointer"
               }}
             >
               确认
@@ -1777,7 +1773,8 @@ function App() {
                 backgroundColor: "#1a73e8",
                 color: "#fff",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor: "pointer"
               }}
             >
               重复
@@ -1789,7 +1786,8 @@ function App() {
                 backgroundColor: "#1a73e8",
                 color: "#fff",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor: "pointer"
               }}
             >
               计划时间
@@ -1821,7 +1819,8 @@ function App() {
                 backgroundColor: "#1a73e8",
                 color: "#fff",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor: "pointer"
               }}
             >
               重复
@@ -1834,7 +1833,8 @@ function App() {
                 backgroundColor: "#1a73e8",
                 color: "#fff",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor: "pointer"
               }}
             >
               计划时间
@@ -1849,7 +1849,8 @@ function App() {
               backgroundColor: "#1a73e8",
               color: "#fff",
               border: "none",
-              borderRadius: 6
+              borderRadius: 6,
+              cursor: "pointer"
             }}
           >
             导入任务
