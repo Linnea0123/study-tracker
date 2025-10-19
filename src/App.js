@@ -150,6 +150,7 @@ function App() {
       }
     } else {
       // Custom date range would be handled here
+      dateRange = weekDates.map(d => d.date); // 默认使用周数据
     }
 
     const stats = calculateStats(dateRange);
@@ -428,6 +429,18 @@ function App() {
       setTasksByDate({});
       localStorage.removeItem("tasksByDate");
     }
+  };
+
+  // 导出数据
+  const handleExportData = () => {
+    const dataStr = JSON.stringify(tasksByDate);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `study-data_${new Date().toISOString().slice(0,10)}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
   };
 
   // 计算今日统计数据
@@ -1377,7 +1390,7 @@ function App() {
           { label: "📘 学习时间", value: formatTime(learningTime) },
           { label: "🏃‍♂️ 运动时间", value: formatTime(sportTime) },
           { label: "📝 任务数量", value: totalTasks },
-          { label: "✅ 完成率", value: `${completionRate}%" },
+          { label: "✅ 完成率", value: `${completionRate}%` },
           { 
             label: "📊 统计", 
             value: "",
@@ -1417,16 +1430,7 @@ function App() {
         marginBottom: 20
       }}>
         <button
-          onClick={() => {
-            const dataStr = JSON.stringify(tasksByDate);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const exportFileDefaultName = `学习打卡数据_${new Date().toISOString().slice(0,10)}.json`;
-
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
-          }}
+          onClick={handleExportData}
           style={{ 
             padding: "6px 12px", 
             backgroundColor: "#1a73e8", 
