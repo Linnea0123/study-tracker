@@ -2143,6 +2143,17 @@ function App() {
       backgroundColor: "#f5faff",
       overflowX: "hidden"
     }}>
+{/* === 在这里添加版本信息 === */}
+      <h1 style={{textAlign: "center", color: "red", fontSize: "16px"}}>
+        学习跟踪器 - 新版本 1.2
+      </h1>
+      <p style={{textAlign: "center", color: "red", fontSize: "12px"}}>
+        更新时间: {new Date().toLocaleString()}
+      </p>
+      {/* ========================== */}
+
+
+
       {/* 所有模态框组件保持不变 */}
       {showImageModal && (
         <ImageModal
