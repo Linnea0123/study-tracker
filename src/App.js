@@ -310,10 +310,18 @@ const TimeModal = ({ config, onSave, onClose }) => {
 };
 
 // 操作菜单模态框
-const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned, onImageUpload, setShowDeleteModal, position }) => {
-  console.log('ActionMenuModal 收到的任务:', task);
-  console.log('任务ID:', task?.id);
-  console.log('任务文本:', task?.text);
+const ActionMenuModal = ({
+  task,
+  onClose,
+  onEditText,
+  onEditNote,
+  onTogglePinned,
+  onImageUpload,
+  setShowDeleteModal,
+  position,
+  onEditScheduledTime,
+  onRemoveScheduledTime
+}) => {
   const fileInputRef = useRef(null);
 
   const handleImageClick = () => {
@@ -338,67 +346,66 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned
         borderRadius: 8,
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         padding: '8px 0',
-        minWidth: 120,
+        minWidth: 150,  // 增加最小宽度
         zIndex: 1001
       }} onClick={e => e.stopPropagation()}>
-        <button
-          onClick={onEditText}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            background: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: 14
-          }}
-        >
-          编辑任务
-        </button>
+
+        {/* 编辑备注 */}
         <button
           onClick={onEditNote}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            background: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: 14
-          }}
+          style={menuItemStyle}
         >
-          编辑备注
+          📝 编辑备注
         </button>
+
+        {/* ▼▼▼ 修改为无条件显示 ▼▼▼ */}
+        <div style={menuDividerStyle} />
+        <button
+          onClick={() => {
+            if (task.scheduledTime) {
+              onEditScheduledTime(task);
+            } else {
+              const newTime = window.prompt("添加计划时间（格式：09:00-10:00）");
+              if (newTime) {
+                onEditScheduledTime({ ...task, scheduledTime: newTime });
+              }
+            }
+            onClose();
+          }}
+          style={menuItemStyle}
+        >
+          {task.scheduledTime ? '🕒 编辑计划时间' : '➕ 添加计划时间'}
+        </button>
+        {task.scheduledTime && (
+          <button
+            onClick={() => {
+              onRemoveScheduledTime(task);
+              onClose();
+            }}
+            style={{ ...menuItemStyle, color: '#ff4444' }}
+          >
+            ❌ 删除计划时间
+          </button>
+        )}
+        {/* ▲▲▲ 修改结束 ▲▲▲ */}
+
+        {/* 置顶/取消置顶 */}
         <button
           onClick={() => {
             onTogglePinned(task);
             onClose();
           }}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            background: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: 14
-          }}
+          style={menuItemStyle}
         >
-          {task.pinned ? '取消置顶' : '置顶'}
+          {task.pinned ? '📌 取消置顶' : '📌 置顶'}
         </button>
+
+        {/* 添加图片 */}
         <button
           onClick={handleImageClick}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            background: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: 14
-          }}
+          style={menuItemStyle}
         >
-          添加图片
+          🖼️ 添加图片
         </button>
         <input
           ref={fileInputRef}
@@ -410,31 +417,47 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned
           }}
           style={{ display: 'none' }}
         />
-        <div style={{ height: 1, backgroundColor: '#e0e0e0', margin: '4px 0' }}></div>
+
+        {/* 删除任务 */}
         <button
           onClick={() => {
             setShowDeleteModal(task);
             onClose();
           }}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            background: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: 14,
-            color: '#d32f2f'
-          }}
+          style={{ ...menuItemStyle, color: '#d32f2f' }}
         >
-          删除任务
+          🗑️ 删除任务
         </button>
       </div>
     </div>
   );
 };
 
-// 删除确认模态框
+// 菜单项样式
+const menuItemStyle = {
+  width: '100%',
+  padding: '8px 16px',
+  background: 'transparent',
+  border: 'none',
+  textAlign: 'left',
+  cursor: 'pointer',
+  fontSize: 14,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  ':hover': {
+    backgroundColor: '#f5f5f5'
+  }
+};
+
+// 菜单分隔线样式
+const menuDividerStyle = {
+  height: '1px',
+  backgroundColor: '#e0e0e0',
+  margin: '6px 0'
+};
+
+// 删除确认 删除哪一天的
 const DeleteConfirmModal = ({ task, selectedDate, onClose, onDelete }) => {
   const [deleteOption, setDeleteOption] = useState('today'); // today, future, all
 
@@ -596,6 +619,27 @@ function App() {
   }, [tasksByDate]);
 
   const tasks = tasksByDate[selectedDate] || [];
+
+// 在组件顶部添加（useEffect部分）
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    const inputContainers = document.querySelectorAll('.input-container');
+    const clickedOutside = Array.from(inputContainers).every(
+      container => !container.contains(e.target)
+    );
+    
+    if (clickedOutside) {
+      setShowAddInput(false);
+      setShowBulkInput(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
+
+
+
 
   // 获取本周任务 - 从全局任务中筛选出本周任务
   const getWeekTasks = () => {
@@ -1104,10 +1148,34 @@ function App() {
     }
   };
 
-  // 编辑任务备注
-  // 编辑任务备注
-  // 编辑任务备注
-  // 编辑任务备注
+  // ★ 新增时间操作函数 ★
+  const editScheduledTime = (task) => {
+    const newTime = window.prompt("编辑计划时间", task.scheduledTime);
+    if (newTime !== null) {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? { ...t, scheduledTime: newTime } : t
+        )
+      }));
+    }
+  };
+
+  const removeScheduledTime = (task) => {
+    if (window.confirm("确定删除计划时间？")) {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? { ...t, scheduledTime: "" } : t
+        )
+      }));
+    }
+  };
+  // ▲▲▲ 插入结束 ▲▲▲
+
+
+
+
   // 编辑任务备注
   const editTaskNote = (task) => {
     // 添加调试代码
@@ -1299,167 +1367,188 @@ function App() {
   // 任务项组件 - 添加边框和紧凑间距
   // 在 TaskItem 组件中，修复布局结构
   const TaskItem = ({ task }) => {
-  const [showImage, setShowImage] = useState(false);
+    const [showImage, setShowImage] = useState(false);
 
-  return (
-    <li
-      style={{
-        display: "flex",
-        alignItems: "flex-start", // 容器顶部对齐
-        minHeight: "44px",
-        padding: "8px 12px",
-        marginBottom: "4px",
-        backgroundColor: task.pinned ? "#fff9e6" : "#fff",
-        borderRadius: "6px",
-        border: "0.5px solid #e0e0e0",
-        gap: "8px" // 统一元素间距
-      }}
-    >
-      {/* 复选框 - 精确对齐 */}
-      <input
-        type="checkbox"
-        checked={task.done}
-        onChange={() => toggleDone(task)}
+    return (
+      <li
         style={{
-          width: "18px",
-          height: "18px",
-          margin: "2px 8px 0 0", // 上边距微调
-          alignSelf: "flex-start", // 强制顶部对齐
-          flexShrink: 0,
-          position: "relative",
-          top: "1px" // 微调垂直位置
+          display: "flex",
+          alignItems: "flex-start", // 容器顶部对齐
+          minHeight: "44px",
+          padding: "8px 12px",
+          marginBottom: "4px",
+          backgroundColor: task.pinned ? "#fff9e6" : "#fff",
+          borderRadius: "6px",
+          border: "0.5px solid #e0e0e0",
+          gap: "8px" // 统一元素间距
         }}
-      />
-      
-      {/* 内容区域 */}
-      <div style={{ 
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        minHeight: "32px"
-      }}>
-        {/* 任务文本 */}
-        <div
-          onClick={() => editTaskText(task)}
+      >
+        {/* 复选框 - 精确对齐 */}
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={() => toggleDone(task)}
           style={{
-            wordBreak: "break-word",
-            whiteSpace: "normal",
-            cursor: "pointer",
-            textDecoration: task.done ? "line-through" : "none",
-            color: task.done ? "#999" : "#000",
-            fontWeight: task.pinned ? "bold" : "normal",
-            lineHeight: "1.4",
-            minHeight: "20px",
-            paddingTop: "1px" // 微调文字位置
+            width: "18px",
+            height: "18px",
+            margin: "2px 8px 0 0", // 上边距微调
+            alignSelf: "flex-start", // 强制顶部对齐
+            flexShrink: 0,
+            position: "relative",
+            top: "1px" // 微调垂直位置
           }}
-        >
-          {task.text}
-          {task.pinned && " 📌"}
-          {task.isWeekTask && " 🌟"}
-        </div>
+        />
 
-        {/* 备注 */}
-        {task.note && (
+        {/* 内容区域 */}
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          minHeight: "32px"
+        }}>
+          {/* 任务文本 */}
           <div
-            onClick={() => editTaskNote(task)}
+            onClick={() => editTaskText(task)}
             style={{
-              fontSize: "12px",
-              color: "#555",
-              marginTop: "4px",
+              wordBreak: "break-word",
+              whiteSpace: "normal",
               cursor: "pointer",
-              backgroundColor: "#fffacd",
-              padding: "2px 4px",
-              borderRadius: "3px",
-              lineHeight: "1.3"
+              textDecoration: task.done ? "line-through" : "none",
+              color: task.done ? "#999" : "#000",
+              fontWeight: task.pinned ? "bold" : "normal",
+              lineHeight: "1.4",
+              minHeight: "20px",
+              paddingTop: "1px" // 微调文字位置
             }}
           >
-            备注: {task.note}
-          </div>
-        )}
-
-        {/* 底部操作栏 */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginTop: "4px"
-        }}>
-          {/* 左侧时间信息 */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 50,
-            fontSize: "12px",
-            color: "#666"
-          }}>
-            {task.scheduledTime && (
-              <span>⏰ {task.scheduledTime}</span>
-            )}
-            <span>{formatTime(task.timeSpent)}</span>
+            {task.text}
+            {task.pinned && " 📌"}
+            {task.isWeekTask && " 🌟"}
           </div>
 
-          {/* 右侧操作按钮 */}
-          <div style={{
-            display: "flex",
-            gap: "6px",
-            alignItems: "center"
-          }}>
-            <button
-              onClick={() => toggleTimer(task)}
-              style={actionButtonStyle}
-            >
-              {runningState[task.id] ? "⏸️" : "▶️"}
-            </button>
-            <button
-              onClick={() => manualAddTime(task)}
-              style={actionButtonStyle}
-            >
-              ➕
-            </button>
-            <button
-              onClick={(e) => openActionMenu(task, e)}
-              style={actionButtonStyle}
-            >
-              ⚙️
-            </button>
-          </div>
-        </div>
-
-        {/* 任务图片 */}
-        {task.image && showImage && (
-          <div style={{ marginTop: "8px" }}>
-            <img
-              src={task.image}
-              alt="任务附件"
-              onClick={() => setShowImageModal(task.image)}
+          {/* 备注 */}
+          {task.note && (
+            <div
+              onClick={() => editTaskNote(task)}
               style={{
-                maxWidth: "100%",
-                maxHeight: "150px",
-                borderRadius: "4px",
-                cursor: "zoom-in"
+                fontSize: "12px",
+                color: "#888",
+                marginTop: "4px",
+                cursor: "pointer",
+                backgroundColor: "none",
+                padding: "2px 4px",
+                borderRadius: "3px",
+                lineHeight: "1.3"
               }}
-            />
-          </div>
-        )}
-      </div>
-    </li>
-  );
-};
+            >
+              {task.note}
+            </div>
+          )}
 
-// 操作按钮统一样式
-const actionButtonStyle = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  padding: "0",
-  height: "24px",
-  width: "24px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "12px"
-};
+          {/* 底部操作栏 */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: "4px"
+          }}>
+            {/* 左侧时间信息 */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "12px",
+              color: "#666"
+            }}>
+              {task.scheduledTime && (
+                <span>⏰ {task.scheduledTime}</span>
+              )}
+
+            </div>
+
+            {/* 右侧操作按钮 */}
+            <div style={{
+              display: "flex",
+              gap: "6px",
+              alignItems: "center"
+            }}>
+              <span>{formatTime(task.timeSpent)}</span>
+              <button
+                onClick={() => toggleTimer(task)}
+                style={actionButtonStyle}
+              >
+                {runningState[task.id] ? "⏸️" : "▶️"}
+              </button>
+
+              {/* 添加备注按钮 */}
+              <button
+                onClick={() => editTaskNote(task)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  height: 24,
+                  width: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12
+                }}
+                title="编辑备注"
+              >
+                📝
+              </button>
+              <button
+                onClick={() => manualAddTime(task)}
+                style={actionButtonStyle}
+              >
+                ➕
+              </button>
+              <button
+                onClick={(e) => openActionMenu(task, e)}
+                style={actionButtonStyle}
+              >
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          {/* 任务图片 */}
+          {task.image && showImage && (
+            <div style={{ marginTop: "8px" }}>
+              <img
+                src={task.image}
+                alt="任务附件"
+                onClick={() => setShowImageModal(task.image)}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "150px",
+                  borderRadius: "4px",
+                  cursor: "zoom-in"
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  };
+
+  // 操作按钮统一样式
+  const actionButtonStyle = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: "0",
+    height: "24px",
+    width: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px"
+  };
 
 
 
@@ -1813,6 +1902,8 @@ const actionButtonStyle = {
           onTogglePinned={togglePinned}
           onImageUpload={handleImageUpload}
           setShowDeleteModal={setShowDeleteModal}
+          onEditScheduledTime={editScheduledTime}
+          onRemoveScheduledTime={removeScheduledTime}
         />
       )}
       {showDeleteModal && (
@@ -2117,7 +2208,7 @@ const actionButtonStyle = {
             cursor: "pointer"
           }}
         >
-          {showAddInput ? "取消添加" : "添加任务"}
+          添加任务
         </button>
         <button
           onClick={() => {
@@ -2134,7 +2225,7 @@ const actionButtonStyle = {
             cursor: "pointer"
           }}
         >
-          {showBulkInput ? "取消批量" : "批量导入"}
+          批量导入
         </button>
       </div>
 
