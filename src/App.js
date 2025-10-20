@@ -1297,235 +1297,173 @@ function App() {
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   // 任务项组件 - 添加边框和紧凑间距
+  // 在 TaskItem 组件中，修复布局结构
   const TaskItem = ({ task }) => {
-    const [showImage, setShowImage] = useState(false);
+  const [showImage, setShowImage] = useState(false);
 
-    return (
-      <li
-        className="task-item"
+  return (
+    <li
+      style={{
+        display: "flex",
+        alignItems: "flex-start", // 容器顶部对齐
+        minHeight: "44px",
+        padding: "8px 12px",
+        marginBottom: "4px",
+        backgroundColor: task.pinned ? "#fff9e6" : "#fff",
+        borderRadius: "6px",
+        border: "0.5px solid #e0e0e0",
+        gap: "8px" // 统一元素间距
+      }}
+    >
+      {/* 复选框 - 精确对齐 */}
+      <input
+        type="checkbox"
+        checked={task.done}
+        onChange={() => toggleDone(task)}
         style={{
+          width: "18px",
+          height: "18px",
+          margin: "2px 8px 0 0", // 上边距微调
+          alignSelf: "flex-start", // 强制顶部对齐
+          flexShrink: 0,
           position: "relative",
-          background: task.pinned ? "#fff9e6" : "#fff",
-          borderRadius: 6,
-          alignItems: "center",
-          marginBottom: 4,
-          padding: "8px",
-          border: "0.5px solid #e0e0e0",
+          top: "1px" // 微调垂直位置
         }}
-      >
-        <div>
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: 6 }}
-            />
-            <div style={{ flex: 1 }}>
-              <div
-                onClick={() => editTaskText(task)}
-                style={{
-                  wordBreak: "break-word",
-                  whiteSpace: "normal",
-                  cursor: "pointer",
-                  textDecoration: task.done ? "line-through" : "none",
-                  color: task.done ? "#999" : "#000",
-                  fontWeight: task.pinned ? "bold" : "normal"
-                }}
-              >
-                {task.text}
-                {task.pinned && " 📌"}
-                {task.isWeekTask && " 🌟"}
-              </div>
-              {/* 修改备注显示部分 */}
-          
+      />
+      
+      {/* 内容区域 */}
+      <div style={{ 
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        minHeight: "32px"
+      }}>
+        {/* 任务文本 */}
+        <div
+          onClick={() => editTaskText(task)}
+          style={{
+            wordBreak: "break-word",
+            whiteSpace: "normal",
+            cursor: "pointer",
+            textDecoration: task.done ? "line-through" : "none",
+            color: task.done ? "#999" : "#000",
+            fontWeight: task.pinned ? "bold" : "normal",
+            lineHeight: "1.4",
+            minHeight: "20px",
+            paddingTop: "1px" // 微调文字位置
+          }}
+        >
+          {task.text}
+          {task.pinned && " 📌"}
+          {task.isWeekTask && " 🌟"}
+        </div>
 
-              {task.note && (
-                <div
-                  onClick={() => editTaskNote(task)}
-                  style={{
-                    fontSize: 12,
-                    color: "#000",
-                    marginTop: 4,
-                    marginBottom: 4,
-                    cursor: "pointer",
-                    backgroundColor: 'yellow'
-                  }}
-                >
-                  备注: {task.note}
-                </div>
-              )}
-            </div>
+        {/* 备注 */}
+        {task.note && (
+          <div
+            onClick={() => editTaskNote(task)}
+            style={{
+              fontSize: "12px",
+              color: "#555",
+              marginTop: "4px",
+              cursor: "pointer",
+              backgroundColor: "#fffacd",
+              padding: "2px 4px",
+              borderRadius: "3px",
+              lineHeight: "1.3"
+            }}
+          >
+            备注: {task.note}
           </div>
+        )}
 
-          {/* 时间信息和操作按钮在同一行 */}
+        {/* 底部操作栏 */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "4px"
+        }}>
+          {/* 左侧时间信息 */}
           <div style={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginTop: 4
+            gap: 50,
+            fontSize: "12px",
+            color: "#666"
           }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 50,
-              fontSize: 12,
-              color: "#666"
-            }}>
-              {task.scheduledTime && (
-                <span>⏰ {task.scheduledTime}</span>
-              )}
-            </div>
-
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8
-            }}>
-              <span style={{
-                fontSize: 12,
-                color: "#333",
-
-                position: "relative",
-                top: "8px"
-              }}>
-                {formatTime(task.timeSpent)}
-              </span>
-              <div style={{
-                display: "flex",
-                gap: 6,
-
-                alignItems: "center"
-
-              }}>
-                <button
-                  onClick={() => toggleTimer(task)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: -15,
-                    height: 32,
-                    width: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    position: "relative",
-                    top: "8px",
-                    marginRight: -10,
-                    justifyContent: "center",
-                    fontSize: 12
-                  }}
-                >
-                  {runningState[task.id] ? "⏸️" : "▶️"}
-                </button>
-                <button
-                  onClick={() => editTaskNote(task)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 2,
-                    height: 32,
-                    width: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                    marginRight: -10,
-                    top: "8px",
-                    fontSize: 12
-
-                  }}
-                  title="编辑备注"
-                >
-                  📝
-                </button>
-                <button
-                  onClick={() => manualAddTime(task)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 2,
-                    height: 32,
-                    width: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                    marginRight: -10,
-                    top: "8px",
-                    fontSize: 12
-
-                  }}
-                >
-                  ➕
-                </button>
-                {task.image && (
-                  <button
-                    onClick={() => setShowImage(!showImage)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 2,
-                      height: 32,
-                      width: 32,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: -10,
-                      position: "relative",
-                      top: "8px",
-                      fontSize: 12
-                    }}
-                  >
-                    {showImage ? "🖼️" : "🖼️"}
-                  </button>
-                )}
-                <button
-                  onClick={(e) => openActionMenu(task, e)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 2,
-                    height: 32,
-                    width: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    marginRight: -10,
-                    position: "relative",
-                    top: "8px",
-                    justifyContent: "center",
-                    fontSize: 12
-                  }}
-                >
-                  ⚙️
-                </button>
-              </div>
-            </div>
+            {task.scheduledTime && (
+              <span>⏰ {task.scheduledTime}</span>
+            )}
+            <span>{formatTime(task.timeSpent)}</span>
           </div>
 
-          {task.image && showImage && (
-            <div style={{ marginTop: 8 }}>
-              <img
-                src={task.image}
-                alt="任务图片"
-                onClick={() => setShowImageModal(task.image)}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "150px",
-                  borderRadius: 4,
-                  cursor: "zoom-in"
-                }}
-              />
-            </div>
-          )}
+          {/* 右侧操作按钮 */}
+          <div style={{
+            display: "flex",
+            gap: "6px",
+            alignItems: "center"
+          }}>
+            <button
+              onClick={() => toggleTimer(task)}
+              style={actionButtonStyle}
+            >
+              {runningState[task.id] ? "⏸️" : "▶️"}
+            </button>
+            <button
+              onClick={() => manualAddTime(task)}
+              style={actionButtonStyle}
+            >
+              ➕
+            </button>
+            <button
+              onClick={(e) => openActionMenu(task, e)}
+              style={actionButtonStyle}
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
-      </li>
-    );
-  };
+
+        {/* 任务图片 */}
+        {task.image && showImage && (
+          <div style={{ marginTop: "8px" }}>
+            <img
+              src={task.image}
+              alt="任务附件"
+              onClick={() => setShowImageModal(task.image)}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "150px",
+                borderRadius: "4px",
+                cursor: "zoom-in"
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </li>
+  );
+};
+
+// 操作按钮统一样式
+const actionButtonStyle = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: "0",
+  height: "24px",
+  width: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px"
+};
+
+
+
+
 
   // 积分荣誉模态框 - 显示今日、本周、本月积分
   const HonorModal = () => (
