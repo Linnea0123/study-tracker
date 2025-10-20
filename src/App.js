@@ -610,6 +610,32 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned
     fileInputRef.current?.click();
   };
 
+  // 添加：计算菜单位置，确保在屏幕内
+  const calculateMenuPosition = (position) => {
+    const menuWidth = 120; // 菜单宽度
+    const menuHeight = 200; // 菜单高度估计值
+    
+    let { top, left } = position;
+    
+    // 如果右边超出屏幕，向左移动
+    if (left + menuWidth > window.innerWidth) {
+      left = window.innerWidth - menuWidth - 10;
+    }
+    
+    // 如果底部超出屏幕，向上移动
+    if (top + menuHeight > window.innerHeight) {
+      top = window.innerHeight - menuHeight - 10;
+    }
+    
+    // 确保不超出屏幕顶部和左侧
+    top = Math.max(10, top);
+    left = Math.max(10, left);
+    
+    return { top, left };
+  };
+
+  const adjustedPosition = calculateMenuPosition(position);
+
   return (
     <div style={{
       position: 'fixed',
@@ -622,15 +648,19 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned
     }} onClick={onClose}>
       <div style={{
         position: 'absolute',
-        top: position.top,
-        left: position.left,
+        top: adjustedPosition.top,  // 使用调整后的位置
+        left: adjustedPosition.left, // 使用调整后的位置
         backgroundColor: 'white',
         borderRadius: 8,
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         padding: '8px 0',
         minWidth: 120,
-        zIndex: 1001
+        zIndex: 1001,
+        // 添加最大高度和滚动，防止内容过多
+        maxHeight: '70vh',
+        overflowY: 'auto'
       }} onClick={e => e.stopPropagation()}>
+        {/* 菜单选项保持不变 */}
         <button
           onClick={onEditText}
           style={{
