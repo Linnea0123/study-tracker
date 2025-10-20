@@ -36,12 +36,302 @@ const getWeekDates = (monday) => {
     weekDates.push({
       date: d.toISOString().split("T")[0],
       label: `周${"一二三四五六日"[i]}`,
+      fullLabel: `周${"一二三四五六日"[i]} (${d.getMonth() + 1}/${d.getDate()})`
     });
   }
   return weekDates;
 };
 
+// 时间表页面组件
+const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds }) => {
+  const weekDates = getWeekDates(currentMonday);
+  
+  
+  // 生成时间槽：从6:00到22:00，每30分钟一个间隔
+  const timeSlots = [];
+  for (let hour = 6; hour <= 22; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      timeSlots.push(timeString);
+    }
+  }
 
+  // 获取任务在时间表中的位置信息
+  const getTaskTimeInfo = (task, date) => {
+    if (!task) return null;
+
+    // 如果有计划时间，使用计划时间
+    if (task.scheduledTime) {
+      const [startTime, endTime] = task.scheduledTime.split('-');
+      return { startTime, endTime, type: 'scheduled' };
+    }
+
+    // 如果有计时记录，计算实际执行时间
+    if (task.timeSpent && task.timeSpent > 0) {
+      // 这里简化处理：假设任务从创建时间开始执行
+      // 在实际应用中，你可能需要记录实际的开始时间
+      const taskDate = new Date(parseInt(task.id));
+      const startTime = `${taskDate.getHours().toString().padStart(2, '0')}:${taskDate.getMinutes().toString().padStart(2, '0')}`;
+      const endTimeDate = new Date(taskDate.getTime() + task.timeSpent * 1000);
+      const endTime = `${endTimeDate.getHours().toString().padStart(2, '0')}:${endTimeDate.getMinutes().toString().padStart(2, '0')}`;
+      return { startTime, endTime, type: 'actual' };
+    }
+
+    return null;
+  };
+
+  // 检查时间是否在区间内
+  const isTimeInRange = (time, startTime, endTime) => {
+    const [timeHour, timeMinute] = time.split(':').map(Number);
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    const timeValue = timeHour * 60 + timeMinute;
+    const startValue = startHour * 60 + startMinute;
+    const endValue = endHour * 60 + endMinute;
+    
+    return timeValue >= startValue && timeValue < endValue;
+  };
+
+  // 获取时间单元格的任务
+  const getTasksForTimeSlot = (time, dayIndex) => {
+    const date = weekDates[dayIndex].date;
+    const dayTasks = tasksByDate[date] || [];
+    
+    return dayTasks.filter(task => {
+      const timeInfo = getTaskTimeInfo(task, date);
+      if (!timeInfo) return false;
+      
+      return isTimeInRange(time, timeInfo.startTime, timeInfo.endTime);
+    });
+  };
+
+  // 获取任务显示样式
+  const getTaskStyle = (task, timeInfo) => {
+    const baseStyle = {
+      padding: '2px 4px',
+      margin: '1px 0',
+      borderRadius: '3px',
+      fontSize: '10px',
+      color: 'white',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      cursor: 'pointer'
+    };
+
+    if (timeInfo.type === 'scheduled') {
+      return {
+        ...baseStyle,
+        backgroundColor: task.done ? '#4CAF50' : '#FF9800',
+        border: task.done ? '1px solid #45a049' : '1px solid #e68900'
+      };
+    } else {
+      return {
+        ...baseStyle,
+        backgroundColor: '#2196F3',
+        border: '1px solid #1976D2'
+      };
+    }
+  };
+
+  return (
+    <div style={{
+      maxWidth: 800,
+      margin: '0 auto',
+      padding: 15,
+      fontFamily: 'sans-serif',
+      backgroundColor: '#f5faff'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 20
+          }}
+        >
+          ⬅️
+        </button>
+        <h1 style={{
+          textAlign: 'center',
+          color: '#1a73e8',
+          fontSize: 20
+        }}>
+          📅 本周时间表 ({currentMonday.getMonth() + 1}/{currentMonday.getDate()} - 
+          {new Date(currentMonday.getTime() + 6 * 24 * 60 * 60 * 1000).getMonth() + 1}/
+          {new Date(currentMonday.getTime() + 6 * 24 * 60 * 60 * 1000).getDate()})
+        </h1>
+        <div style={{ width: 20 }}></div>
+      </div>
+
+      {/* 图例说明 */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 15,
+        marginBottom: 15,
+        fontSize: 12
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#FF9800', borderRadius: 2 }}></div>
+          <span>计划任务</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#4CAF50', borderRadius: 2 }}></div>
+          <span>已完成</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#2196F3', borderRadius: 2 }}></div>
+          <span>实际执行</span>
+        </div>
+      </div>
+
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: 10,
+        overflow: 'hidden',
+        border: '1px solid #e0e0e0'
+      }}>
+        {/* 表头 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '80px repeat(7, 1fr)',
+          backgroundColor: '#1a73e8',
+          color: 'white',
+          fontWeight: 'bold'
+        }}>
+          <div style={{ padding: '10px', textAlign: 'center', borderRight: '1px solid #0b52b0' }}>时间</div>
+          {weekDates.map((day, index) => (
+            <div 
+              key={day.date}
+              style={{ 
+                padding: '10px', 
+                textAlign: 'center',
+                borderRight: index < 6 ? '1px solid #0b52b0' : 'none'
+              }}
+            >
+              {day.fullLabel}
+            </div>
+          ))}
+        </div>
+
+        {/* 时间表内容 */}
+        <div style={{ maxHeight: '70vh', overflow: 'auto' }}>
+          {timeSlots.map((time, timeIndex) => (
+            <div 
+              key={time}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '80px repeat(7, 1fr)',
+                borderBottom: timeIndex < timeSlots.length - 1 ? '1px solid #f0f0f0' : 'none',
+                backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white'
+              }}
+            >
+              {/* 时间列 */}
+              <div style={{
+                padding: '8px',
+                textAlign: 'center',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: '#666',
+                borderRight: '1px solid #e0e0e0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {time}
+              </div>
+
+              {/* 每天的单元格 */}
+              {weekDates.map((day, dayIndex) => {
+                const tasks = getTasksForTimeSlot(time, dayIndex);
+                return (
+                  <div
+                    key={day.date}
+                    style={{
+                      padding: '2px',
+                      minHeight: '40px',
+                      borderRight: dayIndex < 6 ? '1px solid #e0e0e0' : 'none',
+                      backgroundColor: tasks.length > 0 ? '#f8f9fa' : 'transparent'
+                    }}
+                  >
+                    {tasks.map((task, taskIndex) => {
+                      const timeInfo = getTaskTimeInfo(task, day.date);
+                      return (
+                        <div
+                          key={taskIndex}
+                          style={getTaskStyle(task, timeInfo)}
+                          title={`${task.text} (${task.category}) ${timeInfo.startTime}-${timeInfo.endTime}`}
+                        >
+                          {task.text}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 统计信息 */}
+      <div style={{
+        marginTop: 20,
+        padding: 15,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        border: '1px solid #e0e0e0'
+      }}>
+        <h3 style={{ marginBottom: 10, color: '#1a73e8' }}>本周统计</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: '12px' }}>
+          <div>
+            <strong>计划任务:</strong> {
+              weekDates.reduce((total, day) => {
+                const dayTasks = tasksByDate[day.date] || [];
+                return total + dayTasks.filter(task => task.scheduledTime).length;
+              }, 0)
+            } 个
+          </div>
+          <div>
+            <strong>已完成:</strong> {
+              weekDates.reduce((total, day) => {
+                const dayTasks = tasksByDate[day.date] || [];
+                return total + dayTasks.filter(task => task.done).length;
+              }, 0)
+            } 个
+          </div>
+          <div>
+            <strong>实际计时:</strong> {
+              weekDates.reduce((total, day) => {
+                const dayTasks = tasksByDate[day.date] || [];
+                return total + dayTasks.filter(task => task.timeSpent && task.timeSpent > 0).length;
+              }, 0)
+            } 个
+          </div>
+          <div>
+            <strong>总学习时间:</strong> {
+              formatTimeNoSeconds(
+                weekDates.reduce((total, day) => {
+                  const dayTasks = tasksByDate[day.date] || [];
+                  return total + dayTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+                }, 0)
+              )
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // 图片模态框组件
 const ImageModal = ({ imageUrl, onClose }) => (
@@ -310,18 +600,10 @@ const TimeModal = ({ config, onSave, onClose }) => {
 };
 
 // 操作菜单模态框
-const ActionMenuModal = ({
-  task,
-  onClose,
-  onEditText,
-  onEditNote,
-  onTogglePinned,
-  onImageUpload,
-  setShowDeleteModal,
-  position,
-  onEditScheduledTime,
-  onRemoveScheduledTime
-}) => {
+const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned, onImageUpload, setShowDeleteModal, position }) => {
+  console.log('ActionMenuModal 收到的任务:', task);
+  console.log('任务ID:', task?.id);
+  console.log('任务文本:', task?.text);
   const fileInputRef = useRef(null);
 
   const handleImageClick = () => {
@@ -346,66 +628,67 @@ const ActionMenuModal = ({
         borderRadius: 8,
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         padding: '8px 0',
-        minWidth: 150,  // 增加最小宽度
+        minWidth: 120,
         zIndex: 1001
       }} onClick={e => e.stopPropagation()}>
-
-        {/* 编辑备注 */}
+        <button
+          onClick={onEditText}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          编辑任务
+        </button>
         <button
           onClick={onEditNote}
-          style={menuItemStyle}
-        >
-          📝 编辑备注
-        </button>
-
-        {/* ▼▼▼ 修改为无条件显示 ▼▼▼ */}
-        <div style={menuDividerStyle} />
-        <button
-          onClick={() => {
-            if (task.scheduledTime) {
-              onEditScheduledTime(task);
-            } else {
-              const newTime = window.prompt("添加计划时间（格式：09:00-10:00）");
-              if (newTime) {
-                onEditScheduledTime({ ...task, scheduledTime: newTime });
-              }
-            }
-            onClose();
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
           }}
-          style={menuItemStyle}
         >
-          {task.scheduledTime ? '🕒 编辑计划时间' : '➕ 添加计划时间'}
+          编辑备注
         </button>
-        {task.scheduledTime && (
-          <button
-            onClick={() => {
-              onRemoveScheduledTime(task);
-              onClose();
-            }}
-            style={{ ...menuItemStyle, color: '#ff4444' }}
-          >
-            ❌ 删除计划时间
-          </button>
-        )}
-        {/* ▲▲▲ 修改结束 ▲▲▲ */}
-
-        {/* 置顶/取消置顶 */}
         <button
           onClick={() => {
             onTogglePinned(task);
             onClose();
           }}
-          style={menuItemStyle}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
         >
-          {task.pinned ? '📌 取消置顶' : '📌 置顶'}
+          {task.pinned ? '取消置顶' : '置顶'}
         </button>
-
-        {/* 添加图片 */}
         <button
           onClick={handleImageClick}
-          style={menuItemStyle}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
         >
-          🖼️ 添加图片
+          添加图片
         </button>
         <input
           ref={fileInputRef}
@@ -417,47 +700,31 @@ const ActionMenuModal = ({
           }}
           style={{ display: 'none' }}
         />
-
-        {/* 删除任务 */}
+        <div style={{ height: 1, backgroundColor: '#e0e0e0', margin: '4px 0' }}></div>
         <button
           onClick={() => {
             setShowDeleteModal(task);
             onClose();
           }}
-          style={{ ...menuItemStyle, color: '#d32f2f' }}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14,
+            color: '#d32f2f'
+          }}
         >
-          🗑️ 删除任务
+          删除任务
         </button>
       </div>
     </div>
   );
 };
 
-// 菜单项样式
-const menuItemStyle = {
-  width: '100%',
-  padding: '8px 16px',
-  background: 'transparent',
-  border: 'none',
-  textAlign: 'left',
-  cursor: 'pointer',
-  fontSize: 14,
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  ':hover': {
-    backgroundColor: '#f5f5f5'
-  }
-};
-
-// 菜单分隔线样式
-const menuDividerStyle = {
-  height: '1px',
-  backgroundColor: '#e0e0e0',
-  margin: '6px 0'
-};
-
-// 删除确认 删除哪一天的
+// 删除确认模态框
 const DeleteConfirmModal = ({ task, selectedDate, onClose, onDelete }) => {
   const [deleteOption, setDeleteOption] = useState('today'); // today, future, all
 
@@ -580,6 +847,7 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false); // 新增：控制时间表显示
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
@@ -597,6 +865,8 @@ function App() {
 
   const runningRefs = useRef({});
   const [runningState, setRunningState] = useState({});
+  const addInputRef = useRef(null);
+  const bulkInputRef = useRef(null);
 
   // 格式化时间显示 - 用于计时显示（显示秒数）
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
@@ -618,35 +888,36 @@ function App() {
     localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
   }, [tasksByDate]);
 
-  const tasks = tasksByDate[selectedDate] || [];
-
-// 在组件顶部添加（useEffect部分）
-useEffect(() => {
-  const handleClickOutside = (e) => {
-    const inputContainers = document.querySelectorAll('.input-container');
-    const clickedOutside = Array.from(inputContainers).every(
-      container => !container.contains(e.target)
-    );
-    
-    if (clickedOutside) {
+  // 点击页面任意区域收缩输入框
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (addInputRef.current && addInputRef.current.contains(event.target)) {
+        return;
+      }
+      if (bulkInputRef.current && bulkInputRef.current.contains(event.target)) {
+        return;
+      }
+      if (event.target.closest('.action-button')) {
+        return;
+      }
+      
       setShowAddInput(false);
       setShowBulkInput(false);
-    }
-  };
+    };
 
-  document.addEventListener('mousedown', handleClickOutside);
-  return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
-
-
+  const tasks = tasksByDate[selectedDate] || [];
 
   // 获取本周任务 - 从全局任务中筛选出本周任务
   const getWeekTasks = () => {
     const allTasks = Object.values(tasksByDate).flat();
     const weekTasks = allTasks.filter(task => task.category === "本周任务");
 
-    // 去重，基于任务文本内容
     const uniqueTasks = [];
     const seenTexts = new Set();
 
@@ -676,7 +947,6 @@ useEffect(() => {
     let totalPoints = 0;
     const pointsByCategory = {};
 
-    // 初始化类别积分
     categories.forEach(cat => {
       pointsByCategory[cat.name] = {
         today: 0,
@@ -689,11 +959,9 @@ useEffect(() => {
     Object.entries(tasksByDate).forEach(([date, tasks]) => {
       tasks.forEach(task => {
         if (task.done) {
-          // 每个完成的任务积1分
           const points = 1;
           totalPoints += points;
 
-          // 按时间统计
           if (date === today) {
             todayPoints += points;
           }
@@ -704,7 +972,6 @@ useEffect(() => {
             monthPoints += points;
           }
 
-          // 按类别统计
           if (pointsByCategory[task.category]) {
             pointsByCategory[task.category].total += points;
             if (date === today) pointsByCategory[task.category].today += points;
@@ -834,14 +1101,12 @@ useEffect(() => {
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
 
-      // 检查是否设置了重复
       const hasRepeatConfig = repeatConfig.frequency &&
         (repeatConfig.frequency === "daily" ||
           (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
 
       if (hasRepeatConfig) {
         if (repeatConfig.frequency === "daily") {
-          // 每天重复 - 为未来7天都添加任务
           for (let i = 0; i < 7; i++) {
             const date = new Date();
             date.setDate(date.getDate() + i);
@@ -851,7 +1116,6 @@ useEffect(() => {
               newTasksByDate[dateStr] = [];
             }
 
-            // 检查是否已存在相同任务
             const existingTask = newTasksByDate[dateStr].find(
               task => task.text === text && task.category === newTaskCategory
             );
@@ -866,32 +1130,26 @@ useEffect(() => {
             }
           }
         } else if (repeatConfig.frequency === "weekly") {
-          // 每周重复 - 为未来4周在选中的星期添加任务
           const today = new Date();
 
-          // 为未来4周创建任务
           for (let week = 0; week < 4; week++) {
             const weekStart = new Date(today);
             weekStart.setDate(today.getDate() + (week * 7));
-            // 调整到本周一
             const dayOfWeek = weekStart.getDay();
             const monday = new Date(weekStart);
             monday.setDate(weekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
             repeatConfig.days.forEach((isSelected, dayIndex) => {
               if (isSelected) {
-                // dayIndex: 0=周一, 1=周二, ..., 6=周日
                 const taskDate = new Date(monday);
                 taskDate.setDate(monday.getDate() + dayIndex);
                 const dateStr = taskDate.toISOString().split("T")[0];
 
-                // 只创建今天及未来的任务，不创建过去的任务
                 if (taskDate >= today) {
                   if (!newTasksByDate[dateStr]) {
                     newTasksByDate[dateStr] = [];
                   }
 
-                  // 检查是否已存在相同任务
                   const existingTask = newTasksByDate[dateStr].find(
                     task => task.text === text && task.category === newTaskCategory
                   );
@@ -910,12 +1168,10 @@ useEffect(() => {
           }
         }
       } else {
-        // 不重复 - 只在当天添加
         if (!newTasksByDate[selectedDate]) {
           newTasksByDate[selectedDate] = [];
         }
 
-        // 检查是否已存在相同任务
         const existingTask = newTasksByDate[selectedDate].find(
           task => task.text === text && task.category === newTaskCategory
         );
@@ -930,7 +1186,6 @@ useEffect(() => {
 
     setNewTaskText("");
     setShowAddInput(false);
-    // 重置重复配置
     setRepeatConfig({
       frequency: "daily",
       days: [false, false, false, false, false, false, false],
@@ -939,12 +1194,12 @@ useEffect(() => {
     });
   };
 
-  // 添加本周任务 - 创建一条任务，在整周的所有日期都显示
+  // 添加本周任务
   const handleAddWeekTask = (text) => {
     if (!text.trim()) return;
 
     const weekDates = getWeekDates(currentMonday);
-    const taskId = Date.now().toString(); // 使用同一个ID
+    const taskId = Date.now().toString();
 
     const newTask = {
       id: taskId,
@@ -956,18 +1211,16 @@ useEffect(() => {
       image: null,
       scheduledTime: "",
       pinned: false,
-      isWeekTask: true // 标记为本周任务
+      isWeekTask: true
     };
 
     const newTasksByDate = { ...tasksByDate };
 
-    // 为本周的每一天都添加这个任务
     weekDates.forEach(dateObj => {
       if (!newTasksByDate[dateObj.date]) {
         newTasksByDate[dateObj.date] = [];
       }
 
-      // 检查是否已存在相同的本周任务
       const existingTask = newTasksByDate[dateObj.date].find(
         task => task.isWeekTask && task.text === text.trim()
       );
@@ -1018,7 +1271,6 @@ useEffect(() => {
 
   // 切换任务完成状态
   const toggleDone = (task) => {
-    // 如果是本周任务，需要在所有日期中更新状态
     if (task.isWeekTask) {
       const updatedTasksByDate = { ...tasksByDate };
 
@@ -1044,7 +1296,6 @@ useEffect(() => {
     console.log('Toggling pinned for task:', task.id, 'Current pinned:', task.pinned);
 
     if (task.isWeekTask) {
-      // 本周任务在所有日期中更新
       const updatedTasksByDate = { ...tasksByDate };
 
       Object.keys(updatedTasksByDate).forEach(date => {
@@ -1055,7 +1306,6 @@ useEffect(() => {
 
       setTasksByDate(updatedTasksByDate);
     } else {
-      // 普通任务只在当前日期更新
       setTasksByDate(prev => {
         const currentTasks = prev[selectedDate] || [];
         const updatedTasks = currentTasks.map(t =>
@@ -1075,7 +1325,6 @@ useEffect(() => {
     console.log('Deleting task:', task.text, 'Option:', deleteOption);
 
     if (task.isWeekTask || deleteOption === 'all') {
-      // 本周任务或选择删除所有 - 从所有日期中删除
       const updatedTasksByDate = { ...tasksByDate };
 
       Object.keys(updatedTasksByDate).forEach(date => {
@@ -1092,7 +1341,6 @@ useEffect(() => {
 
       setTasksByDate(updatedTasksByDate);
     } else if (deleteOption === 'future') {
-      // 删除今日及以后
       const updatedTasksByDate = { ...tasksByDate };
       const today = new Date(selectedDate);
 
@@ -1107,14 +1355,12 @@ useEffect(() => {
 
       setTasksByDate(updatedTasksByDate);
     } else {
-      // 仅删除今日 (默认)
       setTasksByDate(prev => ({
         ...prev,
         [selectedDate]: prev[selectedDate].filter(t => t.id !== task.id)
       }));
     }
 
-    // 停止计时器
     if (runningRefs.current[task.id]) {
       clearInterval(runningRefs.current[task.id]);
       delete runningRefs.current[task.id];
@@ -1126,7 +1372,6 @@ useEffect(() => {
   const editTaskText = (task) => {
     const newText = window.prompt("编辑任务", task.text);
     if (newText !== null) {
-      // 如果是本周任务，需要在所有日期中更新
       if (task.isWeekTask) {
         const updatedTasksByDate = { ...tasksByDate };
 
@@ -1148,40 +1393,9 @@ useEffect(() => {
     }
   };
 
-  // ★ 新增时间操作函数 ★
-  const editScheduledTime = (task) => {
-    const newTime = window.prompt("编辑计划时间", task.scheduledTime);
-    if (newTime !== null) {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, scheduledTime: newTime } : t
-        )
-      }));
-    }
-  };
-
-  const removeScheduledTime = (task) => {
-    if (window.confirm("确定删除计划时间？")) {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, scheduledTime: "" } : t
-        )
-      }));
-    }
-  };
-  // ▲▲▲ 插入结束 ▲▲▲
-
-
-
-
   // 编辑任务备注
   const editTaskNote = (task) => {
-    // 添加调试代码
     const newNote = window.prompt("编辑备注", task.note || "");
-
-
     if (newNote !== null) {
       if (task.isWeekTask) {
         console.log('处理本周任务...');
@@ -1224,7 +1438,6 @@ useEffect(() => {
     }
   };
 
-
   // 上传任务图片
   const handleImageUpload = (e, task) => {
     const file = e.target.files[0];
@@ -1242,15 +1455,6 @@ useEffect(() => {
     reader.readAsDataURL(file);
   };
 
-  // 删除任务图片
-  const removeImage = (task) => {
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? { ...t, image: null } : t
-      )
-    }));
-  };
 
   // 切换计时器
   const toggleTimer = (task) => {
@@ -1317,9 +1521,8 @@ useEffect(() => {
   };
 
   // 打开操作菜单
-  // 打开操作菜单
   const openActionMenu = (task, event) => {
-    console.log('打开菜单，任务对象:', task);  // 添加这行
+    console.log('打开菜单，任务对象:', task);
     const rect = event.currentTarget.getBoundingClientRect();
     setShowActionMenu({
       task,
@@ -1364,168 +1567,242 @@ useEffect(() => {
 
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
-  // 任务项组件 - 添加边框和紧凑间距
-  // 在 TaskItem 组件中，修复布局结构
+  // 任务项组件
   const TaskItem = ({ task }) => {
     const [showImage, setShowImage] = useState(false);
 
     return (
       <li
+        className="task-item"
         style={{
-          display: "flex",
-          alignItems: "flex-start", // 容器顶部对齐
-          minHeight: "44px",
-          padding: "8px 12px",
-          marginBottom: "4px",
-          backgroundColor: task.pinned ? "#fff9e6" : "#fff",
-          borderRadius: "6px",
+          position: "relative",
+          background: task.pinned ? "#fff9e6" : "#fff",
+          borderRadius: 6,
+          alignItems: "center",
+          marginBottom: 4,
+          padding: "8px",
           border: "0.5px solid #e0e0e0",
-          gap: "8px" // 统一元素间距
         }}
       >
-        {/* 复选框 - 精确对齐 */}
-        <input
-          type="checkbox"
-          checked={task.done}
-          onChange={() => toggleDone(task)}
-          style={{
-            width: "18px",
-            height: "18px",
-            margin: "2px 8px 0 0", // 上边距微调
-            alignSelf: "flex-start", // 强制顶部对齐
-            flexShrink: 0,
-            position: "relative",
-            top: "1px" // 微调垂直位置
-          }}
-        />
-
-        {/* 内容区域 */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          minHeight: "32px"
-        }}>
-          {/* 任务文本 */}
-          <div
-            onClick={() => editTaskText(task)}
-            style={{
-              wordBreak: "break-word",
-              whiteSpace: "normal",
-              cursor: "pointer",
-              textDecoration: task.done ? "line-through" : "none",
-              color: task.done ? "#999" : "#000",
-              fontWeight: task.pinned ? "bold" : "normal",
-              lineHeight: "1.4",
-              minHeight: "20px",
-              paddingTop: "1px" // 微调文字位置
-            }}
-          >
-            {task.text}
-            {task.pinned && " 📌"}
-            {task.isWeekTask && " 🌟"}
+        <div>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: 6 }}
+            />
+            <div style={{ flex: 1 }}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  editTaskText(task);
+                }}
+                style={{
+                  wordBreak: "break-word",
+                  whiteSpace: "normal",
+                  cursor: "pointer",
+                  textDecoration: task.done ? "line-through" : "none",
+                  color: task.done ? "#999" : "#000",
+                  fontWeight: task.pinned ? "bold" : "normal"
+                }}
+              >
+                {task.text}
+                {task.pinned && " 📌"}
+                {task.isWeekTask && " 🌟"}
+              </div>
+              {task.note && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    editTaskNote(task);
+                  }}
+                  style={{
+                    fontSize: 12,
+                    color: "#000",
+                    marginTop: 4,
+                    marginBottom: 4,
+                    cursor: "pointer",
+                    backgroundColor: 'yellow'
+                  }}
+                >
+                  备注: {task.note}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* 备注 */}
-          {task.note && (
-            <div
-              onClick={() => editTaskNote(task)}
-              style={{
-                fontSize: "12px",
-                color: "#888",
-                marginTop: "4px",
-                cursor: "pointer",
-                backgroundColor: "none",
-                padding: "2px 4px",
-                borderRadius: "3px",
-                lineHeight: "1.3"
-              }}
-            >
-              {task.note}
-            </div>
-          )}
-
-          {/* 底部操作栏 */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: "4px"
+            marginTop: 4
           }}>
-            {/* 左侧时间信息 */}
             <div style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              fontSize: "12px",
+              gap: 50,
+              fontSize: 12,
               color: "#666"
             }}>
               {task.scheduledTime && (
                 <span>⏰ {task.scheduledTime}</span>
               )}
-
             </div>
 
-            {/* 右侧操作按钮 */}
             <div style={{
               display: "flex",
-              gap: "6px",
-              alignItems: "center"
+              alignItems: "center",
+              gap: 8
             }}>
-              <span>{formatTime(task.timeSpent)}</span>
-              <button
-                onClick={() => toggleTimer(task)}
-                style={actionButtonStyle}
-              >
-                {runningState[task.id] ? "⏸️" : "▶️"}
-              </button>
-
-              {/* 添加备注按钮 */}
-              <button
-                onClick={() => editTaskNote(task)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  height: 24,
-                  width: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12
-                }}
-                title="编辑备注"
-              >
-                📝
-              </button>
-              <button
-                onClick={() => manualAddTime(task)}
-                style={actionButtonStyle}
-              >
-                ➕
-              </button>
-              <button
-                onClick={(e) => openActionMenu(task, e)}
-                style={actionButtonStyle}
-              >
-                ⚙️
-              </button>
+              <span style={{
+                fontSize: 12,
+                color: "#333",
+                position: "relative",
+                top: "8px"
+              }}>
+                {formatTime(task.timeSpent)}
+              </span>
+              <div style={{
+                display: "flex",
+                gap: 6,
+                alignItems: "center"
+              }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTimer(task);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: -15,
+                    height: 32,
+                    width: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    position: "relative",
+                    top: "8px",
+                    marginRight: -10,
+                    justifyContent: "center",
+                    fontSize: 12
+                  }}
+                >
+                  {runningState[task.id] ? "⏸️" : "▶️"}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    editTaskNote(task);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 2,
+                    height: 32,
+                    width: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                    marginRight: -10,
+                    top: "8px",
+                    fontSize: 12
+                  }}
+                  title="编辑备注"
+                >
+                  📝
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    manualAddTime(task);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 2,
+                    height: 32,
+                    width: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                    marginRight: -10,
+                    top: "8px",
+                    fontSize: 12
+                  }}
+                >
+                  ➕
+                </button>
+                {task.image && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowImage(!showImage);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 2,
+                      height: 32,
+                      width: 32,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: -10,
+                      position: "relative",
+                      top: "8px",
+                      fontSize: 12
+                    }}
+                  >
+                    {showImage ? "🖼️" : "🖼️"}
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openActionMenu(task, e);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 2,
+                    height: 32,
+                    width: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    marginRight: -10,
+                    position: "relative",
+                    top: "8px",
+                    justifyContent: "center",
+                    fontSize: 12
+                  }}
+                >
+                  ⚙️
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* 任务图片 */}
           {task.image && showImage && (
-            <div style={{ marginTop: "8px" }}>
+            <div style={{ marginTop: 8 }}>
               <img
                 src={task.image}
-                alt="任务附件"
-                onClick={() => setShowImageModal(task.image)}
+                alt="任务图片"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowImageModal(task.image);
+                }}
                 style={{
                   maxWidth: "100%",
                   maxHeight: "150px",
-                  borderRadius: "4px",
+                  borderRadius: 4,
                   cursor: "zoom-in"
                 }}
               />
@@ -1536,25 +1813,7 @@ useEffect(() => {
     );
   };
 
-  // 操作按钮统一样式
-  const actionButtonStyle = {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "0",
-    height: "24px",
-    width: "24px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px"
-  };
-
-
-
-
-
-  // 积分荣誉模态框 - 显示今日、本周、本月积分
+  // 积分荣誉模态框
   const HonorModal = () => (
     <div style={{
       position: "fixed",
@@ -1858,6 +2117,19 @@ useEffect(() => {
     );
   };
 
+  // 如果显示时间表页面
+  if (showSchedule) {
+    return (
+      <SchedulePage
+        tasksByDate={tasksByDate}
+        currentMonday={currentMonday}
+        onClose={() => setShowSchedule(false)}
+        formatTimeNoSeconds={formatTimeNoSeconds} 
+      />
+    );
+  }
+
+  // 如果显示统计页面
   if (showStats) {
     return <StatsPage />;
   }
@@ -1871,6 +2143,7 @@ useEffect(() => {
       backgroundColor: "#f5faff",
       overflowX: "hidden"
     }}>
+      {/* 所有模态框组件保持不变 */}
       {showImageModal && (
         <ImageModal
           imageUrl={showImageModal}
@@ -1902,8 +2175,6 @@ useEffect(() => {
           onTogglePinned={togglePinned}
           onImageUpload={handleImageUpload}
           setShowDeleteModal={setShowDeleteModal}
-          onEditScheduledTime={editScheduledTime}
-          onRemoveScheduledTime={removeScheduledTime}
         />
       )}
       {showDeleteModal && (
@@ -1915,6 +2186,7 @@ useEffect(() => {
         />
       )}
 
+      {/* 主页面内容保持不变 */}
       <h1 style={{
         textAlign: "center",
         color: "#1a73e8",
@@ -2012,9 +2284,9 @@ useEffect(() => {
         })}
       </div>
 
-      {/* 本周任务区域 - 浅蓝色 */}
+      {/* 本周任务区域 */}
       <div style={{
-        marginBottom: 8, // 减少间距
+        marginBottom: 8,
         borderRadius: 10,
         overflow: "hidden",
         border: "2px solid #87CEEB",
@@ -2044,7 +2316,7 @@ useEffect(() => {
             </span>
             <button
               onClick={(e) => {
-                e.stopPropagation(); // 阻止事件冒泡，避免触发折叠
+                e.stopPropagation();
                 const text = window.prompt("添加本周任务");
                 if (text && text.trim()) {
                   handleAddWeekTask(text.trim());
@@ -2068,11 +2340,10 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* 本周任务列表 - 根据折叠状态显示 */}
         {!collapsedCategories["本周任务"] && weekTasks.length > 0 && (
           <ul style={{
             listStyle: "none",
-            padding: 8, // 减少内边距
+            padding: 8,
             margin: 0
           }}>
             {weekTasks.map((task) => (
@@ -2085,7 +2356,7 @@ useEffect(() => {
       {/* 置顶任务区域 */}
       {pinnedTasks.length > 0 && (
         <div style={{
-          marginBottom: 8, // 减少间距
+          marginBottom: 8,
           borderRadius: 10,
           overflow: "hidden",
           border: "2px solid #ffcc00",
@@ -2108,12 +2379,11 @@ useEffect(() => {
           </div>
           <ul style={{
             listStyle: "none",
-            padding: 8, // 减少内边距
+            padding: 8,
             margin: 0
           }}>
             {pinnedTasks
               .sort((a, b) => {
-                // 按创建时间倒序排列，最新的在前面
                 return b.id - a.id;
               })
               .map((task) => (
@@ -2134,7 +2404,7 @@ useEffect(() => {
           <div
             key={c.name}
             style={{
-              marginBottom: 8, // 减少间距
+              marginBottom: 8,
               borderRadius: 10,
               overflow: "hidden",
               border: `2px solid ${isComplete ? "#ccc" : c.color}`,
@@ -2169,12 +2439,11 @@ useEffect(() => {
             {!isCollapsed && (
               <ul style={{
                 listStyle: "none",
-                padding: 8, // 减少内边距
+                padding: 8,
                 margin: 0
               }}>
                 {catTasks
                   .sort((a, b) => {
-                    // 置顶任务排在前面
                     if (a.pinned && !b.pinned) return -1;
                     if (!a.pinned && b.pinned) return 1;
                     return 0;
@@ -2194,7 +2463,9 @@ useEffect(() => {
         marginTop: 10
       }}>
         <button
-          onClick={() => {
+          className="action-button"
+          onClick={(e) => {
+            e.stopPropagation();
             setShowAddInput(!showAddInput);
             setShowBulkInput(false);
           }}
@@ -2208,10 +2479,12 @@ useEffect(() => {
             cursor: "pointer"
           }}
         >
-          添加任务
+          {showAddInput ? "取消添加" : "添加任务"}
         </button>
         <button
-          onClick={() => {
+          className="action-button"
+          onClick={(e) => {
+            e.stopPropagation();
             setShowBulkInput(!showBulkInput);
             setShowAddInput(false);
           }}
@@ -2225,12 +2498,12 @@ useEffect(() => {
             cursor: "pointer"
           }}
         >
-          批量导入
+          {showBulkInput ? "取消批量" : "批量导入"}
         </button>
       </div>
 
       {showAddInput && (
-        <div style={{ marginTop: 8 }}>
+        <div ref={addInputRef} style={{ marginTop: 8 }}>
           <div style={{
             display: "flex",
             gap: 6,
@@ -2245,20 +2518,26 @@ useEffect(() => {
                 flex: 1,
                 padding: 6,
                 borderRadius: 6,
-                border: "1px solid #ccc"
+                border: "1px solid #ccc",
+                fontSize: "16px"
               }}
+              onClick={(e) => e.stopPropagation()}
             />
             <select
               value={newTaskCategory}
               onChange={(e) => setNewTaskCategory(e.target.value)}
               style={{ padding: 6 }}
+              onClick={(e) => e.stopPropagation()}
             >
               {categories.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
               ))}
             </select>
             <button
-              onClick={handleAddTask}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddTask();
+              }}
               style={{
                 padding: "6px 10px",
                 backgroundColor: "#1a73e8",
@@ -2273,7 +2552,10 @@ useEffect(() => {
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <button
-              onClick={() => setShowRepeatModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowRepeatModal(true);
+              }}
               style={{
                 padding: "6px 10px",
                 backgroundColor: "#1a73e8",
@@ -2286,7 +2568,10 @@ useEffect(() => {
               重复
             </button>
             <button
-              onClick={() => setShowTimeModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTimeModal(true);
+              }}
               style={{
                 padding: "6px 10px",
                 backgroundColor: "#1a73e8",
@@ -2303,7 +2588,7 @@ useEffect(() => {
       )}
 
       {showBulkInput && (
-        <div style={{ marginTop: 8 }}>
+        <div ref={bulkInputRef} style={{ marginTop: 8 }}>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
@@ -2313,11 +2598,16 @@ useEffect(() => {
               minHeight: 80,
               padding: 6,
               borderRadius: 6,
-              border: "1px solid #ccc"
+              border: "1px solid #ccc",
+              fontSize: "16px"
             }}
+            onClick={(e) => e.stopPropagation()}
           />
           <button
-            onClick={handleImportTasks}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleImportTasks();
+            }}
             style={{
               marginTop: 6,
               padding: 6,
@@ -2378,12 +2668,14 @@ useEffect(() => {
         ))}
       </div>
 
+      {/* 修改底部按钮区域，添加时间表按钮 */}
       <div style={{
         display: "flex",
         justifyContent: "center",
         gap: 10,
         marginTop: 20,
-        marginBottom: 20
+        marginBottom: 20,
+        flexWrap: "wrap"
       }}>
         <button
           onClick={handleExportData}
@@ -2400,6 +2692,22 @@ useEffect(() => {
           }}
         >
           导出数据
+        </button>
+        <button
+          onClick={() => setShowSchedule(true)}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
+          }}
+        >
+          时间表
         </button>
         <button
           onClick={() => {
