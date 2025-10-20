@@ -676,6 +676,23 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onTogglePinned
           编辑任务
         </button>
         <button
+          onClick={() => {
+            onEditScheduledTime(task);
+            onClose();
+          }}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: 14
+          }}
+        >
+          {task.scheduledTime ? '编辑计划时间' : '添加计划时间'}
+        </button>    
+        <button
           onClick={onEditNote}
           style={{
             width: '100%',
@@ -2215,6 +2232,7 @@ function App() {
           onEditNote={editTaskNote}
           onTogglePinned={togglePinned}
           onImageUpload={handleImageUpload}
+          onEditScheduledTime={editScheduledTime} 
           setShowDeleteModal={setShowDeleteModal}
         />
       )}
