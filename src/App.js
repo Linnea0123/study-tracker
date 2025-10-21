@@ -755,6 +755,9 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
   );
 };
 
+
+
+
 // 操作菜单模态框
 const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflection, onTogglePinned, onImageUpload, setShowDeleteModal,
   onEditScheduledTime, onDeleteScheduledTime, position }) => {
@@ -966,6 +969,170 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
   );
 };
 
+
+//== 在所有模态框组件之后添加 ==//
+//== 修改 DatePickerModal 为月历视图 ==//
+// 日期选择模态框 - 月历视图
+const DatePickerModal = ({ onClose, onSelectDate }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // 获取月份的第一天
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  // 获取月份的最后一天
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // 获取月份的第一天是星期几（0=周日，1=周一，...）
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+
+  // 生成月份的日期数组
+  const daysInMonth = [];
+  const totalDays = lastDayOfMonth.getDate();
+
+  // 添加空白格子（上个月的日期）
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    daysInMonth.push(null);
+  }
+
+  // 添加本月的日期
+  for (let i = 1; i <= totalDays; i++) {
+    daysInMonth.push(i);
+  }
+
+  // 周几的标题
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+  // 切换到上个月
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  // 切换到下个月
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  // 检查是否是今天
+  const isToday = (day) => {
+    const today = new Date();
+    return day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 350
+      }}>
+        {/* 年月导航 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <button
+            onClick={prevMonth}
+            style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}
+          >
+            ◀
+          </button>
+          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>
+            {currentDate.getFullYear()}年{currentDate.getMonth() + 1}月
+          </span>
+          <button
+            onClick={nextMonth}
+            style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}
+          >
+            ▶
+          </button>
+        </div>
+
+        {/* 周几标题 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 4,
+          marginBottom: 8
+        }}>
+          {weekDays.map(day => (
+            <div key={day} style={{
+              textAlign: 'center',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              color: '#666',
+              padding: '4px'
+            }}>
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* 日期网格 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 4
+        }}>
+          {daysInMonth.map((day, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                if (day) {
+                  const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                  onSelectDate(selectedDate);
+                }
+              }}
+              disabled={!day}
+              style={{
+                padding: '8px 4px',
+                border: 'none',
+                borderRadius: 6,
+                background: !day ? 'transparent' :
+                  isToday(day) ? '#1a73e8' : '#f8f9fa',
+                color: !day ? 'transparent' :
+                  isToday(day) ? 'white' : '#000',
+                cursor: day ? 'pointer' : 'default',
+                fontSize: '14px',
+                minHeight: '36px'
+              }}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: 10,
+            marginTop: 15,
+            background: '#ccc',
+            color: '#000',
+            border: 'none',
+            borderRadius: 5,
+            cursor: 'pointer'
+          }}
+        >
+          关闭
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
 // 删除确认模态框
 const DeleteConfirmModal = ({ task, selectedDate, onClose, onDelete }) => {
   const [deleteOption, setDeleteOption] = useState('today'); // today, future, all
@@ -1109,6 +1276,8 @@ function App() {
   const [templates, setTemplates] = useState([]);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [exchangeItems, setExchangeItems] = useState([]);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(null); //== 添加任务编辑模态框状态 ==//
 
 
   const runningRefs = useRef({});
@@ -1572,6 +1741,13 @@ function App() {
     }
   };
 
+
+ //== 打开任务编辑模态框 ==//
+const openTaskEditModal = (task) => {
+  setShowTaskEditModal(task);
+};
+
+
   // 修复置顶功能
   const togglePinned = (task) => {
     console.log('Toggling pinned for task:', task.id, 'Current pinned:', task.pinned);
@@ -1740,6 +1916,37 @@ function App() {
     }
   };
 
+  //== 保存任务编辑 ==//
+const saveTaskEdit = (task, editData) => {
+  if (task.isWeekTask) {
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? { 
+          ...t, 
+          text: editData.text,
+          note: editData.note,
+          reflection: editData.reflection,
+          scheduledTime: editData.scheduledTime
+        } : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { 
+          ...t, 
+          text: editData.text,
+          note: editData.note,
+          reflection: editData.reflection,
+          scheduledTime: editData.scheduledTime
+        } : t
+      )
+    }));
+  }
+};
 
 
   // 编辑计划时间
@@ -1892,6 +2099,15 @@ function App() {
     setCurrentMonday(monday);
     setSelectedDate(monday.toISOString().split("T")[0]);
   };
+
+  //== 添加日期选择处理函数 ==//
+  const handleDateSelect = (selectedDate) => {
+    const selectedMonday = getMonday(selectedDate);
+    setCurrentMonday(selectedMonday);
+    setSelectedDate(selectedDate.toISOString().split("T")[0]);
+    setShowDatePickerModal(false);
+  };
+
 
   // 打开操作菜单
   const openActionMenu = (task, event) => {
@@ -2051,51 +2267,56 @@ function App() {
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   // 任务项组件 - 修改布局，图片移到备注下
-  const TaskItem = ({ task }) => {
-    return (
-      <li
-        className="task-item"
-        style={{
-          position: "relative",
-          background: task.pinned ? "#fff9e6" : "#fff",
-          borderRadius: 6,
-          minHeight: "24px",
-          marginBottom: 4,
-          padding: "8px",
-          border: "0.5px solid #e0e0e0",
-        }}
-      >
-        <div>
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{
-                marginTop: "3.5px"
+const TaskItem = ({ task, openLongPressMenu = () => {} }) => {
+  return (
+    <li
+      className="task-item"
+      style={{
+        position: "relative",
+        background: task.pinned ? "#fff9e6" : "#fff",
+        borderRadius: 6,
+        minHeight: "24px",
+        marginBottom: 4,
+        padding: "8px",
+        border: "0.5px solid #e0e0e0",
+      }}
+    >
+      <div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <input
+            type="checkbox"
+            checked={task.done}
+            onChange={() => toggleDone(task)}
+            style={{
+              marginTop: "3.5px"
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                openTaskEditModal(task); // == 改为打开编辑模态框 ==
               }}
-            />
-            <div style={{ flex: 1 }}>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editTaskText(task);
-                }}
-                style={{
-                  wordBreak: "break-word",
-                  whiteSpace: "normal",
-                  cursor: "pointer",
-                  textDecoration: task.done ? "line-through" : "none",
-                  color: task.done ? "#999" : "#000",
-                  fontWeight: task.pinned ? "bold" : "normal",
-                  lineHeight: "1.4"
-                }}
-              >
-                {task.text}
-                {task.pinned && " 📌"}
-                {task.isWeekTask && " 🌟"}
-                
-              </div>
+              style={{
+                wordBreak: "break-word",
+                whiteSpace: "normal",
+                cursor: "pointer",
+                textDecoration: task.done ? "line-through" : "none",
+                color: task.done ? "#999" : "#000",
+                fontWeight: task.pinned ? "bold" : "normal",
+                lineHeight: "1.4"
+              }}
+            >
+              {task.text}
+              {task.pinned && " 📌"}
+              {task.isWeekTask && " 🌟"}
+            </div>
+
+
+
+
+
+
 
               {/* 备注 - 移到任务文本下方 */}
               {task.note && (
@@ -2402,11 +2623,6 @@ function App() {
           </button>
         </div>
 
-
-
-
-
-
         <button
           onClick={() => setShowHonorModal(false)}
           style={{
@@ -2425,6 +2641,213 @@ function App() {
       </div>
     </div>
   );
+
+//== 任务编辑模态框 ==//
+const TaskEditModal = ({ task, onClose, onSave }) => {
+  const [editData, setEditData] = useState({
+    text: task.text || '',
+    note: task.note || '',
+    reflection: task.reflection || '',
+    scheduledTime: task.scheduledTime || ''
+  });
+
+  const handleSave = () => {
+    if (editData.text.trim() === '') {
+      alert('任务内容不能为空！');
+      return;
+    }
+    onSave(editData);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 400,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>编辑任务</h3>
+        
+        {/* 任务内容 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 5, fontWeight: 'bold' }}>任务内容:</div>
+          <input
+            type="text"
+            value={editData.text}
+            onChange={(e) => setEditData({...editData, text: e.target.value})}
+            placeholder="输入任务内容"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14
+            }}
+          />
+        </div>
+
+        {/* 备注 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 5, fontWeight: 'bold' }}>备注:</div>
+          <textarea
+            value={editData.note}
+            onChange={(e) => setEditData({...editData, note: e.target.value})}
+            placeholder="输入备注（支持多行文本）"
+            rows="3"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        {/* 感想 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 5, fontWeight: 'bold' }}>完成感想:</div>
+          <textarea
+            value={editData.reflection}
+            onChange={(e) => setEditData({...editData, reflection: e.target.value})}
+            placeholder="输入完成感想"
+            rows="3"
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        {/* 计划时间 */}
+        {/* 计划时间 - 修改为时间选择器 */}
+<div style={{ marginBottom: 20 }}>
+  <div style={{ marginBottom: 5, fontWeight: 'bold' }}>计划时间:</div>
+  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+    <input
+      type="time"
+      value={editData.scheduledTime.split('-')[0] || ''}
+      onChange={(e) => {
+        const startTime = e.target.value;
+        const endTime = editData.scheduledTime.split('-')[1] || '';
+        setEditData({...editData, scheduledTime: `${startTime}-${endTime}`});
+      }}
+      style={{
+        flex: 1,
+        padding: '8px 12px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14
+      }}
+    />
+    <span style={{ lineHeight: '36px' }}>至</span>
+    <input
+      type="time"
+      value={editData.scheduledTime.split('-')[1] || ''}
+      onChange={(e) => {
+        const startTime = editData.scheduledTime.split('-')[0] || '';
+        const endTime = e.target.value;
+        setEditData({...editData, scheduledTime: `${startTime}-${endTime}`});
+      }}
+      style={{
+        flex: 1,
+        padding: '8px 12px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14
+      }}
+    />
+  </div>
+  <div style={{ fontSize: 12, color: '#666' }}>
+    使用 24 小时制时间选择器
+  </div>
+  {editData.scheduledTime && (
+    <div style={{ 
+      fontSize: 12, 
+      color: '#1a73e8', 
+      marginTop: 4,
+      padding: '4px 8px',
+      backgroundColor: '#e8f0fe',
+      borderRadius: 4
+    }}>
+      已设置: {editData.scheduledTime}
+    </div>
+  )}
+</div>
+
+
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#1a73e8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // 每日日志汇总模态框
   const DailyLogModal = ({ logData, onClose, onCopy }) => {
@@ -3197,9 +3620,24 @@ function App() {
         />
       )}
 
+      {/* == 添加 DatePickerModal 的渲染 == */}
+      {showDatePickerModal && (
+        <DatePickerModal
+          onClose={() => setShowDatePickerModal(false)}
+          onSelectDate={handleDateSelect}
+        />
+      )}
 
+      {/* == 在这里添加任务编辑模态框 == */}
+{showTaskEditModal && (
+  <TaskEditModal
+    task={showTaskEditModal}
+    onClose={() => setShowTaskEditModal(null)}
+    onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
+  />
+)}
 
-
+  
 
       {showActionMenu && (
         <ActionMenuModal
@@ -3294,7 +3732,25 @@ function App() {
           >
             ➡️
           </button>
+          {/* == 添加日历图标 == */}
+          <button
+            onClick={() => setShowDatePickerModal(true)}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "16px",
+              marginLeft: "8px"
+            }}
+            title="选择日期"
+          >
+            📅
+          </button>
         </div>
+
+
+
+
       </div>
 
       <div style={{
@@ -3390,7 +3846,7 @@ function App() {
             margin: 0
           }}>
             {weekTasks.map((task) => (
-              <TaskItem key={task.id} task={task} />
+               <TaskItem key={task.id} task={task} />
             ))}
           </ul>
         )}
