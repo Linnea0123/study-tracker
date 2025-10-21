@@ -1333,7 +1333,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
     scheduledTime: task.scheduledTime || '',
     pinned: task.pinned || false,
     category: task.category || '',
-    progress: task.progress ? { ...task.progress } : { initial: 0, current: 0, target: 0, unit: "%" }
+    progress: task.progress ? { ...task.progress } : { initial: 0, current: 0, target: 0, unit: "%" },
+    tags: task.tags || [],  // 添加标签
+    newTagName: '',         // 新标签名称
+    newTagColor: '#e0e0e0'  // 新标签颜色
   });
   const fileInputRef = useRef(null);
 
@@ -1466,6 +1469,166 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             ))}
           </select>
         </div>
+
+        {/* 5. 标签编辑 - 放在这里！ */}
+<div style={{ marginBottom: 15 }}>
+  <div style={{ marginBottom: 5, fontWeight: "bold" }}>标签:</div>
+  
+  {/* 已选标签显示 */}
+  <div style={{ 
+    display: 'flex', 
+    flexWrap: 'wrap', 
+    gap: 4, 
+    marginBottom: 8,
+    minHeight: 30,
+    padding: 8,
+    border: '1px solid #ccc',
+    borderRadius: 6
+  }}>
+    {editData.tags?.map((tag, index) => (
+      <span
+        key={index}
+        style={{
+          fontSize: 12,
+          padding: '2px 8px',
+          backgroundColor: tag.color || '#e0e0e0',
+          color: '#333',
+          borderRadius: 12,
+          border: '1px solid #ccc',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4
+        }}
+      >
+        {tag.name}
+        <button
+          type="button"
+          onClick={() => {
+            const newTags = [...editData.tags];
+            newTags.splice(index, 1);
+            setEditData({ ...editData, tags: newTags });
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12,
+            padding: 0,
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          ×
+        </button>
+      </span>
+    ))}
+  </div>
+
+  {/* 添加新标签 */}
+  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <input
+      type="text"
+      placeholder="输入标签名称"
+      value={editData.newTagName || ''}
+      onChange={(e) => setEditData({ ...editData, newTagName: e.target.value })}
+      style={{
+        flex: 1,
+        padding: '6px 8px',
+        border: '1px solid #ccc',
+        borderRadius: 4,
+        fontSize: 14
+      }}
+    />
+    <input
+      type="color"
+      value={editData.newTagColor || '#e0e0e0'}
+      onChange={(e) => setEditData({ ...editData, newTagColor: e.target.value })}
+      style={{
+        width: 40,
+        height: 34,
+        padding: 0,
+        border: '1px solid #ccc',
+        borderRadius: 4
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => {
+        if (editData.newTagName?.trim()) {
+          const newTag = {
+            name: editData.newTagName.trim(),
+            color: editData.newTagColor || '#e0e0e0'
+          };
+          const updatedTags = [...(editData.tags || []), newTag];
+          setEditData({ 
+            ...editData, 
+            tags: updatedTags,
+            newTagName: '',
+            newTagColor: '#e0e0e0'
+          });
+        }
+      }}
+      style={{
+        padding: '6px 12px',
+        backgroundColor: '#1a73e8',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontSize: 12
+      }}
+    >
+      添加
+    </button>
+  </div>
+
+  {/* 常用标签快捷选择 */}
+  <div style={{ marginTop: 8 }}>
+    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>常用标签:</div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      {[
+        { name: '重要', color: '#ff4444' },
+        { name: '紧急', color: '#ff9800' },
+        { name: '复习', color: '#4caf50' },
+        { name: '预习', color: '#2196f3' },
+        { name: '作业', color: '#9c27b0' }
+      ].map((tag, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => {
+            const existingTags = editData.tags || [];
+            const isAlreadyAdded = existingTags.some(t => t.name === tag.name);
+            if (!isAlreadyAdded) {
+              setEditData({ 
+                ...editData, 
+                tags: [...existingTags, tag] 
+              });
+            }
+          }}
+          style={{
+            padding: '4px 8px',
+            backgroundColor: tag.color,
+            color: '#fff',
+            border: 'none',
+            borderRadius: 12,
+            cursor: 'pointer',
+            fontSize: 11
+          }}
+        >
+          {tag.name}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+ 
+
 
         {/* 计划时间 */}
         <div style={{ marginBottom: 15 }}>
@@ -1756,10 +1919,10 @@ const TaskItem = ({
             checked={task.done}
             onChange={() => toggleDone(task)}
             style={{
-              marginTop: "3.5px"
+              marginTop: "2px"
             }}
           />
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1 ,paddingRight: '-1px'}}>
             {/* 任务文本 */}
             <div
               onClick={(e) => {
@@ -1775,7 +1938,7 @@ const TaskItem = ({
                 fontWeight: task.pinned ? "bold" : "normal",
                 lineHeight: "1.4",
                 fontSize: "14px", // 这里调整任务字体大小
-                paddingRight: '60px'
+                paddingRight: '20px'
               }}
             >
               {task.text}
@@ -1976,13 +2139,46 @@ const TaskItem = ({
 
         {/* 右侧时间和移动图标 */}
         <div style={{ 
-          osition: 'absolute',
-          top: 0,
-          right: 0,
           display: 'flex',
-          alignItems: 'center',
-          gap: 4
+          justifyContent: 'flex-end',
+          gap: 4,  
+          marginTop: 0, 
+          alignSelf: 'flex-start'  // 添加这个，让时间容器与第一行对齐
            }}>
+          
+          {/* 标签区域 - 在时间左边 */}
+  <div style={{ 
+    display: 'flex', 
+    gap: 3, 
+    flexWrap: 'wrap',
+    maxWidth: '80px'  // 限制标签区域宽度，防止过长
+  }}>
+    {task.tags?.map((tag, index) => (
+      <span
+        key={index}
+        style={{
+          fontSize: 9,  // 小一点的字号
+          padding: '1px 4px',
+          
+          color: tag.color ,
+          borderRadius: 6,
+          border: '1px solid #ccc',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: 'flex',           // 添加这个
+    alignItems: 'center',      // 垂直居中
+    justifyContent: 'center',  // 水平居中
+          maxWidth: '40px'  // 单个标签最大宽度
+        }}
+        title={tag.name}  // 鼠标悬停显示完整标签名
+      >
+        {tag.name}
+      </span>
+    ))}
+  </div>
+          
+          
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -1995,7 +2191,8 @@ const TaskItem = ({
               padding: "2px 8px",
               border: "1px solid #e0e0e0",
               borderRadius: "4px",
-              backgroundColor: "#f5f5f5"
+              backgroundColor: "#f5f5f5",
+              flexShrink: 0 
             }}
             title="点击修改时间"
           >
@@ -2564,6 +2761,8 @@ const handleUpdateProgress = (task, newCurrent) => {
     }
   };
 
+
+
   // 打开任务编辑模态框
   const openTaskEditModal = (task) => {
     setShowTaskEditModal(task);
@@ -2781,7 +2980,8 @@ const handleUpdateProgress = (task, newCurrent) => {
             reflection: editData.reflection,
             scheduledTime: editData.scheduledTime,
             category: editData.category,
-            progress: editData.progress
+            progress: editData.progress,
+            tags: editData.tags || []  // 添加标签保存
           } : t
         );
       });
@@ -2797,12 +2997,19 @@ const handleUpdateProgress = (task, newCurrent) => {
             reflection: editData.reflection,
             scheduledTime: editData.scheduledTime,
             category: editData.category,
-            progress: editData.progress
+            progress: editData.progress,
+            tags: editData.tags || []  // 添加标签保存
           } : t
         )
       }));
     }
   };
+
+  
+
+
+
+  
 
   // 编辑计划时间
   const editScheduledTime = (task) => {
