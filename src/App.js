@@ -634,6 +634,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
         maxWidth: 350,
         maxHeight: '80vh',
         overflow: 'auto'
+       
       }}>
         <h3 style={{ textAlign: 'center', marginBottom: 15 }}>任务模板</h3>
 
@@ -1020,7 +1021,8 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      overflow: 'hidden'
     }}>
       <div style={{
         backgroundColor: 'white',
@@ -1382,7 +1384,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
         width: '90%',
         maxWidth: 400,
         maxHeight: '80vh',
-        overflow: 'auto'
+        overflow: 'auto',
+        position: 'fixed',
+        top: '50%',
+        transform: 'translateY(-50%)'
       }}>
         <h3 style={{ textAlign: 'center', marginBottom: 15 }}>编辑任务</h3>
 
@@ -1501,104 +1506,109 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             />
           </div>
         </div>
+       {/* 进度跟踪 */}
+<div style={{ marginBottom: 15 }}>
+  <div style={{ marginBottom: 5, fontWeight: 'bold' }}>进度跟踪:</div>
+  <div style={{ display: 'flex', gap: 8, marginBottom: 8, overflow: 'hidden'  }}>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 12, marginBottom: 4 }}>初始进度</div>
+      <input
+        type="number"
+        value={editData.progress?.initial || ''}
+        onChange={(e) => setEditData({
+          ...editData,
+          progress: {
+            ...editData.progress,
+            initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
+          }
+        })}
+        style={{
+          width: '100%',
+          padding: '6px 8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: 12
+        }}
+      />
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 12, marginBottom: 4 }}>当前进度</div>
+      <input
+        type="number"
+        value={editData.progress?.current || ''}
+        onChange={(e) => setEditData({
+          ...editData,
+          progress: {
+            ...editData.progress,
+            current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
+          }
+        })}
+        style={{
+          width: '100%',
+          padding: '6px 8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: 12
+        }}
+      />
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 12, marginBottom: 4 }}>目标进度</div>
+      <input
+        type="number"
+        value={editData.progress?.target || ''}
+        onChange={(e) => setEditData({
+          ...editData,
+          progress: {
+            ...editData.progress,
+            target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
+          }
+        })}
+        style={{
+          width: '100%',
+          padding: '6px 8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: 12
+        }}
+      />
+    </div>
+  </div>
+  <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 12, marginBottom: 4 }}>进度单位</div>
+      <select
+        value={editData.progress?.unit || "%"}
+        onChange={(e) => setEditData({
+          ...editData,
+          progress: {
+            ...editData.progress,
+            unit: e.target.value
+          }
+        })}
+        style={{
+          width: '100%',
+          padding: '6px 8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: 12
+        }}
+      >
+        <option value="%">百分比 %</option>
+        <option value="页">页</option>
+        <option value="章">章</option>
+        <option value="题">题</option>
+        <option value="单元">单元</option>
+      </select>
+    </div>
+  </div>
+</div>
 
-        {/* 进度跟踪 */}
-        <div style={{ marginBottom: 15 }}>
-          <div style={{ marginBottom: 5, fontWeight: 'bold' }}>进度跟踪:</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>初始进度</div>
-              <input
-                type="number"
-                value={editData.progress?.initial || 0}
-                onChange={(e) => setEditData({
-                  ...editData,
-                  progress: {
-                    ...editData.progress,
-                    initial: parseInt(e.target.value) || 0
-                  }
-                })}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 4,
-                  fontSize: 12
-                }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>当前进度</div>
-              <input
-                type="number"
-                value={editData.progress?.current || 0}
-                onChange={(e) => setEditData({
-                  ...editData,
-                  progress: {
-                    ...editData.progress,
-                    current: parseInt(e.target.value) || 0
-                  }
-                })}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 4,
-                  fontSize: 12
-                }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>目标进度</div>
-              <input
-                type="number"
-                value={editData.progress?.target || 0}
-                onChange={(e) => setEditData({
-                  ...editData,
-                  progress: {
-                    ...editData.progress,
-                    target: parseInt(e.target.value) || 0
-                  }
-                })}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 4,
-                  fontSize: 12
-                }}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>进度单位</div>
-              <select
-                value={editData.progress?.unit || "%"}
-                onChange={(e) => setEditData({
-                  ...editData,
-                  progress: {
-                    ...editData.progress,
-                    unit: e.target.value
-                  }
-                })}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 4,
-                  fontSize: 12
-                }}
-              >
-                <option value="%">百分比 %</option>
-                <option value="页">页</option>
-                <option value="章">章</option>
-                <option value="题">题</option>
-                <option value="单元">单元</option>
-              </select>
-            </div>
-          </div>
-        </div>
+
+        
+       
+
+
 
         {/* 功能按钮区域 */}
         <div style={{ marginBottom: 20 }}>
@@ -1700,7 +1710,6 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
 };
 
 // 任务项组件 - 修复版本
-// 任务项组件 - 修复版本
 const TaskItem = ({
   task,
   onEditTime,
@@ -1713,18 +1722,18 @@ const TaskItem = ({
   onMoveTask,
   categories,
   setShowMoveModal,
-  onUpdateProgress  // 添加这个新的prop来处理进度更新
+  onUpdateProgress
 }) => {
-  // 处理进度调整 - 直接更新进度
+  const [showProgressControls, setShowProgressControls] = useState(false);
+
+  // 处理进度调整
   const handleProgressAdjust = (increment) => {
     const newCurrent = Math.max(0, (Number(task.progress.current) || 0) + increment);
-    
-    // 如果有进度更新函数，调用它
     if (onUpdateProgress) {
       onUpdateProgress(task, newCurrent);
     }
   };
- 
+
   return (
     <li
       className="task-item"
@@ -1764,7 +1773,9 @@ const TaskItem = ({
                 textDecoration: task.done ? "line-through" : "none",
                 color: task.done ? "#999" : "#000",
                 fontWeight: task.pinned ? "bold" : "normal",
-                lineHeight: "1.4"
+                lineHeight: "1.4",
+                fontSize: "14px", // 这里调整任务字体大小
+                paddingRight: '60px'
               }}
             >
               {task.text}
@@ -1775,81 +1786,117 @@ const TaskItem = ({
             {/* 进度显示 */}
             {task.progress && task.progress.target > 0 && (
               <div style={{ marginTop: 6 }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 10,
-                  marginBottom: 2,
-                  color: '#666'
-                }}>
-                  <span>进度: {task.progress.current}{task.progress.unit}</span>
-                  <span>目标: {task.progress.target}{task.progress.unit}</span>
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: 6,
-                  backgroundColor: '#f0f0f0',
-                  borderRadius: 3,
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
-                    height: '100%',
-                    backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
-                    borderRadius: 3,
-                    transition: 'width 0.3s ease'
-                  }} />
-                </div>
-                <div style={{
-                  fontSize: 9,
-                  color: '#999',
-                  textAlign: 'right',
-                  marginTop: 2
-                }}>  
-                  完成度: {(() => {
-                    const current = Number(task.progress.current) || 0;
-                    const initial = Number(task.progress.initial) || 0;
-                    const target = Number(task.progress.target) || 0;
-                    const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
-                    return isNaN(progress) ? 0 : Math.round(progress);
-                  })()}%
-                </div>
+              
                 
-                {/* 进度调整按钮 */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProgressAdjust(-1);
-                    }}
-                    style={{
-                      padding: '2px 8px',
-                      fontSize: 10,
-                      border: '1px solid #ccc',
-                      borderRadius: 4,
-                      backgroundColor: '#f5f5f5',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    -
-                  </button>
-                  <span style={{ fontSize: 10, lineHeight: '20px' }}>调整进度</span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProgressAdjust(1);
-                    }}
-                    style={{
-                      padding: '2px 8px',
-                      fontSize: 10,
-                      border: '1px solid #ccc',
-                      borderRadius: 4,
-                      backgroundColor: '#f5f5f5',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    +
-                  </button>
+                {/* 可点击的进度条 */}
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowProgressControls(!showProgressControls);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: 10,
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: 5,
+                    overflow: 'hidden',
+                    marginBottom: 6
+                  }}>
+                    <div style={{
+                      width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
+                      height: '100%',
+                      backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
+                      borderRadius: 5,
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+
+                {/* 进度信息和控制按钮 */}
+                <div style={{ 
+  display: 'flex', 
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 0,
+  height: '24px'  // 添加固定高度
+}}>
+                  {/* 左侧：进度信息 */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 11.5,
+                    color: '#666'
+                  }}>
+                    <span>{(() => {
+                      const current = Number(task.progress.current) || 0;
+                      const initial = Number(task.progress.initial) || 0;
+                      const target = Number(task.progress.target) || 0;
+                      const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
+                      return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
+                    })()}</span>
+                    <span>|</span>
+                    <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
+                  </div>
+
+                  {/* 右侧：根据状态显示按钮或占位 */}
+                  {showProgressControls ? (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 4, 
+                      width: '68px',  // 固定宽度
+                      justifyContent: 'flex-end'
+                    }}>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProgressAdjust(-1);
+                        }}
+                        style={{
+                          padding: '1px 6px',
+                          fontSize: 10,
+                          border: '1px solid #ccc',
+                          borderRadius: 3,
+                          backgroundColor: '#fff',
+                          color: '#333',
+                          cursor: 'pointer',
+                          minWidth: '26px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        -
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProgressAdjust(1);
+                        }}
+                        style={{
+                          padding: '1px 6px',
+                          fontSize: 10,
+                          border: '1px solid #ccc',
+                          borderRadius: 3,
+                          backgroundColor: '#fff',
+                          color: '#333',
+                          cursor: 'pointer',
+                          minWidth: '26px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ width: '60px' }} />
+                  )}
                 </div>
               </div>
             )}
@@ -1928,7 +1975,14 @@ const TaskItem = ({
         </div>
 
         {/* 右侧时间和移动图标 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ 
+          osition: 'absolute',
+          top: 0,
+          right: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4
+           }}>
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -1947,29 +2001,15 @@ const TaskItem = ({
           >
             {formatTimeNoSeconds(task.timeSpent)}
           </span>
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMoveModal(task);
-            }}
-            style={{
-              fontSize: "10px",
-              color: "#666",
-              cursor: "pointer",
-              padding: "2px 4px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
-              backgroundColor: "#f5f5f5"
-            }}
-            title="移动到其他类别"
-          >
-            📂
-          </span>
+          
         </div>
       </div>
     </li>
   );
 };
+
+
+
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
@@ -2887,13 +2927,6 @@ const handleUpdateProgress = (task, newCurrent) => {
   const getCategoryTasks = (catName) =>
     tasks.filter(t => t.category === catName);
 
-  // 计算分类完成进度
-  const calcProgress = (catName) => {
-    const catTasks = getCategoryTasks(catName);
-    if (catTasks.length === 0) return 0;
-    const doneCount = catTasks.filter(t => t.done).length;
-    return Math.round((doneCount / catTasks.length) * 100);
-  };
 
   // 计算分类总时间
   const totalTime = (catName) =>
@@ -4132,7 +4165,7 @@ const handleUpdateProgress = (task, newCurrent) => {
             transition: "all 0.3s ease"
           }}
         >
-          <span>📅 本周任务 ({weekTasks.length})</span>
+          <span>📅 本周任务 ({weekTasks.filter(t => t.done).length}/{weekTasks.length})</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12 }}>
               {collapsedCategories["本周任务"] ? "⬇️" : "⬆️"}
@@ -4268,7 +4301,6 @@ const handleUpdateProgress = (task, newCurrent) => {
         const catTasks = getCategoryTasks(c.name);
         if (catTasks.length === 0) return null;
         const isComplete = isCategoryComplete(c.name);
-        const progress = calcProgress(c.name);
         const isCollapsed = collapsedCategories[c.name];
 
         return (
@@ -4300,7 +4332,7 @@ const handleUpdateProgress = (task, newCurrent) => {
               }}
             >
               <span>
-                {c.name} ({progress}%)
+              {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
                 {isComplete && " ✓"}
               </span>
               <span
