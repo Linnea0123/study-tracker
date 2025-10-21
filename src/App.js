@@ -2213,6 +2213,7 @@ function App() {
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
+  const [pointHistory, setPointHistory] = useState([]); // 添加积分历史
   const [newTaskCategory, setNewTaskCategory] = useState(categories[0].name);
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
@@ -2244,6 +2245,18 @@ function App() {
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
+
+  // 🎯 把积分记录函数放在这里！
+  const recordPointChange = (change, reason, currentTotal) => {
+    const historyEntry = {
+      date: new Date().toISOString(),
+      change: change,
+      reason: reason,
+      totalAfterChange: currentTotal
+    };
+    
+    setPointHistory(prev => [historyEntry, ...prev]);
+  };
 
   // 在 App 组件中添加进度更新函数
 const handleUpdateProgress = (task, newCurrent) => {
@@ -2310,22 +2323,45 @@ const handleUpdateProgress = (task, newCurrent) => {
     }
   };
 
-  // 初始化数据
-  useEffect(() => {
-    const saved = localStorage.getItem("tasksByDate");
-    if (saved) setTasksByDate(JSON.parse(saved));
 
-    const savedTemplates = localStorage.getItem("taskTemplates");
-    if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
+ 
+// 初始化数据
+// 初始化数据
+useEffect(() => {
+  const saved = localStorage.getItem("tasksByDate");
+  if (saved) setTasksByDate(JSON.parse(saved));
 
-    const savedExchangeItems = localStorage.getItem("exchangeItems");
-    if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
-  }, []);
+  const savedTemplates = localStorage.getItem("taskTemplates");
+  if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
 
-  // 保存数据到本地存储
-  useEffect(() => {
-    localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
-  }, [tasksByDate]);
+  const savedExchangeItems = localStorage.getItem("exchangeItems");
+  if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
+
+  const savedPointHistory = localStorage.getItem("pointHistory");
+  if (savedPointHistory) {
+    setPointHistory(JSON.parse(savedPointHistory));
+  } else {
+    // 添加初始记录
+    const initialHistory = [{
+      date: new Date().toISOString(),
+      change: 0,
+      reason: '系统初始化',
+      totalAfterChange: 0
+    }];
+    setPointHistory(initialHistory);
+  }
+}, []);
+
+// 保存积分历史到本地存储
+useEffect(() => {
+  localStorage.setItem("pointHistory", JSON.stringify(pointHistory));
+}, [pointHistory]);
+
+// 保存数据到本地存储
+useEffect(() => {
+  localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
+}, [tasksByDate]);
+
 
   // 保存兑换物品数据到本地存储
   useEffect(() => {
@@ -2739,27 +2775,39 @@ const handleUpdateProgress = (task, newCurrent) => {
     setShowBulkInput(false);
   };
 
-  // 切换任务完成状态
-  const toggleDone = (task) => {
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
+// 切换任务完成状态
+const toggleDone = (task) => {
+  const wasDone = task.done;
+  
+  if (task.isWeekTask) {
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? { ...t, done: !t.done } : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { ...t, done: !t.done } : t
+      )
+    }));
+  }
 
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? { ...t, done: !t.done } : t
-        );
-      });
-
-      setTasksByDate(updatedTasksByDate);
+  // 记录积分变化
+  setTimeout(() => {
+    const { totalPoints: newTotal } = calculateHonorPoints();
+    if (!wasDone) {
+      // 从未完成变为完成，积分+1
+      recordPointChange(1, `完成任务: ${task.text}`, newTotal);
     } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, done: !t.done } : t
-        )
-      }));
+      // 从完成变为未完成，积分-1
+      recordPointChange(-1, `取消完成: ${task.text}`, newTotal);
     }
-  };
+  }, 100);
+};
 
 
 
@@ -3294,8 +3342,34 @@ const handleUpdateProgress = (task, newCurrent) => {
     Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
-  // 积分荣誉模态框
-  const HonorModal = () => (
+  
+// 积分荣誉模态框
+const HonorModal = () => {
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  const handleClearPoints = () => {
+    const currentPoints = totalPoints;
+
+// 保存清零记录
+recordPointChange(-currentPoints, '积分清零', 0);
+
+  
+    
+    // 清空所有任务的完成状态
+    const clearedTasksByDate = {};
+    Object.keys(tasksByDate).forEach(date => {
+      clearedTasksByDate[date] = tasksByDate[date].map(task => ({
+        ...task,
+        done: false
+      }));
+    });
+    
+    setTasksByDate(clearedTasksByDate);
+    setShowClearConfirm(false);
+    setShowHonorModal(false);
+  };
+
+  return (
     <div style={{
       position: "fixed",
       top: 0,
@@ -3313,69 +3387,97 @@ const handleUpdateProgress = (task, newCurrent) => {
         padding: 20,
         borderRadius: 10,
         width: "80%",
-        maxWidth: 350
+        maxWidth: 350,
+        maxHeight: "80vh",
+        overflow: "auto"
       }}>
         <h3 style={{ textAlign: "center", marginBottom: 15 }}>🏆 积分荣誉</h3>
 
+        {/* 当前积分 */}
+        <div style={{
+          textAlign: "center",
+          fontSize: 24,
+          fontWeight: "bold",
+          color: "#1a73e8",
+          marginBottom: 15,
+          padding: 10,
+          backgroundColor: '#e8f0fe',
+          borderRadius: 8
+        }}>
+          {totalPoints} 分
+        </div>
+
+        {/* 时间统计 */}
         <div style={{ marginBottom: 15 }}>
-          <div style={{
-            textAlign: "center",
-            fontSize: 24,
-            fontWeight: "bold",
-            color: "#1a73e8",
-            marginBottom: 10
-          }}>
-            {totalPoints} 分
+          <div style={{ marginBottom: 8, fontWeight: "bold" }}>时间统计:</div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span>今日积分:</span>
+            <span style={{ fontWeight: "bold" }}>{todayPoints} 分</span>
           </div>
-
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ marginBottom: 8, fontWeight: "bold" }}>时间统计:</div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <span>今日积分:</span>
-              <span style={{ fontWeight: "bold" }}>{todayPoints} 分</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <span>本周积分:</span>
-              <span style={{ fontWeight: "bold" }}>{weekPoints} 分</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <span>本月积分:</span>
-              <span style={{ fontWeight: "bold" }}>{monthPoints} 分</span>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span>本周积分:</span>
+            <span style={{ fontWeight: "bold" }}>{weekPoints} 分</span>
           </div>
-
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ marginBottom: 8, fontWeight: "bold" }}>各科目积分:</div>
-            {categories.map(cat => (
-              <div key={cat.name} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 6
-              }}>
-                <span>{cat.name}</span>
-                <span style={{ fontWeight: "bold" }}>
-                  今日:{pointsByCategory[cat.name]?.today || 0} /
-                  本周:{pointsByCategory[cat.name]?.week || 0} /
-                  总计:{pointsByCategory[cat.name]?.total || 0}
-                </span>
-              </div>
-            ))}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span>本月积分:</span>
+            <span style={{ fontWeight: "bold" }}>{monthPoints} 分</span>
           </div>
         </div>
-        {/* 积分兑换按钮区域 */}
-        <div style={{
-          display: 'flex',
-          gap: 10,
-          marginTop: 20,
-          marginBottom: 15
-        }}>
+
+        {/* 各科目积分 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8, fontWeight: "bold" }}>各科目积分:</div>
+          {categories.map(cat => (
+            <div key={cat.name} style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 6
+            }}>
+              <span>{cat.name}</span>
+              <span style={{ fontWeight: "bold" }}>
+                今日:{pointsByCategory[cat.name]?.today || 0} /
+                本周:{pointsByCategory[cat.name]?.week || 0} /
+                总计:{pointsByCategory[cat.name]?.total || 0}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* 积分历史 */}
+        {pointHistory.length > 0 && (
+          <div style={{ marginBottom: 15 }}>
+            <div style={{ marginBottom: 8, fontWeight: "bold" }}>积分历史:</div>
+            <div style={{ 
+              maxHeight: 100, 
+              overflow: 'auto',
+              fontSize: 12,
+              border: '1px solid #e0e0e0',
+              borderRadius: 6,
+              padding: 8
+            }}>
+              {pointHistory.slice(0, 5).map((entry, index) => (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: 4
+                }}>
+                  <span>{new Date(entry.date).toLocaleDateString()}</span>
+                  <span style={{ fontWeight: 'bold' }}>{entry.points}分</span>
+                  <span style={{ fontSize: 10, color: '#666' }}>{entry.type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 按钮区域 */}
+        <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
           <button
             onClick={() => {
               setShowHonorModal(false);
               setShowExchangeModal(true);
             }}
             style={{
-              flex: 1,
               padding: "10px 16px",
               backgroundColor: "#28a745",
               color: "#fff",
@@ -3388,25 +3490,104 @@ const handleUpdateProgress = (task, newCurrent) => {
           >
             🎁 积分兑换
           </button>
+          
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#ff6b6b",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 12
+            }}
+          >
+            🗑️ 积分清零
+          </button>
+          
           <button
             onClick={() => setShowHonorModal(false)}
             style={{
-              flex: 1,
-              padding: "10px 16px",
+              padding: "8px 16px",
               backgroundColor: "#6c757d",
               color: "#fff",
               border: "none",
               borderRadius: 6,
               cursor: "pointer",
-              fontSize: 14
+              fontSize: 12
             }}
           >
             关闭
           </button>
         </div>
+
+        {/* 清零确认模态框 */}
+        {showClearConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1001
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: 20,
+              borderRadius: 10,
+              width: '80%',
+              maxWidth: 300
+            }}>
+              <h4 style={{ textAlign: 'center', marginBottom: 15, color: '#d32f2f' }}>
+                确认清零积分？
+              </h4>
+              <p style={{ textAlign: 'center', marginBottom: 15, fontSize: 14 }}>
+                这将重置所有任务的完成状态，当前积分 {totalPoints} 分将被记录到历史中。
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: 8,
+                    backgroundColor: '#ccc',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer'
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleClearPoints}
+                  style={{
+                    flex: 1,
+                    padding: 8,
+                    backgroundColor: '#d32f2f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer'
+                  }}
+                >
+                  确认清零
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+
 
   // 每日日志汇总模态框
   const DailyLogModal = ({ logData, onClose, onCopy }) => {
