@@ -5663,10 +5663,10 @@ const HonorModal = () => {
   minHeight: "24px"  // 控制最小高度
           }}
         >
-          <span>📅 本周任务 ({weekTasks.filter(t => t.done).length}/{weekTasks.length})</span>
+          <span>本周任务 ({weekTasks.filter(t => t.done).length}/{weekTasks.length})</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12 }}>
-              {collapsedCategories["本周任务"] ? "⬇️" : "⬆️"}
+             
             </span>
             <button
               onClick={(e) => {
