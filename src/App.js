@@ -2623,14 +2623,23 @@ const TaskItem = ({
       {!isLongText ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           {/* 左侧：复选框和任务内容 */}
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flex: 1 }}>
+          <div style={{
+             display: "flex", 
+             gap: 8, 
+             alignItems: "flex-start", 
+             flex: 1,
+             minWidth: 0  // 关 
+             
+             }}>
+            
+            
             <input
               type="checkbox"
               checked={task.done}
               onChange={() => toggleDone(task)}
               style={{ marginTop: "2px" }}
             />
-            <div style={{ flex: 1, paddingRight: '5px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -3224,6 +3233,8 @@ useEffect(() => {
   }
 }, []);
 
+
+
 //修改 - 实时更新计时显示
 useEffect(() => {
   let interval;
@@ -3247,29 +3258,34 @@ useEffect(() => {
 // 修改结束
 
 
-//修改 - 统一修改时间显示格式
-const formatTimeNoSeconds = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m${remainingSeconds}s`;
-};
-// 修改结束
+  //修改 - 统一修改时间显示格式
+  const formatTimeNoSeconds = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m${remainingSeconds}s`;
+  };
 
-//修改 - 添加新的时间格式化函数，显示分钟和秒数
-const formatTimeWithSeconds = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m${remainingSeconds}s`;
-};
+  //修改 - 添加新的时间格式化函数，显示分钟和秒数
+  const formatTimeWithSeconds = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m${remainingSeconds}s`;
+  };
 
-
-
+  // 新增：分类标题专用时间格式（去掉0s）
+  const formatCategoryTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m${remainingSeconds}s`;
+  };
 
   // 格式化时间为小时
-  const formatTimeInHours = (seconds) => {
-    const hours = (seconds / 3600).toFixed(1);
-    return `${hours}h`;
-  };
+const formatTimeInHours = (seconds) => {
+  const hours = (seconds / 3600).toFixed(1);
+  return `${hours}h`;
+};
+    
+
 
   // 移动任务函数
   const moveTask = (task, targetCategory) => {
@@ -5842,7 +5858,7 @@ const HonorModal = () => {
                 }}
                 title="点击修改总时间"
               >
-                {formatTimeNoSeconds(totalTime(c.name))}
+                {formatCategoryTime(totalTime(c.name))}
               </span>
             </div>
             {!isCollapsed && (
@@ -5900,11 +5916,33 @@ const HonorModal = () => {
           style={{
             flex: 1,
             padding: 8,
-            backgroundColor: "#1a73e8",
+            backgroundColor: "#1a73e8", // 固定蓝色背景
             color: "#fff",
             border: "none",
             borderRadius: 6,
-            cursor: "pointer"
+            cursor: "pointer",
+    outline: "none",
+    boxShadow: "none",
+    transform: "none",
+    transition: "none"
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            // 强制保持样式
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onMouseUp={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onFocus={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onBlur={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
           }}
         >
           {showAddInput ? "取消添加" : "添加任务"}
