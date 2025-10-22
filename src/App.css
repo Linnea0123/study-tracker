@@ -150,3 +150,31 @@ button:hover, [role="button"]:hover, label:hover,
   color: initial !important;
   filter: none !important;
 }
+
+/* 强制覆盖所有按钮的点击状态 */
+button:active, 
+button:focus, 
+button:hover,
+button:active:hover,
+button:focus:hover {
+  background-color: #1a73e8 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 特别针对添加任务按钮 */
+.action-button:active,
+.action-button:focus,
+.action-button:hover,
+.action-button:active:hover,
+.action-button:focus:hover {
+  background-color: #1a73e8 !important;
+  color: #ffffff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
