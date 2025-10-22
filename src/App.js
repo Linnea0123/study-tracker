@@ -603,12 +603,52 @@ const TimeModal = ({ config, onSave, onClose }) => {
     </div>
   );
 };
-
-// 模板管理模态框
 const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
   const [templateName, setTemplateName] = useState('');
   const [templateCategory, setTemplateCategory] = useState(categories[0].name);
   const [templateContent, setTemplateContent] = useState('');
+  const [templateTags, setTemplateTags] = useState([]);
+  const [templateScheduledTime, setTemplateScheduledTime] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#6B7280');
+
+  // 高级配色方案
+  const colorPalette = {
+    primary: '#3B82F6',
+    secondary: '#6B7280',
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    border: '#E5E7EB',
+    text: '#1F2937',
+    textLight: '#6B7280'
+  };
+
+  const commonTags = [
+    { name: '重要', color: '#EF4444', textColor: '#FFFFFF' },
+    { name: '紧急', color: '#F59E0B', textColor: '#FFFFFF' },
+    { name: '复习', color: '#10B981', textColor: '#FFFFFF' },
+    { name: '预习', color: '#3B82F6', textColor: '#FFFFFF' },
+    { name: '作业', color: '#8B5CF6', textColor: '#FFFFFF' }
+  ];
+
+  const handleAddTag = () => {
+    if (newTagName.trim()) {
+      const newTag = {
+        name: newTagName.trim(),
+        color: newTagColor,
+        textColor: '#FFFFFF'
+      };
+      setTemplateTags([...templateTags, newTag]);
+      setNewTagName('');
+      setNewTagColor('#6B7280');
+    }
+  };
+
+  const handleRemoveTag = (index) => {
+    const newTags = [...templateTags];
+    newTags.splice(index, 1);
+    setTemplateTags(newTags);
+  };
 
   return (
     <div style={{
@@ -617,134 +657,561 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      backdropFilter: 'blur(4px)'
     }}>
       <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '80%',
-        maxWidth: 350,
-        maxHeight: '80vh',
-        overflow: 'auto'
+        backgroundColor: colorPalette.surface,
+        padding: '24px',
+        borderRadius: '16px',
+        width: '90%',
+        maxWidth: '480px',
+        maxHeight: '85vh',
+        overflow: 'auto',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+        border: `1px solid ${colorPalette.border}`
       }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>任务模板</h3>
+        {/* 标题栏 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: `1px solid ${colorPalette.border}`
+        }}>
+          <h3 style={{ 
+            margin: 0, 
+            color: colorPalette.text,
+            fontSize: '18px',
+            fontWeight: '600'
+          }}>
+            📋 任务模板
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer',
+              color: colorPalette.textLight,
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = colorPalette.background;
+              e.target.style.color = colorPalette.text;
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = colorPalette.textLight;
+            }}
+          >
+            ×
+          </button>
+        </div>
 
         {/* 添加新模板 */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>添加新模板:</div>
-          <input
-            type="text"
-            placeholder="模板名称"
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
-            style={{ width: '100%', padding: 8, marginBottom: 8 }}
-          />
-          <select
-            value={templateCategory}
-            onChange={(e) => setTemplateCategory(e.target.value)}
-            style={{ width: '100%', padding: 8, marginBottom: 8 }}
-          >
-            {categories.map(c => (
-              <option key={c.name} value={c.name}>{c.name}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="任务内容"
-            value={templateContent}
-            onChange={(e) => setTemplateContent(e.target.value)}
-            style={{ width: '100%', padding: 8, marginBottom: 8 }}
-          />
-          <button
-            onClick={() => {
-              if (templateName && templateContent) {
-                onSave({
-                  name: templateName,
-                  category: templateCategory,
-                  content: templateContent
-                });
-                setTemplateName('');
-                setTemplateContent('');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: 10,
-              background: '#1a73e8',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 5,
-              cursor: 'pointer'
-            }}
-          >
-            添加模板
-          </button>
+        <div style={{ marginBottom: '32px' }}>
+          <h4 style={{
+            margin: '0 0 16px 0',
+            color: colorPalette.text,
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            创建新模板
+          </h4>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* 模板名称 */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                模板名称
+              </label>
+              <input
+                type="text"
+                placeholder="输入模板名称..."
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${colorPalette.border}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  backgroundColor: colorPalette.background,
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colorPalette.primary;
+                  e.target.style.backgroundColor = colorPalette.surface;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colorPalette.border;
+                  e.target.style.backgroundColor = colorPalette.background;
+                }}
+              />
+            </div>
+
+            {/* 任务类别和内容 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: colorPalette.text,
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  类别
+                </label>
+                <select
+                  value={templateCategory}
+                  onChange={(e) => setTemplateCategory(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {categories.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: colorPalette.text,
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  任务内容
+                </label>
+                <input
+                  type="text"
+                  placeholder="输入任务内容..."
+                  value={templateContent}
+                  onChange={(e) => setTemplateContent(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 计划时间 */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                计划时间
+              </label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <input
+                  type="time"
+                  value={templateScheduledTime.split('-')[0] || ''}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    const endTime = templateScheduledTime.split('-')[1] || '';
+                    setTemplateScheduledTime(`${startTime}-${endTime}`);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+                <span style={{ color: colorPalette.textLight, fontSize: '14px' }}>至</span>
+                <input
+                  type="time"
+                  value={templateScheduledTime.split('-')[1] || ''}
+                  onChange={(e) => {
+                    const startTime = templateScheduledTime.split('-')[0] || '';
+                    const endTime = e.target.value;
+                    setTemplateScheduledTime(`${startTime}-${endTime}`);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 标签编辑 */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                标签
+              </label>
+              
+              {/* 当前标签 */}
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '6px', 
+                marginBottom: '12px',
+                minHeight: '40px',
+                padding: '12px',
+                border: `1px solid ${colorPalette.border}`,
+                borderRadius: '8px',
+                backgroundColor: colorPalette.background
+              }}>
+                {templateTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      backgroundColor: tag.color,
+                      color: tag.textColor,
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {tag.name}
+                    <button
+                      onClick={() => handleRemoveTag(index)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        padding: 0,
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'inherit',
+                        opacity: 0.8
+                      }}
+                      onMouseOver={(e) => e.target.style.opacity = '1'}
+                      onMouseOut={(e) => e.target.style.opacity = '0.8'}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              {/* 添加新标签 */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="新标签名称"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+                <input
+                  type="color"
+                  value={newTagColor}
+                  onChange={(e) => setNewTagColor(e.target.value)}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    padding: 0,
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <button
+                  onClick={handleAddTag}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: colorPalette.primary,
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#2563EB'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = colorPalette.primary}
+                >
+                  添加
+                </button>
+              </div>
+
+              {/* 常用标签 */}
+              <div>
+                <div style={{ fontSize: '12px', color: colorPalette.textLight, marginBottom: '6px' }}>
+                  常用标签
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {commonTags.map((tag, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        const isAlreadyAdded = templateTags.some(t => t.name === tag.name);
+                        if (!isAlreadyAdded) {
+                          setTemplateTags([...templateTags, tag]);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: tag.color,
+                        color: tag.textColor,
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                      onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 添加模板按钮 */}
+            <button
+              onClick={() => {
+                if (templateName && templateContent) {
+                  onSave({
+                    name: templateName,
+                    category: templateCategory,
+                    content: templateContent,
+                    scheduledTime: templateScheduledTime,
+                    tags: templateTags
+                  });
+                  setTemplateName('');
+                  setTemplateContent('');
+                  setTemplateScheduledTime('');
+                  setTemplateTags([]);
+                }
+              }}
+              disabled={!templateName || !templateContent}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                backgroundColor: (!templateName || !templateContent) ? colorPalette.border : colorPalette.primary,
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: (!templateName || !templateContent) ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                if (templateName && templateContent) {
+                  e.target.style.backgroundColor = '#2563EB';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (templateName && templateContent) {
+                  e.target.style.backgroundColor = colorPalette.primary;
+                }
+              }}
+            >
+              创建模板
+            </button>
+          </div>
         </div>
 
         {/* 现有模板列表 */}
         <div>
-          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>现有模板:</div>
+          <h4 style={{
+            margin: '0 0 16px 0',
+            color: colorPalette.text,
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            现有模板 ({templates.length})
+          </h4>
+          
           {templates.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#666', fontSize: 12 }}>
+            <div style={{
+              textAlign: 'center',
+              color: colorPalette.textLight,
+              fontSize: '13px',
+              padding: '32px 16px',
+              backgroundColor: colorPalette.background,
+              borderRadius: '8px'
+            }}>
               暂无模板
             </div>
           ) : (
-            templates.map((template, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 4,
-                  marginBottom: 8
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>{template.name}</div>
-                  <div style={{ fontSize: 10, color: '#666' }}>
-                    {template.category} - {template.content}
-                  </div>
-                </div>
-                <button
-                  onClick={() => onDelete(index)}
+            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+              {templates.map((template, index) => (
+                <div
+                  key={index}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#d32f2f',
-                    cursor: 'pointer',
-                    fontSize: 12
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    padding: '16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                    backgroundColor: colorPalette.background,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = colorPalette.background;
                   }}
                 >
-                  删除
-                </button>
-              </div>
-            ))
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      marginBottom: '6px'
+                    }}>
+                      <span style={{ 
+                        fontWeight: '600', 
+                        fontSize: '13px',
+                        color: colorPalette.text
+                      }}>
+                        {template.name}
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        backgroundColor: colorPalette.primary,
+                        color: '#FFFFFF',
+                        borderRadius: '4px'
+                      }}>
+                        {template.category}
+                      </span>
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: colorPalette.textLight,
+                      marginBottom: '8px'
+                    }}>
+                      {template.content}
+                    </div>
+                    
+                    {/* 标签显示 */}
+                    {template.tags && template.tags.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                        {template.tags.map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            style={{
+                              fontSize: '9px',
+                              padding: '2px 6px',
+                              backgroundColor: tag.color,
+                              color: tag.textColor,
+                              borderRadius: '6px'
+                            }}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* 计划时间显示 */}
+                    {template.scheduledTime && (
+                      <div style={{ 
+                        fontSize: '11px', 
+                        color: colorPalette.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span>⏰</span>
+                        {template.scheduledTime}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onDelete(index)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: colorPalette.textLight,
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.color = '#EF4444';
+                      e.target.style.backgroundColor = '#FEF2F2';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.color = colorPalette.textLight;
+                      e.target.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button
-            style={{
-              flex: 1,
-              padding: 10,
-              background: '#ccc',
-              color: '#000',
-              border: 'none',
-              borderRadius: 5,
-              cursor: 'pointer'
-            }}
-            onClick={onClose}
-          >
-            关闭
-          </button>
         </div>
       </div>
     </div>
@@ -2106,7 +2573,6 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
   );
 };
 
-
 // 任务项组件
 const TaskItem = ({
   task,
@@ -2115,7 +2581,7 @@ const TaskItem = ({
   onEditReflection,
   onOpenEditModal,
   onShowImageModal,
-  formatTimeWithSeconds, // 新增这行
+  formatTimeWithSeconds,
   toggleDone,
   formatTimeNoSeconds,
   onMoveTask,
@@ -2128,6 +2594,10 @@ const TaskItem = ({
   onUpdateProgress
 }) => {
   const [showProgressControls, setShowProgressControls] = useState(false);
+  
+  //开始添加智能布局判断
+  const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
+  //结束添加智能布局判断
 
   const handleProgressAdjust = (increment) => {
     const newCurrent = Math.max(0, (Number(task.progress.current) || 0) + increment);
@@ -2136,15 +2606,13 @@ const TaskItem = ({
     }
   };
 
-// 新增计时处理函数
-const handleTimerClick = () => {
-  if (isTimerRunning) {
-    onPauseTimer(task);
-  } else {
-    onStartTimer(task);
-  }
-};
-
+  const handleTimerClick = () => {
+    if (isTimerRunning) {
+      onPauseTimer(task);
+    } else {
+      onStartTimer(task);
+    }
+  };
 
   return (
     <li
@@ -2159,23 +2627,145 @@ const handleTimerClick = () => {
         border: "0.5px solid #e0e0e0",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flex: 1 }}>
-          <input
-            type="checkbox"
-            checked={task.done}
-            onChange={() => toggleDone(task)}
-            style={{
-              marginTop: "2px"
-            }}
-          />
-          <div style={{ flex: 1 ,paddingRight: '-1px'}}>
+      {/* 开始替换布局部分 */}
+      {/* 短文本布局 - 所有内容在一行 */}
+      {!isLongText ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          {/* 左侧：复选框和任务内容 */}
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flex: 1 }}>
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
+            />
+            <div style={{ flex: 1, paddingRight: '20px' }}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEditModal(task);
+                }}
+                style={{
+                  wordBreak: "break-word",
+                  whiteSpace: "normal",
+                  cursor: "pointer",
+                  textDecoration: task.done ? "line-through" : "none",
+                  color: task.done ? "#999" : "#000",
+                  fontWeight: task.pinned ? "bold" : "normal",
+                  lineHeight: "1.4",
+                  fontSize: "14px",
+                }}
+              >
+                {task.text}
+                {task.pinned && " 📌"}
+                {task.isWeekTask && " 🌟"}
+              </div>
+            </div>
+          </div>
+
+          {/* 右侧：标签、计时器、时间 */}
+          <div style={{ 
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 4,  
+            marginTop: 0, 
+            alignSelf: 'flex-start',
+            alignItems: 'center'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: 3, 
+              flexWrap: 'wrap',
+              maxWidth: '80px'
+            }}>
+              {task.tags?.map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    fontSize: 9,
+                    padding: '1px 4px',
+                    backgroundColor: tag.color,
+                    color: '#fff',
+                    borderRadius: 6,
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    maxWidth: '40px'
+                  }}
+                  title={tag.name}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTimerClick();
+              }}
+              style={{
+                fontSize: 12,
+                padding: "2px 6px",
+                border: "none",
+                borderRadius: "4px",
+                backgroundColor: "transparent",
+                color: isTimerRunning ? "#ff4444" : "#4CAF50",
+                cursor: "pointer",
+                flexShrink: 0
+              }}
+              title={isTimerRunning ? "点击暂停计时" : "点击开始计时"}
+            >
+              {isTimerRunning ? "⏸️" : "⏱️"}
+            </button>
+
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTime(task);
+              }}
+              style={{
+                fontSize: 12,
+                color: "#333",
+                cursor: "pointer",
+                padding: "2px 8px",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+                backgroundColor: "#f5f5f5",
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
+              }}
+              title="点击修改时间"
+            >
+              {isTimerRunning 
+                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+                : formatTimeNoSeconds(task.timeSpent || 0)
+              }
+            </span>
+          </div>
+        </div>
+      ) : (
+        /* 长文本布局 - 时间信息在右下角 */
+        <div>
+          {/* 第一行：任务内容 */}
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
+            />
             <div
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenEditModal(task);
               }}
               style={{
+                flex: 1,
                 wordBreak: "break-word",
                 whiteSpace: "normal",
                 cursor: "pointer",
@@ -2191,275 +2781,287 @@ const handleTimerClick = () => {
               {task.pinned && " 📌"}
               {task.isWeekTask && " 🌟"}
             </div>
-
-            {task.progress && task.progress.target > 0 && (
-              <div style={{ marginTop: 6 }}>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowProgressControls(!showProgressControls);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div style={{
-                    width: '100%',
-                    height: 10,
-                    backgroundColor: '#f0f0f0',
-                    borderRadius: 5,
-                    overflow: 'hidden',
-                    marginBottom: 6
-                  }}>
-                    <div style={{
-                      width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / 
-                              Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
-                      height: '100%',
-                      backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
-                      borderRadius: 5,
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                </div>
-
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 0,
-                  height: '24px'
-                }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 11.5,
-                    color: '#666'
-                  }}>
-                    <span>{(() => {
-                      const current = Number(task.progress.current) || 0;
-                      const initial = Number(task.progress.initial) || 0;
-                      const target = Number(task.progress.target) || 0;
-                      const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
-                      return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
-                    })()}</span>
-                    <span>|</span>
-                    <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
-                  </div>
-
-                  {showProgressControls ? (
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: 4, 
-                      width: '68px',
-                      justifyContent: 'flex-end'
-                    }}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProgressAdjust(-1);
-                        }}
-                        style={{
-                          padding: '1px 6px',
-                          fontSize: 10,
-                          border: '1px solid #ccc',
-                          borderRadius: 3,
-                          backgroundColor: '#fff',
-                          color: '#333',
-                          cursor: 'pointer',
-                          minWidth: '26px',
-                          height: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        -
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProgressAdjust(1);
-                        }}
-                        style={{
-                          padding: '1px 6px',
-                          fontSize: 10,
-                          border: '1px solid #ccc',
-                          borderRadius: 3,
-                          backgroundColor: '#fff',
-                          color: '#333',
-                          cursor: 'pointer',
-                          minWidth: '26px',
-                          height: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ width: '60px' }} />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {task.note && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenEditModal(task);
-                }}
-                style={{
-                  fontSize: 12,
-                  color: "#666",
-                  marginTop: 4,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                  backgroundColor: 'transparent',
-                  lineHeight: "1.3",
-                  whiteSpace: "pre-wrap"
-                }}
-              >
-                {task.note}
-              </div>
-            )}
-
-            {task.reflection && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenEditModal(task);
-                  const newReflection = window.prompt("编辑感想", task.reflection);
-                  if (newReflection !== null) {
-                    onEditReflection(task, newReflection);
-                  }
-                }}
-                style={{
-                  fontSize: 12,
-                  color: "#000",
-                  marginTop: 4,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                  backgroundColor: '#fff9c4',
-                  padding: '6px 8px',
-                  borderRadius: '4px',
-                  lineHeight: "1.3",
-                  whiteSpace: "pre-wrap",
-                  border: '1px solid #ffd54f'
-                }}
-              >
-                💭 {task.reflection}
-              </div>
-            )}
-            
-            {task.image && (
-              <div style={{ marginTop: 4, marginBottom: 4 }}>
-                <img
-                  src={task.image}
-                  alt="任务图片"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowImageModal(task.image);
-                  }}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100px",
-                    borderRadius: 4,
-                    cursor: "zoom-in"
-                  }}
-                />
-              </div>
-            )}
           </div>
-        </div>
 
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: 4,  
-          marginTop: 0, 
-          alignSelf: 'flex-start'
-        }}>
+          {/* 第二行：标签、计时器、时间（右下角） */}
           <div style={{ 
             display: 'flex', 
-            gap: 3, 
-            flexWrap: 'wrap',
-            maxWidth: '80px'
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginTop: '4px'
           }}>
-            {task.tags?.map((tag, index) => (
-              <span
-                key={index}
-                style={{
-                  fontSize: 9,
-    padding: '1px 4px',
-    backgroundColor: tag.color,  // 彩色底色（原来字体的颜色）
-    color: '#fff',  // 白色字
-    borderRadius: 6,
-    border: 'none',  // 无边框
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    maxWidth: '40px'
+            {/* 左侧：标签 */}
+            <div style={{ 
+              display: 'flex', 
+              gap: 3, 
+              flexWrap: 'wrap',
+              flex: 1
+            }}>
+              {task.tags?.map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    fontSize: 9,
+                    padding: '1px 4px',
+                    backgroundColor: tag.color,
+                    color: '#fff',
+                    borderRadius: 6,
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    maxWidth: '40px'
+                  }}
+                  title={tag.name}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            
+            {/* 右侧：计时器和时间 */}
+            <div style={{ 
+              display: 'flex', 
+              gap: 4, 
+              alignItems: 'center',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTimerClick();
                 }}
-                title={tag.name}
+                style={{
+                  fontSize: 12,
+                  padding: "2px 6px",
+                  border: "none",
+                  borderRadius: "4px",
+                  backgroundColor: "transparent",
+                  color: isTimerRunning ? "#ff4444" : "#4CAF50",
+                  cursor: "pointer",
+                  flexShrink: 0
+                }}
+                title={isTimerRunning ? "点击暂停计时" : "点击开始计时"}
               >
-                {tag.name}
+                {isTimerRunning ? "⏸️" : "⏱️"}
+              </button>
+
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTime(task);
+                }}
+                style={{
+                  fontSize: 12,
+                  color: "#333",
+                  cursor: "pointer",
+                  padding: "2px 8px",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                  backgroundColor: "#f5f5f5",
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
+                }}
+                title="点击修改时间"
+              >
+                {isTimerRunning 
+                  ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+                  : formatTimeNoSeconds(task.timeSpent || 0)
+                }
               </span>
-            ))}
+            </div>
           </div>
-          
- {/* 计时按钮 - 新增 */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      handleTimerClick();
-    }}
-    style={{
-      fontSize: 12,
-      padding: "2px 6px",
-      borderRadius: "4px",
-      color: "white",
-      border: "none", 
-      cursor: "pointer",
-      flexShrink: 0
-    }}
-    title={isTimerRunning ? "点击暂停计时" : "点击开始计时"}
-  >
-    {isTimerRunning ? "⏸️" : "⏱️"}
-  </button>
+        </div>
+      )}
+      {/* 结束替换布局部分 */}
 
-
-          <span
+      {/* 进度条和其他内容（两种布局通用） */}
+      {task.progress && task.progress.target > 0 && (
+        <div style={{ marginTop: 6 }}>
+          <div
             onClick={(e) => {
               e.stopPropagation();
-              onEditTime(task);
+              setShowProgressControls(!showProgressControls);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            <div style={{
+              width: '100%',
+              height: 10,
+              backgroundColor: '#f0f0f0',
+              borderRadius: 5,
+              overflow: 'hidden',
+              marginBottom: 6
+            }}>
+              <div style={{
+                width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / 
+                        Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
+                height: '100%',
+                backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
+                borderRadius: 5,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
+
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 0,
+            height: '24px'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 11.5,
+              color: '#666'
+            }}>
+              <span>{(() => {
+                const current = Number(task.progress.current) || 0;
+                const initial = Number(task.progress.initial) || 0;
+                const target = Number(task.progress.target) || 0;
+                const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
+                return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
+              })()}</span>
+              <span>|</span>
+              <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
+            </div>
+
+            {showProgressControls ? (
+              <div style={{ 
+                display: 'flex', 
+                gap: 4, 
+                width: '68px',
+                justifyContent: 'flex-end'
+              }}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProgressAdjust(-1);
+                  }}
+                  style={{
+                    padding: '1px 6px',
+                    fontSize: 10,
+                    border: '1px solid #ccc',
+                    borderRadius: 3,
+                    backgroundColor: '#fff',
+                    color: '#333',
+                    cursor: 'pointer',
+                    minWidth: '26px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  -
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProgressAdjust(1);
+                  }}
+                  style={{
+                    padding: '1px 6px',
+                    fontSize: 10,
+                    border: '1px solid #ccc',
+                    borderRadius: 3,
+                    backgroundColor: '#fff',
+                    color: '#333',
+                    cursor: 'pointer',
+                    minWidth: '26px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div style={{ width: '60px' }} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {task.note && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal(task);
+          }}
+          style={{
+            fontSize: 12,
+            color: "#666",
+            marginTop: 4,
+            marginBottom: 4,
+            cursor: "pointer",
+            backgroundColor: 'transparent',
+            lineHeight: "1.3",
+            whiteSpace: "pre-wrap"
+          }}
+        >
+          {task.note}
+        </div>
+      )}
+
+      {task.reflection && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal(task);
+            const newReflection = window.prompt("编辑感想", task.reflection);
+            if (newReflection !== null) {
+              onEditReflection(task, newReflection);
+            }
+          }}
+          style={{
+            fontSize: 12,
+            color: "#000",
+            marginTop: 4,
+            marginBottom: 4,
+            cursor: "pointer",
+            backgroundColor: '#fff9c4',
+            padding: '6px 8px',
+            borderRadius: '4px',
+            lineHeight: "1.3",
+            whiteSpace: "pre-wrap",
+            border: '1px solid #ffd54f'
+          }}
+        >
+          💭 {task.reflection}
+        </div>
+      )}
+      
+      {task.image && (
+        <div style={{ marginTop: 4, marginBottom: 4 }}>
+          <img
+            src={task.image}
+            alt="任务图片"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowImageModal(task.image);
             }}
             style={{
-              fontSize: 12,
-              color: "#333",
-              cursor: "pointer",
-              padding: "2px 8px",
-              border: "1px solid #e0e0e0",
-              borderRadius: "4px",
-              backgroundColor: "#f5f5f5",
-              flexShrink: 0 
+              maxWidth: "100%",
+              maxHeight: "100px",
+              borderRadius: 4,
+              cursor: "zoom-in"
             }}
-            title="点击修改时间"
-          >
-            {isTimerRunning 
-    ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-    : formatTimeNoSeconds(task.timeSpent || 0)
-  }
-          </span>
+          />
         </div>
-      </div>
+      )}
     </li>
   );
 };
+
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
