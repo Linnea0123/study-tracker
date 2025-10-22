@@ -1836,7 +1836,8 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
-      padding: 10
+      padding: 10,
+  overflow: 'hidden'  // 添加这行防止滚动
     }}>
       <div style={{
         backgroundColor: 'white',
@@ -1847,53 +1848,83 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
         maxHeight: '85vh',
         overflow: 'auto',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        border: '1px solid #e0e0e0'
+        border: '1px solid #e0e0e0',
+    position: 'relative'  // 确保内部元素定位正确
+        
       }}>
-        {/* 标题栏 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
-          paddingBottom: 15,
-          borderBottom: '2px solid #f0f0f0'
-        }}>
-          <h3 style={{ 
-            margin: 0, 
-            color: '#1a73e8',
-            fontSize: 18,
-            fontWeight: '600'
-          }}>
-            ✏️ 编辑任务
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#666',
-              width: '30px',
-              height: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#f0f0f0';
-              e.target.style.color = '#333';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = '#666';
-            }}
-          >
-            ×
-          </button>
-        </div>
+
+{/* 标题栏 */}
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+  paddingBottom: 15,
+  borderBottom: "2px solid #f0f0f0"
+}}>
+  <h3 style={{ 
+    margin: 0, 
+    color: "#1a73e8",
+    fontSize: 18,
+    fontWeight: "600"
+  }}>
+    ✏️ 编辑任务
+  </h3>
+  
+  {/* 右上角按钮组 */}
+  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    {/* 保存按钮 */}
+    <button
+      onClick={handleSave}
+      style={{
+        padding: "8px 16px",
+        backgroundColor: "#1a73e8",
+        color: "#fff",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: "600",
+        transition: "all 0.2s ease"
+      }}
+      onMouseOver={(e) => e.target.style.backgroundColor = "#0b5ed7"}
+      onMouseOut={(e) => e.target.style.backgroundColor = "#1a73e8"}
+    >
+      保存
+    </button>
+    
+    {/* 关闭按钮 */}
+    <button
+      onClick={onClose}
+      style={{
+        background: "transparent",
+        border: "none",
+        fontSize: "20px",
+        cursor: "pointer",
+        color: "#666",
+        width: "30px",
+        height: "30px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        transition: "all 0.2s ease"
+      }}
+      onMouseOver={(e) => {
+        e.target.style.backgroundColor = "#f0f0f0";
+        e.target.style.color = "#333";
+      }}
+      onMouseOut={(e) => {
+        e.target.style.backgroundColor = "transparent";
+        e.target.style.color = "#666";
+      }}
+    >
+      ×
+    </button>
+  </div>
+</div>
+        
+        
 
         <div style={{
           display: 'flex',
@@ -2439,9 +2470,9 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                     fontSize: 12
                   }}
                 >
-                  <option value="%">百分比</option>
+                  <option value="%">%</option>
                   <option value="页">页</option>
-                  <option value="章">章</option>
+                  <option value="章">本</option>
                   <option value="题">题</option>
                   <option value="单元">单元</option>
                 </select>
@@ -2526,47 +2557,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             style={{ display: 'none' }}
           />
 
-          {/* 操作按钮 */}
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <button
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                backgroundColor: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: '600',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}
-            >
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                backgroundColor: '#1a73e8',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: '600',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#0b5ed7'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#1a73e8'}
-            >
-              保存更改
-            </button>
-          </div>
+  
         </div>
       </div>
     </div>
@@ -2639,7 +2630,7 @@ const TaskItem = ({
               onChange={() => toggleDone(task)}
               style={{ marginTop: "2px" }}
             />
-            <div style={{ flex: 1, paddingRight: '20px' }}>
+            <div style={{ flex: 1, paddingRight: '5px' }}>
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -2786,7 +2777,7 @@ const TaskItem = ({
           {/* 第二行：标签、计时器、时间（右下角） */}
           <div style={{ 
             display: 'flex', 
-            justifyContent: 'space-between', 
+            justifyContent: 'flex-end',  // 改为靠右
             alignItems: 'center',
             marginTop: '4px'
           }}>
@@ -2795,7 +2786,7 @@ const TaskItem = ({
               display: 'flex', 
               gap: 3, 
               flexWrap: 'wrap',
-              flex: 1
+              justifyContent: 'flex-end'  // 标签也靠右
             }}>
               {task.tags?.map((tag, index) => (
                 <span
