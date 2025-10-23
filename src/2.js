@@ -737,84 +737,229 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
           </button>
         </div>
 
-        {/* 添加新模板 */}
-        <div style={{ marginBottom: '32px' }}>
-          <h4 style={{
-            margin: '0 0 16px 0',
-            color: colorPalette.text,
-            fontSize: '14px',
-            fontWeight: '600'
-          }}>
-            创建新模板
-          </h4>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* 模板名称 */}
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                color: colorPalette.text,
-                fontSize: '13px',
-                fontWeight: '500'
-              }}>
-                模板名称
-              </label>
-              <input
-                type="text"
-                placeholder="输入模板名称..."
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: `1px solid ${colorPalette.border}`,
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  backgroundColor: colorPalette.background,
-                  transition: 'all 0.2s ease'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colorPalette.primary;
-                  e.target.style.backgroundColor = colorPalette.surface;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colorPalette.border;
-                  e.target.style.backgroundColor = colorPalette.background;
-                }}
-              />
-            </div>
+{/* 添加新模板 */}
+<div style={{ marginBottom: '32px' }}>
+  <h4 style={{
+    margin: '0 0 16px 0',
+    color: colorPalette.text,
+    fontSize: '14px',
+    fontWeight: '600'
+  }}>
+    创建新模板
+  </h4>
 
-            {/* 任务类别和内容 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-              <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '6px',
-                  color: colorPalette.text,
-                  fontSize: '13px',
-                  fontWeight: '500'
-                }}>
-                  类别
-                </label>
-                <select
-                  value={templateCategory}
-                  onChange={(e) => setTemplateCategory(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: `1px solid ${colorPalette.border}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: colorPalette.background,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {categories.map(c => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    {/* 模板名称 */}
+    <div>
+      <label style={{
+        display: 'block',
+        marginBottom: '6px',
+        color: colorPalette.text,
+        fontSize: '13px',
+        fontWeight: '500'
+      }}>
+        模板名称
+      </label>
+      <input
+        type="text"
+        placeholder="输入模板名称..."
+        value={templateName}
+        onChange={(e) => setTemplateName(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          border: `1px solid ${colorPalette.border}`,
+          borderRadius: '8px',
+          fontSize: '14px',
+          backgroundColor: colorPalette.background,
+          transition: 'all 0.2s ease'
+        }}
+        onFocus={(e) => {
+          e.target.style.borderColor = colorPalette.primary;
+          e.target.style.backgroundColor = colorPalette.surface;
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = colorPalette.border;
+          e.target.style.backgroundColor = colorPalette.background;
+        }}
+      />
+    </div>
+
+ 
+{/* 分类和任务内容在同一行 */}
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: '1fr 2fr',
+  gap: '12px',
+  alignItems: 'start',
+  maxWidth: '600px', // 限制最大宽度
+  width: '100%'
+}}>
+  {/* 任务类别 */}
+  <div style={{minWidth: 0}}> {/* 防止内容溢出 */}
+    <label style={{
+      display: 'block',
+      marginBottom: '6px',
+      color: colorPalette.text,
+      fontSize: '13px',
+      fontWeight: '500'
+    }}>
+      类别
+    </label>
+    <select
+      value={templateCategory}
+      onChange={(e) => setTemplateCategory(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        border: `1px solid ${colorPalette.border}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: colorPalette.background,
+        cursor: 'pointer',
+        maxWidth: '100%', // 限制选择框最大宽度
+        boxSizing: 'border-box'
+      }}
+    >
+      {categories.map(c => (
+        <option key={c.name} value={c.name}>{c.name}</option>
+      ))}
+    </select>
+  </div>
+
+  {/* 任务内容 */}
+  <div style={{minWidth: 0}}> {/* 防止内容溢出 */}
+    <label style={{
+      display: 'block',
+      marginBottom: '6px',
+      color: colorPalette.text,
+      fontSize: '13px',
+      fontWeight: '500'
+    }}>
+      任务内容
+    </label>
+    <input
+      type="text"
+      placeholder="输入任务内容..."
+      value={templateContent}
+      onChange={(e) => setTemplateContent(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        border: `1px solid ${colorPalette.border}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: colorPalette.background,
+        transition: 'all 0.2s ease',
+        maxWidth: '100%', // 限制输入框最大宽度
+        boxSizing: 'border-box'
+      }}
+      onFocus={(e) => {
+        e.target.style.borderColor = colorPalette.primary;
+        e.target.style.backgroundColor = colorPalette.surface;
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = colorPalette.border;
+        e.target.style.backgroundColor = colorPalette.background;
+      }}
+    />
+  </div>
+</div>
+
+
+{/* 计划时间 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: '6px',
+    color: colorPalette.text,
+    fontSize: '13px',
+    fontWeight: '500'
+  }}>
+    计划时间
+  </label>
+  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+    <input
+      type="time"
+      value={templateScheduledTime.split('-')[0] || ''}
+      onChange={(e) => {
+        const startTime = e.target.value;
+        const endTime = templateScheduledTime.split('-')[1] || '';
+        setTemplateScheduledTime(`${startTime}-${endTime}`);
+      }}
+      style={{
+        flex: 1,
+        padding: '12px 16px',
+        border: `1px solid ${colorPalette.border}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: colorPalette.background
+      }}
+    />
+    <span style={{ color: colorPalette.textLight, fontSize: '14px' }}>至</span>
+    <input
+      type="time"
+      value={templateScheduledTime.split('-')[1] || ''}
+      onChange={(e) => {
+        const startTime = templateScheduledTime.split('-')[0] || '';
+        const endTime = e.target.value;
+        setTemplateScheduledTime(`${startTime}-${endTime}`);
+      }}
+      style={{
+        flex: 1,
+        padding: '12px 16px',
+        border: `1px solid ${colorPalette.border}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: colorPalette.background
+      }}
+    />
+  </div>
+
+    
+
+              
+
+
+              
+ {/* 添加任务内容输入框 */}
+  <div>
+    <label style={{
+      display: 'block',
+      marginBottom: '6px',
+      color: colorPalette.text,
+      fontSize: '13px',
+      fontWeight: '500'
+    }}>
+      任务内容
+    </label>
+    <input
+      type="text"
+      placeholder="输入任务内容..."
+      value={templateContent}
+      onChange={(e) => setTemplateContent(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        border: `1px solid ${colorPalette.border}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: colorPalette.background,
+        transition: 'all 0.2s ease'
+      }}
+      onFocus={(e) => {
+        e.target.style.borderColor = colorPalette.primary;
+        e.target.style.backgroundColor = colorPalette.surface;
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = colorPalette.border;
+        e.target.style.backgroundColor = colorPalette.background;
+      }}
+    />
+  </div>
+</div>
+
               
 
             {/* 计划时间 */}
@@ -1948,16 +2093,16 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               value={editData.text}
               onChange={(e) => setEditData({ ...editData, text: e.target.value })}
               placeholder="请输入任务内容..."
-              rows="2"
+              rows="1"
               style={{
                 width: '100%',
-                padding: '12px 14px',
+                padding: '10px 12px',
                 border: '2px solid #e0e0e0',
-                borderRadius: 10,
-                fontSize: 15,
+                borderRadius: 8,
+                fontSize: 14,
                 resize: 'vertical',
-                fontFamily: 'inherit',
-                lineHeight: '1.4'
+                backgroundColor: '#fafafa',
+                fontFamily: 'inherit'
               }}
             />
           </div>
@@ -1977,7 +2122,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               value={editData.note}
               onChange={(e) => setEditData({ ...editData, note: e.target.value })}
               placeholder="输入备注..."
-              rows="3"
+              rows="1"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -2005,7 +2150,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               value={editData.reflection}
               onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
               placeholder="输入感想..."
-              rows="3"
+              rows="1"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -2076,7 +2221,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               flexWrap: 'wrap', 
               gap: 6, 
               marginBottom: 12,
-              minHeight: 32,
+              minHeight: 20,
               padding: 10,
               border: '2px solid #e0e0e0',
               borderRadius: 10,
@@ -2356,9 +2501,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 />
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#666', marginTop: 4, textAlign: 'center' }}>
-              24小时制 (时:分)
-            </div>
+            
           </div>
 
           {/* 进度跟踪 */}
@@ -2519,7 +2662,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
             >
-              🗑️ 删除任务
+              删除任务
             </button>
           </div>
 
@@ -5753,7 +5896,7 @@ const HonorModal = () => {
               alignItems: "center"
             }}
           >
-            <span>📌 置顶任务 ({pinnedTasks.length})</span>
+            <span>置顶 ({pinnedTasks.length})</span>
             <span
               onClick={(e) => {
                 e.stopPropagation();

@@ -11,17 +11,6 @@ button {
 
 button:active {
   transform: none !important;
-<<<<<<< HEAD
-  opacity: 1 !important;
-  background-color: inherit !important;
-  color: inherit !important;
-}
-
-/* 移除输入框的点击效果 */
-input:active, input:focus {
-  outline: none;
-  transform: none;
-=======
   background-color: initial !important;
   color: initial !important;
   filter: none !important;
@@ -53,5 +42,4 @@ button:focus:hover {
   outline: none !important;
   box-shadow: none !important;
   transform: none !important;
->>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 }
