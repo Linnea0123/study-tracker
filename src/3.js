@@ -737,230 +737,123 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
           </button>
         </div>
 
+        {/* 添加新模板 */}
+        <div style={{ marginBottom: '32px' }}>
+          <h4 style={{
+            margin: '0 0 16px 0',
+            color: colorPalette.text,
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            创建新模板
+          </h4>
 
-{/* 添加新模板 */}
-<div style={{ marginBottom: '32px' }}>
-  <h4 style={{
-    margin: '0 0 16px 0',
-    color: colorPalette.text,
-    fontSize: '14px',
-    fontWeight: '600'
-  }}>
-    创建新模板
-  </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* 模板名称 */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                模板名称
+              </label>
+              <input
+                type="text"
+                placeholder="输入模板名称..."
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${colorPalette.border}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  backgroundColor: colorPalette.background,
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colorPalette.primary;
+                  e.target.style.backgroundColor = colorPalette.surface;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colorPalette.border;
+                  e.target.style.backgroundColor = colorPalette.background;
+                }}
+              />
+            </div>
 
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-    {/* 模板名称 */}
-    <div>
-      <label style={{
-        display: 'block',
-        marginBottom: '6px',
-        color: colorPalette.text,
-        fontSize: '13px',
-        fontWeight: '500'
-      }}>
-        模板名称
-      </label>
-      <input
-        type="text"
-        placeholder="输入模板名称..."
-        value={templateName}
-        onChange={(e) => setTemplateName(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '12px 16px',
-          border: `1px solid ${colorPalette.border}`,
-          borderRadius: '8px',
-          fontSize: '14px',
-          backgroundColor: colorPalette.background,
-          transition: 'all 0.2s ease'
-        }}
-        onFocus={(e) => {
-          e.target.style.borderColor = colorPalette.primary;
-          e.target.style.backgroundColor = colorPalette.surface;
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = colorPalette.border;
-          e.target.style.backgroundColor = colorPalette.background;
-        }}
-      />
-    </div>
-
- 
-{/* 分类和任务内容在同一行 */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: '1fr 2fr',
-  gap: '12px',
-  alignItems: 'start',
-  maxWidth: '600px', // 限制最大宽度
-  width: '100%'
-}}>
-  {/* 任务类别 */}
-  <div style={{minWidth: 0}}> {/* 防止内容溢出 */}
-    <label style={{
-      display: 'block',
-      marginBottom: '6px',
-      color: colorPalette.text,
-      fontSize: '13px',
-      fontWeight: '500'
-    }}>
-      类别
-    </label>
-    <select
-      value={templateCategory}
-      onChange={(e) => setTemplateCategory(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '12px 16px',
-        border: `1px solid ${colorPalette.border}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        backgroundColor: colorPalette.background,
-        cursor: 'pointer',
-        maxWidth: '100%', // 限制选择框最大宽度
-        boxSizing: 'border-box'
-      }}
-    >
-      {categories.map(c => (
-        <option key={c.name} value={c.name}>{c.name}</option>
-      ))}
-    </select>
-  </div>
-
-  {/* 任务内容 */}
-  <div style={{minWidth: 0}}> {/* 防止内容溢出 */}
-    <label style={{
-      display: 'block',
-      marginBottom: '6px',
-      color: colorPalette.text,
-      fontSize: '13px',
-      fontWeight: '500'
-    }}>
-      任务内容
-    </label>
-    <input
-      type="text"
-      placeholder="输入任务内容..."
-      value={templateContent}
-      onChange={(e) => setTemplateContent(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '12px 16px',
-        border: `1px solid ${colorPalette.border}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        backgroundColor: colorPalette.background,
-        transition: 'all 0.2s ease',
-        maxWidth: '100%', // 限制输入框最大宽度
-        boxSizing: 'border-box'
-      }}
-      onFocus={(e) => {
-        e.target.style.borderColor = colorPalette.primary;
-        e.target.style.backgroundColor = colorPalette.surface;
-      }}
-      onBlur={(e) => {
-        e.target.style.borderColor = colorPalette.border;
-        e.target.style.backgroundColor = colorPalette.background;
-      }}
-    />
-  </div>
-</div>
-
-
-{/* 计划时间 */}
+            {/* 任务类别和内容 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: colorPalette.text,
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  类别
+                </label>
+                <select
+                  value={templateCategory}
+                  onChange={(e) => setTemplateCategory(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {categories.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* 任务内容 */}
 <div>
   <label style={{
     display: 'block',
-    marginBottom: '6px',
-    color: colorPalette.text,
-    fontSize: '13px',
-    fontWeight: '500'
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
   }}>
-    计划时间
+    📝 任务内容
   </label>
-  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-    <input
-      type="time"
-      value={templateScheduledTime.split('-')[0] || ''}
-      onChange={(e) => {
-        const startTime = e.target.value;
-        const endTime = templateScheduledTime.split('-')[1] || '';
-        setTemplateScheduledTime(`${startTime}-${endTime}`);
-      }}
-      style={{
-        flex: 1,
-        padding: '12px 16px',
-        border: `1px solid ${colorPalette.border}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        backgroundColor: colorPalette.background
-      }}
-    />
-    <span style={{ color: colorPalette.textLight, fontSize: '14px' }}>至</span>
-    <input
-      type="time"
-      value={templateScheduledTime.split('-')[1] || ''}
-      onChange={(e) => {
-        const startTime = templateScheduledTime.split('-')[0] || '';
-        const endTime = e.target.value;
-        setTemplateScheduledTime(`${startTime}-${endTime}`);
-      }}
-      style={{
-        flex: 1,
-        padding: '12px 16px',
-        border: `1px solid ${colorPalette.border}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        backgroundColor: colorPalette.background
-      }}
-    />
-  </div>
-
-    
-
-              
-
-
-              
- {/* 添加任务内容输入框 */}
-  <div>
-    <label style={{
-      display: 'block',
-      marginBottom: '6px',
-      color: colorPalette.text,
-      fontSize: '13px',
-      fontWeight: '500'
-    }}>
-      任务内容
-    </label>
-    <input
-      type="text"
-      placeholder="输入任务内容..."
-      value={templateContent}
-      onChange={(e) => setTemplateContent(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '12px 16px',
-        border: `1px solid ${colorPalette.border}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        backgroundColor: colorPalette.background,
-        transition: 'all 0.2s ease'
-      }}
-      onFocus={(e) => {
-        e.target.style.borderColor = colorPalette.primary;
-        e.target.style.backgroundColor = colorPalette.surface;
-      }}
-      onBlur={(e) => {
-        e.target.style.borderColor = colorPalette.border;
-        e.target.style.backgroundColor = colorPalette.background;
-      }}
-    />
-  </div>
+  <textarea
+    value={editData.text}
+    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+    placeholder="请输入任务内容..."
+    rows="2"
+    style={{
+      width: '100%',
+      padding: '12px 14px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 10,
+      fontSize: 15,
+      resize: 'vertical',
+      fontFamily: 'inherit',
+      lineHeight: '1.4'
+    }}
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+    }}
+  />
 </div>
-
-              
+             
+            </div>
 
             {/* 计划时间 */}
             <div>
@@ -1899,23 +1792,8 @@ const MoveSelectModal = ({ task, categories, onClose, onMove }) => {
   );
 };
 
-// 任务编辑模态框
-const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal }) => {
-  const [editData, setEditData] = useState({
-    text: task.text || '',
-    category: task.category || categories[0].name,
-    note: task.note || '',
-    reflection: task.reflection || '',
-    scheduledTime: task.scheduledTime || '',
-    tags: task.tags || [],
-    progress: task.progress || {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    pinned: task.pinned || false
-  });
+// 优化后的任务编辑模态框
+
 
   const fileInputRef = useRef(null);
 
@@ -1933,6 +1811,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
     onSave(finalEditData);
     onClose();
   };
+
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -1977,7 +1856,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
       alignItems: 'center',
       zIndex: 1000,
       padding: 10,
-      overflow: 'hidden'
+  overflow: 'hidden'  // 添加这行防止滚动
     }}>
       <div style={{
         backgroundColor: 'white',
@@ -1989,180 +1868,183 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
         overflow: 'auto',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
         border: '1px solid #e0e0e0',
-        position: 'relative'
+    position: 'relative'  // 确保内部元素定位正确
+        
       }}>
 
-        {/* 标题栏 */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-          paddingBottom: 15,
-          borderBottom: "2px solid #f0f0f0"
-        }}>
-          <h3 style={{ 
-            margin: 0, 
-            color: "#1a73e8",
-            fontSize: 18,
-            fontWeight: "600"
-          }}>
-            ✏️ 编辑任务
-          </h3>
-          
-          {/* 右上角按钮组 */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {/* 添加图片按钮 */}
-            <button
-              onClick={handleImageClick}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#f8f9fa",
-                color: "#666",
-                border: "1px solid #e0e0e0",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: "600",
-                transition: "all 0.2s ease"
-              }}
-            >
-              🖼️ 添加图片
-            </button>
-            
-            {/* 保存按钮 */}
-            <button
-              onClick={handleSave}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: "600",
-                transition: "all 0.2s ease"
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = "#0b5ed7"}
-              onMouseOut={(e) => e.target.style.backgroundColor = "#1a73e8"}
-            >
-              保存
-            </button>
-            
-            {/* 关闭按钮 */}
-            <button
-              onClick={onClose}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "20px",
-                cursor: "pointer",
-                color: "#666",
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "50%",
-                transition: "all 0.2s ease"
-              }}
-            >
-              ×
-            </button>
-          </div>
-        </div>
+{/* 标题栏 */}
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+  paddingBottom: 15,
+  borderBottom: "2px solid #f0f0f0"
+}}>
+  <h3 style={{ 
+    margin: 0, 
+    color: "#1a73e8",
+    fontSize: 18,
+    fontWeight: "600"
+  }}>
+    ✏️ 编辑任务
+  </h3>
+  
+  {/* 右上角按钮组 */}
+  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+   {/* 添加图片按钮 */}
+<button
+  onClick={handleImageClick}
+  style={{
+    padding: "8px 16px",
+    backgroundColor: "#f8f9fa",
+    color: "#666",
+    border: "1px solid #e0e0e0",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: "600",
+    transition: "all 0.2s ease"
+  }}
+>
+  🖼️ 添加图片
+</button>
+   
+   
+    {/* 保存按钮 */}
+    <button
+      onClick={handleSave}
+      style={{
+        padding: "8px 16px",
+        backgroundColor: "#1a73e8",
+        color: "#fff",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: "600",
+        transition: "all 0.2s ease"
+      }}
+      onMouseOver={(e) => e.target.style.backgroundColor = "#0b5ed7"}
+      onMouseOut={(e) => e.target.style.backgroundColor = "#1a73e8"}
+    >
+      保存
+    </button>
+    {/* 关闭按钮 */}
+<button
+  onClick={onClose}
+  style={{
+    background: "transparent",
+    border: "none",
+    fontSize: "20px",
+    cursor: "pointer",
+    color: "#666",
+    width: "30px",
+    height: "30px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "50%",
+    transition: "all 0.2s ease"
+  }}
+>
+  ×
+</button>
+</div> {/* 关闭标题栏的 div */}
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16
-        }}>
-          {/* 任务内容 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              📝 任务内容
-            </label>
-            <textarea
-              value={editData.text}
-              onChange={(e) => setEditData({ ...editData, text: e.target.value })}
-              placeholder="请输入任务内容..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
+<div style={{
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16
+}}>
+  {/* 任务内容 - 修复后的版本 */}
+  <div>
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: '600',
+      color: '#333',
+      fontSize: 14
+    }}>
+      📝 任务内容
+    </label>
+    <textarea
+      value={editData.text}
+      onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+      placeholder="请输入任务内容..."
+      rows="2"
+      style={{
+        width: '100%',
+        padding: '12px 14px',
+        border: '2px solid #e0e0e0',
+        borderRadius: 10,
+        fontSize: 15,
+        resize: 'vertical',
+        fontFamily: 'inherit',
+        lineHeight: '1.4'
+      }}
+    />
+  </div>
+</div> {/* 关闭主容器的 div */}
+   
 
-          {/* 备注和感想 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              备注
-            </label>
-            <textarea
-              value={editData.note}
-              onChange={(e) => setEditData({ ...editData, note: e.target.value })}
-              placeholder="输入备注..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              感想
-            </label>
-            <textarea
-              value={editData.reflection}
-              onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
-              placeholder="输入感想..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
+         {/* 备注和感想 */}
+<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+  <div>
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: '600',
+      color: '#333',
+      fontSize: 14
+    }}>
+      备注
+    </label>
+    <textarea
+      value={editData.note}
+      onChange={(e) => setEditData({ ...editData, note: e.target.value })}
+      placeholder="输入备注..."
+      rows="3"
+      style={{
+        width: '100%',
+        padding: '10px 12px',
+        border: '2px solid #e0e0e0',
+        borderRadius: 8,
+        fontSize: 14,
+        resize: 'vertical',
+        backgroundColor: '#fafafa',
+        fontFamily: 'inherit'
+      }}
+    />
+  </div>
+  <div>
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: '600',
+      color: '#333',
+      fontSize: 14
+    }}>
+      感想
+    </label>
+    <textarea
+      value={editData.reflection}
+      onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
+      placeholder="输入感想..."
+      rows="3"
+      style={{
+        width: '100%',
+        padding: '10px 12px',
+        border: '2px solid #e0e0e0',
+        borderRadius: 8,
+        fontSize: 14,
+        resize: 'vertical',
+        backgroundColor: '#fafafa',
+        fontFamily: 'inherit'
+      }}
+    />
+  </div>
+</div>
 
           {/* 任务类别 */}
           <div>
@@ -2173,7 +2055,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               color: '#333',
               fontSize: 14
             }}>
-              类别
+            类别
             </label>
             <select
               value={editData.category}
@@ -2221,7 +2103,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               flexWrap: 'wrap', 
               gap: 6, 
               marginBottom: 12,
-              minHeight: 20,
+              minHeight: 32,
               padding: 10,
               border: '2px solid #e0e0e0',
               borderRadius: 10,
@@ -2229,23 +2111,23 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             }}>
               {editData.tags?.map((tag, index) => (
                 <span
-                  key={index}
-                  style={{
-                    fontSize: 9,
-                    padding: '1px 4px',
-                    backgroundColor: tag.color,
-                    color: '#fff',
-                    borderRadius: 6,
-                    border: 'none',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    maxWidth: '40px'
-                  }}
-                  title={tag.name}
+                key={index}
+                style={{
+                  fontSize: 9,
+                  padding: '1px 4px',
+                  backgroundColor: tag.color,  // 彩色底色（原来字体的颜色）
+                  color: '#fff',  // 白色字
+                  borderRadius: 6,
+                  border: 'none',  // 无边框
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  maxWidth: '40px'
+                }}
+                title
                 >
                   {tag.name}
                   <button
@@ -2389,121 +2271,124 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             </div>
           </div>
 
-          {/* 计划时间 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              ⏰ 计划时间
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-              {/* 开始时间 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={editData.scheduledTime.split('-')[0]?.split(':')[0] || ''}
-                  onChange={(e) => {
-                    const hours = e.target.value.padStart(2, '0');
-                    const minutes = editData.scheduledTime.split('-')[0]?.split(':')[1] || '00';
-                    const startTime = `${hours}:${minutes}`;
-                    const endTime = editData.scheduledTime.split('-')[1] || '';
-                    setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
-                  }}
-                  placeholder="08"
-                  style={{
-                    width: '50px',
-                    padding: '8px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center'
-                  }}
-                />
-                <span style={{ color: '#666' }}>:</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={editData.scheduledTime.split('-')[0]?.split(':')[1] || ''}
-                  onChange={(e) => {
-                    const hours = editData.scheduledTime.split('-')[0]?.split(':')[0] || '00';
-                    const minutes = e.target.value.padStart(2, '0');
-                    const startTime = `${hours}:${minutes}`;
-                    const endTime = editData.scheduledTime.split('-')[1] || '';
-                    setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
-                  }}
-                  placeholder="00"
-                  style={{
-                    width: '50px',
-                    padding: '8px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center'
-                  }}
-                />
-              </div>
-              
-              <span style={{ color: '#666', fontSize: 14, margin: '0 8px' }}>至</span>
-              
-              {/* 结束时间 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={editData.scheduledTime.split('-')[1]?.split(':')[0] || ''}
-                  onChange={(e) => {
-                    const hours = e.target.value.padStart(2, '0');
-                    const minutes = editData.scheduledTime.split('-')[1]?.split(':')[1] || '00';
-                    const endTime = `${hours}:${minutes}`;
-                    const startTime = editData.scheduledTime.split('-')[0] || '';
-                    setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
-                  }}
-                  placeholder="17"
-                  style={{
-                    width: '50px',
-                    padding: '8px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center'
-                  }}
-                />
-                <span style={{ color: '#666' }}>:</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={editData.scheduledTime.split('-')[1]?.split(':')[1] || ''}
-                  onChange={(e) => {
-                    const hours = editData.scheduledTime.split('-')[1]?.split(':')[0] || '00';
-                    const minutes = e.target.value.padStart(2, '0');
-                    const endTime = `${hours}:${minutes}`;
-                    const startTime = editData.scheduledTime.split('-')[0] || '';
-                    setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
-                  }}
-                  placeholder="30"
-                  style={{
-                    width: '50px',
-                    padding: '8px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center'
-                  }}
-                />
-              </div>
-            </div>
-            
-          </div>
+    {/* 计划时间 - 数字输入框版本 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    ⏰ 计划时间
+  </label>
+  <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+    {/* 开始时间 */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        value={editData.scheduledTime.split('-')[0]?.split(':')[0] || ''}
+        onChange={(e) => {
+          const hours = e.target.value.padStart(2, '0');
+          const minutes = editData.scheduledTime.split('-')[0]?.split(':')[1] || '00';
+          const startTime = `${hours}:${minutes}`;
+          const endTime = editData.scheduledTime.split('-')[1] || '';
+          setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
+        }}
+        placeholder="08"
+        style={{
+          width: '50px',
+          padding: '8px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center'
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        value={editData.scheduledTime.split('-')[0]?.split(':')[1] || ''}
+        onChange={(e) => {
+          const hours = editData.scheduledTime.split('-')[0]?.split(':')[0] || '00';
+          const minutes = e.target.value.padStart(2, '0');
+          const startTime = `${hours}:${minutes}`;
+          const endTime = editData.scheduledTime.split('-')[1] || '';
+          setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
+        }}
+        placeholder="00"
+        style={{
+          width: '50px',
+          padding: '8px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center'
+        }}
+      />
+    </div>
+    
+    <span style={{ color: '#666', fontSize: 14, margin: '0 8px' }}>至</span>
+    
+    {/* 结束时间 */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        value={editData.scheduledTime.split('-')[1]?.split(':')[0] || ''}
+        onChange={(e) => {
+          const hours = e.target.value.padStart(2, '0');
+          const minutes = editData.scheduledTime.split('-')[1]?.split(':')[1] || '00';
+          const endTime = `${hours}:${minutes}`;
+          const startTime = editData.scheduledTime.split('-')[0] || '';
+          setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
+        }}
+        placeholder="17"
+        style={{
+          width: '50px',
+          padding: '8px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center'
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        value={editData.scheduledTime.split('-')[1]?.split(':')[1] || ''}
+        onChange={(e) => {
+          const hours = editData.scheduledTime.split('-')[1]?.split(':')[0] || '00';
+          const minutes = e.target.value.padStart(2, '0');
+          const endTime = `${hours}:${minutes}`;
+          const startTime = editData.scheduledTime.split('-')[0] || '';
+          setEditData({ ...editData, scheduledTime: `${startTime}-${endTime}` });
+        }}
+        placeholder="30"
+        style={{
+          width: '50px',
+          padding: '8px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center'
+        }}
+      />
+    </div>
+  </div>
+  <div style={{ fontSize: 12, color: '#666', marginTop: 4, textAlign: 'center' }}>
+    24小时制 (时:分)
+  </div>
+</div>
 
+          
           {/* 进度跟踪 */}
           <div>
             <label style={{
@@ -2598,14 +2483,14 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                       unit: e.target.value
                     }
                   })}
-                  style={{
-                    width: '60%',
-                    padding: '8px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: '12px',
-                    height: 'auto'
-                  }}
+                    style={{
+    width: '60%',           // 只调窄宽度，保持80%
+    padding: '8px',         // 保持与其他输入框相同的padding
+    border: '1px solid #e0e0e0',
+    borderRadius: 6,
+    fontSize: '12px',
+    height: 'auto'          // 保持自动高度与其他一致
+  }}
                 >
                   <option value="%">%</option>
                   <option value="页">页</option>
@@ -2618,62 +2503,64 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
           </div>
 
           {/* 功能按钮区域 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 8,
-            marginTop: 8
-          }}>
-            <button
-              onClick={() => {
-                onTogglePinned(task);
-                setEditData({ ...editData, pinned: !editData.pinned });
-              }}
-              style={{
-                padding: '10px 8px',
-                backgroundColor: editData.pinned ? '#ffcc00' : '#f8f9fa',
-                color: editData.pinned ? '#000' : '#666',
-                border: '1px solid #e0e0e0',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = editData.pinned ? '#e6b800' : '#e9ecef'}
-              onMouseOut={(e) => e.target.style.backgroundColor = editData.pinned ? '#ffcc00' : '#f8f9fa'}
-            >
-              {editData.pinned ? '📌 已置顶' : '📌 置顶'}
-            </button>
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: 8,
+  marginTop: 8
+}}>
+  <button
+    onClick={() => {
+      onTogglePinned(task);
+      setEditData({ ...editData, pinned: !editData.pinned });
+    }}
+    style={{
+      padding: '10px 8px',
+      backgroundColor: editData.pinned ? '#ffcc00' : '#f8f9fa',
+      color: editData.pinned ? '#000' : '#666',
+      border: '1px solid #e0e0e0',
+      borderRadius: 8,
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: '500',
+      transition: 'all 0.2s ease'
+    }}
+    onMouseOver={(e) => e.target.style.backgroundColor = editData.pinned ? '#e6b800' : '#e9ecef'}
+    onMouseOut={(e) => e.target.style.backgroundColor = editData.pinned ? '#ffcc00' : '#f8f9fa'}
+  >
+    {editData.pinned ? '📌 已置顶' : '📌 置顶'}
+  </button>
 
-            <button
-              onClick={handleDelete}
-              style={{
-                padding: '10px 8px',
-                backgroundColor: '#f8f9fa',
-                color: '#666',
-                border: '1px solid #e0e0e0',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-            >
-              🗑️ 删除任务
-            </button>
+  <button
+    onClick={handleDelete}
+    style={{
+      padding: '10px 8px',
+      backgroundColor: '#f8f9fa',
+      color: '#666',
+      border: '1px solid #e0e0e0',
+      borderRadius: 8,
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: '500',
+      transition: 'all 0.2s ease'
+    }}
+    onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
+    onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+  >
+    🗑️ 删除任务
+  </button>
           </div>
 
           {/* 隐藏的文件输入 */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            style={{ display: 'none' }}
-          />
+            <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    onChange={handleImageChange}
+    style={{ display: 'none' }}
+  />
+
+  
         </div>
       </div>
     </div>
