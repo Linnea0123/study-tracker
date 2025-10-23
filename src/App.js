@@ -1354,6 +1354,554 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
   );
 };
 
+// 模板模态框组件
+const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
+  const [templateName, setTemplateName] = useState('');
+  const [templateCategory, setTemplateCategory] = useState(categories[0].name);
+  const [templateContent, setTemplateContent] = useState('');
+  const [templateTags, setTemplateTags] = useState([]);
+  const [templateScheduledTime, setTemplateScheduledTime] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#6B7280');
+
+  const colorPalette = {
+    primary: '#3B82F6',
+    secondary: '#6B7280',
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    border: '#E5E7EB',
+    text: '#1F2937',
+    textLight: '#6B7280'
+  };
+
+  const commonTags = [
+    { name: '重要', color: '#EF4444', textColor: '#FFFFFF' },
+    { name: '紧急', color: '#F59E0B', textColor: '#FFFFFF' },
+    { name: '复习', color: '#10B981', textColor: '#FFFFFF' },
+    { name: '预习', color: '#3B82F6', textColor: '#FFFFFF' },
+    { name: '作业', color: '#8B5CF6', textColor: '#FFFFFF' }
+  ];
+
+  const handleAddTag = () => {
+    if (newTagName.trim()) {
+      const newTag = {
+        name: newTagName.trim(),
+        color: newTagColor,
+        textColor: '#FFFFFF'
+      };
+      setTemplateTags([...templateTags, newTag]);
+      setNewTagName('');
+      setNewTagColor('#6B7280');
+    }
+  };
+
+  const handleRemoveTag = (index) => {
+    const newTags = [...templateTags];
+    newTags.splice(index, 1);
+    setTemplateTags(newTags);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div style={{
+        backgroundColor: colorPalette.surface,
+        padding: '24px',
+        borderRadius: '16px',
+        width: '90%',
+        maxWidth: '480px',
+        maxHeight: '85vh',
+        overflow: 'auto',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+        border: `1px solid ${colorPalette.border}`
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: `1px solid ${colorPalette.border}`
+        }}>
+          <h3 style={{ 
+            margin: 0, 
+            color: colorPalette.text,
+            fontSize: '18px',
+            fontWeight: '600'
+          }}>
+            📋 任务模板
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer',
+              color: colorPalette.textLight,
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ marginBottom: '32px' }}>
+          <h4 style={{
+            margin: '0 0 16px 0',
+            color: colorPalette.text,
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            创建新模板
+          </h4>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                模板名称
+              </label>
+              <input
+                type="text"
+                placeholder="输入模板名称..."
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${colorPalette.border}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  backgroundColor: colorPalette.background
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: colorPalette.text,
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  类别
+                </label>
+                <select
+                  value={templateCategory}
+                  onChange={(e) => setTemplateCategory(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                >
+                  {categories.map(c => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  color: colorPalette.text,
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  任务内容
+                </label>
+                <input
+                  type="text"
+                  placeholder="输入任务内容..."
+                  value={templateContent}
+                  onChange={(e) => setTemplateContent(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                计划时间
+              </label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <input
+                  type="time"
+                  value={templateScheduledTime.split('-')[0] || ''}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    const endTime = templateScheduledTime.split('-')[1] || '';
+                    setTemplateScheduledTime(`${startTime}-${endTime}`);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+                <span style={{ color: colorPalette.textLight, fontSize: '14px' }}>至</span>
+                <input
+                  type="time"
+                  value={templateScheduledTime.split('-')[1] || ''}
+                  onChange={(e) => {
+                    const startTime = templateScheduledTime.split('-')[0] || '';
+                    const endTime = e.target.value;
+                    setTemplateScheduledTime(`${startTime}-${endTime}`);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                color: colorPalette.text,
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                标签
+              </label>
+              
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '6px', 
+                marginBottom: '12px',
+                minHeight: '40px',
+                padding: '12px',
+                border: `1px solid ${colorPalette.border}`,
+                borderRadius: '8px',
+                backgroundColor: colorPalette.background
+              }}>
+                {templateTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      backgroundColor: tag.color,
+                      color: tag.textColor,
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {tag.name}
+                    <button
+                      onClick={() => handleRemoveTag(index)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        padding: 0,
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'inherit',
+                        opacity: 0.8
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="新标签名称"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    backgroundColor: colorPalette.background
+                  }}
+                />
+                <input
+                  type="color"
+                  value={newTagColor}
+                  onChange={(e) => setNewTagColor(e.target.value)}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    padding: 0,
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <button
+                  onClick={handleAddTag}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: colorPalette.primary,
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}
+                >
+                  添加
+                </button>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '12px', color: colorPalette.textLight, marginBottom: '6px' }}>
+                  常用标签
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {commonTags.map((tag, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        const isAlreadyAdded = templateTags.some(t => t.name === tag.name);
+                        if (!isAlreadyAdded) {
+                          setTemplateTags([...templateTags, tag]);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: tag.color,
+                        color: tag.textColor,
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (templateName && templateContent) {
+                  onSave({
+                    name: templateName,
+                    category: templateCategory,
+                    content: templateContent,
+                    scheduledTime: templateScheduledTime,
+                    tags: templateTags
+                  });
+                  setTemplateName('');
+                  setTemplateContent('');
+                  setTemplateScheduledTime('');
+                  setTemplateTags([]);
+                }
+              }}
+              disabled={!templateName || !templateContent}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                backgroundColor: (!templateName || !templateContent) ? colorPalette.border : colorPalette.primary,
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: (!templateName || !templateContent) ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+            >
+              创建模板
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h4 style={{
+            margin: '0 0 16px 0',
+            color: colorPalette.text,
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            现有模板 ({templates.length})
+          </h4>
+          
+          {templates.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              color: colorPalette.textLight,
+              fontSize: '13px',
+              padding: '32px 16px',
+              backgroundColor: colorPalette.background,
+              borderRadius: '8px'
+            }}>
+              暂无模板
+            </div>
+          ) : (
+            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+              {templates.map((template, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    padding: '16px',
+                    border: `1px solid ${colorPalette.border}`,
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                    backgroundColor: colorPalette.background
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      marginBottom: '6px'
+                    }}>
+                      <span style={{ 
+                        fontWeight: '600', 
+                        fontSize: '13px',
+                        color: colorPalette.text
+                      }}>
+                        {template.name}
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        backgroundColor: colorPalette.primary,
+                        color: '#FFFFFF',
+                        borderRadius: '4px'
+                      }}>
+                        {template.category}
+                      </span>
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: colorPalette.textLight,
+                      marginBottom: '8px'
+                    }}>
+                      {template.content}
+                    </div>
+                    
+                    {template.tags && template.tags.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                        {template.tags.map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            style={{
+                              fontSize: '9px',
+                              padding: '2px 6px',
+                              backgroundColor: tag.color,
+                              color: tag.textColor,
+                              borderRadius: '6px'
+                            }}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {template.scheduledTime && (
+                      <div style={{ 
+                        fontSize: '11px', 
+                        color: colorPalette.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span>⏰</span>
+                        {template.scheduledTime}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onDelete(index)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: colorPalette.textLight,
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 操作菜单模态框
 const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflection, onTogglePinned, onImageUpload, setShowDeleteModal,
   onEditScheduledTime, onDeleteScheduledTime, position }) => {
@@ -1363,7 +1911,10 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
     fileInputRef.current?.click();
   };
 
+<<<<<<< HEAD
   // 添加：计算菜单位置，确保在屏幕内
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const calculateMenuPosition = (position) => {
     const menuWidth = 120;
     const menuHeight = 200;
@@ -1552,7 +2103,11 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
   );
 };
 
+<<<<<<< HEAD
 // 日期选择模态框 - 月历视图
+=======
+// 日期选择模态框
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 const DatePickerModal = ({ onClose, onSelectDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -1903,6 +2458,7 @@ const MoveSelectModal = ({ task, categories, onClose, onMove }) => {
 const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
+<<<<<<< HEAD
     category: task.category || categories[0].name,
     note: task.note || '',
     reflection: task.reflection || '',
@@ -1917,6 +2473,18 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
     pinned: task.pinned || false
   });
 
+=======
+    note: task.note || '',
+    reflection: task.reflection || '',
+    scheduledTime: task.scheduledTime || '',
+    pinned: task.pinned || false,
+    category: task.category || categories[0].name,
+    progress: task.progress ? { ...task.progress } : { initial: 0, current: 0, target: 0, unit: "%" },
+    tags: task.tags || [],
+    newTagName: '',
+    newTagColor: '#e0e0e0'
+  });
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const fileInputRef = useRef(null);
 
   const handleSave = () => {
@@ -1952,7 +2520,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
     }
   };
 
+<<<<<<< HEAD
   // 常用标签配置
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const commonTags = [
     { name: '重要', color: '#ff4444', textColor: '#fff' },
     { name: '紧急', color: '#ff9800', textColor: '#fff' },
@@ -1991,8 +2562,11 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
         border: '1px solid #e0e0e0',
         position: 'relative'
       }}>
+<<<<<<< HEAD
 
         {/* 标题栏 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
         <div style={{
           display: "flex",
           justifyContent: "space-between",
@@ -2010,6 +2584,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             ✏️ 编辑任务
           </h3>
           
+<<<<<<< HEAD
           {/* 右上角按钮组 */}
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {/* 添加图片按钮 */}
@@ -2031,6 +2606,9 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             </button>
             
             {/* 保存按钮 */}
+=======
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <button
               onClick={handleSave}
               style={{
@@ -2041,16 +2619,24 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 13,
+<<<<<<< HEAD
                 fontWeight: "600",
                 transition: "all 0.2s ease"
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = "#0b5ed7"}
               onMouseOut={(e) => e.target.style.backgroundColor = "#1a73e8"}
+=======
+                fontWeight: "600"
+              }}
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             >
               保存
             </button>
             
+<<<<<<< HEAD
             {/* 关闭按钮 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <button
               onClick={onClose}
               style={{
@@ -2064,8 +2650,12 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+<<<<<<< HEAD
                 borderRadius: "50%",
                 transition: "all 0.2s ease"
+=======
+                borderRadius: "50%"
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               }}
             >
               ×
@@ -2078,7 +2668,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
           flexDirection: 'column',
           gap: 16
         }}>
+<<<<<<< HEAD
           {/* 任务内容 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           <div>
             <label style={{
               display: 'block',
@@ -2089,6 +2682,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             }}>
               📝 任务内容
             </label>
+<<<<<<< HEAD
             <textarea
               value={editData.text}
               onChange={(e) => setEditData({ ...editData, text: e.target.value })}
@@ -2103,10 +2697,25 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 resize: 'vertical',
                 backgroundColor: '#fafafa',
                 fontFamily: 'inherit'
+=======
+            <input
+              type="text"
+              value={editData.text}
+              onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+              placeholder="请输入任务内容..."
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '2px solid #e0e0e0',
+                borderRadius: 10,
+                fontSize: 15,
+                backgroundColor: '#fafafa'
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               }}
             />
           </div>
 
+<<<<<<< HEAD
           {/* 备注和感想 */}
           <div>
             <label style={{
@@ -2134,6 +2743,63 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 fontFamily: 'inherit'
               }}
             />
+=======
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontWeight: '600',
+                color: '#333',
+                fontSize: 14
+              }}>
+                📋 任务备注
+              </label>
+              <textarea
+                value={editData.note}
+                onChange={(e) => setEditData({ ...editData, note: e.target.value })}
+                placeholder="输入备注..."
+                rows="3"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  resize: 'vertical',
+                  backgroundColor: '#fafafa',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontWeight: '600',
+                color: '#333',
+                fontSize: 14
+              }}>
+                💭 完成感想
+              </label>
+              <textarea
+                value={editData.reflection}
+                onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
+                placeholder="输入感想..."
+                rows="3"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  resize: 'vertical',
+                  backgroundColor: '#fafafa',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           </div>
 
           <div>
@@ -2144,6 +2810,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               color: '#333',
               fontSize: 14
             }}>
+<<<<<<< HEAD
               感想
             </label>
             <textarea
@@ -2174,6 +2841,9 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               fontSize: 14
             }}>
               类别
+=======
+              🗂️ 任务类别
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             </label>
             <select
               value={editData.category}
@@ -2185,6 +2855,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 borderRadius: 10,
                 fontSize: 14,
                 backgroundColor: '#fafafa',
+<<<<<<< HEAD
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
               }}
@@ -2195,6 +2866,9 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               onBlur={(e) => {
                 e.target.style.borderColor = '#e0e0e0';
                 e.target.style.backgroundColor = '#fafafa';
+=======
+                cursor: 'pointer'
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               }}
             >
               {categories.map(cat => (
@@ -2203,7 +2877,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             </select>
           </div>
 
+<<<<<<< HEAD
           {/* 标签编辑 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           <div>
             <label style={{
               display: 'block',
@@ -2212,16 +2889,26 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               color: '#333',
               fontSize: 14
             }}>
+<<<<<<< HEAD
               标签
             </label>
             
             {/* 当前标签显示 */}
+=======
+              🏷️ 任务标签
+            </label>
+            
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <div style={{ 
               display: 'flex', 
               flexWrap: 'wrap', 
               gap: 6, 
               marginBottom: 12,
+<<<<<<< HEAD
               minHeight: 20,
+=======
+              minHeight: 32,
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               padding: 10,
               border: '2px solid #e0e0e0',
               borderRadius: 10,
@@ -2245,7 +2932,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                     justifyContent: 'center',
                     maxWidth: '40px'
                   }}
+<<<<<<< HEAD
                   title={tag.name}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
                 >
                   {tag.name}
                   <button
@@ -2270,8 +2960,11 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                       color: 'inherit',
                       opacity: 0.7
                     }}
+<<<<<<< HEAD
                     onMouseOver={(e) => e.target.style.opacity = '1'}
                     onMouseOut={(e) => e.target.style.opacity = '0.7'}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
                   >
                     ×
                   </button>
@@ -2284,7 +2977,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               )}
             </div>
 
+<<<<<<< HEAD
             {/* 添加新标签 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
               <input
                 type="text"
@@ -2339,17 +3035,25 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                   borderRadius: 8,
                   cursor: 'pointer',
                   fontSize: 12,
+<<<<<<< HEAD
                   fontWeight: '500',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseOver={(e) => e.target.style.backgroundColor = '#0b5ed7'}
                 onMouseOut={(e) => e.target.style.backgroundColor = '#1a73e8'}
+=======
+                  fontWeight: '500'
+                }}
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               >
                 添加
               </button>
             </div>
 
+<<<<<<< HEAD
             {/* 常用标签 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <div>
               <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>常用标签:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -2375,12 +3079,17 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                       borderRadius: 16,
                       cursor: 'pointer',
                       fontSize: 11,
+<<<<<<< HEAD
                       fontWeight: '500',
                       transition: 'all 0.2s ease',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                     }}
                     onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
                     onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+=======
+                      fontWeight: '500'
+                    }}
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
                   >
                     {tag.name}
                   </button>
@@ -2389,7 +3098,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* 计划时间 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           <div>
             <label style={{
               display: 'block',
@@ -2401,7 +3113,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               ⏰ 计划时间
             </label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+<<<<<<< HEAD
               {/* 开始时间 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <input
                   type="number"
@@ -2452,7 +3167,10 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               
               <span style={{ color: '#666', fontSize: 14, margin: '0 8px' }}>至</span>
               
+<<<<<<< HEAD
               {/* 结束时间 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <input
                   type="number"
@@ -2501,10 +3219,18 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 />
               </div>
             </div>
+<<<<<<< HEAD
             
           </div>
 
           {/* 进度跟踪 */}
+=======
+            <div style={{ fontSize: 12, color: '#666', marginTop: 4, textAlign: 'center' }}>
+              24小时制 (时:分)
+            </div>
+          </div>
+          
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           <div>
             <label style={{
               display: 'block',
@@ -2599,12 +3325,20 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                     }
                   })}
                   style={{
+<<<<<<< HEAD
                     width: '60%',
                     padding: '8px',
                     border: '1px solid #e0e0e0',
                     borderRadius: 6,
                     fontSize: '12px',
                     height: 'auto'
+=======
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 6,
+                    fontSize: 12
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
                   }}
                 >
                   <option value="%">%</option>
@@ -2617,10 +3351,16 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* 功能按钮区域 */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
+=======
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             gap: 8,
             marginTop: 8
           }}>
@@ -2637,16 +3377,40 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 borderRadius: 8,
                 cursor: 'pointer',
                 fontSize: 12,
+<<<<<<< HEAD
                 fontWeight: '500',
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = editData.pinned ? '#e6b800' : '#e9ecef'}
               onMouseOut={(e) => e.target.style.backgroundColor = editData.pinned ? '#ffcc00' : '#f8f9fa'}
+=======
+                fontWeight: '500'
+              }}
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             >
               {editData.pinned ? '📌 已置顶' : '📌 置顶'}
             </button>
 
             <button
+<<<<<<< HEAD
+=======
+              onClick={handleImageClick}
+              style={{
+                padding: '10px 8px',
+                backgroundColor: '#f8f9fa',
+                color: '#666',
+                border: '1px solid #e0e0e0',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: '500'
+              }}
+            >
+              🖼️ 添加图片
+            </button>
+
+            <button
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
               onClick={handleDelete}
               style={{
                 padding: '10px 8px',
@@ -2656,17 +3420,25 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 borderRadius: 8,
                 cursor: 'pointer',
                 fontSize: 12,
+<<<<<<< HEAD
                 fontWeight: '500',
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+=======
+                fontWeight: '500'
+              }}
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             >
               🗑️ 删除任务
             </button>
           </div>
 
+<<<<<<< HEAD
           {/* 隐藏的文件输入 */}
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
           <input
             ref={fileInputRef}
             type="file"
@@ -2702,9 +3474,13 @@ const TaskItem = ({
 }) => {
   const [showProgressControls, setShowProgressControls] = useState(false);
   
+<<<<<<< HEAD
   //开始添加智能布局判断
   const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
   //结束添加智能布局判断
+=======
+  const isLongText = task.text.length > 20;
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 
   const handleProgressAdjust = (increment) => {
     const newCurrent = Math.max(0, (Number(task.progress.current) || 0) + increment);
@@ -2721,6 +3497,7 @@ const TaskItem = ({
     }
   };
 
+<<<<<<< HEAD
  return (
   <li
     className="task-item"
@@ -2937,6 +3714,99 @@ const TaskItem = ({
             alignItems: 'center',
             flexShrink: 0
           }}>
+=======
+  return (
+    <li
+      className="task-item"
+      style={{
+        position: "relative",
+        background: task.pinned ? "#fff9e6" : "#fff",
+        borderRadius: 6,
+        minHeight: "24px",
+        marginBottom: 4,
+        padding: "8px",
+        border: "0.5px solid #e0e0e0",
+      }}
+    >
+      {!isLongText ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div style={{
+             display: "flex", 
+             gap: 8, 
+             alignItems: "flex-start", 
+             flex: 1,
+             minWidth: 0
+          }}>
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEditModal(task);
+                }}
+                style={{
+                  wordBreak: "break-word",
+                  whiteSpace: "normal",
+                  cursor: "pointer",
+                  textDecoration: task.done ? "line-through" : "none",
+                  color: task.done ? "#999" : "#000",
+                  fontWeight: task.pinned ? "bold" : "normal",
+                  lineHeight: "1.4",
+                  fontSize: "14px",
+                }}
+              >
+                {task.text}
+                {task.pinned && " 📌"}
+                {task.isWeekTask && " 🌟"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ 
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 4,  
+            marginTop: 0, 
+            alignSelf: 'flex-start',
+            alignItems: 'center'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: 3, 
+              flexWrap: 'wrap',
+              maxWidth: '80px'
+            }}>
+              {task.tags?.map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    fontSize: 9,
+                    padding: '1px 4px',
+                    backgroundColor: tag.color,
+                    color: '#fff',
+                    borderRadius: 6,
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    maxWidth: '40px'
+                  }}
+                  title={tag.name}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -2982,6 +3852,7 @@ const TaskItem = ({
             </span>
           </div>
         </div>
+<<<<<<< HEAD
       </div>
     )}
     {/* 结束智能布局 */}
@@ -3014,6 +3885,159 @@ const TaskItem = ({
             }} />
           </div>
         </div>
+=======
+      ) : (
+        <div>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+            <input
+              type="checkbox"
+              checked={task.done}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
+            />
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditModal(task);
+              }}
+              style={{
+                flex: 1,
+                wordBreak: "break-word",
+                whiteSpace: "normal",
+                cursor: "pointer",
+                textDecoration: task.done ? "line-through" : "none",
+                color: task.done ? "#999" : "#000",
+                fontWeight: task.pinned ? "bold" : "normal",
+                lineHeight: "1.4",
+                fontSize: "14px",
+                paddingRight: '20px'
+              }}
+            >
+              {task.text}
+              {task.pinned && " 📌"}
+              {task.isWeekTask && " 🌟"}
+            </div>
+          </div>
+
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            marginTop: '4px'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: 3, 
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end'
+            }}>
+              {task.tags?.map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    fontSize: 9,
+                    padding: '1px 4px',
+                    backgroundColor: tag.color,
+                    color: '#fff',
+                    borderRadius: 6,
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    maxWidth: '40px'
+                  }}
+                  title={tag.name}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: 4, 
+              alignItems: 'center',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTimerClick();
+                }}
+                style={{
+                  fontSize: 12,
+                  padding: "2px 6px",
+                  border: "none",
+                  borderRadius: "4px",
+                  backgroundColor: "transparent",
+                  color: isTimerRunning ? "#ff4444" : "#4CAF50",
+                  cursor: "pointer",
+                  flexShrink: 0
+                }}
+                title={isTimerRunning ? "点击暂停计时" : "点击开始计时"}
+              >
+                {isTimerRunning ? "⏸️" : "⏱️"}
+              </button>
+
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTime(task);
+                }}
+                style={{
+                  fontSize: 12,
+                  color: "#333",
+                  cursor: "pointer",
+                  padding: "2px 8px",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                  backgroundColor: "#f5f5f5",
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
+                }}
+                title="点击修改时间"
+              >
+                {isTimerRunning 
+                  ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+                  : formatTimeNoSeconds(task.timeSpent || 0)
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {task.progress && task.progress.target > 0 && (
+        <div style={{ marginTop: 6 }}>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowProgressControls(!showProgressControls);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            <div style={{
+              width: '100%',
+              height: 10,
+              backgroundColor: '#f0f0f0',
+              borderRadius: 5,
+              overflow: 'hidden',
+              marginBottom: 6
+            }}>
+              <div style={{
+                width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / 
+                        Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
+                height: '100%',
+                backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
+                borderRadius: 5,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 
           <div style={{ 
             display: 'flex', 
@@ -3170,7 +4194,304 @@ const TaskItem = ({
   );
 };
 
+<<<<<<< HEAD
 
+=======
+// 每日日志汇总模态框
+const DailyLogModal = ({ logData, onClose, onCopy }) => {
+  if (!logData) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+        maxWidth: 400,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+          📅 {logData.date} 学习汇总
+        </h3>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 10,
+          marginBottom: 15
+        }}>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 10,
+            borderRadius: 8,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 12, color: '#666' }}>完成任务</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+              {logData.stats.completedTasks} 个
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 10,
+            borderRadius: 8,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 12, color: '#666' }}>总任务数</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+              {logData.stats.totalTasks} 个
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 10,
+            borderRadius: 8,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 12, color: '#666' }}>完成率</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+              {logData.stats.completionRate}%
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 10,
+            borderRadius: 8,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 12, color: '#666' }}>学习时长</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+              {logData.stats.totalMinutes} 分钟
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          padding: 10,
+          borderRadius: 6,
+          marginBottom: 15,
+          maxHeight: 200,
+          overflow: 'auto',
+          fontSize: 12,
+          lineHeight: 1.4,
+          whiteSpace: 'pre-wrap'
+        }}>
+          {logData.content}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            关闭
+          </button>
+          <button
+            onClick={onCopy}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            📋 复制日志
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 统计页面组件
+const StatsPage = ({ statsMode, setStatsMode, setShowStats, dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime }) => {
+  const chartHeight = window.innerWidth <= 768 ? 200 : 300;
+  const fontSize = window.innerWidth <= 768 ? 10 : 12;
+
+  return (
+    <div style={{
+      maxWidth: 600,
+      margin: "0 auto",
+      padding: 15,
+      fontFamily: "sans-serif",
+      backgroundColor: "#f5faff"
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20
+      }}>
+        <button
+          onClick={() => setShowStats(false)}
+          style={{
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 20
+          }}
+        >
+          ⬅️
+        </button>
+        <h1 style={{
+          textAlign: "center",
+          color: "#1a73e8",
+          fontSize: 20
+        }}>
+          {statsMode === "week" ? "本周统计" : statsMode === "month" ? "本月统计" : "自选统计"}
+        </h1>
+        <div style={{ width: 20 }}></div>
+      </div>
+
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 10,
+        marginBottom: 20
+      }}>
+        <button
+          onClick={() => setStatsMode("week")}
+          style={{
+            padding: "6px 12px",
+            background: statsMode === "week" ? "#1a73e8" : "#eee",
+            color: statsMode === "week" ? "#fff" : "#000",
+            border: "none",
+            borderRadius: 4
+          }}
+        >
+          本周
+        </button>
+        <button
+          onClick={() => setStatsMode("month")}
+          style={{
+            padding: "6px 12px",
+            background: statsMode === "month" ? "#1a73e8" : "#eee",
+            color: statsMode === "month" ? "#fff" : "#000",
+            border: "none",
+            borderRadius: 4
+          }}
+        >
+          本月
+        </button>
+      </div>
+
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 20,
+        padding: "8px 0",
+        backgroundColor: "#e8f0fe",
+        borderRadius: 10
+      }}>
+        {[
+          { label: "📊 平均完成率", value: `${avgCompletion}%` },
+          { label: "⏱️ 日均时长", value: `${avgDailyTime}m` }
+        ].map((item, idx) => (
+          <div
+            key={idx}
+            style={{
+              flex: 1,
+              textAlign: "center",
+              fontSize: 12,
+              borderRight: idx < 1 ? "1px solid #cce0ff" : "none",
+              padding: "4px 0"
+            }}
+          >
+            <div>{item.label}</div>
+            <div style={{ fontWeight: "bold", marginTop: 2 }}>
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ height: chartHeight, marginBottom: 30 }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          每日学习时间
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={dailyStudyData} margin={{ left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} />
+            <Bar
+              dataKey="time"
+              fill="#1a73e8"
+              radius={[4, 4, 0, 0]}
+              label={{ position: "top", fontSize }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={{ height: chartHeight, marginBottom: 30 }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          各科目学习时间
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={categoryData} margin={{ left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} />
+            <Bar
+              dataKey="time"
+              fill="#4a90e2"
+              radius={[4, 4, 0, 0]}
+              label={{ position: "top", fontSize }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={{ height: chartHeight }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          每日完成任务数
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={dailyTasksData} margin={{ left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} />
+            <Bar
+              dataKey="tasks"
+              fill="#00a854"
+              radius={[4, 4, 0, 0]}
+              label={{ position: "top", fontSize }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// 主应用组件
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
@@ -3182,11 +4503,18 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStats, setShowStats] = useState(false);
+<<<<<<< HEAD
+=======
+  const [shelddiTasks, setShelddiTasks] = useState([]);
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const [showSchedule, setShowSchedule] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
+<<<<<<< HEAD
   const [showHonorModal, setShowHonorModal] = useState(false);
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [repeatConfig, setRepeatConfig] = useState({
     frequency: "daily",
@@ -3200,14 +4528,18 @@ function App() {
   const [showDeleteModal, setShowDeleteModal] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templates, setTemplates] = useState([]);
+<<<<<<< HEAD
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [exchangeItems, setExchangeItems] = useState([]);
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
+<<<<<<< HEAD
   const [dailyRating, setDailyRating] = useState(0);
 const [dailyReflection, setDailyReflection] = useState('');
 
@@ -3244,6 +4576,52 @@ useEffect(() => {
     setDailyReflection(data.reflection || '');
   }
 }, [selectedDate]);
+=======
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+// 添加处理 Shelddi 任务的函数
+const handleAddShelddiTask = (text) => {
+    const newTask = {
+      id: Date.now().toString(),
+      text,
+      done: false,
+      category: "Shelddi",
+      createdAt: new Date().toISOString(),
+      timeSpent: 0,
+      note: "",
+      reflection: "",
+      progress: 
+      {  // ← 这里改成对象，而不是数字 0
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      }
+    };
+    setShelddiTasks(prev => [...prev, newTask]);
+  };
+  
+  // 添加其他必要的处理函数
+  const toggleShelddiTaskDone = (taskId) => {
+    setShelddiTasks(prev => 
+      prev.map(task => 
+        task.id === taskId ? { ...task, done: !task.done } : task
+      )
+    );
+  };
+  
+  const editShelddiTaskTime = (taskId, timeSpent) => {
+    setShelddiTasks(prev => 
+      prev.map(task => 
+        task.id === taskId ? { ...task, timeSpent } : task
+      )
+    );
+  };
+  
+
+
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 
 
   // 进度更新函数
@@ -3279,6 +4657,7 @@ useEffect(() => {
   };
 
   // 开始计时
+<<<<<<< HEAD
 const handleStartTimer = (task) => {
   // 停止其他正在运行的计时器
   if (activeTimer && activeTimer.taskId !== task.id) {
@@ -3391,10 +4770,151 @@ useEffect(() => {
 
 
   //修改 - 统一修改时间显示格式
+=======
+  const handleStartTimer = (task) => {
+    if (activeTimer && activeTimer.taskId !== task.id) {
+      handlePauseTimer({ id: activeTimer.taskId });
+    }
+    
+    const startTime = Date.now();
+    setActiveTimer({ taskId: task.id, startTime });
+    
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.active.postMessage({
+          type: 'START_TIMER',
+          taskId: task.id,
+          startTime: startTime
+        });
+      });
+    }
+    
+    localStorage.setItem(`timer_${task.id}`, startTime.toString());
+  };
+
+  // 暂停计时
+  const handlePauseTimer = (task) => {
+    if (!activeTimer || activeTimer.taskId !== task.id) return;
+    
+    const endTime = Date.now();
+    const timeSpent = Math.floor((endTime - activeTimer.startTime) / 1000);
+    
+    setTasksByDate(prev => {
+      const currentTasks = prev[selectedDate] || [];
+      const updatedTasks = currentTasks.map(t =>
+        t.id === task.id ? { 
+          ...t, 
+          timeSpent: (t.timeSpent || 0) + timeSpent 
+        } : t
+      );
+      
+      return {
+        ...prev,
+        [selectedDate]: updatedTasks
+      };
+    });
+    
+    setActiveTimer(null);
+    localStorage.removeItem(`timer_${task.id}`);
+  };
+
+  // 恢复计时器状态
+  useEffect(() => {
+    const keys = Object.keys(localStorage);
+    const timerKeys = keys.filter(key => key.startsWith('timer_'));
+    
+    if (timerKeys.length > 0) {
+      timerKeys.forEach(key => {
+        const taskId = key.replace('timer_', '');
+        const startTime = parseInt(localStorage.getItem(key));
+        const currentTime = Date.now();
+        const timeSpent = Math.floor((currentTime - startTime) / 1000);
+        
+        setTasksByDate(prev => {
+          const updatedTasksByDate = { ...prev };
+          Object.keys(updatedTasksByDate).forEach(date => {
+            updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+              t.id === taskId ? { 
+                ...t, 
+                timeSpent: (t.timeSpent || 0) + timeSpent 
+              } : t
+            );
+          });
+          return updatedTasksByDate;
+        });
+        
+        setActiveTimer({ taskId, startTime: Date.now() - timeSpent * 1000 });
+      });
+    }
+  }, []);
+
+  // 实时更新计时显示
+  useEffect(() => {
+    let interval;
+    
+    if (activeTimer) {
+      interval = setInterval(() => {
+        const currentTime = Date.now();
+        const timeElapsed = Math.floor((currentTime - activeTimer.startTime) / 1000);
+        setElapsedTime(timeElapsed);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [activeTimer]);
+
+  // 时间格式化函数
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   const formatTimeNoSeconds = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}m${remainingSeconds}s`;
+<<<<<<< HEAD
+=======
+  };
+
+  const formatTimeWithSeconds = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m${remainingSeconds}s`;
+  };
+
+  const formatCategoryTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m${remainingSeconds}s`;
+  };
+
+  const formatTimeInHours = (seconds) => {
+    const hours = (seconds / 3600).toFixed(1);
+    return `${hours}h`;
+  };
+
+  // 移动任务函数
+  const moveTask = (task, targetCategory) => {
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? { ...t, category: targetCategory } : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? { ...t, category: targetCategory } : t
+        )
+      }));
+    }
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   };
 
   //修改 - 添加新的时间格式化函数，显示分钟和秒数
@@ -3452,6 +4972,7 @@ const formatTimeInHours = (seconds) => {
     const savedTemplates = localStorage.getItem("taskTemplates");
     if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
 
+<<<<<<< HEAD
     const savedExchangeItems = localStorage.getItem("exchangeItems");
     if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
 
@@ -3474,6 +4995,13 @@ const formatTimeInHours = (seconds) => {
       .catch(error => console.log('SW registration failed'));
   }
     
+=======
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => console.log('SW registered'))
+        .catch(error => console.log('SW registration failed'));
+    }
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   }, []);
 
 useEffect(() => {
@@ -3496,11 +5024,14 @@ useEffect(() => {
     localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
   }, [tasksByDate]);
 
+<<<<<<< HEAD
   // 保存兑换物品数据到本地存储
   useEffect(() => {
     localStorage.setItem("exchangeItems", JSON.stringify(exchangeItems));
   }, [exchangeItems]);
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   // 保存模板到本地存储
   useEffect(() => {
     localStorage.setItem("taskTemplates", JSON.stringify(templates));
@@ -3553,6 +5084,7 @@ useEffect(() => {
   const pinnedTasks = tasks.filter(task => task.pinned);
   const weekDates = getWeekDates(currentMonday);
 
+<<<<<<< HEAD
   // 计算积分荣誉
   const calculateHonorPoints = () => {
     const today = new Date().toISOString().split("T")[0];
@@ -3605,6 +5137,8 @@ useEffect(() => {
 
   const { todayPoints, weekPoints, monthPoints, totalPoints, pointsByCategory } = calculateHonorPoints();
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   // 判断分类是否全部完成
   const isCategoryComplete = (catName) => {
     const catTasks = getCategoryTasks(catName);
@@ -3697,6 +5231,8 @@ useEffect(() => {
         Math.round(stats.dailyTimes.reduce((a, b) => a + b, 0) / stats.dailyTimes.length / 60) : 0
     };
   };
+
+  const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   // 添加任务
   const handleAddTask = (template = null) => {
@@ -3885,6 +5421,7 @@ const handleImportTasks = () => {
     }
   }
 
+<<<<<<< HEAD
   const newTasks = lines.slice(1).map((line, index) => ({
     id: Date.now().toString() + index,
     text: line,
@@ -3898,6 +5435,21 @@ const handleImportTasks = () => {
     reflection: "",
     tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
   }));
+=======
+    const newTasks = lines.slice(1).map((line, index) => ({
+      id: Date.now().toString() + index,
+      text: line,
+      category,
+      done: false,
+      timeSpent: 0,
+      note: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      reflection: "",
+      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }]
+    }));
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
 
   setTasksByDate(prev => ({
     ...prev,
@@ -3910,8 +5462,11 @@ const handleImportTasks = () => {
 
   // 切换任务完成状态
   const toggleDone = (task) => {
+<<<<<<< HEAD
     const wasDone = task.done;
     
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
     if (task.isWeekTask) {
       const updatedTasksByDate = { ...tasksByDate };
       Object.keys(updatedTasksByDate).forEach(date => {
@@ -3937,6 +5492,40 @@ const handleImportTasks = () => {
         recordPointChange(-1, `取消完成: ${task.text}`, newTotal);
       }
     }, 100);
+  };
+
+  // 打开任务编辑模态框
+  const openTaskEditModal = (task) => {
+    setShowTaskEditModal(task);
+  };
+
+  // 编辑任务时间
+  const editTaskTime = (task) => {
+    const currentTime = Math.floor((task.timeSpent || 0) / 60);
+    const newTime = window.prompt("修改任务时间（分钟）", currentTime);
+
+    if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
+      const seconds = parseInt(newTime) * 60;
+
+      if (task.isWeekTask) {
+        const updatedTasksByDate = { ...tasksByDate };
+
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? { ...t, timeSpent: seconds } : t
+          );
+        });
+
+        setTasksByDate(updatedTasksByDate);
+      } else {
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t =>
+            t.id === task.id ? { ...t, timeSpent: seconds } : t
+          )
+        }));
+      }
+    }
   };
 
   // 打开任务编辑模态框
@@ -4305,7 +5894,10 @@ const nextWeek = () => {
   setSelectedDate(monday.toISOString().split("T")[0]);
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   // 日期选择处理函数
   const handleDateSelect = (selectedDate) => {
     const selectedMonday = getMonday(selectedDate);
@@ -4407,6 +5999,7 @@ const nextWeek = () => {
     handleAddTask(template);
   };
 
+<<<<<<< HEAD
   // 添加兑换物品
   const handleAddExchangeItem = (newItemData) => {
     if (newItemData.name && newItemData.points > 0) {
@@ -4428,6 +6021,8 @@ const nextWeek = () => {
     }
   };
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   // 计算今日统计数据
   const todayTasks = tasksByDate[selectedDate] || [];
   const learningTime = tasks
@@ -4439,6 +6034,7 @@ const nextWeek = () => {
   const totalTasks = todayTasks.length;
   const completionRate = totalTasks === 0 ? 0 :
     Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
+<<<<<<< HEAD
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   
@@ -5519,9 +7115,37 @@ const HonorModal = () => {
     );
   }
 
+=======
+
+  // 如果显示时间表页面
+  if (showSchedule) {
+    return (
+      <SchedulePage
+        tasksByDate={tasksByDate}
+        currentMonday={currentMonday}
+        onClose={() => setShowSchedule(false)}
+        formatTimeNoSeconds={formatTimeNoSeconds}
+        onMoveTask={moveTask}
+        categories={categories}
+      />
+    );
+  }
+
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
   // 如果显示统计页面
   if (showStats) {
-    return <StatsPage />;
+    return (
+      <StatsPage
+        statsMode={statsMode}
+        setStatsMode={setStatsMode}
+        setShowStats={setShowStats}
+        dailyStudyData={dailyStudyData}
+        categoryData={categoryData}
+        dailyTasksData={dailyTasksData}
+        avgCompletion={avgCompletion}
+        avgDailyTime={avgDailyTime}
+      />
+    );
   }
 
   return (
@@ -5534,6 +7158,18 @@ const HonorModal = () => {
       overflowX: "hidden"
     }}>
 
+<<<<<<< HEAD
+=======
+      <div style={{
+        textAlign: "center",
+        fontSize: "11px",
+        color: "#999",
+        marginBottom: "10px"
+      }}>
+        更新于: {new Date().toLocaleString()}
+      </div>
+
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
       {/* 所有模态框组件 */}
       {showImageModal && (
         <ImageModal
@@ -5541,7 +7177,6 @@ const HonorModal = () => {
           onClose={() => setShowImageModal(null)}
         />
       )}
-      {showHonorModal && <HonorModal />}
       {showRepeatModal && (
         <RepeatModal
           config={repeatConfig}
@@ -5601,6 +7236,7 @@ const HonorModal = () => {
         />
       )}
 
+<<<<<<< HEAD
       {showExchangeModal && (
         <ExchangeModal
           exchangeItems={exchangeItems}
@@ -5612,6 +7248,8 @@ const HonorModal = () => {
         />
       )}
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
       {showDatePickerModal && (
         <DatePickerModal
           onClose={() => setShowDatePickerModal(false)}
@@ -5673,7 +7311,11 @@ const HonorModal = () => {
   marginBottom: "10px",  // 调整下边距
   paddingTop: "0px"      // 确保为0
       }}>
+<<<<<<< HEAD
         汤圆学习打卡系统
+=======
+        每日任务管理
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
       </h1>
       <div style={{
         textAlign: "center",
@@ -5689,20 +7331,7 @@ const HonorModal = () => {
         alignItems: "center",
         marginBottom: 5
       }}>
-        <button
-          onClick={() => setShowHonorModal(true)}
-          style={{
-            padding: "4px 8px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            fontSize: 12,
-            cursor: "pointer"
-          }}
-        >
-          积分荣誉: {totalPoints}
-        </button>
+        <div style={{ width: 80 }}></div>
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={prevWeek}
@@ -5875,6 +7504,97 @@ const HonorModal = () => {
           </ul>
         )}
       </div>
+
+
+{/* Shelddi 固定区域 */}
+<div style={{
+  marginBottom: 8,
+  borderRadius: 10,
+  overflow: "hidden",
+  border: "2px solid #9370DB",
+  backgroundColor: "#fff"
+}}>
+  <div
+    onClick={() => setCollapsedCategories(prev => ({
+      ...prev,
+      "Shelddi": !prev["Shelddi"]
+    }))}
+    style={{
+      backgroundColor: "#9370DB",
+      color: "#fff",
+      padding: "3px 8px",
+      fontWeight: "bold",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+      fontSize: "13px",
+      minHeight: "24px"
+    }}
+  >
+    <span>Shelddi ({shelddiTasks.filter(t => t.done).length}/{shelddiTasks.length})</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          const text = window.prompt("添加 Shelddi 任务");
+          if (text && text.trim()) {
+            handleAddShelddiTask(text.trim()); // 使用定义好的函数
+          }
+        }}
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          fontSize: 16,
+          padding: 0,
+          margin: 0
+        }}
+      >
+        ➕
+      </button>
+    </div>
+  </div>
+
+  {!collapsedCategories["Shelddi"] && shelddiTasks.length > 0 && (
+    <ul style={{
+      listStyle: "none",
+      padding: 8,
+      margin: 0
+    }}>
+      {shelddiTasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onEditTime={editShelddiTaskTime} // 使用专门的处理函数
+          onEditNote={editTaskNote}
+          onEditReflection={editTaskReflection}
+          onOpenEditModal={openTaskEditModal}
+          onShowImageModal={setShowImageModal}
+          toggleDone={toggleShelddiTaskDone} // 使用专门的处理函数
+          formatTimeNoSeconds={formatTimeNoSeconds}
+          formatTimeWithSeconds={formatTimeWithSeconds}
+          onMoveTask={moveTask}
+          categories={categories}
+          setShowMoveModal={setShowMoveModal}
+          onUpdateProgress={handleUpdateProgress}
+          onStartTimer={handleStartTimer}
+          elapsedTime={elapsedTime}
+          onPauseTimer={handlePauseTimer}
+          isTimerRunning={activeTimer?.taskId === task.id}
+        />
+      ))}
+    </ul>
+  )}
+</div>
+
+
+      
 
       {/* 置顶任务区域 */}
       {pinnedTasks.length > 0 && (
@@ -6051,6 +7771,7 @@ const HonorModal = () => {
         );
       })}
 
+<<<<<<< HEAD
      <div style={{
   display: "flex",
   gap: 10,
@@ -6132,6 +7853,73 @@ const HonorModal = () => {
     <div style={{ flex: 1 }}>
       <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
         今日评分:
+=======
+      <div style={{
+        display: "flex",
+        gap: 10,
+        marginTop: 10
+      }}>
+        <button
+          className="action-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowAddInput(!showAddInput);
+            setShowBulkInput(false);
+          }}
+          style={{
+            flex: 1,
+            padding: 8,
+            backgroundColor: "#1a73e8", // 固定蓝色背景
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+    outline: "none",
+    boxShadow: "none",
+    transform: "none",
+    transition: "none"
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            // 强制保持样式
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onMouseUp={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onFocus={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+          onBlur={(e) => {
+            e.target.style.backgroundColor = "#1a73e8";
+            e.target.style.color = "#fff";
+          }}
+        >
+          {showAddInput ? "取消添加" : "添加任务"}
+        </button>
+        <button
+          className="action-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowBulkInput(!showBulkInput);
+            setShowAddInput(false);
+          }}
+          style={{
+            flex: 1,
+            padding: 8,
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer"
+          }}
+        >
+          {showBulkInput ? "取消批量" : "批量导入"}
+        </button>
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
       </div>
       <select
         value={dailyRating}
@@ -6176,6 +7964,7 @@ const HonorModal = () => {
   </div>
 )}
 
+<<<<<<< HEAD
 {/* 添加任务输入框（展开时显示） */}
 {showAddInput && (
   <div ref={addInputRef} style={{ marginTop: 8 }}>
@@ -6312,6 +8101,165 @@ const HonorModal = () => {
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
           今日评分:
+=======
+      {showAddInput && (
+        <div ref={addInputRef} style={{ marginTop: 8 }}>
+          <div style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 8
+          }}>
+            <input
+              type="text"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="输入任务"
+              style={{
+                flex: 1,
+                padding: 6,
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                fontSize: "16px"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <select
+              value={newTaskCategory}
+              onChange={(e) => setNewTaskCategory(e.target.value)}
+              style={{ padding: 6 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {categories.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddTask();
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              确认
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowRepeatModal(true);
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              重复
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTimeModal(true);
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              计划时间
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTemplateModal(true);
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#28a745",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              模板
+            </button>
+
+            {templates.map((template, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUseTemplate(template);
+                }}
+                style={{
+                  padding: "6px 10px",
+                  backgroundColor: "#6c757d",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: "12px"
+                }}
+                title={`${template.name}: ${template.content}`}
+              >
+                {template.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showBulkInput && (
+        <div ref={bulkInputRef} style={{ marginTop: 8 }}>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder="第一行写类别，其余每行一条任务"
+            style={{
+              width: "100%",
+              minHeight: 80,
+              padding: 6,
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              fontSize: "16px"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleImportTasks();
+            }}
+            style={{
+              marginTop: 6,
+              padding: 6,
+              width: "100%",
+              backgroundColor: "#1a73e8",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer"
+            }}
+          >
+            导入任务
+          </button>
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
         </div>
         <select
           value={dailyRating}
@@ -6499,10 +8447,13 @@ const HonorModal = () => {
         ))}
       </div>
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 5c7c71215dd67a659a9b894d1a065fd11d8ded38
       {/* 底部按钮区域 */}
       <div style={{
         display: "flex",
@@ -6617,7 +8568,7 @@ const HonorModal = () => {
             cursor: "pointer"
           }}
         >
-          清空数据
+          清空数据222
         </button>
       </div>
     </div>
