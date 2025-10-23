@@ -6562,30 +6562,53 @@ const HonorModal = () => {
           导入数据
         </button>
         <input
-          id="import-file"
-          type="file"
-          accept=".json"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+  id="import-file"
+  type="file"
+  accept=".json"
+  onChange={(e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const data = JSON.parse(event.target.result);
-                if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
-                  setTasksByDate(data);
-                  alert('数据导入成功！');
-                }
-              } catch (error) {
-                alert('导入失败：文件格式不正确');
-              }
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-          }}
-          style={{ display: "none" }}
-        />
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        
+        // 验证数据格式
+        if (typeof data !== 'object' || data === null) {
+          throw new Error('无效的数据格式');
+        }
+        
+        // 检查是否是有效的任务数据
+        const isValidData = Object.values(data).every(dateTasks => 
+          Array.isArray(dateTasks) && dateTasks.every(task => 
+            task && typeof task.text === 'string'
+          )
+        );
+        
+        if (!isValidData) {
+          throw new Error('数据格式不正确');
+        }
+        
+        if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
+          setTasksByDate(data);
+          alert('数据导入成功！');
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        alert(`导入失败：${error.message || '文件格式不正确'}`);
+      }
+    };
+    
+    reader.onerror = () => {
+      alert('文件读取失败，请重试');
+    };
+    
+    reader.readAsText(file);
+    e.target.value = '';
+  }}
+  style={{ display: "none" }}
+/>
         <button
           onClick={clearAllData}
           style={{
