@@ -613,21 +613,8 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#6B7280');
  // 添加这行 - 定义 editData 状态
-  const [editData, setEditData] = useState({
-    text: '',
-    category: categories[0].name,
-    note: '',
-    reflection: '',
-    scheduledTime: '',
-    tags: [],
-    progress: {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    pinned: false
-  });
+
+
   // 高级配色方案
   const colorPalette = {
     primary: '#3B82F6',
@@ -4442,10 +4429,10 @@ const nextWeek = () => {
   const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   
-// 积分荣誉模态框 - 修改后的版本
+// 积分荣誉模态框 - 修改后的版本（无滚动条，一屏显示）
 const HonorModal = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // 新增：控制历史记录显示
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleClearPoints = () => {
     const currentPoints = totalPoints;
@@ -4573,8 +4560,7 @@ const HonorModal = () => {
       backgroundColor: "rgba(0,0,0,0.5)",
       display: "flex",
       justifyContent: "center",
-      alignItems: "center",
-      zIndex: 1000
+    zIndex: 1000
     }}>
       <div style={{
         backgroundColor: "white",
@@ -4582,10 +4568,19 @@ const HonorModal = () => {
         borderRadius: 10,
         width: "90%",
         maxWidth: 400,
-        maxHeight: "80vh",
-        overflow: "auto"
+        height: "85vh", // 固定高度
+        maxHeight: "85vh", // 最大高度
+        overflow: "hidden", // 去掉滚动条
+        display: "flex",
+        flexDirection: "column"
       }}>
-        <h3 style={{ textAlign: "center", marginBottom: 15, color: "#1a73e8" }}>
+        <h3 style={{ 
+          textAlign: "center", 
+          marginBottom: 15, 
+          color: "#1a73e8",
+          fontSize: 18,
+          marginTop: -10, // 添加负的margin-top让标题往上移动
+        }}>
           🏆 积分荣誉
         </h3>
 
@@ -4617,60 +4612,54 @@ const HonorModal = () => {
           padding: 15,
           backgroundColor: '#f8f9fa',
           borderRadius: 8,
-          border: '1px solid #e0e0e0'
+          border: '1px solid #e0e0e0',
+          flex: 1 // 占据剩余空间
         }}>
-          <div style={{ marginBottom: 10, fontWeight: "bold", color: "#333" }}>时间统计:</div>
+          <div style={{ marginBottom: 15, fontWeight: "bold", color: "#333", fontSize: 14 }}>时间统计:</div>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(3, 1fr)', 
             gap: 10,
-            textAlign: 'center'
+            textAlign: 'center',
+            marginBottom: 20
           }}>
             <div style={{
-              padding: 8,
+              padding: 12,
               backgroundColor: '#fff',
-              borderRadius: 6,
+              borderRadius: 8,
               border: '1px solid #e0e0e0'
             }}>
-              <div style={{ fontSize: 12, color: '#666' }}>今日</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#28a745' }}>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>今日</div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#28a745' }}>
                 {todayPoints} 分
               </div>
             </div>
             <div style={{
-              padding: 8,
+              padding: 12,
               backgroundColor: '#fff',
-              borderRadius: 6,
+              borderRadius: 8,
               border: '1px solid #e0e0e0'
             }}>
-              <div style={{ fontSize: 12, color: '#666' }}>本周</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>本周</div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
                 {weekPoints} 分
               </div>
             </div>
             <div style={{
-              padding: 8,
+              padding: 12,
               backgroundColor: '#fff',
-              borderRadius: 6,
+              borderRadius: 8,
               border: '1px solid #e0e0e0'
             }}>
-              <div style={{ fontSize: 12, color: '#666' }}>本月</div>
-              <div style={{ fontSize: 16, fontWeight: 'bold', color: '#ff6b6b' }}>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>本月</div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#ff6b6b' }}>
                 {monthPoints} 分
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 各科目积分 */}
-        <div style={{ 
-          marginBottom: 20,
-          padding: 15,
-          backgroundColor: '#f8f9fa',
-          borderRadius: 8,
-          border: '1px solid #e0e0e0'
-        }}>
-          <div style={{ marginBottom: 10, fontWeight: "bold", color: "#333" }}>各科目积分:</div>
+          {/* 各科目积分 */}
+          <div style={{ marginBottom: 15, fontWeight: "bold", color: "#333", fontSize: 14 }}>各科目积分:</div>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(2, 1fr)', 
@@ -4681,11 +4670,11 @@ const HonorModal = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "6px 8px",
+                padding: "8px 10px",
                 backgroundColor: '#fff',
                 borderRadius: 6,
                 border: '1px solid #e0e0e0',
-                fontSize: 12
+                fontSize: 13
               }}>
                 <span>{cat.name}</span>
                 <span style={{ 
@@ -4699,12 +4688,11 @@ const HonorModal = () => {
           </div>
         </div>
 
-        {/* 按钮区域 - 一行4个按钮 */}
+        {/* 按钮区域 */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(2, 1fr)', 
-          gap: 10,
-          marginBottom: 15
+          gap: 10
         }}>
           <button
             onClick={() => {
@@ -4718,7 +4706,7 @@ const HonorModal = () => {
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: "bold",
               display: 'flex',
               alignItems: 'center',
@@ -4738,7 +4726,7 @@ const HonorModal = () => {
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: "bold",
               display: 'flex',
               alignItems: 'center',
@@ -4748,13 +4736,7 @@ const HonorModal = () => {
           >
             📊 历史
           </button>
-        </div>
-
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(2, 1fr)', 
-          gap: 10
-        }}>
+          
           <button
             onClick={() => setShowClearConfirm(true)}
             style={{
@@ -4764,7 +4746,7 @@ const HonorModal = () => {
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: "bold",
               display: 'flex',
               alignItems: 'center',
@@ -4784,7 +4766,7 @@ const HonorModal = () => {
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: "bold",
               display: 'flex',
               alignItems: 'center',
@@ -4865,7 +4847,6 @@ const HonorModal = () => {
     </div>
   );
 };
-
 
   // 每日日志汇总模态框
   const DailyLogModal = ({ logData, onClose, onCopy }) => {
