@@ -3463,8 +3463,7 @@ function App() {
     setPointHistory(prev => [historyEntry, ...prev]);
   };
 
-  const STORAGE_KEY = 'daily-check-data';
-  
+  const STORAGE_KEY = 'study-tracker-data';
   const handleSubtaskToggle = (mainTask, subtaskIndex) => {
     setTasksByDate(prev => ({
       ...prev,
@@ -3498,7 +3497,7 @@ function App() {
       reflection: dailyReflection,
       date: selectedDate
     };
-    localStorage.setItem(`dailyData_${selectedDate}`, JSON.stringify(dailyData));
+    localStorage.setItem(`${STORAGE_KEY}_daily_${selectedDate}`, JSON.stringify(dailyData));
   }, [dailyRating, dailyReflection, selectedDate]);
 
   // 读取数据
@@ -3713,7 +3712,7 @@ useEffect(() => {
   const savedTemplates = localStorage.getItem(`${STORAGE_KEY}_templates`);
   if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
 
-  const savedExchangeItems = localStorage.getItem("exchangeItems");
+  const savedExchangeItems = localStorage.getItem(`${STORAGE_KEY}_exchange`);
   if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
 
   // 修改后的  
@@ -3814,7 +3813,7 @@ useEffect(() => {
 
   // 保存模板到本地存储
   useEffect(() => {
-    localStorage.setItem("taskTemplates", JSON.stringify(templates));
+    localStorage.setItem(`${STORAGE_KEY}_templates`, JSON.stringify(templates));
   }, [templates]);
 
   // 点击页面任意区域收缩输入框
