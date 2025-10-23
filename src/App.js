@@ -2501,9 +2501,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 />
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#666', marginTop: 4, textAlign: 'center' }}>
-              24小时制 (时:分)
-            </div>
+            
           </div>
 
           {/* 进度跟踪 */}
