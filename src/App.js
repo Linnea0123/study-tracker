@@ -2664,7 +2664,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
               onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
             >
-              🗑️ 删除任务
+              删除任务
             </button>
           </div>
 
@@ -5898,7 +5898,7 @@ const HonorModal = () => {
               alignItems: "center"
             }}
           >
-            <span>📌 置顶任务 ({pinnedTasks.length})</span>
+            <span>置顶 ({pinnedTasks.length})</span>
             <span
               onClick={(e) => {
                 e.stopPropagation();
