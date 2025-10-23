@@ -10,6 +10,8 @@ const getWeekNumber = (date) => {
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
+const STORAGE_KEY = 'study-tracker-data';
+
 const categories = [
   { name: "语文", color: "#4a90e2" },
   { name: "数学", color: "#357ABD" },
@@ -3219,12 +3221,12 @@ useEffect(() => {
     reflection: dailyReflection,
     date: selectedDate
   };
-  localStorage.setItem(`dailyData_${selectedDate}`, JSON.stringify(dailyData));
+  localStorage.setItem(`${STORAGE_KEY}_daily_${selectedDate}`, JSON.stringify(dailyData));
 }, [dailyRating, dailyReflection, selectedDate]);
 
 // 读取数据
 useEffect(() => {
-  const savedData = localStorage.getItem(`dailyData_${selectedDate}`);
+  const savedData = localStorage.getItem(`${STORAGE_KEY}_daily_${selectedDate}`);
   if (savedData) {
     const data = JSON.parse(savedData);
     setDailyRating(data.rating || 0);
@@ -3433,16 +3435,16 @@ const formatTimeInHours = (seconds) => {
 
   // 初始化数据
   useEffect(() => {
-    const saved = localStorage.getItem("tasksByDate");
+    const saved = localStorage.getItem(`${STORAGE_KEY}_tasks`);
     if (saved) setTasksByDate(JSON.parse(saved));
 
-    const savedTemplates = localStorage.getItem("taskTemplates");
+    const savedTemplates = localStorage.getItem(`${STORAGE_KEY}_templates`);
     if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
 
-    const savedExchangeItems = localStorage.getItem("exchangeItems");
+    const savedExchangeItems = localStorage.getItem(`${STORAGE_KEY}_exchange`);
     if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
 
-    const savedPointHistory = localStorage.getItem("pointHistory");
+    const savedPointHistory = localStorage.getItem(`${STORAGE_KEY}_pointHistory`);
     if (savedPointHistory) {
       setPointHistory(JSON.parse(savedPointHistory));
     } else {
@@ -3475,22 +3477,22 @@ useEffect(() => {
 
   // 保存积分历史到本地存储
   useEffect(() => {
-    localStorage.setItem("pointHistory", JSON.stringify(pointHistory));
+    localStorage.setItem(`${STORAGE_KEY}_pointHistory`, JSON.stringify(pointHistory));
   }, [pointHistory]);
 
   // 保存数据到本地存储
   useEffect(() => {
-    localStorage.setItem("tasksByDate", JSON.stringify(tasksByDate));
+    localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(tasksByDate));
   }, [tasksByDate]);
 
   // 保存兑换物品数据到本地存储
   useEffect(() => {
-    localStorage.setItem("exchangeItems", JSON.stringify(exchangeItems));
+    localStorage.setItem(`${STORAGE_KEY}_exchange`, JSON.stringify(exchangeItems));
   }, [exchangeItems]);
 
   // 保存模板到本地存储
   useEffect(() => {
-    localStorage.setItem("taskTemplates", JSON.stringify(templates));
+    localStorage.setItem(`${STORAGE_KEY}_templates`, JSON.stringify(templates));
   }, [templates]);
 
   // 点击页面任意区域收缩输入框
