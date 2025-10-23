@@ -1,7 +1,8 @@
 {
   "name": "study-tracker",
   "version": "0.1.1",
-  "homepage": "https://linnea0123.github.io/study-tracker",
+  "homepage": "https://study-tracker-ivory.vercel.app",
+  "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -12,6 +13,26 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
