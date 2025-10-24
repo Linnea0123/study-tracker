@@ -10,7 +10,8 @@ const getWeekNumber = (date) => {
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
-const STORAGE_KEY = 'study-tracker-data';
+// 主学习跟踪器的存储配置
+const STORAGE_KEY = 'study-tracker-main';
 
 const categories = [
   { name: "语文", color: "#4a90e2" },
@@ -19,6 +20,31 @@ const categories = [
   { name: "科学", color: "#00aaff" },
   { name: "体育", color: "#3399ff" },
 ];
+
+// 存储函数 - 主学习跟踪器专用
+const saveMainData = (key, data) => {
+  return new Promise((resolve) => {
+    if (chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ [`${STORAGE_KEY}_${key}`]: data }, resolve);
+    } else {
+      localStorage.setItem(`${STORAGE_KEY}_${key}`, JSON.stringify(data));
+      resolve();
+    }
+  });
+};
+
+const loadMainData = (key) => {
+  return new Promise((resolve) => {
+    if (chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.get([`${STORAGE_KEY}_${key}`], (result) => {
+        resolve(result[`${STORAGE_KEY}_${key}`] || null);
+      });
+    } else {
+      const data = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+      resolve(data ? JSON.parse(data) : null);
+    }
+  });
+};
 
 
 // 修复：获取本周一的日期
