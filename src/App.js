@@ -21,27 +21,35 @@ const categories = [
 ];
 
 
-
-// 获取本周一的日期
+// 修复：获取本周一的日期
 const getMonday = (date) => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0); // 清除时间部分
   const day = d.getDay(); // 0是周日，1是周一，...，6是周六
+  
+  // 修正：如果今天是周日(0)，需要减去6天；否则减去(day-1)天
+  const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(d);
-  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  monday.setDate(d.getDate() - diff);
   return monday;
 };
 
-// 获取一周的日期
+// 修复：获取一周的日期
 const getWeekDates = (monday) => {
   const weekDates = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
+    
+    // 修正：确保日期格式正确
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    
     weekDates.push({
-      date: d.toISOString().split("T")[0],
+      date: `${year}-${month}-${day}`,
       label: `周${"一二三四五六日"[i]}`,
-      fullLabel: `周${"一二三四五六日"[i]} (${d.getMonth() + 1}/${d.getDate()})`
+      fullLabel: `周${"一二三四五六日"[i]} (${month}/${day})`
     });
   }
   return weekDates;
