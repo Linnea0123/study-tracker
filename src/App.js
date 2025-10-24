@@ -68,33 +68,6 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     }
   }
 
-// 防抖保存函数
-const useDebouncedSave = (key, data, delay = 1000) => {
-  const timeoutRef = useRef(null);
-  
-  useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-        console.log(`数据已保存到 ${key}`);
-      } catch (error) {
-        console.error(`保存数据到 ${key} 失败:`, error);
-      }
-    }, delay);
-    
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [data, key, delay]);
-};
-
-  
   // 获取任务在时间表中的位置信息
   const getTaskTimeInfo = (task, date) => {
     if (!task) return null;
@@ -4236,18 +4209,26 @@ useEffect(() => {
   }, []);
 
 
-// 保存任务数据 - 使用防抖
-useDebouncedSave(`${STORAGE_KEY}_tasks`, tasksByDate);
 
-// 保存模板数据 - 使用防抖  
-useDebouncedSave(`${STORAGE_KEY}_templates`, templates);
+  // 保存积分历史到本地存储
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_pointHistory`, JSON.stringify(pointHistory));
+  }, [pointHistory]);
 
-// 保存兑换物品数据 - 使用防抖
-useDebouncedSave(`${STORAGE_KEY}_exchange`, exchangeItems);
+  // 保存数据到本地存储
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(tasksByDate));
+  }, [tasksByDate]);
 
-// 保存积分历史 - 使用防抖
-useDebouncedSave(`${STORAGE_KEY}_pointHistory`, pointHistory);
+  // 保存兑换物品数据到本地存储
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_exchange`, JSON.stringify(exchangeItems));
+  }, [exchangeItems]);
 
+  // 保存模板到本地存储
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_templates`, JSON.stringify(templates));
+  }, [templates]);
 
   // 替换现有的 useEffect 点击外部处理逻辑
   useEffect(() => {
