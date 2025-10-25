@@ -2,6 +2,86 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
+
+
+// 自动导出函数 - 替换原来的 autoBackup
+const autoExportBackup = async (tasksByDate, templates, pointHistory, exchangeItems) => {
+  try {
+    const backupData = {
+      tasks: tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems,
+      backupDate: new Date().toISOString(),
+      version: '1.0',
+      totalTasks: Object.values(tasksByDate).flat().length,
+      completedTasks: Object.values(tasksByDate).flat().filter(t => t.done).length
+    };
+
+    // 生成带时间戳的文件名
+    const now = new Date();
+    const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+    const fileName = `学习备份_${timestamp}.json`;
+    
+    // 创建并下载文件
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', fileName);
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('✅ 自动导出完成:', fileName);
+    
+    // 管理本地存储的导出记录（可选）
+    saveExportRecord(fileName, now);
+    
+  } catch (error) {
+    console.error('自动导出失败:', error);
+  }
+};
+
+// 保存导出记录（用于界面显示）
+const saveExportRecord = (fileName, date) => {
+  try {
+    const records = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_export_records`) || '[]');
+    
+    // 只保留最近10条记录
+    const newRecords = [
+      {
+        fileName,
+        date: date.toISOString(),
+        size: JSON.stringify({
+          tasks: window.appInstance?.getState().tasksByDate || {},
+          templates: window.appInstance?.getState().templates || [],
+          pointHistory: window.appInstance?.getState().pointHistory || [],
+          exchangeItems: window.appInstance?.getState().exchangeItems || []
+        }).length
+      },
+      ...records
+    ].slice(0, 10);
+    
+    localStorage.setItem(`${STORAGE_KEY}_export_records`, JSON.stringify(newRecords));
+  } catch (error) {
+    console.error('保存导出记录失败:', error);
+  }
+};
+
+// 获取导出记录
+const getExportRecords = () => {
+  try {
+    return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_export_records`) || '[]');
+  } catch (error) {
+    return [];
+  }
+};
+
+
 // 保持这样就行
 const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
@@ -44,6 +124,160 @@ const loadMainData = async (key) => {
     return null;
   }
 };
+
+
+
+// 导出管理模态框
+const ExportManagerModal = ({ onClose }) => {
+  const [exportRecords, setExportRecords] = useState([]);
+
+  useEffect(() => {
+    setExportRecords(getExportRecords());
+  }, []);
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const formatSize = (bytes) => {
+    return (bytes / 1024).toFixed(1) + ' KB';
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 450,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>📁 导出文件管理</h3>
+        
+        <div style={{ 
+          backgroundColor: '#e8f0fe', 
+          padding: 12, 
+          borderRadius: 8, 
+          marginBottom: 15,
+          fontSize: 13
+        }}>
+          <div>💡 自动导出说明：</div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+            • 数据变化后会自动导出备份文件<br/>
+            • 文件保存在手机"下载"文件夹中<br/>
+            • 可随时通过"手动导出"创建新备份
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <button
+            onClick={() => {
+              autoExportBackup(
+                window.appInstance?.getState().tasksByDate || {},
+                window.appInstance?.getState().templates || [],
+                window.appInstance?.getState().pointHistory || [],
+                window.appInstance?.getState().exchangeItems || []
+              );
+              setTimeout(() => {
+                setExportRecords(getExportRecords());
+              }, 1000);
+            }}
+            style={{
+              width: '100%',
+              padding: '10px 16px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            📥 手动导出当前数据
+          </button>
+        </div>
+
+        <div>
+          <div style={{ marginBottom: 8, fontWeight: 'bold', fontSize: 14 }}>
+            最近导出记录 ({exportRecords.length})
+          </div>
+          
+          {exportRecords.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 20, fontSize: 13 }}>
+              暂无导出记录
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
+              {exportRecords.map((record, index) => (
+                <div
+                  key={record.fileName}
+                  style={{
+                    padding: 10,
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 6,
+                    marginBottom: 8,
+                    backgroundColor: index === 0 ? '#f0f8ff' : '#f8f9fa'
+                  }}
+                >
+                  <div style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: 13,
+                    marginBottom: 4,
+                    color: index === 0 ? '#1a73e8' : '#333'
+                  }}>
+                    {record.fileName}
+                    {index === 0 && <span style={{ fontSize: 11, color: '#28a745', marginLeft: 6 }}>最新</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#666' }}>
+                    时间: {formatDate(record.date)} | 大小: {formatSize(record.size)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: 10,
+            marginTop: 15,
+            backgroundColor: '#6c757d',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer'
+          }}
+        >
+          关闭
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 // 全局调试函数 - 在 Console 中可以直接调用
 window.debugStudyTracker = {
@@ -1542,6 +1776,10 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
     fileInputRef.current?.click();
   };
 
+
+ 
+
+  
   // 添加：计算菜单位置，确保在屏幕内
   const calculateMenuPosition = (position) => {
     const menuWidth = 120;
@@ -3139,6 +3377,7 @@ const TaskItem = ({
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
 
+
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
     setEditingSubTaskIndex(index);
@@ -3775,7 +4014,7 @@ function App() {
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
-  
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
@@ -3806,6 +4045,7 @@ function App() {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
@@ -4140,6 +4380,42 @@ const generateDailyLog = () => {
 
     setPointHistory(prev => [historyEntry, ...prev]);
   };
+
+
+// 在 App 组件中替换原来的备份 useEffect
+useEffect(() => {
+  if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    // 防抖：避免频繁导出
+    const timeoutId = setTimeout(() => {
+      // 只在有实际数据变化时导出（避免初始化时导出空数据）
+      const hasMeaningfulData = Object.values(tasksByDate).some(tasks => 
+        tasks.length > 0
+      );
+      
+      if (hasMeaningfulData) {
+        autoExportBackup(tasksByDate, templates, pointHistory, exchangeItems);
+      }
+    }, 10000); // 数据变化后10秒自动导出，避免太频繁
+    
+    return () => clearTimeout(timeoutId);
+  }
+}, [tasksByDate, templates, pointHistory, exchangeItems, isInitialized]);
+
+
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (showMoreMenu && !event.target.closest('.more-menu-container')) {
+      setShowMoreMenu(false);
+    }
+  };
+
+  document.addEventListener('click', handleClickOutside);
+  return () => {
+    document.removeEventListener('click', handleClickOutside);
+  };
+}, [showMoreMenu]);
+
 
 // 清理计时器状态
 useEffect(() => {
@@ -6924,6 +7200,9 @@ if (isInitialized && todayTasks.length === 0) {
           onClose={() => setShowRepeatModal(false)}
         />
       )}
+
+  
+
       
       {showDailyLogModal && (
         <DailyLogModal
@@ -7000,6 +7279,19 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
 
+      {/* 添加 ExportManagerModal 在这里 */}
+{showExportModal && (
+  <ExportManagerModal onClose={() => setShowExportModal(false)} />
+)}
+
+{showDatePickerModal && (
+  <DatePickerModal
+    onClose={() => setShowDatePickerModal(false)}
+    onSelectDate={handleDateSelect}
+  />
+)}
+
+
       {showDatePickerModal && (
         <DatePickerModal
           onClose={() => setShowDatePickerModal(false)}
@@ -7051,6 +7343,11 @@ if (isInitialized && todayTasks.length === 0) {
           onDelete={deleteTask}
         />
       )}
+
+          {/* ========== 添加这行 ========== */}
+    {showExportModal && (
+      <ExportManagerModal onClose={() => setShowExportModal(false)} />
+    )}
 
       {/* 主页面内容 */}
       <h1 style={{
@@ -7970,279 +8267,180 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
+      
+<div style={{
+  display: "flex",
+  justifyContent: "center",
+  gap: 10,
+  marginTop: 20,
+  marginBottom: 20,
+  flexWrap: "wrap",
+  position: "relative"
+}}>
+  <button
+    onClick={() => generateDailyLog()}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#28a745",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer"
+    }}
+  >
+    每日日志
+  </button>
+  
+  <div className="more-menu-container" style={{ position: "relative" }}>
+    <button
+      onClick={() => setShowMoreMenu(!showMoreMenu)}
+      style={{
+        padding: "6px 10px",
+        backgroundColor: "#6c757d",
+        color: "#fff",
+        border: "none",
+        fontSize: 12,
+        borderRadius: 6,
+        width: "70px",
+        height: "30px",
+        cursor: "pointer"
+      }}
+    >
+      更多 ▼
+    </button>
 
-
-      {/* 底部按钮区域 */}
+    {/* 更多菜单下拉框 */}
+    {showMoreMenu && (
       <div style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 10,
-        marginTop: 20,
-        marginBottom: 20,
-        flexWrap: "wrap"
+        position: "absolute",
+        top: "35px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: "white",
+        border: "1px solid #ddd",
+        borderRadius: "6px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        zIndex: 1000,
+        minWidth: "120px",
+        padding: "5px 0"
       }}>
         <button
-          onClick={() => generateDailyLog()}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#28a745",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
+          onClick={() => {
+            setShowMoreMenu(false);
+            handleExportData();
           }}
-        >
-          每日日志
-        </button>
-        <button
-          onClick={handleExportData}
           style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
+            width: "100%",
+            padding: "8px 12px",
+            backgroundColor: "transparent",
+            color: "#333",
             border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
+            textAlign: "left",
+            cursor: "pointer",
+            fontSize: "12px",
+            borderBottom: "1px solid #f0f0f0"
           }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           导出数据
         </button>
+        
         <button
-          onClick={() => setShowSchedule(true)}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
+          onClick={() => {
+            setShowMoreMenu(false);
+            setShowSchedule(true);
           }}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            backgroundColor: "transparent",
+            color: "#333",
+            border: "none",
+            textAlign: "left",
+            cursor: "pointer",
+            fontSize: "12px",
+            borderBottom: "1px solid #f0f0f0"
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           时间表
         </button>
+        
         <button
           onClick={() => {
+            setShowMoreMenu(false);
             document.getElementById('import-file').click();
           }}
           style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
+            width: "100%",
+            padding: "8px 12px",
+            backgroundColor: "transparent",
+            color: "#333",
             border: "none",
-            borderRadius: 6,
-            fontSize: 12,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
+            textAlign: "left",
+            cursor: "pointer",
+            fontSize: "12px",
+            borderBottom: "1px solid #f0f0f0"
           }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           导入数据
         </button>
         
-<input
-  id="import-file"
-  type="file"
-  accept=".json"
-  onChange={async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const importedData = JSON.parse(event.target.result);
-
-        // 验证数据格式
-        if (!importedData.tasks || !importedData.version) {
-          throw new Error('无效的数据文件格式');
-        }
-
-        if (window.confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) {
-          // 依次导入各个部分
-          if (importedData.tasks) {
-            await saveMainData('tasks', importedData.tasks);
-            setTasksByDate(importedData.tasks);
-          }
-          if (importedData.templates) {
-            await saveMainData('templates', importedData.templates);
-            setTemplates(importedData.templates);
-          }
-          if (importedData.exchange) {
-            await saveMainData('exchange', importedData.exchange);
-            setExchangeItems(importedData.exchange);
-          }
-          if (importedData.pointHistory) {
-            await saveMainData('pointHistory', importedData.pointHistory);
-            setPointHistory(importedData.pointHistory);
-          }
-          
-          alert('数据导入成功！');
-        }
-      } catch (error) {
-        console.error('导入失败:', error);
-        alert(`导入失败：${error.message || '文件格式不正确'}`);
-      }
-    };
-
-    reader.onerror = () => {
-      alert('文件读取失败，请重试');
-    };
-
-    reader.readAsText(file);
-    e.target.value = '';
-  }}
-  style={{ display: "none" }}
-/>
-
-
-
         <button
-          onClick={clearAllData}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#ff4444",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontSize: 12,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
+          onClick={() => {
+            setShowMoreMenu(false);
+            clearAllData();
           }}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            backgroundColor: "transparent",
+            color: "#d32f2f",
+            border: "none",
+            textAlign: "left",
+            cursor: "pointer",
+            fontSize: "12px",
+            borderBottom: "1px solid #f0f0f0"
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "#ffebee"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           清空数据
         </button>
-        {/* 测试按钮 - 临时添加用于调试 */}
-<button
-  onClick={async () => {
-    // 手动保存所有数据
-    await saveMainData('tasks', tasksByDate);
-    await saveMainData('templates', templates);
-    await saveMainData('pointHistory', pointHistory);
-    await saveMainData('exchange', exchangeItems);
-    alert('数据已手动保存！');
-    
-    // 显示存储状态
-    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
-    keys.forEach(key => {
-      const data = localStorage.getItem(`${STORAGE_KEY}_${key}`);
-      console.log(`${key} 存储长度:`, data ? data.length : '无数据');
-    });
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#ff6b6b",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: "pointer"
-  }}
->
-  测试保存
-</button>
-
-<button
-  onClick={() => {
-    // 显示所有存储的键
-    const allKeys = Object.keys(localStorage);
-    const appKeys = allKeys.filter(key => key.includes(STORAGE_KEY));
-    console.log('应用存储的键:', appKeys);
-    appKeys.forEach(key => {
-      console.log(`${key}:`, localStorage.getItem(key));
-    });
-    alert('查看控制台输出存储信息');
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#4ecdc4",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: "pointer"
-  }}
->
-  检查存储
-</button>
-<button
-  onClick={() => {
-    // 手动从存储加载数据
-    const tasks = localStorage.getItem('study-tracker-main-v2_tasks');
-    const templates = localStorage.getItem('study-tracker-main-v2_templates');
-    const pointHistory = localStorage.getItem('study-tracker-main-v2_pointHistory');
-    const exchange = localStorage.getItem('study-tracker-main-v2_exchange');
-    
-    console.log('手动检查存储:');
-    console.log('tasks:', tasks);
-    console.log('templates:', templates);
-    console.log('pointHistory:', pointHistory);
-    console.log('exchange:', exchange);
-    
-    if (tasks) {
-      try {
-        const parsedTasks = JSON.parse(tasks);
-        setTasksByDate(parsedTasks);
-        console.log('手动设置任务数据:', parsedTasks);
-        alert('数据已手动恢复！');
-      } catch (e) {
-        console.error('解析任务数据失败:', e);
-      }
-    }
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#9c27b0",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: "pointer"
-  }}
->
-  手动恢复数据
-</button>
-<button
-  onClick={() => {
-    // 强制从存储加载数据
-    const tasksData = localStorage.getItem('study-tracker-main-v2_tasks');
-    if (tasksData) {
-      try {
-        const tasks = JSON.parse(tasksData);
-        setTasksByDate(tasks);
-        console.log('🔧 手动恢复任务数据:', tasks);
-        alert('任务数据已手动恢复！');
-      } catch (e) {
-        console.error('手动恢复失败:', e);
-        alert('恢复失败：' + e.message);
-      }
-    } else {
-      alert('没有找到存储的数据');
-    }
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#ff9800",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: "pointer"
-  }}
->
-  强制恢复数据
-</button>
+        
+        <button
+          onClick={() => {
+            setShowMoreMenu(false);
+            setShowExportModal(true);
+          }}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            backgroundColor: "transparent",
+            color: "#333",
+            border: "none",
+            textAlign: "left",
+            cursor: "pointer",
+            fontSize: "12px"
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+        >
+          导出管理
+          </button>
       </div>
-    </div>
+    )}
+  </div>
+</div>
+
+    </div>  // 添加这个闭合标签
   );
 }
 
