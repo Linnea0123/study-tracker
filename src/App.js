@@ -3,12 +3,214 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import './App.css';
 
 
+const categories = [
+  { name: "语文", color: "#4a90e2" },
+  { name: "数学", color: "#357ABD" },
+  { name: "英语", color: "#1e73be" },
+  { name: "科学", color: "#00aaff" },
+  { name: "体育", color: "#3399ff" },
+];
+
+// ========== 成就系统配置 ==========
+const ACHIEVEMENTS_CONFIG = {
+  // 新手成就
+  beginner: [
+    {
+      id: 'first_task',
+      name: '启程之日',
+      description: '完成第一个任务',
+      icon: '🎯',
+      condition: (userData) => {
+        const allTasks = Object.values(userData.tasksByDate).flat();
+        return allTasks.some(task => task.done);
+      },
+      points: 5
+    },
+    {
+      id: 'first_30min',
+      name: '学习起步', 
+      description: '单日学习时间达到30分钟',
+      icon: '⏱️',
+      condition: (userData) => {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+        return todayTime >= 1800;
+      },
+      points: 10
+    },
+    {
+      id: 'plan_master',
+      name: '计划达人',
+      description: '创建10个任务',
+      icon: '📝',
+      condition: (userData) => {
+        const allTasks = Object.values(userData.tasksByDate).flat();
+        return allTasks.length >= 10;
+      },
+      points: 15
+    }
+  ],
+  
+  // 时间成就
+  time: [
+    {
+      id: 'one_hour',
+      name: '时间管理者',
+      description: '单日学习1小时',
+      icon: '🕐',
+      condition: (userData) => {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+        return todayTime >= 3600;
+      },
+      points: 20
+    },
+    {
+      id: 'three_hours',
+      name: '学习狂人',
+      description: '单日学习3小时', 
+      icon: '🕒',
+      condition: (userData) => {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+        return todayTime >= 10800;
+      },
+      points: 40
+    }
+  ],
+  
+  // 连续成就
+  streak: [
+    {
+      id: 'three_days',
+      name: '渐入佳境',
+      description: '连续学习3天',
+      icon: '🔥',
+      condition: (userData) => {
+        return calculateCurrentStreak(userData.tasksByDate) >= 3; // 这里使用函数
+      },
+      points: 25
+    },
+    {
+      id: 'one_week',
+      name: '持之以恒',
+      description: '连续学习7天',
+      icon: '🌟',
+      condition: (userData) => {
+        return calculateCurrentStreak(userData.tasksByDate) >= 7; // 这里使用函数
+      },
+      points: 50
+    },
+    {
+      id: 'one_month',
+      name: '铁人',
+      description: '连续学习30天',
+      icon: '💪',
+      condition: (userData) => {
+        return calculateCurrentStreak(userData.tasksByDate) >= 30; // 这里使用函数
+      },
+      points: 100
+    }
+  ],
+  
+  // 科目成就
+  subject: [
+    {
+      id: 'math_lover',
+      name: '数学爱好者',
+      description: '数学学习时间达到2小时',
+      icon: '📐',
+      condition: (userData) => {
+        const allTasks = Object.values(userData.tasksByDate).flat();
+        const mathTime = allTasks
+          .filter(task => task.category === '数学')
+          .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+        return mathTime >= 7200;
+      },
+      points: 30
+    },
+    {
+      id: 'english_master',
+      name: '英语达人',
+      description: '英语学习时间达到2小时',
+      icon: '🔤',
+      condition: (userData) => {
+        const allTasks = Object.values(userData.tasksByDate).flat();
+        const englishTime = allTasks
+          .filter(task => task.category === '英语')
+          .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+        return englishTime >= 7200;
+      },
+      points: 30
+    },
+    {
+      id: 'balanced',
+      name: '全面发展',
+      description: '所有科目都有学习记录',
+      icon: '⚖️',
+      condition: (userData) => {
+        const allTasks = Object.values(userData.tasksByDate).flat();
+        const studiedCategories = new Set(allTasks.map(task => task.category));
+        return categories.every(cat => studiedCategories.has(cat.name));
+      },
+      points: 40
+    }
+  ],
+  
+  custom: [
+    // 这里会动态添加用户自定义的成就
+  ],
+
+  // 特殊成就
+  special: [
+    {
+      id: 'early_bird',
+      name: '早起的鸟儿',
+      description: '在早上8点前开始学习',
+      icon: '🐦',
+      condition: (userData) => {
+        // 简化条件：只要有早上8点前的任务
+        return Math.random() > 0.7; // 随机解锁用于演示
+      },
+      points: 25
+    },
+
+    
+    {
+      id: 'night_owl',
+      name: '夜猫子',
+      description: '在晚上10点后还在学习',
+      icon: '🦉',
+      condition: (userData) => {
+        // 简化条件
+        return Math.random() > 0.7; // 随机解锁用于演示
+      },
+      points: 25
+    },
+    {
+      id: 'weekend_hero',
+      name: '周末英雄',
+      description: '周末完成5小时学习',
+      icon: '🎪',
+      condition: (userData) => {
+        // 简化条件
+        return Math.random() > 0.8; // 随机解锁用于演示
+      },
+      points: 35
+    }
+    
+  ]
+};
+//成就系统end
+
+
 // 备份管理模态框组件
 const BackupManagerModal = ({ onClose }) => {
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
 
   useEffect(() => {
+
     // 获取备份列表
     setBackups(getBackupList());
   }, []);
@@ -310,7 +512,10 @@ const BackupManagerModal = ({ onClose }) => {
       </div>
     </div>
   );
-};// 在这里添加计时记录模态框组件 ↓
+};
+
+
+// 在这里添加计时记录模态框组件 ↓
 const TimerRecordsModal = ({ records, onClose }) => {
   return (
     <div style={{
@@ -404,6 +609,412 @@ const TimerRecordsModal = ({ records, onClose }) => {
 
 
 
+const CustomAchievementModal = ({ onSave, onClose, editAchievement = null }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    targetType: 'taskCount',
+    targetValue: '',
+    subject: '语文',
+    icon: '🎯',
+    points: 10
+  });
+
+  const iconOptions = ['🎯', '⭐', '🏆', '🔥', '🌟', '💪', '📚', '⏱️', '✅', '📊'];
+
+  const handleSave = () => {
+    if (!formData.name.trim() || !formData.targetValue) {
+      alert('请填写成就名称和目标值');
+      return;
+    }
+
+    const customAchievement = {
+      id: `custom_${Date.now()}`,
+      name: formData.name.trim(),
+      description: formData.description.trim() || `完成目标：${formData.targetValue}`,
+      icon: formData.icon,
+      points: parseInt(formData.points) || 10,
+      condition: (userData) => {
+        switch (formData.targetType) {
+          case 'taskCount':
+            const allTasks = Object.values(userData.tasksByDate).flat();
+            return allTasks.filter(task => task.done).length >= parseInt(formData.targetValue);
+          case 'subjectTime':
+            const allTasks2 = Object.values(userData.tasksByDate).flat();
+            const subjectTime = allTasks2
+              .filter(task => task.category === formData.subject && task.done)
+              .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+            return subjectTime >= (parseInt(formData.targetValue) * 3600);
+          case 'totalTime':
+            const allTasks3 = Object.values(userData.tasksByDate).flat();
+            const totalTime = allTasks3
+              .filter(task => task.done)
+              .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+            return totalTime >= (parseInt(formData.targetValue) * 3600);
+          default:
+            return false;
+        }
+      },
+      isCustom: true
+    };
+
+    onSave(customAchievement);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 15,
+        width: '90%',
+        maxWidth: 400,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#1a73e8' }}>
+          创建自定义成就
+        </h3>
+
+        {/* 图标选择 */}
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>选择图标:</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {iconOptions.map(icon => (
+              <button
+                key={icon}
+                onClick={() => setFormData({ ...formData, icon })}
+                style={{
+                  fontSize: '20px',
+                  padding: '8px',
+                  border: `2px solid ${formData.icon === icon ? '#1a73e8' : '#ddd'}`,
+                  borderRadius: '8px',
+                  backgroundColor: formData.icon === icon ? '#e8f0fe' : 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 成就名称 */}
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>成就名称:</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="例如：数学大师"
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+          />
+        </div>
+
+        {/* 目标类型 */}
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>目标类型:</label>
+          <select
+            value={formData.targetType}
+            onChange={(e) => setFormData({ ...formData, targetType: e.target.value })}
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+          >
+            <option value="taskCount">完成任务数量</option>
+            <option value="subjectTime">科目学习时间</option>
+            <option value="totalTime">总学习时间</option>
+          </select>
+        </div>
+
+        {/* 目标值 */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>目标值:</label>
+          <input
+            type="number"
+            value={formData.targetValue}
+            onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
+            placeholder="例如：10"
+            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: '12px', backgroundColor: '#ccc', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            style={{ flex: 1, padding: '12px', backgroundColor: '#1a73e8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            创建
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+// 修改成就模态框组件
+const AchievementsModal = ({ 
+  achievements, 
+  onClose, 
+  isNew = false, 
+  unlockedAchievements = [], 
+  onAddCustom, 
+  onEditCustom, 
+  onDeleteCustom, 
+  customAchievements = [] 
+}) => {
+  
+  // 获取所有系统成就（排除custom数组）
+  const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
+    .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
+    .flat();
+  
+  // 合并系统成就和自定义成就
+  const allAchievements = [...allSystemAchievements, ...customAchievements];
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 15,
+        width: '95%',
+        maxWidth: 500,
+        maxHeight: '80vh',
+        overflow: 'auto',
+        textAlign: 'center'
+      }}>
+        {isNew && achievements.length > 0 && (
+          <div style={{ fontSize: 24, marginBottom: 10, color: '#ff6b6b', fontWeight: 'bold' }}>
+            🎉 成就解锁！
+          </div>
+        )}
+        
+        <h3 style={{ marginBottom: 20, color: '#1a73e8' }}>🏆 成就徽章墙</h3>
+        
+        {/* 自定义成就按钮 */}
+        <div style={{ marginBottom: 15 }}>
+          <button
+            onClick={(e) => {
+              console.log('创建自定义成就按钮被点击');
+              e.stopPropagation(); // 阻止事件冒泡
+              onAddCustom();
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}
+          >
+            ➕ 创建自定义成就
+          </button>
+        </div>
+
+        {/* 统计信息 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: '10px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '15px',
+          fontSize: '12px'
+        }}>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>已解锁</div>
+            <div>{unlockedAchievements.length}/{allAchievements.length}</div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>总积分</div>
+            <div>{allAchievements
+              .filter(ach => unlockedAchievements.includes(ach.id))
+              .reduce((sum, ach) => sum + ach.points, 0)}分</div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>完成度</div>
+            <div>{allAchievements.length > 0 ? Math.round((unlockedAchievements.length / allAchievements.length) * 100) : 0}%</div>
+          </div>
+        </div>
+
+        {/* 成就网格 */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: 10,
+          marginBottom: 20
+        }}>
+          {allAchievements.map((achievement) => {
+            const isUnlocked = unlockedAchievements.includes(achievement.id);
+            const isCustom = achievement.isCustom;
+            
+            return (
+              <div
+                key={achievement.id}
+                style={{
+                  padding: '12px 8px',
+                  backgroundColor: isUnlocked ? '#e8f5e8' : '#f5f5f5',
+                  borderRadius: '10px',
+                  border: `2px solid ${isUnlocked ? '#4CAF50' : isCustom ? '#ffa726' : '#ddd'}`,
+                  textAlign: 'center',
+                  opacity: isUnlocked ? 1 : 0.7,
+                  position: 'relative'
+                }}
+              >
+                {/* 自定义成就标识 */}
+                {isCustom && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    fontSize: '10px',
+                    color: '#ffa726'
+                  }}>
+                    ✏️
+                  </div>
+                )}
+                
+                <div style={{
+                  fontSize: '24px',
+                  marginBottom: '8px',
+                  filter: isUnlocked ? 'none' : 'grayscale(100%)'
+                }}>
+                  {achievement.icon}
+                </div>
+                
+                <div style={{
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  marginBottom: '4px',
+                  color: isUnlocked ? '#333' : '#999'
+                }}>
+                  {achievement.name}
+                </div>
+                
+                <div style={{
+                  fontSize: '10px',
+                  color: isUnlocked ? '#666' : '#999',
+                  marginBottom: '6px',
+                  lineHeight: '1.2'
+                }}>
+                  {achievement.description}
+                </div>
+                
+                <div style={{
+                  fontSize: '9px',
+                  color: isUnlocked ? '#4CAF50' : '#ccc',
+                  fontWeight: 'bold'
+                }}>
+                  {isUnlocked ? `+${achievement.points}积分` : '未解锁'}
+                </div>
+
+                {/* 自定义成就操作按钮 */}
+                {isCustom && (
+                  <div style={{ marginTop: '8px', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCustom(achievement);
+                      }}
+                      style={{
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        backgroundColor: '#17a2b8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteCustom(achievement.id);
+                      }}
+                      style={{
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      删除
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#1a73e8',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}
+        >
+          {isNew ? '太棒了！继续努力！' : '关闭'}
+        </button>
+      </div>
+    </div>
+  );
+};
+//成就模块end
+
+
+
+
+
+
+
+
 
 
 // 保持这样就行
@@ -416,6 +1027,63 @@ const AUTO_BACKUP_CONFIG = {
   backupInterval: 30 * 60 * 1000,   // 30分钟（30 * 60 * 1000 毫秒）
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
+
+
+// 计算连续学习天数
+const calculateCurrentStreak = (tasksByDate) => {
+  const dates = Object.keys(tasksByDate)
+    .filter(date => {
+      const dayTasks = tasksByDate[date] || [];
+      return dayTasks.some(task => task.done) || 
+             dayTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0) > 0;
+    })
+    .sort((a, b) => b.localeCompare(a));
+  
+  if (dates.length === 0) return 0;
+  
+  let streak = 1;
+  let currentDate = new Date(dates[0]);
+  
+  for (let i = 1; i < dates.length; i++) {
+    const prevDate = new Date(dates[i]);
+    const diffTime = currentDate - prevDate;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    
+    if (diffDays === 1) {
+      streak++;
+      currentDate = prevDate;
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+};
+
+
+// 修改成就检查函数，添加 customAchievements 参数
+const checkAchievements = (userData, unlockedAchievements, customAchievements = []) => {
+  const newAchievements = [];
+  
+  // 获取所有系统成就（排除custom数组）
+  const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
+    .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
+    .flat();
+  
+  // 合并系统成就和自定义成就
+  const allAchievements = [...allSystemAchievements, ...customAchievements];
+  
+  allAchievements.forEach(achievement => {
+    if (!unlockedAchievements.includes(achievement.id) && achievement.condition(userData)) {
+      newAchievements.push(achievement);
+    }
+  });
+  
+  return newAchievements;
+};
+
+
+
 
 
 // ==== 自动备份功能 ====
@@ -604,14 +1272,6 @@ const getWeekNumber = (date) => {
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
-
-const categories = [
-  { name: "语文", color: "#4a90e2" },
-  { name: "数学", color: "#357ABD" },
-  { name: "英语", color: "#1e73be" },
-  { name: "科学", color: "#00aaff" },
-  { name: "体育", color: "#3399ff" },
-];
 
 // 统一的存储函数
 const saveMainData = async (key, data) => {
@@ -4355,8 +5015,12 @@ function App() {
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
   const [showHonorModal, setShowHonorModal] = useState(false);
+  
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  const [newAchievements, setNewAchievements] = useState([]);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [repeatConfig, setRepeatConfig] = useState({
     frequency: "daily",
     days: [false, false, false, false, false, false, false],
@@ -4392,6 +5056,9 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
   const [showTimerRecords, setShowTimerRecords] = useState(false);
+  const [customAchievements, setCustomAchievements] = useState([]);
+  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
+  const [editingAchievement, setEditingAchievement] = useState(null);
 
  
   const editSubTask = (task, subTaskIndex, newText) => {
@@ -4424,6 +5091,155 @@ function App() {
       }
     }
   };
+
+
+  
+
+// ========== 自定义成就处理函数 ==========
+const handleAddCustomAchievement = (achievement) => {
+  console.log('添加自定义成就:', achievement);
+  const updatedAchievements = [...customAchievements, achievement];
+  setCustomAchievements(updatedAchievements);
+  saveMainData('customAchievements', updatedAchievements);
+  setShowCustomAchievementModal(false);
+  setEditingAchievement(null);
+};
+
+const handleEditCustomAchievement = (achievement) => {
+  setCustomAchievements(prev => prev.map(a => 
+    a.id === achievement.id ? achievement : a
+  ));
+  saveMainData('customAchievements', customAchievements);
+};
+
+const handleDeleteCustomAchievement = (achievementId) => {
+  if (window.confirm('确定要删除这个自定义成就吗？')) {
+    setCustomAchievements(prev => prev.filter(a => a.id !== achievementId));
+    setUnlockedAchievements(prev => prev.filter(id => id !== achievementId));
+    saveMainData('customAchievements', customAchievements.filter(a => a.id !== achievementId));
+  }
+};
+
+const handleOpenCustomAchievementModal = (achievement = null) => {
+  setEditingAchievement(achievement);
+  setShowCustomAchievementModal(true);
+};
+
+
+
+  // ========== 修复成就系统 ==========
+
+
+
+
+  
+
+// 加载已解锁的成就
+useEffect(() => {
+  const loadUnlockedAchievements = async () => {
+    try {
+      const savedAchievements = await loadMainData('unlockedAchievements');
+      if (savedAchievements) {
+        setUnlockedAchievements(savedAchievements);
+        console.log('✅ 加载已解锁成就:', savedAchievements);
+      }
+    } catch (error) {
+      console.error('加载成就数据失败:', error);
+    }
+  };
+
+  if (isInitialized) {
+    loadUnlockedAchievements();
+  }
+}, [isInitialized]);
+
+
+// 添加状态监控 - 放在这里
+useEffect(() => {
+  console.log('showCustomAchievementModal 状态变化:', showCustomAchievementModal);
+}, [showCustomAchievementModal]);
+
+// 保存已解锁的成就
+useEffect(() => {
+  const saveUnlockedAchievements = async () => {
+    if (isInitialized && unlockedAchievements.length > 0) {
+      await saveMainData('unlockedAchievements', unlockedAchievements);
+      console.log('💾 保存成就数据:', unlockedAchievements);
+    }
+  };
+
+  saveUnlockedAchievements();
+}, [unlockedAchievements, isInitialized]);
+
+
+     
+        
+  
+
+  
+// 调试函数 - 在控制台测试成就
+useEffect(() => {
+  window.debugAchievements = {
+    // 强制检查所有成就
+    checkAll: () => {
+      const userData = {
+        tasksByDate,
+        templates,
+        pointHistory,
+        exchangeItems
+      };
+      const allAchievements = Object.values(ACHIEVEMENTS_CONFIG).flat();
+      const unlocked = allAchievements.filter(ach => ach.condition(userData));
+      console.log('可解锁成就:', unlocked);
+      return unlocked;
+    },
+    // 重置成就
+    reset: async () => {
+      setUnlockedAchievements([]);
+      await saveMainData('unlockedAchievements', []);
+      console.log('成就已重置');
+    },
+    // 解锁特定成就（用于测试）
+    unlock: (achievementId) => {
+      const allAchievements = Object.values(ACHIEVEMENTS_CONFIG).flat();
+      const achievement = allAchievements.find(ach => ach.id === achievementId);
+      if (achievement && !unlockedAchievements.includes(achievementId)) {
+        setNewAchievements([achievement]);
+        setUnlockedAchievements(prev => [...prev, achievementId]);
+        setShowAchievementsModal(true);
+      }
+    }
+  };
+// 添加延迟检查，确保数据完全加载
+const timer = setTimeout(() => {
+  if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    const userData = {
+      tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems
+    };
+    
+    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
+    
+    if (newlyUnlocked.length > 0) {
+      setNewAchievements(newlyUnlocked);
+      setUnlockedAchievements(prev => [
+        ...prev,
+        ...newlyUnlocked.map(ach => ach.id)
+      ]);
+      
+      setTimeout(() => {
+        setShowAchievementsModal(true);
+      }, 1000);
+    }
+  }
+}, 2000);
+return () => clearTimeout(timer);
+}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
+
+
+
 
 
 // 在 App 组件中的 generateDailyLog 函数
@@ -4800,6 +5616,8 @@ useEffect(() => {
       saveMainData('templates', templates);
       saveMainData('pointHistory', pointHistory);
       saveMainData('exchange', exchangeItems);
+      saveMainData('customAchievements', customAchievements);
+      saveMainData('unlockedAchievements', unlockedAchievements);
       console.log('✅ 所有数据已保存');
     },
     getState: () => ({
@@ -4807,16 +5625,75 @@ useEffect(() => {
       templates,
       pointHistory,
       exchangeItems,
+      customAchievements,
+      unlockedAchievements,
+      isInitialized,
       selectedDate,
-      todayTasks: tasksByDate[selectedDate] || []  // 添加 todayTasks
-    })
+      // 添加模态框状态
+      showAchievementsModal,
+      showCustomAchievementModal,
+      editingAchievement,
+      todayTasks: tasksByDate[selectedDate] || []
+    }),
+    // 添加setState方法
+    setState: (newState) => {
+      if (newState.showAchievementsModal !== undefined) setShowAchievementsModal(newState.showAchievementsModal);
+      if (newState.showCustomAchievementModal !== undefined) setShowCustomAchievementModal(newState.showCustomAchievementModal);
+      if (newState.unlockedAchievements !== undefined) setUnlockedAchievements(newState.unlockedAchievements);
+      if (newState.customAchievements !== undefined) setCustomAchievements(newState.customAchievements);
+      console.log('状态已更新:', newState);
+    }
   };
   
   return () => {
     delete window.appInstance;
   };
-}, [tasksByDate, templates, pointHistory, exchangeItems, selectedDate]); // 添加 selectedDate 依赖
+}, [tasksByDate, templates, pointHistory, exchangeItems, customAchievements, unlockedAchievements, isInitialized, selectedDate, showAchievementsModal, showCustomAchievementModal, editingAchievement]);
   
+
+
+// 成就检查逻辑
+useEffect(() => {
+  console.log('🔍 成就检查触发:', {
+    isInitialized,
+    tasksByDateCount: Object.keys(tasksByDate).length,
+    unlockedAchievementsCount: unlockedAchievements.length
+  });
+  
+  if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    const userData = {
+      tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems
+    };
+    
+    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
+    
+    console.log('新解锁成就:', newlyUnlocked);
+    
+    if (newlyUnlocked.length > 0) {
+      setNewAchievements(newlyUnlocked);
+      setUnlockedAchievements(prev => [
+        ...prev,
+        ...newlyUnlocked.map(ach => ach.id)
+      ]);
+      
+      setTimeout(() => {
+        setShowAchievementsModal(true);
+      }, 1000);
+    }
+  }
+}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
+
+
+
+
+
+
+
+
+
   // ==== 新增：状态变化监听 ====
   useEffect(() => {
     console.log('🔄 tasksByDate 状态变化:', {
@@ -5233,6 +6110,32 @@ useEffect(() => {
         setExchangeItems(savedExchangeItems);
       }
       
+
+
+
+ // 加载自定义成就
+   // 加载自定义成就
+   const savedCustomAchievements = await loadMainData('customAchievements');
+   console.log('✅ 加载的自定义成就:', savedCustomAchievements);
+   if (savedCustomAchievements) {
+     setCustomAchievements(savedCustomAchievements);
+   } else {
+     setCustomAchievements([]); // 如果没有数据，设为空数组
+   }
+ // ========== 结束添加 ==========
+
+
+ // 在数据初始化的useEffect中，检查这行代码是否存在：
+const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
+console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
+if (savedUnlockedAchievements) {
+  setUnlockedAchievements(savedUnlockedAchievements);
+} else {
+  setUnlockedAchievements([]);
+}
+
+
+
       console.log('🎉 应用初始化完成');
 
 
@@ -5252,10 +6155,41 @@ useEffect(() => {
     }
     
     setIsInitialized(true);
+    console.log('✅ isInitialized 设置为 true');
   };
 
   initializeApp();
 }, []);
+//初始化end
+
+
+
+
+// 简化版本，不需要额外延迟
+useEffect(() => {
+  if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    const userData = {
+      tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems
+    };
+    
+    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
+    
+    if (newlyUnlocked.length > 0) {
+      setNewAchievements(newlyUnlocked);
+      setUnlockedAchievements(prev => [
+        ...prev,
+        ...newlyUnlocked.map(ach => ach.id)
+      ]);
+      
+      setTimeout(() => {
+        setShowAchievementsModal(true);
+      }, 1000);
+    }
+  }
+}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
 
 // 自动保存任务数据
 useEffect(() => {
@@ -5358,9 +6292,12 @@ useEffect(() => {
       const isRepeatButton = event.target.closest('button')?.textContent?.includes('重复');
       const isTimeButton = event.target.closest('button')?.textContent?.includes('计划时间');
       const isTemplateButton = event.target.closest('button')?.textContent?.includes('模板');
-
-      // 如果点击了这些功能按钮，不关闭输入框
-      if (isRepeatButton || isTimeButton || isTemplateButton) {
+      
+      // 新增：检查是否点击了自定义成就模态框
+      const isCustomAchievementModal = event.target.closest('[style*="position: fixed"]')?.querySelector('h3')?.textContent?.includes('自定义成就');
+  
+      // 如果点击了这些功能按钮或模态框，不关闭输入框
+      if (isRepeatButton || isTimeButton || isTemplateButton || isCustomAchievementModal) {
         return;
       }
 
@@ -7554,6 +8491,55 @@ if (isInitialized && todayTasks.length === 0) {
           onClose={() => setShowImageModal(null)}
         />
       )}
+
+{console.log('渲染时 showCustomAchievementModal:', showCustomAchievementModal) || null}
+{showCustomAchievementModal && (
+  <CustomAchievementModal
+    onSave={(achievement) => {
+      console.log('保存成就:', achievement);
+      if (editingAchievement) {
+        handleEditCustomAchievement(achievement);
+      } else {
+        handleAddCustomAchievement(achievement);
+      }
+    }}
+    onClose={() => {
+      console.log('🔴 CustomAchievementModal onClose 被调用了！'); // 添加这行
+      setShowCustomAchievementModal(false);
+      setEditingAchievement(null);
+    }}
+    editAchievement={editingAchievement}
+  />
+)}
+
+ 
+      {/* 成就模态框 */}
+      {showAchievementsModal && (
+  <AchievementsModal
+    achievements={newAchievements}
+    onClose={() => {
+      setShowAchievementsModal(false);
+      setNewAchievements([]);
+    }}
+    isNew={newAchievements.length > 0}
+    unlockedAchievements={unlockedAchievements}
+    onAddCustom={() => {
+      console.log('开始设置 showCustomAchievementModal 为 true');
+      setShowCustomAchievementModal(true);
+      console.log('设置 showCustomAchievementModal 为 true');
+  
+      // 添加一个延时检查状态
+      setTimeout(() => {
+        console.log('当前 showCustomAchievementModal 状态:', showCustomAchievementModal);
+      }, 100);
+    }}
+    onEditCustom={handleOpenCustomAchievementModal}
+    onDeleteCustom={handleDeleteCustomAchievement}
+    customAchievements={customAchievements}
+  />
+)}
+
+
       {showHonorModal && <HonorModal />}
       {showRepeatModal && (
         <RepeatModal
@@ -7599,6 +8585,8 @@ if (isInitialized && todayTasks.length === 0) {
           }}
         />
       )}
+
+
       {showTimeModal && (
         <TimeModal
           config={repeatConfig}
@@ -7606,6 +8594,11 @@ if (isInitialized && todayTasks.length === 0) {
           onClose={() => setShowTimeModal(false)}
         />
       )}
+
+
+
+
+
       {showTemplateModal && (
         <TemplateModal
           templates={templates}
@@ -8808,6 +9801,24 @@ if (isInitialized && todayTasks.length === 0) {
 >
   计时记录
 </button>
+ 
+        {/* 在这里添加成就按钮 */}
+        <button
+          onClick={() => setShowAchievementsModal(true)}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
+          }}
+        >
+          我的成就
+        </button>
       </div>
     </div>
   );
