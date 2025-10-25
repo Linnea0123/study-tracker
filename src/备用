@@ -5180,7 +5180,40 @@ const toggleSubTask = (task, subTaskIndex) => {
     }));
   }
 };
-
+// 在 TaskEditModal 组件中添加这个函数
+const editSubTask = (task, subTaskIndex) => {
+  const currentSubTask = task.subTasks[subTaskIndex];
+  const newText = window.prompt("编辑子任务", currentSubTask.text);
+  
+  if (newText !== null && newText.trim() !== '') {
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        )
+      }));
+    }
+  }
+};  
 
   // 打开任务编辑模态框
   const openTaskEditModal = (task) => {
