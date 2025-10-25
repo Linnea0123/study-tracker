@@ -15,9 +15,6 @@ const getWeekNumber = (date) => {
 };
 
 
-// 主学习跟踪器的存储配置
-const STORAGE_KEY = 'study-tracker-main-v2';
-
 const categories = [
   { name: "语文", color: "#4a90e2" },
   { name: "数学", color: "#357ABD" },
