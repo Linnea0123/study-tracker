@@ -22,27 +22,79 @@ const categories = [
 ];
 
 
-// 统一的存储函数
+// 修复存储函数，添加错误处理和验证
 const saveMainData = async (key, data) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
+  const storageKey = `study_tracker_v2_${key}`; // 使用更独特的键名
+  
   try {
-    localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data);
+    // 添加数据验证
+    if (!data) {
+      console.warn(`尝试保存空数据: ${key}`);
+      return;
+    }
+    
+    const dataToSave = {
+      data: data,
+      timestamp: new Date().toISOString(),
+      version: '2.0'
+    };
+    
+    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+    console.log(`✅ 数据保存成功: ${key}`, data);
+    
+    // 验证保存是否成功
+    const verify = localStorage.getItem(storageKey);
+    if (!verify) {
+      throw new Error('保存验证失败');
+    }
+    
   } catch (error) {
-    console.error(`数据保存失败: ${key}`, error);
+    console.error(`❌ 数据保存失败: ${key}`, error);
+    // 尝试清理可能损坏的数据
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) {
+      console.error('清理损坏数据失败:', e);
+    }
   }
 };
 
 const loadMainData = async (key) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
+  const storageKey = `study_tracker_v2_${key}`;
+  
   try {
-    const data = localStorage.getItem(storageKey);
-    return data ? JSON.parse(data) : null;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) {
+      console.log(`没有找到存储数据: ${key}`);
+      return null;
+    }
+    
+    const parsed = JSON.parse(stored);
+    
+    // 验证数据格式
+    if (!parsed || !parsed.data) {
+      console.warn(`数据格式无效: ${key}`);
+      return null;
+    }
+    
+    console.log(`✅ 数据加载成功: ${key}`, parsed.data);
+    return parsed.data;
+    
   } catch (error) {
-    console.error(`数据加载失败: ${key}`, error);
+    console.error(`❌ 数据加载失败: ${key}`, error);
+    
+    // 尝试恢复损坏的数据
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) {
+      console.error('清理损坏数据失败:', e);
+    }
+    
     return null;
   }
 };
+
+
 
 // 修复：获取本周一的日期
 const getMonday = (date) => {
