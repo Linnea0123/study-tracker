@@ -3377,6 +3377,11 @@ const TaskItem = ({
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
 
+ // 修复：确保复选框可以点击
+ const handleCheckboxClick = (e) => {
+  e.stopPropagation(); // 阻止事件冒泡
+  toggleDone(task);
+};
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -3455,8 +3460,16 @@ const TaskItem = ({
             <input
               type="checkbox"
               checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: "2px" }}
+              onChange={handleCheckboxClick} // 修复：使用专门的点击处理函数
+              onClick={handleCheckboxClick}  // 修复：添加 onClick 事件
+              
+              
+              style={{ 
+                marginTop: "2px",
+                cursor: "pointer", // 添加指针样式
+                zIndex: 1 // 确保在最上层
+              
+              }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
@@ -3597,8 +3610,15 @@ const TaskItem = ({
             <input
               type="checkbox"
               checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: "2px" }}
+              onChange={handleCheckboxClick} // 修复：使用专门的点击处理函数
+              onClick={handleCheckboxClick}  // 修复：添加 onClick 事件
+            
+              style={{
+                marginTop: "2px",
+                cursor: "pointer", // 添加指针样式
+                zIndex: 1 // 确保在最上层 
+
+              }}
             />
 
             <div
