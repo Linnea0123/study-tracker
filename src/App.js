@@ -310,7 +310,100 @@ const BackupManagerModal = ({ onClose }) => {
       </div>
     </div>
   );
+};// 在这里添加计时记录模态框组件 ↓
+const TimerRecordsModal = ({ records, onClose }) => {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 500,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+          ⏱️ 计时记录
+        </h3>
+        
+        {records.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>
+            暂无计时记录
+          </div>
+        ) : (
+          <div style={{ maxHeight: 400, overflow: 'auto' }}>
+            {records.map(record => (
+              <div key={record.id} style={{ 
+                padding: '12px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                backgroundColor: '#f8f9fa'
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                  {record.taskText}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  📚 {record.category}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+  {/* 把开始和结束时间放在同一行 */}
+  🕐 {new Date(record.startTime).toLocaleString()} 
+  {record.endTime && ` →  ${new Date(record.endTime).toLocaleString()}`}
+</div>
+                
+                <div style={{ 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  color: record.endTime ? '#28a745' : '#ffc107',
+                  textAlign: 'right'
+                }}>
+                  {record.endTime ? 
+                    `${Math.floor(record.duration / 60)}分${record.duration % 60}秒` : 
+                    '进行中...'
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: '12px',
+            marginTop: '15px',
+            backgroundColor: '#1a73e8',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}
+        >
+          关闭
+        </button>
+      </div>
+    </div>
+  );
 };
+
+
+
 
 
 // 保持这样就行
@@ -4297,6 +4390,8 @@ function App() {
   const [activeTimer, setActiveTimer] = useState(null); // { taskId, startTime }
   const [elapsedTime, setElapsedTime] = useState(0); // 新增：实时计时
   const [isInitialized, setIsInitialized] = useState(false);
+  const [timerRecords, setTimerRecords] = useState([]);
+  const [showTimerRecords, setShowTimerRecords] = useState(false);
 
  
   const editSubTask = (task, subTaskIndex, newText) => {
@@ -4845,6 +4940,17 @@ const handleStartTimer = (task) => {
   setActiveTimer({ taskId: task.id, startTime });
   setElapsedTime(0);
 
+  const newRecord = {
+    id: Date.now().toString(),
+    taskId: task.id,
+    taskText: task.text,
+    category: task.category,
+    startTime: new Date().toISOString(),
+    endTime: null,
+    duration: 0
+  };
+  setTimerRecords(prev => [newRecord, ...prev]);
+
   console.log('⏱️ 开始计时:', {
     任务: task.text,
     开始时间: new Date(startTime).toLocaleTimeString(),
@@ -4860,6 +4966,13 @@ const handleStartTimer = (task) => {
     const endTime = Date.now();
     const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
     
+    // 在这里添加更新记录 ↓
+  setTimerRecords(prev => prev.map(record => 
+    record.taskId === task.id && !record.endTime 
+      ? {...record, endTime: new Date().toISOString(), duration: timeSpentThisSession}
+      : record
+  ));
+
     // 只使用本次会话的时间，elapsedTime已经在实时更新中包含了
     const totalTimeSpent = timeSpentThisSession;
   
@@ -7581,7 +7694,13 @@ if (isInitialized && todayTasks.length === 0) {
         <BackupManagerModal onClose={() => setShowBackupModal(false)} />
       )}
 
-
+{/* 在这里添加计时记录模态框 ↓ */}
+{showTimerRecords && (
+  <TimerRecordsModal 
+    records={timerRecords}
+    onClose={() => setShowTimerRecords(false)}
+  />
+)}
 
       {/* 主页面内容 */}
       <h1 style={{
@@ -8672,6 +8791,23 @@ if (isInitialized && todayTasks.length === 0) {
         >
           备份管理
         </button>
+       
+<button
+  onClick={() => setShowTimerRecords(true)}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#1a73e8",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+>
+  计时记录
+</button>
       </div>
     </div>
   );
