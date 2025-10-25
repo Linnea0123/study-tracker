@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
+// 保持这样就行
+const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
+const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
+
 // 获取周数
 const getWeekNumber = (date) => {
   const d = new Date(date);
