@@ -3604,7 +3604,10 @@ const TaskItem = ({
         </div>
       )}
 
-      {/* 子任务显示 - 放在这里 */}
+ 
+ 
+
+{/* 子任务显示 - 放在这里 */}
 {task.subTasks && task.subTasks.length > 0 && (
   <div style={{ marginLeft: '28px', marginTop: 6, marginBottom: 6, borderLeft: '2px solid #e0e0e0', paddingLeft: 12 }}>
     {task.subTasks.map((subTask, index) => (
@@ -3612,16 +3615,32 @@ const TaskItem = ({
         <input
           type="checkbox"
           checked={subTask.done}
-          // onChange={() => toggleSubTask(task, index)}
+          onChange={() => onToggleSubTask(task, index)}
           style={{ transform: 'scale(0.8)' }}
         />
-        <span style={{ textDecoration: subTask.done ? 'line-through' : 'none' }}>
+        <span 
+          onClick={() => onEditSubTask(task, index)}  // 添加点击编辑
+          style={{ 
+            textDecoration: subTask.done ? 'line-through' : 'none',
+            cursor: 'pointer',
+            flex: 1,
+            padding: '2px 4px',
+            borderRadius: '3px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+        >
           {subTask.text}
         </span>
       </div>
     ))}
   </div>
 )}
+
+
+
+
 
       {task.reflection && (
         <div
@@ -3746,6 +3765,42 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
  
+// 在 App 组件中添加这个函数
+const editSubTask = (task, subTaskIndex) => {
+  const currentSubTask = task.subTasks[subTaskIndex];
+  const newText = window.prompt("编辑子任务", currentSubTask.text);
+  
+  if (newText !== null && newText.trim() !== '') {
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        )
+      }));
+    }
+  }
+};
+
+
 // 在 App 组件中的 generateDailyLog 函数
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
@@ -5035,51 +5090,31 @@ useEffect(() => {
     setShowBulkInput(false);
   };
 
-  // 切换任务完成状态
-  const toggleDone = (task) => {
-    const wasDone = task.done;
+ 
 
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? { ...t, done: !t.done } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, done: !t.done } : t
-        )
-      }));
-    }
+// 切换任务完成状态
+const toggleDone = (task) => {
+  const wasDone = task.done;
 
-    setTimeout(() => {
-      const { totalPoints: newTotal } = calculateHonorPoints();
-      if (!wasDone) {
-        recordPointChange(1, `完成任务: ${task.text}`, newTotal);
-      } else {
-        recordPointChange(-1, `取消完成: ${task.text}`, newTotal);
-      }
-    }, 100);
+  const updateTaskWithDone = (t, doneState) => {
+    // 如果主任务被标记为完成，所有子任务也自动完成
+    // 如果主任务被取消完成，子任务状态保持不变
+    const newSubTasks = doneState 
+      ? t.subTasks.map(st => ({ ...st, done: true }))
+      : t.subTasks;
+    
+    return {
+      ...t,
+      done: doneState,
+      subTasks: newSubTasks
+    };
   };
 
-
-
-  // 切换子任务完成状态
-const toggleSubTask = (task, subTaskIndex) => {
   if (task.isWeekTask) {
     const updatedTasksByDate = { ...tasksByDate };
     Object.keys(updatedTasksByDate).forEach(date => {
       updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-        t.isWeekTask && t.text === task.text ? {
-          ...t,
-          subTasks: t.subTasks.map((st, index) => 
-            index === subTaskIndex ? { ...st, done: !st.done } : st
-          )
-        } : t
+        t.isWeekTask && t.text === task.text ? updateTaskWithDone(t, !wasDone) : t
       );
     });
     setTasksByDate(updatedTasksByDate);
@@ -5087,16 +5122,98 @@ const toggleSubTask = (task, subTaskIndex) => {
     setTasksByDate(prev => ({
       ...prev,
       [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? {
-          ...t,
-          subTasks: t.subTasks.map((st, index) => 
-            index === subTaskIndex ? { ...st, done: !st.done } : st
-          )
-        } : t
+        t.id === task.id ? updateTaskWithDone(t, !wasDone) : t
+      )
+    }));
+  }
+
+  setTimeout(() => {
+    const { totalPoints: newTotal } = calculateHonorPoints();
+    if (!wasDone) {
+      recordPointChange(1, `完成任务: ${task.text}`, newTotal);
+    } else {
+      recordPointChange(-1, `取消完成: ${task.text}`, newTotal);
+    }
+  }, 100);
+};
+
+
+
+
+
+
+
+
+
+
+// 切换子任务完成状态
+const toggleSubTask = (task, subTaskIndex) => {
+  const updateTaskWithSubTasks = (t) => {
+    const newSubTasks = t.subTasks.map((st, index) => 
+      index === subTaskIndex ? { ...st, done: !st.done } : st
+    );
+    
+    // 检查是否所有子任务都完成了
+    const allSubTasksDone = newSubTasks.length > 0 && newSubTasks.every(st => st.done);
+    
+    return {
+      ...t,
+      subTasks: newSubTasks,
+      done: allSubTasksDone // 自动设置主任务完成状态
+    };
+  };
+
+  if (task.isWeekTask) {
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? updateTaskWithSubTasks(t) : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? updateTaskWithSubTasks(t) : t
       )
     }));
   }
 };
+// 在 TaskEditModal 组件中添加这个函数
+const editSubTask = (task, subTaskIndex) => {
+  const currentSubTask = task.subTasks[subTaskIndex];
+  const newText = window.prompt("编辑子任务", currentSubTask.text);
+  
+  if (newText !== null && newText.trim() !== '') {
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? {
+            ...t,
+            subTasks: t.subTasks.map((st, index) => 
+              index === subTaskIndex ? { ...st, text: newText.trim() } : st
+            )
+          } : t
+        )
+      }));
+    }
+  }
+};  
 
   // 打开任务编辑模态框
   const openTaskEditModal = (task) => {
@@ -7159,6 +7276,7 @@ if (isInitialized && todayTasks.length === 0) {
                   onPauseTimer={handlePauseTimer}
                   isTimerRunning={activeTimer?.taskId === task.id}
                   elapsedTime={elapsedTime} // 新增这行
+                  onEditSubTask={editSubTask}  // 添加这行
                 />
               ))}
           </ul>
@@ -7239,15 +7357,19 @@ if (isInitialized && todayTasks.length === 0) {
                 onEditReflection={editTaskReflection}
                 onOpenEditModal={openTaskEditModal}
                 onShowImageModal={setShowImageModal}
+           
                 toggleDone={toggleDone}
                 formatTimeNoSeconds={formatTimeNoSeconds}
                 formatTimeWithSeconds={formatTimeWithSeconds}
                 onMoveTask={moveTask}
                 categories={categories}
+              
                 setShowMoveModal={setShowMoveModal}
                 onUpdateProgress={handleUpdateProgress}
+                onEditSubTask={editSubTask}
                 onStartTimer={handleStartTimer}
                 elapsedTime={elapsedTime} // 新增这行
+                onToggleSubTask={toggleSubTask}  // 添加这行
                 onPauseTimer={handlePauseTimer}
                 isTimerRunning={activeTimer?.taskId === task.id}
               />
@@ -7346,6 +7468,8 @@ if (isInitialized && todayTasks.length === 0) {
                       onUpdateProgress={handleUpdateProgress}
                       onStartTimer={handleStartTimer}
                       onPauseTimer={handlePauseTimer}
+                      onEditSubTask={editSubTask}
+                      onToggleSubTask={toggleSubTask}
                       isTimerRunning={activeTimer?.taskId === task.id}
                       elapsedTime={elapsedTime} // 新增这行
                     />
