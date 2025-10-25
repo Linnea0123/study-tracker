@@ -21,31 +21,28 @@ const categories = [
   { name: "体育", color: "#3399ff" },
 ];
 
-// 存储函数 - 主学习跟踪器专用
-const saveMainData = (key, data) => {
-  return new Promise((resolve) => {
-    if (chrome.storage && chrome.storage.sync) {
-      chrome.storage.sync.set({ [`${STORAGE_KEY}_${key}`]: data }, resolve);
-    } else {
-      localStorage.setItem(`${STORAGE_KEY}_${key}`, JSON.stringify(data));
-      resolve();
-    }
-  });
+
+// 统一的存储函数
+const saveMainData = async (key, data) => {
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    console.log(`数据保存成功: ${key}`, data);
+  } catch (error) {
+    console.error(`数据保存失败: ${key}`, error);
+  }
 };
 
-const loadMainData = (key) => {
-  return new Promise((resolve) => {
-    if (chrome.storage && chrome.storage.sync) {
-      chrome.storage.sync.get([`${STORAGE_KEY}_${key}`], (result) => {
-        resolve(result[`${STORAGE_KEY}_${key}`] || null);
-      });
-    } else {
-      const data = localStorage.getItem(`${STORAGE_KEY}_${key}`);
-      resolve(data ? JSON.parse(data) : null);
-    }
-  });
+const loadMainData = async (key) => {
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    const data = localStorage.getItem(storageKey);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`数据加载失败: ${key}`, error);
+    return null;
+  }
 };
-
 
 // 修复：获取本周一的日期
 const getMonday = (date) => {
@@ -4028,59 +4025,66 @@ useEffect(() => {
     }
   };
 
-  // 开始计时
-  const handleStartTimer = (task) => {
-    // 停止其他正在运行的计时器
-    if (activeTimer && activeTimer.taskId !== task.id) {
-      handlePauseTimer({ id: activeTimer.taskId });
-    }
+ // 修复计时器状态
+const handleStartTimer = (task) => {
+  // 停止其他正在运行的计时器
+  if (activeTimer && activeTimer.taskId !== task.id) {
+    handlePauseTimer({ id: activeTimer.taskId });
+  }
 
-    const startTime = Date.now();
-    setActiveTimer({ taskId: task.id, startTime });
+  const startTime = Date.now();
+  setActiveTimer({ taskId: task.id, startTime });
 
-    // 使用 Web Worker 或 Service Worker 来确保后台计时
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.active.postMessage({
-          type: 'START_TIMER',
-          taskId: task.id,
-          startTime: startTime
-        });
-      });
-    }
-
-    // 本地也保存开始时间到 localStorage
-    localStorage.setItem(`timer_${task.id}`, startTime.toString());
+  // 保存到存储
+  const saveTimer = async () => {
+    const timerData = {
+      [task.id]: {
+        startTime: startTime
+      }
+    };
+    await saveMainData('activeTimers', timerData);
   };
+  saveTimer();
+};
 
-  // 暂停计时
-  const handlePauseTimer = (task) => {
-    if (!activeTimer || activeTimer.taskId !== task.id) return;
+const handlePauseTimer = (task) => {
+  if (!activeTimer || activeTimer.taskId !== task.id) return;
 
-    const endTime = Date.now();
-    const timeSpent = Math.floor((endTime - activeTimer.startTime) / 1000); // 转换为秒
+  const endTime = Date.now();
+  const timeSpent = Math.floor((endTime - activeTimer.startTime) / 1000);
 
-    // 更新任务时间
-    setTasksByDate(prev => {
-      const currentTasks = prev[selectedDate] || [];
-      const updatedTasks = currentTasks.map(t =>
-        t.id === task.id ? {
-          ...t,
-          timeSpent: (t.timeSpent || 0) + timeSpent
-        } : t
-      );
+  // 更新任务时间
+  setTasksByDate(prev => {
+    const currentTasks = prev[selectedDate] || [];
+    const updatedTasks = currentTasks.map(t =>
+      t.id === task.id ? {
+        ...t,
+        timeSpent: (t.timeSpent || 0) + timeSpent
+      } : t
+    );
 
-      return {
-        ...prev,
-        [selectedDate]: updatedTasks
-      };
-    });
+    return {
+      ...prev,
+      [selectedDate]: updatedTasks
+    };
+  });
 
-    setActiveTimer(null);
+  setActiveTimer(null);
 
-    // 清理存储
-    localStorage.removeItem(`timer_${task.id}`);
+  // 清理存储
+  const clearTimer = async () => {
+    await saveMainData('activeTimers', {});
   };
+  clearTimer();
+};
+
+
+
+
+
+
+
+
 
   //修改 - 恢复计时器状态
   useEffect(() => {
@@ -4191,70 +4195,128 @@ useEffect(() => {
 
 
 
-
-
-
-  // 初始化数据
-  useEffect(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_tasks`);
-    if (saved) setTasksByDate(JSON.parse(saved));
-
-    const savedTemplates = localStorage.getItem(`${STORAGE_KEY}_templates`);
-    if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
-
-    const savedExchangeItems = localStorage.getItem(`${STORAGE_KEY}_exchange`);
-    if (savedExchangeItems) setExchangeItems(JSON.parse(savedExchangeItems));
-
-    const savedPointHistory = localStorage.getItem(`${STORAGE_KEY}_pointHistory`);
-    if (savedPointHistory) {
-      setPointHistory(JSON.parse(savedPointHistory));
-    } else {
-      const initialHistory = [{
-        date: new Date().toISOString(),
-        change: 0,
-        reason: '系统初始化',
-        totalAfterChange: 0
-      }];
-      setPointHistory(initialHistory);
+// 修复任务数据保存
+useEffect(() => {
+  const saveTasks = async () => {
+    try {
+      // 即使 tasksByDate 为空也保存，避免数据丢失
+      await saveMainData('tasks', tasksByDate);
+      console.log('任务数据自动保存:', Object.keys(tasksByDate).length, '天的数据');
+    } catch (error) {
+      console.error('任务数据保存失败:', error);
     }
-    // 在这里添加 Service Worker 注册
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => console.log('SW registered'))
-        .catch(error => console.log('SW registration failed'));
+  };
+
+  // 添加防抖，避免频繁保存
+  const timeoutId = setTimeout(saveTasks, 1000);
+  return () => clearTimeout(timeoutId);
+}, [tasksByDate]);
+
+// 修复其他数据的保存
+useEffect(() => {
+  const saveTemplateData = async () => {
+    if (templates.length > 0) {
+      await saveMainData('templates', templates);
     }
+  };
+  saveTemplateData();
+}, [templates]);
 
-  }, []);
+useEffect(() => {
+  const saveExchangeData = async () => {
+    if (exchangeItems.length > 0) {
+      await saveMainData('exchange', exchangeItems);
+    }
+  };
+  saveExchangeData();
+}, [exchangeItems]);
 
-  useEffect(() => {
-    // 确保初始日期正确
-    const today = new Date();
-    const correctMonday = getMonday(today);
-    setCurrentMonday(correctMonday);
-    setSelectedDate(today.toISOString().split("T")[0]);
-  }, []);
+useEffect(() => {
+  const savePointHistory = async () => {
+    if (pointHistory.length > 0) {
+      await saveMainData('pointHistory', pointHistory);
+    }
+  };
+  savePointHistory();
+}, [pointHistory]);
 
 
+// 读取每日数据
+useEffect(() => {
+  const loadDailyData = async () => {
+    if (selectedDate) {
+      const savedData = await loadMainData(`daily_${selectedDate}`);
+      if (savedData) {
+        setDailyRating(savedData.rating || 0);
+        setDailyReflection(savedData.reflection || '');
+      }
+    }
+  };
 
-  // 保存积分历史到本地存储
-  useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_pointHistory`, JSON.stringify(pointHistory));
-  }, [pointHistory]);
+  loadDailyData();
+}, [selectedDate]);
 
-  // 保存数据到本地存储
-  useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(tasksByDate));
-  }, [tasksByDate]);
+// 数据完整性检查
+useEffect(() => {
+  const checkDataIntegrity = async () => {
+    try {
+      const savedTasks = await loadMainData('tasks');
+      if (savedTasks && Object.keys(savedTasks).length > 0) {
+        let fixedCount = 0;
+        const fixedTasks = {};
 
-  // 保存兑换物品数据到本地存储
-  useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_exchange`, JSON.stringify(exchangeItems));
-  }, [exchangeItems]);
+        Object.entries(savedTasks).forEach(([date, tasks]) => {
+          if (Array.isArray(tasks)) {
+            // 修复任务数据格式
+            const fixedTaskList = tasks.map(task => ({
+              id: task.id || `fixed_${Date.now()}_${Math.random()}`,
+              text: task.text || '未命名任务',
+              category: task.category || categories[0].name,
+              done: task.done || false,
+              timeSpent: task.timeSpent || 0,
+              note: task.note || "",
+              reflection: task.reflection || "",
+              image: task.image || null,
+              scheduledTime: task.scheduledTime || "",
+              pinned: task.pinned || false,
+              isWeekTask: task.isWeekTask || false,
+              tags: task.tags || [],
+              subTasks: task.subTasks || [],
+              progress: task.progress || {
+                initial: 0,
+                current: 0,
+                target: 0,
+                unit: "%"
+              }
+            }));
 
-  // 保存模板到本地存储
-  useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_templates`, JSON.stringify(templates));
-  }, [templates]);
+            if (fixedTaskList.length !== tasks.length) {
+              fixedCount += (fixedTaskList.length - tasks.length);
+            }
+
+            fixedTasks[date] = fixedTaskList;
+          }
+        });
+
+        if (fixedCount > 0) {
+          console.log(`修复了 ${fixedCount} 个任务的数据格式`);
+          await saveMainData('tasks', fixedTasks);
+          setTasksByDate(fixedTasks);
+        }
+      }
+    } catch (error) {
+      console.error('数据完整性检查失败:', error);
+    }
+  };
+
+  if (Object.keys(tasksByDate).length > 0) {
+    checkDataIntegrity();
+  }
+}, [tasksByDate]);
+
+
+  
+
 
   // 替换现有的 useEffect 点击外部处理逻辑
   useEffect(() => {
@@ -5144,26 +5206,68 @@ const nextWeek = () => {
     setShowDatePickerModal(false);
   };
 
-  // 清空所有数据
-  const clearAllData = () => {
-    if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
-      setTasksByDate({});
-      localStorage.removeItem("tasksByDate");
-    }
-  };
+ // 清空所有数据
+const clearAllData = async () => {
+  if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
+    setTasksByDate({});
+    setTemplates([]);
+    setExchangeItems([]);
+    setPointHistory([{
+      date: new Date().toISOString(),
+      change: 0,
+      reason: '系统初始化',
+      totalAfterChange: 0
+    }]);
+    
+    // 清空所有存储
+    await saveMainData('tasks', {});
+    await saveMainData('templates', []);
+    await saveMainData('exchange', []);
+    await saveMainData('pointHistory', [{
+      date: new Date().toISOString(),
+      change: 0,
+      reason: '系统初始化',
+      totalAfterChange: 0
+    }]);
+    await saveMainData('activeTimers', {});
+    
+    // 清空每日数据
+    const today = new Date().toISOString().split("T")[0];
+    await saveMainData(`daily_${today}`, {
+      rating: 0,
+      reflection: '',
+      date: today
+    });
+  }
+};
 
-  // 导出数据
-  const handleExportData = () => {
-    const dataStr = JSON.stringify(tasksByDate);
+
+// 导出数据
+const handleExportData = async () => {
+  try {
+    const allData = {
+      tasks: await loadMainData('tasks'),
+      templates: await loadMainData('templates'),
+      exchange: await loadMainData('exchange'),
+      pointHistory: await loadMainData('pointHistory'),
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    const exportFileDefaultName = `study-data_${new Date().toISOString().slice(0, 10)}.json`;
+    const exportFileDefaultName = `study-tracker-backup_${new Date().toISOString().slice(0, 10)}.json`;
 
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
-  };
-
+  } catch (error) {
+    console.error('导出失败:', error);
+    alert('导出失败，请重试');
+  }
+};
+  
   
 // 每日日志汇总模态框
 const DailyLogModal = ({ logData, onClose, onCopy }) => {
@@ -5379,10 +5483,11 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
 
-    const handleClearPoints = () => {
+    
+    const handleClearPoints = async () => {
       const currentPoints = totalPoints;
       recordPointChange(-currentPoints, '积分清零', 0);
-
+    
       const clearedTasksByDate = {};
       Object.keys(tasksByDate).forEach(date => {
         clearedTasksByDate[date] = tasksByDate[date].map(task => ({
@@ -5390,11 +5495,21 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           done: false
         }));
       });
-
+    
       setTasksByDate(clearedTasksByDate);
+      
+      // 保存到存储
+      await saveMainData('tasks', clearedTasksByDate);
+      
       setShowClearConfirm(false);
       setShowHonorModal(false);
+      setTasksByDate(clearedTasksByDate);
     };
+
+
+      
+    
+    
 
     // 积分历史记录组件
     const PointHistory = () => (
@@ -7460,54 +7575,64 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         >
           导入数据
         </button>
-        <input
-          id="import-file"
-          type="file"
-          accept=".json"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        
+<input
+  id="import-file"
+  type="file"
+  accept=".json"
+  onChange={async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const data = JSON.parse(event.target.result);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
 
-                // 验证数据格式
-                if (typeof data !== 'object' || data === null) {
-                  throw new Error('无效的数据格式');
-                }
+        // 验证数据格式
+        if (!importedData.tasks || !importedData.version) {
+          throw new Error('无效的数据文件格式');
+        }
 
-                // 检查是否是有效的任务数据
-                const isValidData = Object.values(data).every(dateTasks =>
-                  Array.isArray(dateTasks) && dateTasks.every(task =>
-                    task && typeof task.text === 'string'
-                  )
-                );
+        if (window.confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) {
+          // 依次导入各个部分
+          if (importedData.tasks) {
+            await saveMainData('tasks', importedData.tasks);
+            setTasksByDate(importedData.tasks);
+          }
+          if (importedData.templates) {
+            await saveMainData('templates', importedData.templates);
+            setTemplates(importedData.templates);
+          }
+          if (importedData.exchange) {
+            await saveMainData('exchange', importedData.exchange);
+            setExchangeItems(importedData.exchange);
+          }
+          if (importedData.pointHistory) {
+            await saveMainData('pointHistory', importedData.pointHistory);
+            setPointHistory(importedData.pointHistory);
+          }
+          
+          alert('数据导入成功！');
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        alert(`导入失败：${error.message || '文件格式不正确'}`);
+      }
+    };
 
-                if (!isValidData) {
-                  throw new Error('数据格式不正确');
-                }
+    reader.onerror = () => {
+      alert('文件读取失败，请重试');
+    };
 
-                if (window.confirm('导入数据将覆盖当前所有任务，确定要继续吗？')) {
-                  setTasksByDate(data);
-                  alert('数据导入成功！');
-                }
-              } catch (error) {
-                console.error('导入失败:', error);
-                alert(`导入失败：${error.message || '文件格式不正确'}`);
-              }
-            };
+    reader.readAsText(file);
+    e.target.value = '';
+  }}
+  style={{ display: "none" }}
+/>
 
-            reader.onerror = () => {
-              alert('文件读取失败，请重试');
-            };
 
-            reader.readAsText(file);
-            e.target.value = '';
-          }}
-          style={{ display: "none" }}
-        />
+
         <button
           onClick={clearAllData}
           style={{
