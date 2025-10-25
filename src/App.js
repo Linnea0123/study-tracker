@@ -3373,8 +3373,8 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 setEditData({ ...editData, pinned: !editData.pinned });
               }}
               style={{
-               width: '24px',    // 固定宽度
-      height: '24px',   // 固定高度  
+               width: '32px',    // 固定宽度
+      height: '32px',   // 固定高度  
       padding: 0,       // 移除padding
       backgroundColor: editData.pinned ? '#ffcc00' : '#f8f9fa',
       color: editData.pinned ? '#000' : '#666',
