@@ -3121,9 +3121,9 @@ const TaskItem = ({
   onEditReflection,
   onOpenEditModal,
   onShowImageModal,
-  formatTimeWithSeconds,
-  toggleDone,
   formatTimeNoSeconds,
+  toggleDone,
+  formatTimeWithSeconds,
   onMoveTask,
   categories,
   setShowMoveModal,
@@ -3132,10 +3132,44 @@ const TaskItem = ({
   onPauseTimer,
   isTimerRunning,
   elapsedTime,
-  onUpdateProgress
+  onUpdateProgress,
+  onEditSubTask = () => {}
 }) => {
+  const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
+  const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
 
+  // 开始编辑子任务
+  const startEditSubTask = (index, currentText) => {
+    setEditingSubTaskIndex(index);
+    setEditSubTaskText(currentText);
+  };
+
+  // 保存子任务编辑
+  const saveEditSubTask = () => {
+    if (editSubTaskText.trim() && editingSubTaskIndex !== null) {
+      onEditSubTask(task, editingSubTaskIndex, editSubTaskText.trim());
+    }
+    setEditingSubTaskIndex(null);
+    setEditSubTaskText('');
+  };
+
+  // 取消编辑
+  const cancelEditSubTask = () => {
+    setEditingSubTaskIndex(null);
+    setEditSubTaskText('');
+  };
+
+  // 处理按键事件
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      saveEditSubTask();
+    } else if (e.key === 'Escape') {
+      cancelEditSubTask();
+    }
+  };
+
+  // ... 其他代码保持不变
 
   // 计算是否为长文本
   const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
@@ -3606,8 +3640,6 @@ const TaskItem = ({
 
  
  
-
-{/* 子任务显示 - 放在这里 */}
 {task.subTasks && task.subTasks.length > 0 && (
   <div style={{ marginLeft: '28px', marginTop: 6, marginBottom: 6, borderLeft: '2px solid #e0e0e0', paddingLeft: 12 }}>
     {task.subTasks.map((subTask, index) => (
@@ -3618,28 +3650,48 @@ const TaskItem = ({
           onChange={() => onToggleSubTask(task, index)}
           style={{ transform: 'scale(0.8)' }}
         />
-        <span 
-          onClick={() => onEditSubTask(task, index)}  // 添加点击编辑
-          style={{ 
-            textDecoration: subTask.done ? 'line-through' : 'none',
-            cursor: 'pointer',
-            flex: 1,
-            padding: '2px 4px',
-            borderRadius: '3px',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-        >
-          {subTask.text}
-        </span>
+        
+        {editingSubTaskIndex === index ? (
+          <input
+            type="text"
+            value={editSubTaskText}
+            onChange={(e) => setEditSubTaskText(e.target.value)}
+            onBlur={saveEditSubTask}
+            onKeyDown={handleKeyPress}
+            autoFocus
+            style={{
+              flex: 1,
+              padding: '2px 4px',
+              border: '1px solid #1a73e8',
+              borderRadius: '3px',
+              fontSize: '12px',
+              outline: 'none'
+            }}
+          />
+        ) : (
+          <span 
+            onClick={() => startEditSubTask(index, subTask.text)}
+            style={{ 
+              textDecoration: subTask.done ? 'line-through' : 'none',
+              cursor: 'pointer',
+              flex: 1,
+              padding: '2px 4px',
+              borderRadius: '3px',
+              transition: 'background-color 0.2s',
+              minHeight: '20px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+          >
+            {subTask.text}
+          </span>
+        )}
       </div>
     ))}
   </div>
 )}
-
-
-
 
 
       {task.reflection && (
@@ -3765,40 +3817,36 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
  
-// 在 App 组件中添加这个函数
-const editSubTask = (task, subTaskIndex) => {
-  const currentSubTask = task.subTasks[subTaskIndex];
-  const newText = window.prompt("编辑子任务", currentSubTask.text);
-  
-  if (newText !== null && newText.trim() !== '') {
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? {
-            ...t,
-            subTasks: t.subTasks.map((st, index) => 
-              index === subTaskIndex ? { ...st, text: newText.trim() } : st
-            )
-          } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? {
-            ...t,
-            subTasks: t.subTasks.map((st, index) => 
-              index === subTaskIndex ? { ...st, text: newText.trim() } : st
-            )
-          } : t
-        )
-      }));
+  const editSubTask = (task, subTaskIndex, newText) => {
+    if (newText && newText.trim() !== '') {
+      if (task.isWeekTask) {
+        const updatedTasksByDate = { ...tasksByDate };
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? {
+              ...t,
+              subTasks: t.subTasks.map((st, index) => 
+                index === subTaskIndex ? { ...st, text: newText.trim() } : st
+              )
+            } : t
+          );
+        });
+        setTasksByDate(updatedTasksByDate);
+      } else {
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t =>
+            t.id === task.id ? {
+              ...t,
+              subTasks: t.subTasks.map((st, index) => 
+                index === subTaskIndex ? { ...st, text: newText.trim() } : st
+              )
+            } : t
+          )
+        }));
+      }
     }
-  }
-};
+  };
 
 
 // 在 App 组件中的 generateDailyLog 函数
@@ -3893,10 +3941,7 @@ const generateDailyLog = () => {
       dailyReflection: dailyReflection
     }
   });
-  
-  // ==== 删除这里的 useEffect！它不应该在这里 ====
 };
-
 
 
   // 添加 ReminderModal 组件
@@ -5180,40 +5225,7 @@ const toggleSubTask = (task, subTaskIndex) => {
     }));
   }
 };
-// 在 TaskEditModal 组件中添加这个函数
-const editSubTask = (task, subTaskIndex) => {
-  const currentSubTask = task.subTasks[subTaskIndex];
-  const newText = window.prompt("编辑子任务", currentSubTask.text);
-  
-  if (newText !== null && newText.trim() !== '') {
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? {
-            ...t,
-            subTasks: t.subTasks.map((st, index) => 
-              index === subTaskIndex ? { ...st, text: newText.trim() } : st
-            )
-          } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? {
-            ...t,
-            subTasks: t.subTasks.map((st, index) => 
-              index === subTaskIndex ? { ...st, text: newText.trim() } : st
-            )
-          } : t
-        )
-      }));
-    }
-  }
-};  
+
 
   // 打开任务编辑模态框
   const openTaskEditModal = (task) => {
@@ -7252,33 +7264,33 @@ if (isInitialized && todayTasks.length === 0) {
             margin: 0
           }}>
             {pinnedTasks
-              .sort((a, b) => {
-                return b.id - a.id;
-              })
-              .map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onEditTime={editTaskTime}
-                  onEditNote={editTaskNote}
-                  onEditReflection={editTaskReflection}
-                  onOpenEditModal={openTaskEditModal}
-                  onShowImageModal={setShowImageModal}
-                  toggleDone={toggleDone}
-                  formatTimeNoSeconds={formatTimeNoSeconds}
-                  formatTimeWithSeconds={formatTimeWithSeconds}
-                  onMoveTask={moveTask}
-                  categories={categories}
-                  setShowMoveModal={setShowMoveModal}
-                  onUpdateProgress={handleUpdateProgress}
-                  onStartTimer={handleStartTimer}
-                  onToggleSubTask={toggleSubTask} // 添加这行
-                  onPauseTimer={handlePauseTimer}
-                  isTimerRunning={activeTimer?.taskId === task.id}
-                  elapsedTime={elapsedTime} // 新增这行
-                  onEditSubTask={editSubTask}  // 添加这行
-                />
-              ))}
+  .sort((a, b) => {
+    return b.id - a.id;
+  })
+  .map((task) => (
+    <TaskItem
+      key={task.id}
+      task={task}
+      onEditTime={editTaskTime}
+      onEditNote={editTaskNote}
+      onEditReflection={editTaskReflection}
+      onOpenEditModal={openTaskEditModal}
+      onShowImageModal={setShowImageModal}
+      toggleDone={toggleDone}
+      formatTimeNoSeconds={formatTimeNoSeconds}
+      formatTimeWithSeconds={formatTimeWithSeconds}
+      onMoveTask={moveTask}
+      categories={categories}
+      setShowMoveModal={setShowMoveModal}
+      onUpdateProgress={handleUpdateProgress}
+      onStartTimer={handleStartTimer}
+      onToggleSubTask={toggleSubTask} // 添加这行
+      onPauseTimer={handlePauseTimer}
+      isTimerRunning={activeTimer?.taskId === task.id}
+      elapsedTime={elapsedTime} // 新增这行
+      onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
+    />
+))}
           </ul>
         </div>
       )}
@@ -7349,31 +7361,29 @@ if (isInitialized && todayTasks.length === 0) {
             margin: 0
           }}>
             {weekTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onEditTime={editTaskTime}
-                onEditNote={editTaskNote}
-                onEditReflection={editTaskReflection}
-                onOpenEditModal={openTaskEditModal}
-                onShowImageModal={setShowImageModal}
-           
-                toggleDone={toggleDone}
-                formatTimeNoSeconds={formatTimeNoSeconds}
-                formatTimeWithSeconds={formatTimeWithSeconds}
-                onMoveTask={moveTask}
-                categories={categories}
-              
-                setShowMoveModal={setShowMoveModal}
-                onUpdateProgress={handleUpdateProgress}
-                onEditSubTask={editSubTask}
-                onStartTimer={handleStartTimer}
-                elapsedTime={elapsedTime} // 新增这行
-                onToggleSubTask={toggleSubTask}  // 添加这行
-                onPauseTimer={handlePauseTimer}
-                isTimerRunning={activeTimer?.taskId === task.id}
-              />
-            ))}
+  <TaskItem
+    key={task.id}
+    task={task}
+    onEditTime={editTaskTime}
+    onEditNote={editTaskNote}
+    onEditReflection={editTaskReflection}
+    onOpenEditModal={openTaskEditModal}
+    onShowImageModal={setShowImageModal}
+    toggleDone={toggleDone}
+    formatTimeNoSeconds={formatTimeNoSeconds}
+    formatTimeWithSeconds={formatTimeWithSeconds}
+    onMoveTask={moveTask}
+    categories={categories}
+    setShowMoveModal={setShowMoveModal}
+    onUpdateProgress={handleUpdateProgress}
+    onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
+    onStartTimer={handleStartTimer}
+    elapsedTime={elapsedTime} // 新增这行
+    onToggleSubTask={toggleSubTask}  // 添加这行
+    onPauseTimer={handlePauseTimer}
+    isTimerRunning={activeTimer?.taskId === task.id}
+  />
+))}
           </ul>
         )}
       </div>
@@ -7445,35 +7455,35 @@ if (isInitialized && todayTasks.length === 0) {
                 margin: 0
               }}>
                 {catTasks
-                  .sort((a, b) => {
-                    if (a.pinned && !b.pinned) return -1;
-                    if (!a.pinned && b.pinned) return 1;
-                    return 0;
-                  })
-                  .map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      onEditTime={editTaskTime}
-                      onEditNote={editTaskNote}
-                      onEditReflection={editTaskReflection}
-                      onOpenEditModal={openTaskEditModal}
-                      onShowImageModal={setShowImageModal}
-                      toggleDone={toggleDone}
-                      formatTimeNoSeconds={formatTimeNoSeconds}
-                      formatTimeWithSeconds={formatTimeWithSeconds}
-                      onMoveTask={moveTask}
-                      categories={categories}
-                      setShowMoveModal={setShowMoveModal}
-                      onUpdateProgress={handleUpdateProgress}
-                      onStartTimer={handleStartTimer}
-                      onPauseTimer={handlePauseTimer}
-                      onEditSubTask={editSubTask}
-                      onToggleSubTask={toggleSubTask}
-                      isTimerRunning={activeTimer?.taskId === task.id}
-                      elapsedTime={elapsedTime} // 新增这行
-                    />
-                  ))}
+  .sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return 0;
+  })
+  .map((task) => (
+    <TaskItem
+      key={task.id}
+      task={task}
+      onEditTime={editTaskTime}
+      onEditNote={editTaskNote}
+      onEditReflection={editTaskReflection}
+      onOpenEditModal={openTaskEditModal}
+      onShowImageModal={setShowImageModal}
+      toggleDone={toggleDone}
+      formatTimeNoSeconds={formatTimeNoSeconds}
+      formatTimeWithSeconds={formatTimeWithSeconds}
+      onMoveTask={moveTask}
+      categories={categories}
+      setShowMoveModal={setShowMoveModal}
+      onUpdateProgress={handleUpdateProgress}
+      onStartTimer={handleStartTimer}
+      onPauseTimer={handlePauseTimer}
+      onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
+      onToggleSubTask={toggleSubTask}
+      isTimerRunning={activeTimer?.taskId === task.id}
+      elapsedTime={elapsedTime} // 新增这行
+    />
+))}
               </ul>
             )}
           </div>
