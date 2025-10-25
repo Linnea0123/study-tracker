@@ -209,6 +209,12 @@ const BackupManagerModal = ({ onClose }) => {
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
 
+
+
+
+
+  
+
   useEffect(() => {
 
     // 获取备份列表
@@ -826,7 +832,7 @@ const AchievementsModal = ({
         <div style={{ marginBottom: 15 }}>
           <button
             onClick={(e) => {
-              console.log('创建自定义成就按钮被点击');
+              
               e.stopPropagation(); // 阻止事件冒泡
               onAddCustom();
             }}
@@ -1103,7 +1109,7 @@ const autoBackup = async () => {
     
     localStorage.setItem(backupKey, JSON.stringify(backupData));
     await cleanupOldBackups();
-    console.log(`✅ 自动备份完成: ${timestamp}`);
+    
   } catch (error) {
     console.error('自动备份失败:', error);
   }
@@ -1336,17 +1342,19 @@ const migrateLegacyData = async () => {
 };
 
 
-
 // 修复：获取本周一的日期
 const getMonday = (date) => {
   const d = new Date(date);
-  d.setHours(0, 0, 0, 0); // 清除时间部分
   const day = d.getDay(); // 0是周日，1是周一，...，6是周六
   
-  // 修正：如果今天是周日(0)，需要减去6天；否则减去(day-1)天
+  // 修正：如果今天是周日(0)，周一应该是往前推6天
+  // 如果今天是周一(1)，不需要推，以此类推
   const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(d);
   monday.setDate(d.getDate() - diff);
+  monday.setHours(0, 0, 0, 0);
+  
+  console.log('计算周一: 输入日期', date, '输出周一', monday);
   return monday;
 };
 
@@ -2218,95 +2226,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
                 </select>
               </div>
 
-              {/* 任务内容 */}
-              <div style={{ minWidth: 0 }}> {/* 防止内容溢出 */}
-                <label style={{
-                  display: 'block',
-                  marginBottom: '6px',
-                  color: colorPalette.text,
-                  fontSize: '13px',
-                  fontWeight: '500'
-                }}>
-                  任务内容
-                </label>
-                <input
-                  type="text"
-                  placeholder="输入任务内容..."
-                  value={templateContent}
-                  onChange={(e) => setTemplateContent(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: `1px solid ${colorPalette.border}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: colorPalette.background,
-                    transition: 'all 0.2s ease',
-                    maxWidth: '100%', // 限制输入框最大宽度
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = colorPalette.primary;
-                    e.target.style.backgroundColor = colorPalette.surface;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = colorPalette.border;
-                    e.target.style.backgroundColor = colorPalette.background;
-                  }}
-                />
-              </div>
-            </div>
-
-
-            {/* 计划时间 */}
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                color: colorPalette.text,
-                fontSize: '13px',
-                fontWeight: '500'
-              }}>
-                计划时间
-              </label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input
-                  type="time"
-                  value={templateScheduledTime.split('-')[0] || ''}
-                  onChange={(e) => {
-                    const startTime = e.target.value;
-                    const endTime = templateScheduledTime.split('-')[1] || '';
-                    setTemplateScheduledTime(`${startTime}-${endTime}`);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    border: `1px solid ${colorPalette.border}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: colorPalette.background
-                  }}
-                />
-                <span style={{ color: colorPalette.textLight, fontSize: '14px' }}>至</span>
-                <input
-                  type="time"
-                  value={templateScheduledTime.split('-')[1] || ''}
-                  onChange={(e) => {
-                    const startTime = templateScheduledTime.split('-')[0] || '';
-                    const endTime = e.target.value;
-                    setTemplateScheduledTime(`${startTime}-${endTime}`);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    border: `1px solid ${colorPalette.border}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: colorPalette.background
-                  }}
-                />
-              </div>
-
+            
 
 
 
@@ -2373,6 +2293,8 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
                     setTemplateScheduledTime(`${startTime}-${endTime}`);
                   }}
                   style={{
+
+            
                     flex: 1,
                     padding: '12px 16px',
                     border: `1px solid ${colorPalette.border}`,
@@ -2973,13 +2895,6 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-// 检查今天任务显示
-const today = new Date().toISOString().split('T')[0];
-console.log('=== 今天任务检查 ===');
-console.log('今天日期:', today);
-console.log('选中日期:', window.appInstance?.getState().selectedDate);
-console.log('任务数据中的今天:', window.appInstance?.getState().tasksByDate[today]);
-console.log('今日任务数组:', window.appInstance?.getState().todayTasks);
 
 
   const isToday = (day) => {
@@ -5059,7 +4974,11 @@ function App() {
   const [customAchievements, setCustomAchievements] = useState([]);
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
+  
 
+
+  
+  // 在状态更新后强制渲染
  
   const editSubTask = (task, subTaskIndex, newText) => {
     if (newText && newText.trim() !== '') {
@@ -5129,10 +5048,38 @@ const handleOpenCustomAchievementModal = (achievement = null) => {
 
   // ========== 修复成就系统 ==========
 
-
-
-
+// 强制日期更新 - 放在组件最前面
+useEffect(() => {
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
   
+  
+  
+  if (selectedDate !== todayStr) {
+   
+    setSelectedDate(todayStr);
+    setCurrentMonday(getMonday(today));
+    
+    // 强制重新渲染
+    setTimeout(() => {
+      setSelectedDate(prev => prev);
+    }, 100);
+  }
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+// 方法2：直接禁用这条规则的警告
+useEffect(() => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (selectedDate !== todayStr) {
+    setSelectedDate(todayStr);
+    setCurrentMonday(getMonday(new Date()));
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+  
+
+
 
 // 加载已解锁的成就
 useEffect(() => {
@@ -5141,7 +5088,7 @@ useEffect(() => {
       const savedAchievements = await loadMainData('unlockedAchievements');
       if (savedAchievements) {
         setUnlockedAchievements(savedAchievements);
-        console.log('✅ 加载已解锁成就:', savedAchievements);
+      
       }
     } catch (error) {
       console.error('加载成就数据失败:', error);
@@ -5154,17 +5101,13 @@ useEffect(() => {
 }, [isInitialized]);
 
 
-// 添加状态监控 - 放在这里
-useEffect(() => {
-  console.log('showCustomAchievementModal 状态变化:', showCustomAchievementModal);
-}, [showCustomAchievementModal]);
 
 // 保存已解锁的成就
 useEffect(() => {
   const saveUnlockedAchievements = async () => {
     if (isInitialized && unlockedAchievements.length > 0) {
       await saveMainData('unlockedAchievements', unlockedAchievements);
-      console.log('💾 保存成就数据:', unlockedAchievements);
+      
     }
   };
 
@@ -5618,7 +5561,7 @@ useEffect(() => {
       saveMainData('exchange', exchangeItems);
       saveMainData('customAchievements', customAchievements);
       saveMainData('unlockedAchievements', unlockedAchievements);
-      console.log('✅ 所有数据已保存');
+      
     },
     getState: () => ({
       tasksByDate,
@@ -5641,7 +5584,7 @@ useEffect(() => {
       if (newState.showCustomAchievementModal !== undefined) setShowCustomAchievementModal(newState.showCustomAchievementModal);
       if (newState.unlockedAchievements !== undefined) setUnlockedAchievements(newState.unlockedAchievements);
       if (newState.customAchievements !== undefined) setCustomAchievements(newState.customAchievements);
-      console.log('状态已更新:', newState);
+      
     }
   };
   
@@ -5715,7 +5658,7 @@ useEffect(() => {
     console.log('🔄 exchangeItems 状态变化:', exchangeItems);
   }, [exchangeItems]);
   
-  // ... 其他代码
+
 
 
   // 检查提醒时间并置顶到期任务
@@ -5828,12 +5771,7 @@ const handleStartTimer = (task) => {
   };
   setTimerRecords(prev => [newRecord, ...prev]);
 
-  console.log('⏱️ 开始计时:', {
-    任务: task.text,
-    开始时间: new Date(startTime).toLocaleTimeString(),
-    任务ID: task.id,
-    已有时间: task.timeSpent || 0
-  });
+  
 };
   
   
@@ -5872,11 +5810,7 @@ const handleStartTimer = (task) => {
     setActiveTimer(null);
     setElapsedTime(0);
   
-    console.log('⏸️ 暂停计时:', {
-      任务: task.text,
-      本次计时: totalTimeSpent + '秒',
-      总时间: (task.timeSpent || 0) + totalTimeSpent + '秒'
-    });
+   
   };
 
 
@@ -6063,13 +5997,13 @@ useEffect(() => {
 
 useEffect(() => {
   const initializeApp = async () => {
-    console.log('🚀 初始化应用数据...');
+   
     
     // 先迁移旧数据
     await migrateLegacyData();
     
     try {
-      console.log('=== 开始加载数据 ===');
+     
       
       // 加载任务数据
       const savedTasks = await loadMainData('tasks');
@@ -6084,14 +6018,14 @@ useEffect(() => {
       
       // 加载模板数据
       const savedTemplates = await loadMainData('templates');
-      console.log('✅ 加载的模板数据:', savedTemplates);
+      
       if (savedTemplates) {
         setTemplates(savedTemplates);
       }
       
       // 加载积分历史
       const savedPointHistory = await loadMainData('pointHistory');
-      console.log('✅ 加载的积分历史:', savedPointHistory);
+      
       if (savedPointHistory) {
         setPointHistory(savedPointHistory);
       } else {
@@ -6105,7 +6039,7 @@ useEffect(() => {
       
       // 加载兑换物品
       const savedExchangeItems = await loadMainData('exchange');
-      console.log('✅ 加载的兑换物品:', savedExchangeItems);
+      
       if (savedExchangeItems) {
         setExchangeItems(savedExchangeItems);
       }
@@ -6116,7 +6050,7 @@ useEffect(() => {
  // 加载自定义成就
    // 加载自定义成就
    const savedCustomAchievements = await loadMainData('customAchievements');
-   console.log('✅ 加载的自定义成就:', savedCustomAchievements);
+ 
    if (savedCustomAchievements) {
      setCustomAchievements(savedCustomAchievements);
    } else {
@@ -8769,7 +8703,7 @@ if (isInitialized && todayTasks.length === 0) {
   onClick={(e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('右箭头被点击'); // 添加调试信息
+    
     nextWeek();
   }}
   style={{
@@ -8817,15 +8751,21 @@ if (isInitialized && todayTasks.length === 0) {
         return null;
       })()}
 
+
+{/* 日期选择器 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   marginBottom: 10
 }}>
   {getWeekDates(currentMonday).map((d) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const today = new Date();
+    // 使用本地日期格式，不要用 toISOString()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
     const isSelected = d.date === selectedDate;
     const isToday = d.date === todayStr;
+    
     
     return (
       <div
@@ -8841,8 +8781,6 @@ if (isInitialized && todayTasks.length === 0) {
           cursor: "pointer",
           backgroundColor: isToday ? "#1a73e8" : "transparent",
           color: isToday ? "#fff" : "#000",
-          transition: "all 0.2s ease",
-          boxSizing: "border-box"
         }}
       >
         <div>{d.label}</div>
