@@ -10,8 +10,9 @@ const getWeekNumber = (date) => {
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
+
 // 主学习跟踪器的存储配置
-const STORAGE_KEY = 'study-tracker-main';
+const STORAGE_KEY = 'study-tracker-main-v2';
 
 const categories = [
   { name: "语文", color: "#4a90e2" },
@@ -21,76 +22,102 @@ const categories = [
   { name: "体育", color: "#3399ff" },
 ];
 
-
-// 修复存储函数，添加错误处理和验证
+// 统一的存储函数
 const saveMainData = async (key, data) => {
-  const storageKey = `study_tracker_v2_${key}`; // 使用更独特的键名
-  
+  const storageKey = `${STORAGE_KEY}_${key}`;
   try {
-    // 添加数据验证
-    if (!data) {
-      console.warn(`尝试保存空数据: ${key}`);
-      return;
-    }
-    
-    const dataToSave = {
-      data: data,
-      timestamp: new Date().toISOString(),
-      version: '2.0'
-    };
-    
-    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-    console.log(`✅ 数据保存成功: ${key}`, data);
-    
-    // 验证保存是否成功
-    const verify = localStorage.getItem(storageKey);
-    if (!verify) {
-      throw new Error('保存验证失败');
-    }
-    
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    console.log(`数据保存成功: ${key}`, data);
   } catch (error) {
-    console.error(`❌ 数据保存失败: ${key}`, error);
-    // 尝试清理可能损坏的数据
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (e) {
-      console.error('清理损坏数据失败:', e);
-    }
+    console.error(`数据保存失败: ${key}`, error);
   }
 };
 
 const loadMainData = async (key) => {
-  const storageKey = `study_tracker_v2_${key}`;
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    const data = localStorage.getItem(storageKey);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`数据加载失败: ${key}`, error);
+    return null;
+  }
+};
+
+// 全局调试函数 - 在 Console 中可以直接调用
+window.debugStudyTracker = {
+  // 检查所有存储数据
+  checkStorage: () => {
+    console.log('=== 学习跟踪器存储调试 ===');
+    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+    keys.forEach(key => {
+      const storageKey = `${STORAGE_KEY}_${key}`;
+      const data = localStorage.getItem(storageKey);
+      console.log(`${key}:`, data ? `✅ 有数据 (${data.length} 字符)` : '❌ 无数据');
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          console.log(`  内容:`, parsed);
+        } catch (e) {
+          console.log(`  解析错误:`, e);
+        }
+      }
+    });
+  },
+  
+  // 手动保存当前数据
+  saveAll: () => {
+    console.log('💾 手动保存所有数据...');
+    // 这些需要在 App 组件内部调用
+    if (window.appInstance) {
+      window.appInstance.saveAllData();
+    } else {
+      console.log('❌ 无法访问 App 实例');
+    }
+  },
+  
+  // 清除所有数据
+  clearAll: () => {
+    if (window.confirm('确定要清除所有数据吗？')) {  // 修复：添加 window.
+      const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+      keys.forEach(key => {
+        localStorage.removeItem(`${STORAGE_KEY}_${key}`);
+      });
+      console.log('✅ 所有数据已清除');
+      window.location.reload();  // 修复：添加 window.
+    }
+  }
+};
+
+// 数据迁移函数 - 从旧版本迁移数据
+const migrateLegacyData = async () => {
+  const LEGACY_STORAGE_KEY = 'study-tracker-main';
   
   try {
-    const stored = localStorage.getItem(storageKey);
-    if (!stored) {
-      console.log(`没有找到存储数据: ${key}`);
-      return null;
+    // 检查旧版本数据是否存在
+    const legacyTasks = localStorage.getItem(`${LEGACY_STORAGE_KEY}_tasks`);
+    const hasNewData = localStorage.getItem(`${STORAGE_KEY}_tasks`);
+    
+    // 如果旧数据存在且新数据不存在，则迁移
+    if (legacyTasks && !hasNewData) {
+      console.log('🔁 检测到旧版本数据，开始迁移...');
+      
+      const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+      let migratedCount = 0;
+      
+      keys.forEach(key => {
+        const legacyData = localStorage.getItem(`${LEGACY_STORAGE_KEY}_${key}`);
+        if (legacyData) {
+          localStorage.setItem(`${STORAGE_KEY}_${key}`, legacyData);
+          migratedCount++;
+          console.log(`✅ 迁移 ${key} 数据`);
+        }
+      });
+      
+      console.log(`🎉 数据迁移完成，共迁移 ${migratedCount} 项数据`);
     }
-    
-    const parsed = JSON.parse(stored);
-    
-    // 验证数据格式
-    if (!parsed || !parsed.data) {
-      console.warn(`数据格式无效: ${key}`);
-      return null;
-    }
-    
-    console.log(`✅ 数据加载成功: ${key}`, parsed.data);
-    return parsed.data;
-    
   } catch (error) {
-    console.error(`❌ 数据加载失败: ${key}`, error);
-    
-    // 尝试恢复损坏的数据
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (e) {
-      console.error('清理损坏数据失败:', e);
-    }
-    
-    return null;
+    console.error('数据迁移失败:', error);
   }
 };
 
@@ -1732,6 +1759,15 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+// 检查今天任务显示
+const today = new Date().toISOString().split('T')[0];
+console.log('=== 今天任务检查 ===');
+console.log('今天日期:', today);
+console.log('选中日期:', window.appInstance?.getState().selectedDate);
+console.log('任务数据中的今天:', window.appInstance?.getState().tasksByDate[today]);
+console.log('今日任务数组:', window.appInstance?.getState().todayTasks);
+
+
   const isToday = (day) => {
     const today = new Date();
     return day === today.getDate() &&
@@ -3099,17 +3135,11 @@ const TaskItem = ({
 }) => {
   const [showProgressControls, setShowProgressControls] = useState(false);
 
-  //开始添加智能布局判断
+
+  // 计算是否为长文本
   const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
-  //结束添加智能布局判断
 
-  const handleProgressAdjust = (increment) => {
-    const newCurrent = Math.max(0, (Number(task.progress.current) || 0) + increment);
-    if (onUpdateProgress) {
-      onUpdateProgress(task, newCurrent);
-    }
-  };
-
+  // 处理计时器点击
   const handleTimerClick = () => {
     if (isTimerRunning) {
       onPauseTimer(task);
@@ -3117,6 +3147,16 @@ const TaskItem = ({
       onStartTimer(task);
     }
   };
+
+  // 处理进度调整
+  const handleProgressAdjust = (increment) => {
+    const newCurrent = Math.max(0, (Number(task.progress.current) || 0) + increment);
+    if (onUpdateProgress) {
+      onUpdateProgress(task, newCurrent);
+    }
+  };
+  
+
 
   return (
     <li
@@ -3247,28 +3287,32 @@ const TaskItem = ({
             </button>
 
             <span
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTime(task);
-              }}
-              style={{
-                fontSize: 12,
-                color: "#333",
-                cursor: "pointer",
-                padding: "2px 8px",
-                border: "1px solid #e0e0e0",
-                borderRadius: "4px",
-                backgroundColor: "#f5f5f5",
-                flexShrink: 0,
-                whiteSpace: 'nowrap'
-              }}
-              title="点击修改时间"
-            >
-              {isTimerRunning
-                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                : formatTimeNoSeconds(task.timeSpent || 0)
-              }
-            </span>
+  onClick={(e) => {
+    e.stopPropagation();
+    // 确保 onEditTime 存在再调用
+    if (onEditTime) {
+      onEditTime(task);
+    }
+  }}
+  style={{
+    fontSize: 12,
+    color: "#333",
+    cursor: "pointer",
+    padding: "2px 8px",
+    border: "1px solid #e0e0e0",
+    borderRadius: "4px",
+    backgroundColor: "#f5f5f5",
+    flexShrink: 0,
+    whiteSpace: 'nowrap'
+  }}
+  title="点击修改时间"
+>
+
+  {isTimerRunning
+    ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+    : formatTimeNoSeconds(task.timeSpent || 0)
+  }
+</span>
           </div>
         </div>
       ) : (
@@ -3659,6 +3703,7 @@ function App() {
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
@@ -3697,9 +3742,10 @@ function App() {
   const todayTasks = tasksByDate[selectedDate] || [];
   const [activeTimer, setActiveTimer] = useState(null); // { taskId, startTime }
   const [elapsedTime, setElapsedTime] = useState(0); // 新增：实时计时
+  const [isInitialized, setIsInitialized] = useState(false);
 
-
-  // 在 App 组件中的 generateDailyLog 函数
+ 
+// 在 App 组件中的 generateDailyLog 函数
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
 
@@ -3777,8 +3823,8 @@ const generateDailyLog = () => {
 
   setShowDailyLogModal({
     visible: true,
-    content: logContent,           // 原始格式，用于显示
-    markdownContent: markdownContent, // Markdown 格式，用于复制
+    content: logContent,
+    markdownContent: markdownContent,
     date: selectedDate,
     stats: {
       completedTasks: completedTasks.length,
@@ -3791,7 +3837,11 @@ const generateDailyLog = () => {
       dailyReflection: dailyReflection
     }
   });
+  
+  // ==== 删除这里的 useEffect！它不应该在这里 ====
 };
+
+
 
   // 添加 ReminderModal 组件
   const ReminderModal = ({ config, onSave, onClose }) => {
@@ -3990,6 +4040,123 @@ const generateDailyLog = () => {
     setPointHistory(prev => [historyEntry, ...prev]);
   };
 
+// 清理计时器状态
+useEffect(() => {
+  return () => {
+    // 组件卸载时，如果有活动的计时器，保存当前状态
+    if (activeTimer) {
+      const timerData = {
+        taskId: activeTimer.taskId,
+        startTime: activeTimer.startTime,
+        elapsedBeforeStart: elapsedTime
+      };
+      localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+    }
+  };
+}, [activeTimer, elapsedTime]);
+
+
+// 恢复计时器状态
+useEffect(() => {
+  const restoreTimerState = async () => {
+    try {
+      const savedTimer = await loadMainData('activeTimer');
+      if (savedTimer && savedTimer.taskId && savedTimer.startTime) {
+        const currentTime = Date.now();
+        const elapsedBeforeStart = savedTimer.elapsedBeforeStart || 0;
+        const timeSinceStart = Math.floor((currentTime - savedTimer.startTime) / 1000);
+        const totalElapsed = elapsedBeforeStart + timeSinceStart;
+        
+        setElapsedTime(totalElapsed);
+        setActiveTimer({
+          taskId: savedTimer.taskId,
+          startTime: savedTimer.startTime
+        });
+        
+        console.log('⏱️ 恢复计时器状态:', savedTimer.taskId, '已运行:', totalElapsed + '秒');
+      }
+    } catch (error) {
+      console.error('恢复计时器状态失败:', error);
+    }
+  };
+
+  if (isInitialized) {
+    restoreTimerState();
+  }
+}, [isInitialized]);
+
+// 保存计时器状态
+useEffect(() => {
+  const saveTimerState = async () => {
+    if (activeTimer) {
+      const timerData = {
+        taskId: activeTimer.taskId,
+        startTime: activeTimer.startTime,
+        elapsedBeforeStart: elapsedTime,
+        savedAt: new Date().toISOString()
+      };
+      await saveMainData('activeTimer', timerData);
+    } else {
+      // 没有活动计时器时清除存储
+      await saveMainData('activeTimer', null);
+    }
+  };
+
+  if (isInitialized) {
+    saveTimerState();
+  }
+}, [activeTimer, elapsedTime, isInitialized]);
+
+
+// 暴露实例给全局调试
+useEffect(() => {
+  window.appInstance = {
+    saveAllData: () => {
+      saveMainData('tasks', tasksByDate);
+      saveMainData('templates', templates);
+      saveMainData('pointHistory', pointHistory);
+      saveMainData('exchange', exchangeItems);
+      console.log('✅ 所有数据已保存');
+    },
+    getState: () => ({
+      tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems,
+      selectedDate,
+      todayTasks: tasksByDate[selectedDate] || []  // 添加 todayTasks
+    })
+  };
+  
+  return () => {
+    delete window.appInstance;
+  };
+}, [tasksByDate, templates, pointHistory, exchangeItems, selectedDate]); // 添加 selectedDate 依赖
+  
+  // ==== 新增：状态变化监听 ====
+  useEffect(() => {
+    console.log('🔄 tasksByDate 状态变化:', {
+      天数: Object.keys(tasksByDate).length,
+      总任务数: Object.values(tasksByDate).flat().length,
+      内容: tasksByDate
+    });
+  }, [tasksByDate]);
+  
+  useEffect(() => {
+    console.log('🔄 templates 状态变化:', templates);
+  }, [templates]);
+  
+  useEffect(() => {
+    console.log('🔄 pointHistory 状态变化:', pointHistory);
+  }, [pointHistory]);
+  
+  useEffect(() => {
+    console.log('🔄 exchangeItems 状态变化:', exchangeItems);
+  }, [exchangeItems]);
+  
+  // ... 其他代码
+
+
   // 检查提醒时间并置顶到期任务
 useEffect(() => {
   const now = new Date();
@@ -4076,66 +4243,48 @@ useEffect(() => {
       }));
     }
   };
-
- // 修复计时器状态
-const handleStartTimer = (task) => {
-  // 停止其他正在运行的计时器
-  if (activeTimer && activeTimer.taskId !== task.id) {
-    handlePauseTimer({ id: activeTimer.taskId });
-  }
-
-  const startTime = Date.now();
-  setActiveTimer({ taskId: task.id, startTime });
-
-  // 保存到存储
-  const saveTimer = async () => {
-    const timerData = {
-      [task.id]: {
-        startTime: startTime
-      }
-    };
-    await saveMainData('activeTimers', timerData);
+  const handleStartTimer = (task) => {
+    // 停止其他正在运行的计时器
+    if (activeTimer && activeTimer.taskId !== task.id) {
+      handlePauseTimer({ id: activeTimer.taskId });
+    }
+  
+    const startTime = Date.now();
+    setActiveTimer({ taskId: task.id, startTime });
+    setElapsedTime(0); // 重置实时计时
+  
+    console.log('⏱️ 开始计时:', task.text);
   };
-  saveTimer();
-};
-
-const handlePauseTimer = (task) => {
-  if (!activeTimer || activeTimer.taskId !== task.id) return;
-
-  const endTime = Date.now();
-  const timeSpent = Math.floor((endTime - activeTimer.startTime) / 1000);
-
-  // 更新任务时间
-  setTasksByDate(prev => {
-    const currentTasks = prev[selectedDate] || [];
-    const updatedTasks = currentTasks.map(t =>
-      t.id === task.id ? {
-        ...t,
-        timeSpent: (t.timeSpent || 0) + timeSpent
-      } : t
-    );
-
-    return {
-      ...prev,
-      [selectedDate]: updatedTasks
-    };
-  });
-
-  setActiveTimer(null);
-
-  // 清理存储
-  const clearTimer = async () => {
-    await saveMainData('activeTimers', {});
+  
+  const handlePauseTimer = (task) => {
+    if (!activeTimer || activeTimer.taskId !== task.id) return;
+  
+    const endTime = Date.now();
+    const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
+    const totalTimeSpent = timeSpentThisSession + elapsedTime;
+  
+    // 更新任务时间
+    setTasksByDate(prev => {
+      const currentTasks = prev[selectedDate] || [];
+      const updatedTasks = currentTasks.map(t =>
+        t.id === task.id ? {
+          ...t,
+          timeSpent: (t.timeSpent || 0) + totalTimeSpent
+        } : t
+      );
+  
+      return {
+        ...prev,
+        [selectedDate]: updatedTasks
+      };
+    });
+  
+    setActiveTimer(null);
+    setElapsedTime(0);
+  
+    console.log('⏸️ 暂停计时:', task.text, '本次计时:', totalTimeSpent + '秒');
   };
-  clearTimer();
-};
-
-
-
-
-
-
-
+ 
 
 
   //修改 - 恢复计时器状态
@@ -4173,27 +4322,26 @@ const handlePauseTimer = (task) => {
 
 
 
-  //修改 - 实时更新计时显示
-  useEffect(() => {
-    let interval;
+  // 实时更新计时显示
+useEffect(() => {
+  let interval;
 
-    if (activeTimer) {
-      interval = setInterval(() => {
-        const currentTime = Date.now();
-        const timeElapsed = Math.floor((currentTime - activeTimer.startTime) / 1000);
-        setElapsedTime(timeElapsed);
-      }, 1000); // 每秒更新一次
-    } else {
-      setElapsedTime(0);
+  if (activeTimer) {
+    interval = setInterval(() => {
+      const currentTime = Date.now();
+      const timeElapsed = Math.floor((currentTime - activeTimer.startTime) / 1000);
+      setElapsedTime(timeElapsed);
+    }, 1000); // 每秒更新一次
+  } else {
+    setElapsedTime(0);
+  }
+
+  return () => {
+    if (interval) {
+      clearInterval(interval);
     }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [activeTimer]);
-  // 修改结束
+  };
+}, [activeTimer]);
 
 
   //修改 - 统一修改时间显示格式
@@ -4307,6 +4455,100 @@ useEffect(() => {
 
   loadDailyData();
 }, [selectedDate]);
+
+
+useEffect(() => {
+  const initializeApp = async () => {
+    console.log('🚀 初始化应用数据...');
+    
+    // 先迁移旧数据
+    await migrateLegacyData();
+    
+    try {
+      console.log('=== 开始加载数据 ===');
+      
+      // 加载任务数据
+      const savedTasks = await loadMainData('tasks');
+      console.log('✅ 加载的任务数据:', savedTasks);
+      if (savedTasks) {
+        setTasksByDate(savedTasks);
+        console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
+      } else {
+        console.log('ℹ️ 没有任务数据，使用空对象');
+        setTasksByDate({});
+      }
+      
+      // 加载模板数据
+      const savedTemplates = await loadMainData('templates');
+      console.log('✅ 加载的模板数据:', savedTemplates);
+      if (savedTemplates) {
+        setTemplates(savedTemplates);
+      }
+      
+      // 加载积分历史
+      const savedPointHistory = await loadMainData('pointHistory');
+      console.log('✅ 加载的积分历史:', savedPointHistory);
+      if (savedPointHistory) {
+        setPointHistory(savedPointHistory);
+      } else {
+        setPointHistory([{
+          date: new Date().toISOString(),
+          change: 0,
+          reason: '系统初始化',
+          totalAfterChange: 0
+        }]);
+      }
+      
+      // 加载兑换物品
+      const savedExchangeItems = await loadMainData('exchange');
+      console.log('✅ 加载的兑换物品:', savedExchangeItems);
+      if (savedExchangeItems) {
+        setExchangeItems(savedExchangeItems);
+      }
+      
+      console.log('🎉 应用初始化完成');
+      
+    } catch (error) {
+      console.error('初始化失败:', error);
+    }
+    
+    setIsInitialized(true);
+  };
+
+  initializeApp();
+}, []);
+
+// 自动保存任务数据
+useEffect(() => {
+  if (isInitialized) { // 这里必须使用 isInitialized
+    console.log('💾 自动保存任务数据...');
+    saveMainData('tasks', tasksByDate);
+  }
+}, [tasksByDate, isInitialized]);
+
+// 自动保存模板数据
+useEffect(() => {
+  if (isInitialized) { // 这里必须使用 isInitialized
+    console.log('💾 自动保存模板数据...');
+    saveMainData('templates', templates);
+  }
+}, [templates, isInitialized]);
+
+// 自动保存积分历史
+useEffect(() => {
+  if (isInitialized) { // 这里必须使用 isInitialized
+    console.log('💾 自动保存积分历史...');
+    saveMainData('pointHistory', pointHistory);
+  }
+}, [pointHistory, isInitialized]);
+
+// 自动保存兑换物品
+useEffect(() => {
+  if (isInitialized) { // 这里必须使用 isInitialized
+    console.log('💾 自动保存兑换物品...');
+    saveMainData('exchange', exchangeItems);
+  }
+}, [exchangeItems, isInitialized]);
 
 // 数据完整性检查
 useEffect(() => {
@@ -5258,7 +5500,7 @@ const nextWeek = () => {
     setShowDatePickerModal(false);
   };
 
- // 清空所有数据
+// 清空所有数据
 const clearAllData = async () => {
   if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
     setTasksByDate({});
@@ -5270,6 +5512,8 @@ const clearAllData = async () => {
       reason: '系统初始化',
       totalAfterChange: 0
     }]);
+    setActiveTimer(null);
+    setElapsedTime(0);
     
     // 清空所有存储
     await saveMainData('tasks', {});
@@ -5281,7 +5525,7 @@ const clearAllData = async () => {
       reason: '系统初始化',
       totalAfterChange: 0
     }]);
-    await saveMainData('activeTimers', {});
+    await saveMainData('activeTimer', null);
     
     // 清空每日数据
     const today = new Date().toISOString().split("T")[0];
@@ -5292,6 +5536,7 @@ const clearAllData = async () => {
     });
   }
 };
+
 
 
 // 导出数据
@@ -6491,6 +6736,39 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     return <StatsPage />;
   }
 
+
+// ==== 渲染调试 - 展开详细内容 ====
+console.log('🎨 组件渲染 - 详细状态:', {
+  任务天数: Object.keys(tasksByDate).length,
+  任务数据所有日期: Object.keys(tasksByDate),
+  选中日期: selectedDate,
+  今日任务数量: todayTasks.length,
+  今日任务详情: todayTasks,
+  模板数量: templates.length,
+  积分历史数量: pointHistory.length,
+  积分历史详情: pointHistory,
+  兑换物品数量: exchangeItems.length,
+  是否初始化: isInitialized
+});
+
+// 特别检查今日任务
+console.log('📅 今日任务检查:');
+console.log('  - 选中日期:', selectedDate);
+console.log('  - 任务数据中该日期的任务:', tasksByDate[selectedDate]);
+console.log('  - todayTasks 变量:', todayTasks);
+
+
+// 如果任务数据为空，显示警告
+if (isInitialized && Object.keys(tasksByDate).length === 0) {
+  console.warn('⚠️ 警告: 已初始化但任务数据为空');
+}
+
+if (isInitialized && todayTasks.length === 0) {
+  console.warn('⚠️ 警告: 已初始化但今日任务为空');
+}
+
+
+
   return (
     <div style={{
       maxWidth: 600,
@@ -6810,38 +7088,45 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           border: "2px solid #ffcc00",
           backgroundColor: "#fff"
         }}>
-          <div
-            style={{
-              backgroundColor: "#ffcc00",
-              color: "#000",
-              padding: "6px 10px",
-              fontWeight: "bold",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}
-          >
-            <span>置顶 ({pinnedTasks.length})</span>
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                if (pinnedTasks.length > 0) {
-                  editTaskTime(pinnedTasks[0]);
-                }
-              }}
-              style={{
-                fontSize: "12px",
-                color: "#666",
-                cursor: "pointer",
-                padding: "2px 6px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                backgroundColor: "#f5f5f5"
-              }}
-              title="点击修改时间"
-            >
-              ✏️
-            </span>
+         
+         <div
+  style={{
+    backgroundColor: "#ffcc00",
+    color: "#000",
+    padding: "6px 10px",
+    fontWeight: "bold",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
+  }}
+>
+  <span>置顶 ({pinnedTasks.length})</span>
+  <span
+    style={{
+      fontSize: 12,
+      color: "#333",
+      padding: "2px 8px",
+      border: "1px solid #e0e0e0",
+      borderRadius: "4px",
+      backgroundColor: "#f5f5f5",
+      flexShrink: 0,
+      whiteSpace: 'nowrap'
+    }}
+    title="置顶任务总时间"
+  >
+    {(() => {
+      // 计算所有置顶任务的总时间
+      const totalTime = pinnedTasks.reduce((sum, task) => {
+        const taskTime = task.timeSpent || 0;
+        // 如果这个任务正在计时，加上实时计时
+        if (activeTimer && activeTimer.taskId === task.id) {
+          return sum + taskTime + elapsedTime;
+        }
+        return sum + taskTime;
+      }, 0);
+      return formatTimeNoSeconds(totalTime);
+    })()}
+  </span>
           </div>
           <ul style={{
             listStyle: "none",
@@ -7173,23 +7458,23 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
             </select>
           </div>
 
-          {/* 今日感想 */}
-          <div style={{ flex: 2 }}>
-            <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-              今日感想:
-            </div>
-            <input
-              type="text"
-              value={dailyReflection}
-              onChange={(e) => setDailyReflection(e.target.value)}
-              placeholder="记录今天的收获和感悟..."
-              style={{
-                width: "100%",
-                padding: "6px 8px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "12px"
-              }}
+         {/* 今日感想 */}
+<div style={{ flex: 2 }}>
+  <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
+    今日感想:
+  </div>
+  <input
+    type="text"
+    value={dailyReflection}
+    onChange={(e) => setDailyReflection(e.target.value)}
+    placeholder="记录今天的收获和感悟..."
+    style={{
+      width: "100%",
+      padding: "6px 8px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      fontSize: "12px"
+    }}
             />
           </div>
         </div>
@@ -7701,6 +7986,126 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         >
           清空数据
         </button>
+        {/* 测试按钮 - 临时添加用于调试 */}
+<button
+  onClick={async () => {
+    // 手动保存所有数据
+    await saveMainData('tasks', tasksByDate);
+    await saveMainData('templates', templates);
+    await saveMainData('pointHistory', pointHistory);
+    await saveMainData('exchange', exchangeItems);
+    alert('数据已手动保存！');
+    
+    // 显示存储状态
+    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+    keys.forEach(key => {
+      const data = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+      console.log(`${key} 存储长度:`, data ? data.length : '无数据');
+    });
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#ff6b6b",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 12,
+    cursor: "pointer"
+  }}
+>
+  测试保存
+</button>
+
+<button
+  onClick={() => {
+    // 显示所有存储的键
+    const allKeys = Object.keys(localStorage);
+    const appKeys = allKeys.filter(key => key.includes(STORAGE_KEY));
+    console.log('应用存储的键:', appKeys);
+    appKeys.forEach(key => {
+      console.log(`${key}:`, localStorage.getItem(key));
+    });
+    alert('查看控制台输出存储信息');
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#4ecdc4",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 12,
+    cursor: "pointer"
+  }}
+>
+  检查存储
+</button>
+<button
+  onClick={() => {
+    // 手动从存储加载数据
+    const tasks = localStorage.getItem('study-tracker-main-v2_tasks');
+    const templates = localStorage.getItem('study-tracker-main-v2_templates');
+    const pointHistory = localStorage.getItem('study-tracker-main-v2_pointHistory');
+    const exchange = localStorage.getItem('study-tracker-main-v2_exchange');
+    
+    console.log('手动检查存储:');
+    console.log('tasks:', tasks);
+    console.log('templates:', templates);
+    console.log('pointHistory:', pointHistory);
+    console.log('exchange:', exchange);
+    
+    if (tasks) {
+      try {
+        const parsedTasks = JSON.parse(tasks);
+        setTasksByDate(parsedTasks);
+        console.log('手动设置任务数据:', parsedTasks);
+        alert('数据已手动恢复！');
+      } catch (e) {
+        console.error('解析任务数据失败:', e);
+      }
+    }
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#9c27b0",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 12,
+    cursor: "pointer"
+  }}
+>
+  手动恢复数据
+</button>
+<button
+  onClick={() => {
+    // 强制从存储加载数据
+    const tasksData = localStorage.getItem('study-tracker-main-v2_tasks');
+    if (tasksData) {
+      try {
+        const tasks = JSON.parse(tasksData);
+        setTasksByDate(tasks);
+        console.log('🔧 手动恢复任务数据:', tasks);
+        alert('任务数据已手动恢复！');
+      } catch (e) {
+        console.error('手动恢复失败:', e);
+        alert('恢复失败：' + e.message);
+      }
+    } else {
+      alert('没有找到存储的数据');
+    }
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#ff9800",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 12,
+    cursor: "pointer"
+  }}
+>
+  强制恢复数据
+</button>
       </div>
     </div>
   );
