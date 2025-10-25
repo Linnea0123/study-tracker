@@ -3,88 +3,505 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import './App.css';
 
 
+// 备份管理模态框组件
+const BackupManagerModal = ({ onClose }) => {
+  const [backups, setBackups] = useState([]);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
 
-// 自动导出函数 - 替换原来的 autoBackup
-const autoExportBackup = async (tasksByDate, templates, pointHistory, exchangeItems) => {
-  try {
-    const backupData = {
-      tasks: tasksByDate,
-      templates,
-      pointHistory,
-      exchangeItems,
-      backupDate: new Date().toISOString(),
-      version: '1.0',
-      totalTasks: Object.values(tasksByDate).flat().length,
-      completedTasks: Object.values(tasksByDate).flat().filter(t => t.done).length
-    };
+  useEffect(() => {
+    // 获取备份列表
+    setBackups(getBackupList());
+  }, []);
 
-    // 生成带时间戳的文件名
-    const now = new Date();
-    const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
-    const fileName = `学习备份_${timestamp}.json`;
-    
-    // 创建并下载文件
-    const dataStr = JSON.stringify(backupData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', fileName);
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log('✅ 自动导出完成:', fileName);
-    
-    // 管理本地存储的导出记录（可选）
-    saveExportRecord(fileName, now);
-    
-  } catch (error) {
-    console.error('自动导出失败:', error);
-  }
-};
+  const handleRestore = async (backupKey) => {
+    await restoreBackup(backupKey);
+    onClose();
+  };
 
-// 保存导出记录（用于界面显示）
-const saveExportRecord = (fileName, date) => {
-  try {
-    const records = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_export_records`) || '[]');
-    
-    // 只保留最近10条记录
-    const newRecords = [
-      {
-        fileName,
-        date: date.toISOString(),
-        size: JSON.stringify({
-          tasks: window.appInstance?.getState().tasksByDate || {},
-          templates: window.appInstance?.getState().templates || [],
-          pointHistory: window.appInstance?.getState().pointHistory || [],
-          exchangeItems: window.appInstance?.getState().exchangeItems || []
-        }).length
-      },
-      ...records
-    ].slice(0, 10);
-    
-    localStorage.setItem(`${STORAGE_KEY}_export_records`, JSON.stringify(newRecords));
-  } catch (error) {
-    console.error('保存导出记录失败:', error);
-  }
-};
+  const handleManualBackup = async () => {
+    await autoBackup();
+    setBackups(getBackupList()); // 刷新列表
+    alert('手动备份已创建！');
+  };
 
-// 获取导出记录
-const getExportRecords = () => {
-  try {
-    return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_export_records`) || '[]');
-  } catch (error) {
-    return [];
-  }
+  const handleDeleteBackup = (backupKey) => {
+    if (window.confirm('确定要删除这个备份吗？')) {
+      localStorage.removeItem(backupKey);
+      setBackups(getBackupList()); // 刷新列表
+      alert('备份已删除！');
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 500,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 15,
+          borderBottom: '1px solid #e0e0e0',
+          paddingBottom: 10
+        }}>
+          <h3 style={{ margin: 0, color: '#1a73e8' }}>📦 备份管理</h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* 备份统计 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 10,
+          marginBottom: 15,
+          padding: 10,
+          backgroundColor: '#f8f9fa',
+          borderRadius: 8
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: '#666' }}>备份数量</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+              {backups.length} 个
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: '#666' }}>自动备份</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#28a745' }}>
+              每30分钟
+            </div>
+          </div>
+        </div>
+
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
+          <button
+            onClick={handleManualBackup}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            💾 立即备份
+          </button>
+          <button
+            onClick={() => {
+              // 导出所有备份信息
+              const backupInfo = {
+                total: backups.length,
+                backups: backups,
+                exportTime: new Date().toISOString()
+              };
+              const dataStr = JSON.stringify(backupInfo, null, 2);
+              const dataBlob = new Blob([dataStr], { type: 'application/json' });
+              const url = URL.createObjectURL(dataBlob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `backup-list_${new Date().toISOString().slice(0, 10)}.json`;
+              link.click();
+              URL.revokeObjectURL(url);
+            }}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              backgroundColor: '#17a2b8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            📋 导出列表
+          </button>
+        </div>
+
+        {/* 备份列表 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>
+            备份记录 ({backups.length})
+          </div>
+          
+          {backups.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: 20,
+              color: '#666',
+              backgroundColor: '#f8f9fa',
+              borderRadius: 6
+            }}>
+              暂无备份记录
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
+              {backups.map((backup, index) => (
+                <div
+                  key={backup.key}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 6,
+                    marginBottom: 8,
+                    backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+                      {new Date(backup.time).toLocaleString()}
+                      {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      任务天数: {backup.tasksCount} | 自动备份
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => setShowRestoreConfirm(backup.key)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#ffc107',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: 12
+                      }}
+                    >
+                      恢复
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBackup(backup.key)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#dc3545',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: 12
+                      }}
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 使用说明 */}
+        <div style={{
+          fontSize: 12,
+          color: '#666',
+          padding: 10,
+          backgroundColor: '#f8f9fa',
+          borderRadius: 6,
+          lineHeight: 1.4
+        }}>
+          <strong>💡 使用说明：</strong><br/>
+          • 系统每30分钟自动备份一次<br/>
+          • 最多保留7个备份，旧的会自动删除<br/>
+          • 恢复备份会覆盖当前所有数据<br/>
+          • 建议重要操作前手动备份
+        </div>
+
+        {/* 恢复确认模态框 */}
+        {showRestoreConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1001
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: 20,
+              borderRadius: 10,
+              width: '80%',
+              maxWidth: 300
+            }}>
+              <h4 style={{ textAlign: 'center', marginBottom: 15, color: '#d32f2f' }}>
+                确认恢复备份？
+              </h4>
+              <p style={{ textAlign: 'center', marginBottom: 15, fontSize: 14, lineHeight: 1.4 }}>
+                这将覆盖当前所有数据，且无法撤销！
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setShowRestoreConfirm(null)}
+                  style={{
+                    flex: 1,
+                    padding: 10,
+                    backgroundColor: '#ccc',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 14
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => handleRestore(showRestoreConfirm)}
+                  style={{
+                    flex: 1,
+                    padding: 10,
+                    backgroundColor: '#d32f2f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 14
+                  }}
+                >
+                  确认恢复
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 
 // 保持这样就行
 const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
+
+// ==== 新增：自动备份配置 ====
+const AUTO_BACKUP_CONFIG = {
+  maxBackups: 7,                    // 保留7个备份
+  backupInterval: 30 * 60 * 1000,   // 30分钟（30 * 60 * 1000 毫秒）
+  backupPrefix: 'auto_backup_'      // 备份文件前缀
+};
+
+
+// ==== 自动备份功能 ====
+const autoBackup = async () => {
+  try {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
+    
+    const backupData = {
+      tasks: await loadMainData('tasks'),
+      templates: await loadMainData('templates'),
+      pointHistory: await loadMainData('pointHistory'),
+      exchange: await loadMainData('exchange'),
+      backupTime: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    localStorage.setItem(backupKey, JSON.stringify(backupData));
+    await cleanupOldBackups();
+    console.log(`✅ 自动备份完成: ${timestamp}`);
+  } catch (error) {
+    console.error('自动备份失败:', error);
+  }
+};
+
+const cleanupOldBackups = async () => {
+  const allKeys = Object.keys(localStorage);
+  const backupKeys = allKeys
+    .filter(key => key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`))
+    .sort((a, b) => b.localeCompare(a));
+  
+  if (backupKeys.length > AUTO_BACKUP_CONFIG.maxBackups) {
+    const keysToDelete = backupKeys.slice(AUTO_BACKUP_CONFIG.maxBackups);
+    keysToDelete.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`🗑️ 删除旧备份: ${key}`);
+    });
+  }
+};
+
+const getBackupList = () => {
+  const allKeys = Object.keys(localStorage);
+  return allKeys
+    .filter(key => key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`))
+    .map(key => {
+      const data = JSON.parse(localStorage.getItem(key));
+      return {
+        key,
+        time: data?.backupTime || key,
+        tasksCount: Object.keys(data?.tasks || {}).length
+      };
+    })
+    .sort((a, b) => b.time.localeCompare(a.time));
+};
+
+const restoreBackup = async (backupKey) => {
+  try {
+    const backupData = JSON.parse(localStorage.getItem(backupKey));
+    if (!backupData) {
+      alert('备份文件不存在');
+      return;
+    }
+
+    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+      await saveMainData('tasks', backupData.tasks || {});
+      await saveMainData('templates', backupData.templates || []);
+      await saveMainData('pointHistory', backupData.pointHistory || []);
+      await saveMainData('exchange', backupData.exchange || []);
+      
+      if (window.appInstance) {
+        window.appInstance.setState({
+          tasksByDate: backupData.tasks || {},
+          templates: backupData.templates || [],
+          pointHistory: backupData.pointHistory || [],
+          exchangeItems: backupData.exchange || []
+        });
+      }
+      
+      alert('备份恢复成功！');
+      window.location.reload();
+    }
+  } catch (error) {
+    console.error('恢复备份失败:', error);
+    alert('恢复备份失败：' + error.message);
+  }
+};
+
+// 手动触发备份
+window.manualBackup = autoBackup;
+
+// 全局调试函数 - 在 Console 中可以直接调用
+window.debugStudyTracker = {
+  // 检查所有存储数据
+  checkStorage: () => {
+    console.log('=== 学习跟踪器存储调试 ===');
+    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+    keys.forEach(key => {
+      const storageKey = `${STORAGE_KEY}_${key}`;
+      const data = localStorage.getItem(storageKey);
+      console.log(`${key}:`, data ? `✅ 有数据 (${data.length} 字符)` : '❌ 无数据');
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          console.log(`  内容:`, parsed);
+        } catch (e) {
+          console.log(`  解析错误:`, e);
+        }
+      }
+    });
+    
+    // ==== 新增：显示备份信息 ====
+    const backupKeys = Object.keys(localStorage)
+      .filter(key => key.includes(AUTO_BACKUP_CONFIG.backupPrefix));
+    console.log(`备份文件: ${backupKeys.length} 个`);
+    backupKeys.forEach(key => {
+      console.log(`  ${key}`);
+    });
+  },  // 这里需要逗号
+  
+  // 备份管理
+  backupManager: () => {
+    const backups = getBackupList();
+    console.log('=== 备份管理 ===');
+    console.log(`共有 ${backups.length} 个备份文件`);
+    backups.forEach((backup, index) => {
+      console.log(`${index + 1}. ${backup.key}`);
+      console.log(`   时间: ${new Date(backup.time).toLocaleString()}`);
+      console.log(`   任务天数: ${backup.tasksCount}`);
+    });
+    
+    // 在控制台提供恢复选项
+    if (backups.length > 0) {
+      const choice = prompt(`输入要恢复的备份编号 (1-${backups.length}) 或输入 "c" 取消`);
+      if (choice && choice !== 'c') {
+        const index = parseInt(choice) - 1;
+        if (index >= 0 && index < backups.length) {
+          restoreBackup(backups[index].key);
+        }
+      }
+    }
+  },  // 这里需要逗号
+  
+  // 手动创建备份
+  createBackup: () => {
+    autoBackup();
+    alert('手动备份已创建！');
+  },  // 这里需要逗号
+  
+  // 手动保存当前数据
+  saveAll: () => {
+    console.log('💾 手动保存所有数据...');
+    // 这些需要在 App 组件内部调用
+    if (window.appInstance) {
+      window.appInstance.saveAllData();
+      // ==== 新增：手动保存时也备份 ====
+      autoBackup();
+    } else {
+      console.log('❌ 无法访问 App 实例');
+    }
+  },  // 这里需要逗号
+  
+  // 清除所有数据
+  clearAll: () => {
+    if (window.confirm('确定要清除所有数据吗？')) {
+      const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+      keys.forEach(key => {
+        localStorage.removeItem(`${STORAGE_KEY}_${key}`);
+      });
+      console.log('✅ 所有数据已清除');
+      window.location.reload();
+    }
+  }  // 最后一个方法不需要逗号
+};
+
+
+
+
+
+
 
 // 获取周数
 const getWeekNumber = (date) => {
@@ -127,202 +544,11 @@ const loadMainData = async (key) => {
 
 
 
-// 导出管理模态框
-const ExportManagerModal = ({ onClose }) => {
-  const [exportRecords, setExportRecords] = useState([]);
-
-  useEffect(() => {
-    setExportRecords(getExportRecords());
-  }, []);
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
-  const formatSize = (bytes) => {
-    return (bytes / 1024).toFixed(1) + ' KB';
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '90%',
-        maxWidth: 450,
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>📁 导出文件管理</h3>
-        
-        <div style={{ 
-          backgroundColor: '#e8f0fe', 
-          padding: 12, 
-          borderRadius: 8, 
-          marginBottom: 15,
-          fontSize: 13
-        }}>
-          <div>💡 自动导出说明：</div>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-            • 数据变化后会自动导出备份文件<br/>
-            • 文件保存在手机"下载"文件夹中<br/>
-            • 可随时通过"手动导出"创建新备份
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <button
-            onClick={() => {
-              autoExportBackup(
-                window.appInstance?.getState().tasksByDate || {},
-                window.appInstance?.getState().templates || [],
-                window.appInstance?.getState().pointHistory || [],
-                window.appInstance?.getState().exchangeItems || []
-              );
-              setTimeout(() => {
-                setExportRecords(getExportRecords());
-              }, 1000);
-            }}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold'
-            }}
-          >
-            📥 手动导出当前数据
-          </button>
-        </div>
-
-        <div>
-          <div style={{ marginBottom: 8, fontWeight: 'bold', fontSize: 14 }}>
-            最近导出记录 ({exportRecords.length})
-          </div>
-          
-          {exportRecords.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#666', padding: 20, fontSize: 13 }}>
-              暂无导出记录
-            </div>
-          ) : (
-            <div style={{ maxHeight: 300, overflow: 'auto' }}>
-              {exportRecords.map((record, index) => (
-                <div
-                  key={record.fileName}
-                  style={{
-                    padding: 10,
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 6,
-                    marginBottom: 8,
-                    backgroundColor: index === 0 ? '#f0f8ff' : '#f8f9fa'
-                  }}
-                >
-                  <div style={{ 
-                    fontWeight: 'bold', 
-                    fontSize: 13,
-                    marginBottom: 4,
-                    color: index === 0 ? '#1a73e8' : '#333'
-                  }}>
-                    {record.fileName}
-                    {index === 0 && <span style={{ fontSize: 11, color: '#28a745', marginLeft: 6 }}>最新</span>}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#666' }}>
-                    时间: {formatDate(record.date)} | 大小: {formatSize(record.size)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: 10,
-            marginTop: 15,
-            backgroundColor: '#6c757d',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer'
-          }}
-        >
-          关闭
-        </button>
-      </div>
-    </div>
-  );
-};
 
 
-// 全局调试函数 - 在 Console 中可以直接调用
-window.debugStudyTracker = {
-  // 检查所有存储数据
-  checkStorage: () => {
-    console.log('=== 学习跟踪器存储调试 ===');
-    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
-    keys.forEach(key => {
-      const storageKey = `${STORAGE_KEY}_${key}`;
-      const data = localStorage.getItem(storageKey);
-      console.log(`${key}:`, data ? `✅ 有数据 (${data.length} 字符)` : '❌ 无数据');
-      if (data) {
-        try {
-          const parsed = JSON.parse(data);
-          console.log(`  内容:`, parsed);
-        } catch (e) {
-          console.log(`  解析错误:`, e);
-        }
-      }
-    });
-  },
-  
-  // 手动保存当前数据
-  saveAll: () => {
-    console.log('💾 手动保存所有数据...');
-    // 这些需要在 App 组件内部调用
-    if (window.appInstance) {
-      window.appInstance.saveAllData();
-    } else {
-      console.log('❌ 无法访问 App 实例');
-    }
-  },
-  
-  // 清除所有数据
-  clearAll: () => {
-    if (window.confirm('确定要清除所有数据吗？')) {  // 修复：添加 window.
-      const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
-      keys.forEach(key => {
-        localStorage.removeItem(`${STORAGE_KEY}_${key}`);
-      });
-      console.log('✅ 所有数据已清除');
-      window.location.reload();  // 修复：添加 window.
-    }
-  }
-};
+
+ 
+
 
 // 数据迁移函数 - 从旧版本迁移数据
 const migrateLegacyData = async () => {
@@ -1776,10 +2002,6 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
     fileInputRef.current?.click();
   };
 
-
- 
-
-  
   // 添加：计算菜单位置，确保在屏幕内
   const calculateMenuPosition = (position) => {
     const menuWidth = 120;
@@ -2483,8 +2705,8 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
                 setEditData({ ...editData, pinned: !editData.pinned });
               }}
               style={{
-               width: '32px',    // 固定宽度
-      height: '32px',   // 固定高度  
+               width: '24px',    // 固定宽度
+      height: '24px',   // 固定高度  
       padding: 0,       // 移除padding
       backgroundColor: editData.pinned ? '#ffcc00' : '#f8f9fa',
       color: editData.pinned ? '#000' : '#666',
@@ -3376,12 +3598,7 @@ const TaskItem = ({
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
-
- // 修复：确保复选框可以点击
- const handleCheckboxClick = (e) => {
-  e.stopPropagation(); // 阻止事件冒泡
-  toggleDone(task);
-};
+  
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -3460,16 +3677,8 @@ const TaskItem = ({
             <input
               type="checkbox"
               checked={task.done}
-              onChange={handleCheckboxClick} // 修复：使用专门的点击处理函数
-              onClick={handleCheckboxClick}  // 修复：添加 onClick 事件
-              
-              
-              style={{ 
-                marginTop: "2px",
-                cursor: "pointer", // 添加指针样式
-                zIndex: 1 // 确保在最上层
-              
-              }}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
@@ -3489,7 +3698,7 @@ const TaskItem = ({
                 }}
               >
                 {task.text}
-                {task.pinned && " 📌"}
+                {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
                 {task.isWeekTask && " 🌟"}
                  {task.reminderTime && (
       <span
@@ -3557,13 +3766,14 @@ const TaskItem = ({
               onClick={(e) => {
                 e.stopPropagation();
                 handleTimerClick();
+                e.target.blur();
               }}
               style={{
                 fontSize: 12,
                 padding: "2px 6px",
                 border: "none",
                 borderRadius: "4px",
-                backgroundColor: "transparent",
+                backgroundColor: "transparent", // 始终透明背景
                 color: isTimerRunning ? "#ff4444" : "#4CAF50",
                 cursor: "pointer",
                 flexShrink: 0
@@ -3610,15 +3820,8 @@ const TaskItem = ({
             <input
               type="checkbox"
               checked={task.done}
-              onChange={handleCheckboxClick} // 修复：使用专门的点击处理函数
-              onClick={handleCheckboxClick}  // 修复：添加 onClick 事件
-            
-              style={{
-                marginTop: "2px",
-                cursor: "pointer", // 添加指针样式
-                zIndex: 1 // 确保在最上层 
-
-              }}
+              onChange={() => toggleDone(task)}
+              style={{ marginTop: "2px" }}
             />
 
             <div
@@ -3898,11 +4101,24 @@ const TaskItem = ({
       )}
 
  
- 
 {task.subTasks && task.subTasks.length > 0 && (
-  <div style={{ marginLeft: '28px', marginTop: 6, marginBottom: 6, borderLeft: '2px solid #e0e0e0', paddingLeft: 12 }}>
+  <div style={{ 
+    marginLeft: '28px', 
+    marginTop: -2,  // 减少上边距
+    marginBottom: 0,  // 减少下边距
+    borderLeft: '2px solid #e0e0e0', 
+    paddingLeft: 8  // 减少内边距
+  }}>
     {task.subTasks.map((subTask, index) => (
-      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 12, color: task.done ? '#999' : '#666' }}>
+      <div key={index} style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1, //子任务和复选框的距离
+        marginBottom: 2,  // 减少子任务之间的间距
+        fontSize: 12, 
+        color: task.done ? '#999' : '#666',
+        minHeight: '20px'  // 设置最小高度
+      }}>
         <input
           type="checkbox"
           checked={subTask.done}
@@ -3920,11 +4136,12 @@ const TaskItem = ({
             autoFocus
             style={{
               flex: 1,
-              padding: '2px 4px',
+              padding: '1px 4px',  // 减少内边距
               border: '1px solid #1a73e8',
               borderRadius: '3px',
               fontSize: '12px',
-              outline: 'none'
+              outline: 'none',
+              height: '20px'  // 固定高度
             }}
           />
         ) : (
@@ -3934,12 +4151,13 @@ const TaskItem = ({
               textDecoration: subTask.done ? 'line-through' : 'none',
               cursor: 'pointer',
               flex: 1,
-              padding: '2px 4px',
+              padding: '1px 4px',  // 减少内边距
               borderRadius: '3px',
               transition: 'background-color 0.2s',
-              minHeight: '20px',
+              minHeight: '18px',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              lineHeight: '1.2'  // 调整行高
             }}
             onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
             onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
@@ -3950,7 +4168,9 @@ const TaskItem = ({
       </div>
     ))}
   </div>
-)}
+)} 
+
+
 
 
       {task.reflection && (
@@ -4019,7 +4239,10 @@ const TaskItem = ({
       )}
     </li>
   );
-};
+};//end
+
+
+
 
 
 function App() {
@@ -4034,7 +4257,7 @@ function App() {
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
@@ -4065,7 +4288,6 @@ function App() {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
-  const [showExportModal, setShowExportModal] = useState(false);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
@@ -4401,42 +4623,6 @@ const generateDailyLog = () => {
     setPointHistory(prev => [historyEntry, ...prev]);
   };
 
-
-// 在 App 组件中替换原来的备份 useEffect
-useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length > 0) {
-    // 防抖：避免频繁导出
-    const timeoutId = setTimeout(() => {
-      // 只在有实际数据变化时导出（避免初始化时导出空数据）
-      const hasMeaningfulData = Object.values(tasksByDate).some(tasks => 
-        tasks.length > 0
-      );
-      
-      if (hasMeaningfulData) {
-        autoExportBackup(tasksByDate, templates, pointHistory, exchangeItems);
-      }
-    }, 10000); // 数据变化后10秒自动导出，避免太频繁
-    
-    return () => clearTimeout(timeoutId);
-  }
-}, [tasksByDate, templates, pointHistory, exchangeItems, isInitialized]);
-
-
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (showMoreMenu && !event.target.closest('.more-menu-container')) {
-      setShowMoreMenu(false);
-    }
-  };
-
-  document.addEventListener('click', handleClickOutside);
-  return () => {
-    document.removeEventListener('click', handleClickOutside);
-  };
-}, [showMoreMenu]);
-
-
 // 清理计时器状态
 useEffect(() => {
   return () => {
@@ -4460,9 +4646,10 @@ useEffect(() => {
       const savedTimer = await loadMainData('activeTimer');
       if (savedTimer && savedTimer.taskId && savedTimer.startTime) {
         const currentTime = Date.now();
-        const elapsedBeforeStart = savedTimer.elapsedBeforeStart || 0;
         const timeSinceStart = Math.floor((currentTime - savedTimer.startTime) / 1000);
-        const totalElapsed = elapsedBeforeStart + timeSinceStart;
+        
+        // 直接使用保存的已用时间 + 从保存到现在的时间
+        const totalElapsed = (savedTimer.elapsedBeforeStart || 0) + timeSinceStart;
         
         setElapsedTime(totalElapsed);
         setActiveTimer({
@@ -4470,7 +4657,12 @@ useEffect(() => {
           startTime: savedTimer.startTime
         });
         
-        console.log('⏱️ 恢复计时器状态:', savedTimer.taskId, '已运行:', totalElapsed + '秒');
+        console.log('⏱️ 恢复计时器:', {
+          任务ID: savedTimer.taskId,
+          已保存时间: savedTimer.elapsedBeforeStart,
+          恢复后运行时间: timeSinceStart,
+          总时间: totalElapsed
+        });
       }
     } catch (error) {
       console.error('恢复计时器状态失败:', error);
@@ -4640,25 +4832,36 @@ useEffect(() => {
       }));
     }
   };
-  const handleStartTimer = (task) => {
-    // 停止其他正在运行的计时器
-    if (activeTimer && activeTimer.taskId !== task.id) {
-      handlePauseTimer({ id: activeTimer.taskId });
-    }
   
-    const startTime = Date.now();
-    setActiveTimer({ taskId: task.id, startTime });
-    setElapsedTime(0); // 重置实时计时
   
-    console.log('⏱️ 开始计时:', task.text);
-  };
+  // 在开始计时时添加调试
+const handleStartTimer = (task) => {
+  // 停止其他正在运行的计时器
+  if (activeTimer && activeTimer.taskId !== task.id) {
+    handlePauseTimer({ id: activeTimer.taskId });
+  }
+
+  const startTime = Date.now();
+  setActiveTimer({ taskId: task.id, startTime });
+  setElapsedTime(0);
+
+  console.log('⏱️ 开始计时:', {
+    任务: task.text,
+    开始时间: new Date(startTime).toLocaleTimeString(),
+    任务ID: task.id,
+    已有时间: task.timeSpent || 0
+  });
+};
+  
   
   const handlePauseTimer = (task) => {
     if (!activeTimer || activeTimer.taskId !== task.id) return;
   
     const endTime = Date.now();
     const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
-    const totalTimeSpent = timeSpentThisSession + elapsedTime;
+    
+    // 只使用本次会话的时间，elapsedTime已经在实时更新中包含了
+    const totalTimeSpent = timeSpentThisSession;
   
     // 更新任务时间
     setTasksByDate(prev => {
@@ -4679,9 +4882,12 @@ useEffect(() => {
     setActiveTimer(null);
     setElapsedTime(0);
   
-    console.log('⏸️ 暂停计时:', task.text, '本次计时:', totalTimeSpent + '秒');
+    console.log('⏸️ 暂停计时:', {
+      任务: task.text,
+      本次计时: totalTimeSpent + '秒',
+      总时间: (task.timeSpent || 0) + totalTimeSpent + '秒'
+    });
   };
- 
 
 
   //修改 - 恢复计时器状态
@@ -4718,8 +4924,7 @@ useEffect(() => {
   }, []);
 
 
-
-  // 实时更新计时显示
+// 优化实时计时
 useEffect(() => {
   let interval;
 
@@ -4728,7 +4933,18 @@ useEffect(() => {
       const currentTime = Date.now();
       const timeElapsed = Math.floor((currentTime - activeTimer.startTime) / 1000);
       setElapsedTime(timeElapsed);
-    }, 1000); // 每秒更新一次
+      
+      // 每30秒自动保存一次计时状态
+      if (timeElapsed % 30 === 0) {
+        const timerData = {
+          taskId: activeTimer.taskId,
+          startTime: activeTimer.startTime,
+          elapsedBeforeStart: 0, // 现在elapsedTime就是总时间
+          savedAt: new Date().toISOString()
+        };
+        saveMainData('activeTimer', timerData);
+      }
+    }, 1000);
   } else {
     setElapsedTime(0);
   }
@@ -4739,6 +4955,7 @@ useEffect(() => {
     }
   };
 }, [activeTimer]);
+
 
 
   //修改 - 统一修改时间显示格式
@@ -4904,6 +5121,18 @@ useEffect(() => {
       }
       
       console.log('🎉 应用初始化完成');
+
+
+      await autoBackup();
+      
+      // 设置定时备份
+      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+      
+      // 清理函数
+      return () => {
+        clearInterval(backupTimer);
+      };
+
       
     } catch (error) {
       console.error('初始化失败:', error);
@@ -7220,9 +7449,6 @@ if (isInitialized && todayTasks.length === 0) {
           onClose={() => setShowRepeatModal(false)}
         />
       )}
-
-  
-
       
       {showDailyLogModal && (
         <DailyLogModal
@@ -7299,19 +7525,6 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
 
-      {/* 添加 ExportManagerModal 在这里 */}
-{showExportModal && (
-  <ExportManagerModal onClose={() => setShowExportModal(false)} />
-)}
-
-{showDatePickerModal && (
-  <DatePickerModal
-    onClose={() => setShowDatePickerModal(false)}
-    onSelectDate={handleDateSelect}
-  />
-)}
-
-
       {showDatePickerModal && (
         <DatePickerModal
           onClose={() => setShowDatePickerModal(false)}
@@ -7363,11 +7576,12 @@ if (isInitialized && todayTasks.length === 0) {
           onDelete={deleteTask}
         />
       )}
+      {/* 备份管理模态框 */}
+      {showBackupModal && (
+        <BackupManagerModal onClose={() => setShowBackupModal(false)} />
+      )}
 
-          {/* ========== 添加这行 ========== */}
-    {showExportModal && (
-      <ExportManagerModal onClose={() => setShowExportModal(false)} />
-    )}
+
 
       {/* 主页面内容 */}
       <h1 style={{
@@ -8287,180 +8501,179 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-      
-<div style={{
-  display: "flex",
-  justifyContent: "center",
-  gap: 10,
-  marginTop: 20,
-  marginBottom: 20,
-  flexWrap: "wrap",
-  position: "relative"
-}}>
-  <button
-    onClick={() => generateDailyLog()}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#28a745",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer"
-    }}
-  >
-    每日日志
-  </button>
-  
-  <div className="more-menu-container" style={{ position: "relative" }}>
-    <button
-      onClick={() => setShowMoreMenu(!showMoreMenu)}
-      style={{
-        padding: "6px 10px",
-        backgroundColor: "#6c757d",
-        color: "#fff",
-        border: "none",
-        fontSize: 12,
-        borderRadius: 6,
-        width: "70px",
-        height: "30px",
-        cursor: "pointer"
-      }}
-    >
-      更多 ▼
-    </button>
 
-    {/* 更多菜单下拉框 */}
-    {showMoreMenu && (
+
+      {/* 底部按钮区域 */}
       <div style={{
-        position: "absolute",
-        top: "35px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        backgroundColor: "white",
-        border: "1px solid #ddd",
-        borderRadius: "6px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        zIndex: 1000,
-        minWidth: "120px",
-        padding: "5px 0"
+        display: "flex",
+        justifyContent: "center",
+        gap: 10,
+        marginTop: 20,
+        marginBottom: 20,
+        flexWrap: "wrap"
       }}>
         <button
-          onClick={() => {
-            setShowMoreMenu(false);
-            handleExportData();
-          }}
+          onClick={() => generateDailyLog()}
           style={{
-            width: "100%",
-            padding: "8px 12px",
-            backgroundColor: "transparent",
-            color: "#333",
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
             border: "none",
-            textAlign: "left",
-            cursor: "pointer",
-            fontSize: "12px",
-            borderBottom: "1px solid #f0f0f0"
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
-          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+        >
+          每日日志
+        </button>
+        <button
+          onClick={handleExportData}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
+          }}
         >
           导出数据
         </button>
-        
         <button
-          onClick={() => {
-            setShowMoreMenu(false);
-            setShowSchedule(true);
-          }}
+          onClick={() => setShowSchedule(true)}
           style={{
-            width: "100%",
-            padding: "8px 12px",
-            backgroundColor: "transparent",
-            color: "#333",
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
             border: "none",
-            textAlign: "left",
-            cursor: "pointer",
-            fontSize: "12px",
-            borderBottom: "1px solid #f0f0f0"
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
-          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           时间表
         </button>
-        
         <button
           onClick={() => {
-            setShowMoreMenu(false);
             document.getElementById('import-file').click();
           }}
           style={{
-            width: "100%",
-            padding: "8px 12px",
-            backgroundColor: "transparent",
-            color: "#333",
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
             border: "none",
-            textAlign: "left",
-            cursor: "pointer",
-            fontSize: "12px",
-            borderBottom: "1px solid #f0f0f0"
+            borderRadius: 6,
+            fontSize: 12,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
-          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           导入数据
         </button>
         
+<input
+  id="import-file"
+  type="file"
+  accept=".json"
+  onChange={async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+
+        // 验证数据格式
+        if (!importedData.tasks || !importedData.version) {
+          throw new Error('无效的数据文件格式');
+        }
+
+        if (window.confirm('导入数据将覆盖当前所有数据，确定要继续吗？')) {
+          // 依次导入各个部分
+          if (importedData.tasks) {
+            await saveMainData('tasks', importedData.tasks);
+            setTasksByDate(importedData.tasks);
+          }
+          if (importedData.templates) {
+            await saveMainData('templates', importedData.templates);
+            setTemplates(importedData.templates);
+          }
+          if (importedData.exchange) {
+            await saveMainData('exchange', importedData.exchange);
+            setExchangeItems(importedData.exchange);
+          }
+          if (importedData.pointHistory) {
+            await saveMainData('pointHistory', importedData.pointHistory);
+            setPointHistory(importedData.pointHistory);
+          }
+          
+          alert('数据导入成功！');
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        alert(`导入失败：${error.message || '文件格式不正确'}`);
+      }
+    };
+
+    reader.onerror = () => {
+      alert('文件读取失败，请重试');
+    };
+
+    reader.readAsText(file);
+    e.target.value = '';
+  }}
+  style={{ display: "none" }}
+/>
+
+
+
         <button
-          onClick={() => {
-            setShowMoreMenu(false);
-            clearAllData();
-          }}
+          onClick={clearAllData}
           style={{
-            width: "100%",
-            padding: "8px 12px",
-            backgroundColor: "transparent",
-            color: "#d32f2f",
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
             border: "none",
-            textAlign: "left",
-            cursor: "pointer",
-            fontSize: "12px",
-            borderBottom: "1px solid #f0f0f0"
+            borderRadius: 6,
+            fontSize: 12,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = "#ffebee"}
-          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
         >
           清空数据
         </button>
-        
-        <button
-          onClick={() => {
-            setShowMoreMenu(false);
-            setShowExportModal(true);
-          }}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            backgroundColor: "transparent",
-            color: "#333",
-            border: "none",
-            textAlign: "left",
-            cursor: "pointer",
-            fontSize: "12px"
-          }}
-          onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
-          onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
-        >
-          导出管理
-          </button>
-      </div>
-    )}
-  </div>
-</div>
+        {/* 测试按钮 - 临时添加用于调试 */}
 
-    </div>  // 添加这个闭合标签
+
+
+<button
+          onClick={() => setShowBackupModal(true)}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
+          }}
+        >
+          备份管理
+        </button>
+      </div>
+    </div>
   );
 }
 
