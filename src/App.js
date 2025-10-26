@@ -1404,104 +1404,37 @@ const getWeekDates = (monday) => {
 };
 
 
-// 时间表页面组件 - 无横向滚动版本
+
+
+// 时间表页面组件 - 只调整大小和文字
 const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds }) => {
   const weekDates = getWeekDates(currentMonday);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
-  // 监听窗口大小变化
-  useEffect(() => {
-    const handleResize = () => {
-      setContainerWidth(window.innerWidth);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // 响应式配置 - 重点调整列宽以适应屏幕
-  const getResponsiveConfig = () => {
-    if (containerWidth <= 480) {
-      // 手机端 - 紧凑布局
-      return {
-        timeColumnWidth: '12%', // 百分比宽度
-        dateColumnWidth: '12.5%', // 7列平均分配剩余空间
-        timeFontSize: '9px',
-        dateFontSize: '9px',
-        taskFontSize: '7px',
-        cellPadding: '1px',
-        headerHeight: '30px',
-        timeSlotHeight: '20px',
-        timeSlotsPerHour: 2,
-        startHour: 8,
-        endHour: 22
-      };
-    } else if (containerWidth <= 768) {
-      // iPad端
-      return {
-        timeColumnWidth: '10%',
-        dateColumnWidth: '12.8%',
-        timeFontSize: '10px',
-        dateFontSize: '10px',
-        taskFontSize: '8px',
-        cellPadding: '1px',
-        headerHeight: '35px',
-        timeSlotHeight: '22px',
-        timeSlotsPerHour: 2,
-        startHour: 7,
-        endHour: 22
-      };
-    } else {
-      // Windows/桌面端
-      return {
-        timeColumnWidth: '8%',
-        dateColumnWidth: '13.1%',
-        timeFontSize: '11px',
-        dateFontSize: '11px',
-        taskFontSize: '9px',
-        cellPadding: '2px',
-        headerHeight: '40px',
-        timeSlotHeight: '24px',
-        timeSlotsPerHour: 2,
-        startHour: 6,
-        endHour: 22
-      };
+  // 生成时间槽：从6:00到22:00，每30分钟一个间隔
+  const timeSlots = [];
+  for (let hour = 6; hour <= 22; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      timeSlots.push(timeString);
     }
-  };
-
-  const responsiveConfig = getResponsiveConfig();
-
-  // 生成时间槽
-  const generateTimeSlots = () => {
-    const timeSlots = [];
-    const { startHour, endHour, timeSlotsPerHour } = responsiveConfig;
-    
-    for (let hour = startHour; hour <= endHour; hour++) {
-      if (timeSlotsPerHour === 2) {
-        timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-        if (hour < endHour) {
-          timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
-        }
-      }
-    }
-    
-    return timeSlots;
-  };
-
-  const timeSlots = generateTimeSlots();
+  }
 
   const getTaskTimeInfo = (task, date) => {
     if (!task) return null;
 
+    // 如果有计划时间，使用计划时间
     if (task.scheduledTime) {
       const [startTime, endTime] = task.scheduledTime.split('-');
       return { startTime, endTime, type: 'scheduled' };
     }
 
+    // 如果有计时时间段，显示每个时间段
     if (task.timeSegments && task.timeSegments.length > 0) {
+      // 查找该日期对应的计时时间段
       const dateSegments = task.timeSegments.filter(segment => {
         if (segment.startTime) {
+          // 直接使用本地时间，不要手动加8小时
           const localDate = new Date(segment.startTime);
           const segmentDate = localDate.toISOString().split('T')[0];
           return segmentDate === date;
@@ -1510,14 +1443,23 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
       });
 
       if (dateSegments.length > 0) {
+        // 使用第一个有效时间段
         const segment = dateSegments[0];
         if (segment.startTime && segment.endTime) {
+          // 使用本地时间
           const startTimeLocal = new Date(segment.startTime);
           const endTimeLocal = new Date(segment.endTime);
           
           const startTime = `${startTimeLocal.getHours().toString().padStart(2, '0')}:${startTimeLocal.getMinutes().toString().padStart(2, '0')}`;
           const endTime = `${endTimeLocal.getHours().toString().padStart(2, '0')}:${endTimeLocal.getMinutes().toString().padStart(2, '0')}`;
 
+          console.log('本地时间段:', { 
+            original: `${segment.startTime} - ${segment.endTime}`,
+            local: `${startTime} - ${endTime}`,
+            本地小时: startTimeLocal.getHours(),
+            本地分钟: startTimeLocal.getMinutes()
+          });
+          
           return { startTime, endTime, type: 'actual' };
         }
       }
@@ -1526,6 +1468,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     return null;
   };
 
+  // 检查时间是否在区间内
   const isTimeInRange = (time, startTime, endTime) => {
     const [timeHour, timeMinute] = time.split(':').map(Number);
     const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -1535,9 +1478,13 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     const startValue = startHour * 60 + startMinute;
     const endValue = endHour * 60 + endMinute;
 
-    return timeValue >= startValue && timeValue < endValue;
-  };
+    const result = timeValue >= startValue && timeValue < endValue;
+    console.log(`⏰ 时间比较: ${time} (${timeValue}) 在 ${startTime}-${endTime} (${startValue}-${endValue}) 之间?`, result);
 
+    return result;
+  };
+  
+  // 在 SchedulePage 组件中修改 getTasksForTimeSlot 函数
   const getTasksForTimeSlot = (time, dayIndex) => {
     const date = weekDates[dayIndex].date;
     const dayTasks = tasksByDate[date] || [];
@@ -1546,6 +1493,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
       const timeInfo = getTaskTimeInfo(task, date);
       if (!timeInfo) return false;
 
+      // 对于实际计时任务，即使时间段很短也显示
       if (timeInfo.type === 'actual') {
         const [timeHour, timeMinute] = time.split(':').map(Number);
         const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
@@ -1553,63 +1501,66 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
         const timeValue = timeHour * 60 + timeMinute;
         const startValue = startHour * 60 + startMinute;
         
-        const timeSlotDuration = 30;
+        // 如果当前时间槽包含任务的开始时间，就显示（即使很短）
+        const timeSlotDuration = 30; // 每个时间槽30分钟
         const isAtStartTime = timeValue >= startValue && timeValue < startValue + timeSlotDuration;
         
         if (isAtStartTime) {
+          console.log(`✅ 显示短时间段任务 "${task.text}" 在时间槽 ${time}`);
           return true;
         }
       }
 
+      // 对于计划任务，使用原来的逻辑
       return isTimeInRange(time, timeInfo.startTime, timeInfo.endTime);
     });
   };
 
   const getTaskStyle = (task, timeInfo) => {
     const baseStyle = {
-      padding: '0px 1px',
-      margin: '0px',
-      borderRadius: '1px',
-      fontSize: responsiveConfig.taskFontSize,
+      padding: '2px 4px',
+      margin: '1px 0',
+      borderRadius: '3px',
+      fontSize: '10px', // 调整文字大小
       color: 'white',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
-      cursor: 'pointer',
-      lineHeight: '1',
-      height: '100%',
-      minHeight: '12px'
+      cursor: 'pointer'
     };
 
+    // 按类别颜色显示
     const category = categories.find(cat => cat.name === task.category);
     const categoryColor = category ? category.color : '#666';
 
     if (timeInfo.type === 'scheduled') {
       return {
         ...baseStyle,
-        backgroundColor: task.done ? '#4CAF50' : categoryColor,
+        backgroundColor: task.done ? '#4CAF50' : categoryColor, // 使用类别颜色
         border: task.done ? '1px solid #45a049' : `1px solid ${categoryColor}`
       };
     } else {
+      // 实际计时任务 - 根据时间段长度调整样式
       const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
       const [endHour, endMinute] = timeInfo.endTime.split(':').map(Number);
       const duration = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
       
+      // 短时间段用细条表示
       if (duration < 30) {
         return {
           ...baseStyle,
-          backgroundColor: categoryColor,
+          backgroundColor: categoryColor, // 使用类别颜色
           border: `1px solid ${categoryColor}`,
-          height: '6px',
-          minHeight: '6px',
-          fontSize: '5px',
-          padding: '0px',
+          height: '8px',
+          minHeight: '8px',
+          fontSize: '8px', // 调整文字大小
+          padding: '1px 2px',
           lineHeight: '1'
         };
       } else {
         return {
           ...baseStyle,
-          backgroundColor: categoryColor,
+          backgroundColor: categoryColor, // 使用类别颜色
           border: `1px solid ${categoryColor}`
         };
       }
@@ -1618,20 +1569,17 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
 
   return (
     <div style={{
-      width: '100%',
+      maxWidth: 800, // 调整整体宽度
       margin: '0 auto',
-      padding: containerWidth <= 480 ? '8px' : '15px',
+      padding: 15,
       fontFamily: 'sans-serif',
-      backgroundColor: '#f5faff',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
+      backgroundColor: '#f5faff'
     }}>
-      {/* 头部导航 */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: containerWidth <= 480 ? '10px' : '15px'
+        marginBottom: 20
       }}>
         <button
           onClick={onClose}
@@ -1639,8 +1587,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
             backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            fontSize: containerWidth <= 480 ? '16px' : '20px',
-            padding: '5px'
+            fontSize: 20
           }}
         >
           ⬅️
@@ -1648,121 +1595,106 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
         <h1 style={{
           textAlign: 'center',
           color: '#1a73e8',
-          fontSize: containerWidth <= 480 ? '14px' : '18px',
-          margin: 0
+          fontSize: 18 // 调整标题大小
         }}>
-          📅 本周时间表
+          📅 本周时间表 ({currentMonday.getMonth() + 1}/{currentMonday.getDate()} -
+          {new Date(currentMonday.getTime() + 6 * 24 * 60 * 60 * 1000).getMonth() + 1}/
+          {new Date(currentMonday.getTime() + 6 * 24 * 60 * 60 * 1000).getDate()})
         </h1>
-        <div style={{ width: containerWidth <= 480 ? '30px' : '40px' }}></div>
+        <div style={{ width: 20 }}></div>
       </div>
 
-      {/* 时间表容器 - 关键修改：使用百分比宽度，去掉最小宽度 */}
+      {/* 图例说明 */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 15,
+        marginBottom: 15,
+        fontSize: 12 // 调整文字大小
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#FF9800', borderRadius: 2 }}></div>
+          <span>计划任务</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#4CAF50', borderRadius: 2 }}></div>
+          <span>已完成</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 12, height: 12, backgroundColor: '#2196F3', borderRadius: 2 }}></div>
+          <span>实际执行</span>
+        </div>
+      </div>
+
       <div style={{
         backgroundColor: 'white',
-        borderRadius: '8px',
+        borderRadius: 10,
         overflow: 'hidden',
-        border: '1px solid #e0e0e0',
-        width: '100%',
-        boxSizing: 'border-box'
+        border: '1px solid #e0e0e0'
       }}>
-        {/* 表头 - 使用百分比网格布局 */}
+        {/* 表头 */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: `${responsiveConfig.timeColumnWidth} repeat(7, ${responsiveConfig.dateColumnWidth})`,
+          gridTemplateColumns: '70px repeat(7, 1fr)', // 调整时间列宽度
           backgroundColor: '#1a73e8',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: responsiveConfig.dateFontSize,
-          width: '100%'
+          fontSize: 12 // 调整文字大小
         }}>
-          <div style={{ 
-            padding: '6px 2px', 
-            textAlign: 'center', 
-            borderRight: '1px solid #0b52b0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: responsiveConfig.headerHeight
-          }}>
-            时间
-          </div>
+          <div style={{ padding: '10px', textAlign: 'center', borderRight: '1px solid #0b52b0' }}>时间</div>
           {weekDates.map((day, index) => (
             <div
               key={day.date}
               style={{
-                padding: '6px 2px',
+                padding: '10px',
                 textAlign: 'center',
-                borderRight: index < 6 ? '1px solid #0b52b0' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: responsiveConfig.headerHeight,
-                flexDirection: 'column',
-                gap: '1px',
-                overflow: 'hidden'
+                borderRight: index < 6 ? '1px solid #0b52b0' : 'none'
               }}
             >
-              <div style={{ fontSize: responsiveConfig.dateFontSize }}>{day.label}</div>
-              <div style={{ 
-                fontSize: Math.max(responsiveConfig.dateFontSize - 2, 8), 
-                opacity: 0.9,
-                lineHeight: '1'
-              }}>
-                {day.date.slice(5)}
-              </div>
+              {day.fullLabel}
             </div>
           ))}
         </div>
 
-        {/* 时间表内容 - 关键修改：去掉水平滚动 */}
-        <div style={{ 
-          width: '100%',
-          overflow: 'hidden'
-        }}>
+        {/* 时间表内容 */}
+        <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
           {timeSlots.map((time, timeIndex) => (
             <div
               key={time}
               style={{
                 display: 'grid',
-                gridTemplateColumns: `${responsiveConfig.timeColumnWidth} repeat(7, ${responsiveConfig.dateColumnWidth})`,
+                gridTemplateColumns: '70px repeat(7, 1fr)', // 调整时间列宽度
                 borderBottom: timeIndex < timeSlots.length - 1 ? '1px solid #f0f0f0' : 'none',
-                backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white',
-                minHeight: responsiveConfig.timeSlotHeight,
-                width: '100%'
+                backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white'
               }}
             >
               {/* 时间列 */}
               <div style={{
-                padding: responsiveConfig.cellPadding,
+                padding: '8px',
                 textAlign: 'center',
-                fontSize: responsiveConfig.timeFontSize,
+                fontSize: '11px', // 调整文字大小
                 fontWeight: 'bold',
                 color: '#666',
                 borderRight: '1px solid #e0e0e0',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: timeIndex % 2 === 0 ? '#f5f5f5' : 'white'
+                justifyContent: 'center'
               }}>
                 {time}
               </div>
 
-              {/* 日期列 - 紧凑布局 */}
+              {/* 日期列 */}
               {weekDates.map((day, dayIndex) => {
                 const tasks = getTasksForTimeSlot(time, dayIndex);
                 return (
                   <div
                     key={day.date}
                     style={{
-                      padding: responsiveConfig.cellPadding,
-                      minHeight: responsiveConfig.timeSlotHeight,
+                      padding: '2px',
+                      minHeight: '35px', // 调整最小高度
                       borderRight: dayIndex < 6 ? '1px solid #e0e0e0' : 'none',
                       backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white',
-                      cursor: tasks.length > 0 ? 'pointer' : 'default',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0px',
-                      overflow: 'hidden'
+                      cursor: tasks.length > 0 ? 'pointer' : 'default'
                     }}
                     onClick={() => {
                       if (tasks.length > 0) {
@@ -1785,9 +1717,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                           style={getTaskStyle(task, timeInfo)}
                           title={`${task.text} (${task.category}) ${timeInfo.startTime}-${timeInfo.endTime}`}
                         >
-                          {containerWidth <= 480 ? '●' : (
-                            task.text.length > 4 ? task.text.substring(0, 4) + '...' : task.text
-                          )}
+                          {task.text}
                         </div>
                       );
                     })}
@@ -1799,27 +1729,23 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
         </div>
       </div>
 
-      {/* 简化的统计信息 */}
+      {/* 统计信息 */}
       <div style={{
-        marginTop: '10px',
-        padding: '10px',
+        marginTop: 20,
+        padding: 15,
         backgroundColor: 'white',
-        borderRadius: '6px',
-        border: '1px solid #e0e0e0',
-        fontSize: containerWidth <= 480 ? '10px' : '12px'
+        borderRadius: 10,
+        border: '1px solid #e0e0e0'
       }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(2, 1fr)', 
-          gap: '5px'
-        }}>
+        <h3 style={{ marginBottom: 10, color: '#1a73e8', fontSize: 14 }}>本周统计</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: '12px' }}>
           <div>
             <strong>计划任务:</strong> {
               weekDates.reduce((total, day) => {
                 const dayTasks = tasksByDate[day.date] || [];
                 return total + dayTasks.filter(task => task.scheduledTime).length;
               }, 0)
-            }
+            } 个
           </div>
           <div>
             <strong>已完成:</strong> {
@@ -1827,7 +1753,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                 const dayTasks = tasksByDate[day.date] || [];
                 return total + dayTasks.filter(task => task.done).length;
               }, 0)
-            }
+            } 个
           </div>
         </div>
       </div>
@@ -1844,57 +1770,53 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 1000,
-          padding: '10px'
+          zIndex: 1000
         }} onClick={() => setSelectedTimeSlot(null)}>
           <div style={{
             backgroundColor: 'white',
-            padding: '15px',
-            borderRadius: '8px',
-            width: '95%',
-            maxWidth: '400px',
+            padding: 20,
+            borderRadius: 10,
+            width: '90%',
+            maxWidth: 400,
             maxHeight: '80vh',
             overflow: 'auto'
           }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ 
-              textAlign: 'center', 
-              marginBottom: '10px', 
-              color: '#1a73e8',
-              fontSize: '16px'
-            }}>
+            <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8', fontSize: 16 }}>
               ⏱️ 时间段详情
             </h3>
             
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 5, fontSize: 14 }}>
                 {selectedTimeSlot.dateLabel} {selectedTimeSlot.time}
               </div>
-              <div style={{ fontSize: '12px', color: '#666' }}>
+              <div style={{ fontSize: 12, color: '#666' }}>
                 共 {selectedTimeSlot.tasks.length} 个任务
               </div>
             </div>
 
-            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
               {selectedTimeSlot.tasks.map((task, index) => {
                 const timeInfo = getTaskTimeInfo(task, selectedTimeSlot.date);
                 return (
                   <div key={index} style={{
-                    padding: '8px',
+                    padding: '12px',
                     border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                    marginBottom: '5px',
+                    borderRadius: '8px',
+                    marginBottom: '8px',
                     backgroundColor: '#f8f9fa'
                   }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: 13 }}>
                       {task.text}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                       📚 {task.category}
                     </div>
                     {timeInfo && (
-                      <div style={{ fontSize: '11px', color: '#666' }}>
-                        🕐 {timeInfo.startTime} - {timeInfo.endTime}
-                      </div>
+                      <>
+                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                          🕐 {timeInfo.startTime} - {timeInfo.endTime}
+                        </div>
+                      </>
                     )}
                   </div>
                 );
@@ -1905,13 +1827,14 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
               onClick={() => setSelectedTimeSlot(null)}
               style={{
                 width: '100%',
-                padding: '8px',
-                marginTop: '10px',
+                padding: '10px',
+                marginTop: '15px',
                 backgroundColor: '#1a73e8',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: 14
               }}
             >
               关闭
@@ -1922,8 +1845,6 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     </div>
   );
 };
-
-
 
 
 
