@@ -4693,12 +4693,25 @@ const TaskItem = ({
   isTimerRunning,
   elapsedTime,
   onUpdateProgress,
+  activeTimer,
   onEditSubTask = () => {}
 }) => {
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
   
+
+  const isThisTaskRunning = activeTimer && (
+    activeTimer.taskId === task.id || 
+    (task.isWeekTask && activeTimer.taskText === task.text)
+  );
+  
+
+
+
+
+
+
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -5031,10 +5044,10 @@ const TaskItem = ({
                   cursor: "pointer",
                   flexShrink: 0
                 }}
-                title={isTimerRunning ? "点击暂停计时" : "点击开始计时"}
-              >
-                {isTimerRunning ? "⏸️" : "⏱️"}
-              </button>
+                title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+>
+  {isThisTaskRunning ? "⏸️" : "⏱️"}
+</button>
 
               <span
                 onClick={(e) => {
@@ -6268,7 +6281,7 @@ useEffect(() => {
     };
   }, [activeTimer]); // 只在 activeTimer 变化时重新启动
   
-  // 4. 修复开始计时函数
+  
   const handleStartTimer = (task) => {
     console.log('🎯 开始计时:', task.text);
     
@@ -6282,7 +6295,9 @@ useEffect(() => {
     // 立即设置状态
     setActiveTimer({
       taskId: task.id,
-      startTime: startTime
+      startTime: startTime,
+      taskText: task.text, // 添加任务文本用于识别本周任务
+      isWeekTask: task.isWeekTask // 标记是否为本周任务
     });
     setElapsedTime(0);
   
@@ -6291,7 +6306,9 @@ useEffect(() => {
       taskId: task.id,
       startTime: startTime,
       elapsedTime: 0,
-      savedAt: startTime
+      savedAt: startTime,
+      taskText: task.text,
+      isWeekTask: task.isWeekTask
     };
     localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
     
@@ -6305,33 +6322,58 @@ useEffect(() => {
       category: task.category,
       startTime: new Date().toISOString(),
       endTime: null,
-      duration: 0
+      duration: 0,
+      isWeekTask: task.isWeekTask
     };
     setTimerRecords(prev => [newRecord, ...prev]);
   
-    // 添加到任务的 timeSegments
-    const newSegment = {
-      startTime: new Date().toISOString(),
-      endTime: null,
-      duration: 0
-    };
-  
-    setTasksByDate(prev => {
-      const currentTasks = prev[selectedDate] || [];
-      const updatedTasks = currentTasks.map(t =>
-        t.id === task.id ? {
-          ...t,
-          timeSegments: [...(t.timeSegments || []), newSegment]
-        } : t
-      );
-      return {
-        ...prev,
-        [selectedDate]: updatedTasks
-      };
-    });
+    // 如果是本周任务，在所有日期创建 timeSegments
+    if (task.isWeekTask) {
+      setTasksByDate(prev => {
+        const updatedTasksByDate = { ...prev };
+        
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? {
+              ...t,
+              timeSegments: [...(t.timeSegments || []), {
+                startTime: new Date().toISOString(),
+                endTime: null,
+                duration: 0
+              }]
+            } : t
+          );
+        });
+        
+        return updatedTasksByDate;
+      });
+    } else {
+      // 普通任务，只在当前日期创建 timeSegment
+      setTasksByDate(prev => {
+        const currentTasks = prev[selectedDate] || [];
+        const updatedTasks = currentTasks.map(t =>
+          t.id === task.id ? {
+            ...t,
+            timeSegments: [...(t.timeSegments || []), {
+              startTime: new Date().toISOString(),
+              endTime: null,
+              duration: 0
+            }]
+          } : t
+        );
+        return {
+          ...prev,
+          [selectedDate]: updatedTasks
+        };
+      });
+    }
   };
+
+
+
   
-  // 5. 修复暂停计时函数
+ 
+
   const handlePauseTimer = (task) => {
     if (!activeTimer) {
       console.log('⚠️ 没有活动的计时器可暂停');
@@ -6341,18 +6383,21 @@ useEffect(() => {
     console.log('⏸️ 暂停计时器:', task.text);
     
     const endTime = Date.now();
-    const timeSpentThisSession = elapsedTime; // 使用当前的 elapsedTime
-    
-    console.log('📊 本次计时:', {
+    const accurateElapsedTime = Math.floor((endTime - activeTimer.startTime) / 1000);
+    const timeSpentThisSession = accurateElapsedTime;
+  
+    console.log('📊 准确计时:', {
       任务: task.text,
       计时秒数: timeSpentThisSession,
       开始时间: new Date(activeTimer.startTime).toLocaleString(),
-      结束时间: new Date(endTime).toLocaleString()
+      结束时间: new Date(endTime).toLocaleString(),
+      是否本周任务: task.isWeekTask
     });
   
     // 更新计时记录
     setTimerRecords(prev => prev.map(record => 
-      record.taskId === task.id && !record.endTime 
+      (record.taskId === task.id || 
+       (task.isWeekTask && record.taskText === task.text)) && !record.endTime 
         ? {
             ...record, 
             endTime: new Date().toISOString(), 
@@ -6361,37 +6406,41 @@ useEffect(() => {
         : record
     ));
   
-    // 更新任务时间
+    // 更新任务时间 - 区分本周任务和普通任务
     setTasksByDate(prev => {
-      const currentTasks = prev[selectedDate] || [];
-      const updatedTasks = currentTasks.map(t => {
-        if (t.id === task.id) {
-          // 更新最后一个未结束的 segment
-          const updatedSegments = [...(t.timeSegments || [])];
-          if (updatedSegments.length > 0) {
-            const lastSegment = updatedSegments[updatedSegments.length - 1];
-            if (lastSegment && !lastSegment.endTime) {
-              updatedSegments[updatedSegments.length - 1] = {
-                ...lastSegment,
-                endTime: new Date().toISOString(),
-                duration: timeSpentThisSession
-              };
-            }
-          }
+      const updatedTasksByDate = { ...prev };
+      
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t => {
+          // 匹配条件：相同ID 或者 是本周任务且文本相同
+          const isTargetTask = t.id === task.id || 
+                             (task.isWeekTask && t.isWeekTask && t.text === task.text);
           
-          return {
-            ...t,
-            timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
-            timeSegments: updatedSegments
-          };
-        }
-        return t;
+          if (isTargetTask) {
+            // 更新最后一个未结束的 segment
+            const updatedSegments = [...(t.timeSegments || [])];
+            if (updatedSegments.length > 0) {
+              const lastSegment = updatedSegments[updatedSegments.length - 1];
+              if (lastSegment && !lastSegment.endTime) {
+                updatedSegments[updatedSegments.length - 1] = {
+                  ...lastSegment,
+                  endTime: new Date().toISOString(),
+                  duration: timeSpentThisSession
+                };
+              }
+            }
+            
+            return {
+              ...t,
+              timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
+              timeSegments: updatedSegments
+            };
+          }
+          return t;
+        });
       });
-  
-      return {
-        ...prev,
-        [selectedDate]: updatedTasks
-      };
+      
+      return updatedTasksByDate;
     });
   
     // 清理状态和存储
@@ -6401,7 +6450,13 @@ useEffect(() => {
     
     console.log('🗑️ 清理计时器存储和状态');
   };
-  
+
+
+
+
+
+
+
   // 6. 添加手动清除计时器函数（用于调试）
   const clearTimerStorage = () => {
     localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
@@ -9475,6 +9530,7 @@ if (isInitialized && todayTasks.length === 0) {
       formatTimeWithSeconds={formatTimeWithSeconds}
       onMoveTask={moveTask}
       categories={categories}
+      activeTimer={activeTimer}  // 添加这行
       setShowMoveModal={setShowMoveModal}
       onUpdateProgress={handleUpdateProgress}
       onStartTimer={handleStartTimer}
@@ -9564,6 +9620,7 @@ if (isInitialized && todayTasks.length === 0) {
     onOpenEditModal={openTaskEditModal}
     onShowImageModal={setShowImageModal}
     toggleDone={toggleDone}
+    activeTimer={activeTimer}  // 添加这行
     formatTimeNoSeconds={formatTimeNoSeconds}
     formatTimeWithSeconds={formatTimeWithSeconds}
     onMoveTask={moveTask}
@@ -9668,6 +9725,7 @@ if (isInitialized && todayTasks.length === 0) {
       formatTimeWithSeconds={formatTimeWithSeconds}
       onMoveTask={moveTask}
       categories={categories}
+      activeTimer={activeTimer}  // 添加这行
       setShowMoveModal={setShowMoveModal}
       onUpdateProgress={handleUpdateProgress}
       onStartTimer={handleStartTimer}
