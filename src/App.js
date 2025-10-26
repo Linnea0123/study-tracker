@@ -2866,9 +2866,72 @@ const ActionMenuModal = ({ task, onClose, onEditText, onEditNote, onEditReflecti
   );
 };
 
-// 日期选择模态框 - 月历视图
-const DatePickerModal = ({ onClose, onSelectDate }) => {
+
+
+const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // 柔和颜色方案
+  const softColors = {
+    primary: '#8B9DC3',
+    secondary: '#A8B5C1', 
+    background: '#F8FAFD',
+    surface: '#FFFFFF',
+    border: '#E1E8ED',
+    text: '#2C3E50',
+    textLight: '#7F8C8D',
+    today: '#3498DB',
+    dotComplete: '#2ECC71',
+    dotIncomplete: '#E74C3C',
+    dotFuture: '#F39C12'
+  };
+
+  // 日期圆点组件
+  const DateDot = ({ date, tasksByDate }) => {
+    if (!tasksByDate) {
+      return null;
+    }
+
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dayTasks = tasksByDate[dateStr] || [];
+    
+    if (dayTasks.length === 0) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const taskDate = new Date(dateStr);
+    taskDate.setHours(0, 0, 0, 0);
+    
+    const isFuture = taskDate > today;
+    const allDone = dayTasks.every(task => task.done);
+    
+    let dotColor = '';
+    if (isFuture) {
+      dotColor = softColors.dotFuture;
+    } else if (allDone) {
+      dotColor = softColors.dotComplete;
+    } else {
+      dotColor = softColors.dotIncomplete;
+    }
+    
+    return (
+      <div style={{
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        backgroundColor: dotColor,
+        margin: '2px auto 0',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+      }} />
+    );
+  };
+
+  const isToday = (day) => {
+    const today = new Date();
+    return day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear();
+  };
 
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -2895,15 +2958,6 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-
-
-  const isToday = (day) => {
-    const today = new Date();
-    return day === today.getDate() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getFullYear() === today.getFullYear();
-  };
-
   return (
     <div style={{
       position: 'fixed',
@@ -2911,101 +2965,220 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.4)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000,
-      overflow: 'hidden'
+      zIndex: 1000
     }}>
       <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '90%',
-        maxWidth: 350
+        backgroundColor: softColors.surface,
+        padding: '24px',
+        borderRadius: '20px',
+        width: '95%',
+        maxWidth: '420px',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+        border: `1px solid ${softColors.border}`,
+        overflow: 'hidden' // 防止内容溢出
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-          <button
+        {/* 月份导航 */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '20px',
+          padding: '16px 20px',
+          backgroundColor: softColors.background,
+          borderRadius: '14px',
+          border: `1px solid ${softColors.border}`
+        }}>
+          <button 
             onClick={prevMonth}
-            style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px',
+              color: softColors.primary,
+              padding: '10px',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = 'rgba(139, 157, 195, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+            }}
           >
             ◀
           </button>
-          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>
+          <span style={{ 
+            fontWeight: '600', 
+            fontSize: '18px',
+            color: softColors.text 
+          }}>
             {currentDate.getFullYear()}年{currentDate.getMonth() + 1}月
           </span>
-          <button
+          <button 
             onClick={nextMonth}
-            style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px',
+              color: softColors.primary,
+              padding: '10px',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = 'rgba(139, 157, 195, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+            }}
           >
             ▶
           </button>
         </div>
 
+        {/* 图例说明 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '14px 16px',
+          backgroundColor: softColors.background,
+          borderRadius: '12px',
+          border: `1px solid ${softColors.border}`,
+          fontSize: '11px',
+          color: softColors.textLight
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: softColors.dotComplete }} />
+            <span>全部完成</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: softColors.dotIncomplete }} />
+            <span>未完成</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: softColors.dotFuture }} />
+            <span>未来任务</span>
+          </div>
+        </div>
+
+        {/* 星期标题 */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 4,
-          marginBottom: 8
+          gap: 6,
+          marginBottom: 16
         }}>
           {weekDays.map(day => (
             <div key={day} style={{
               textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              color: '#666',
-              padding: '4px'
+              fontSize: '13px',
+              fontWeight: '600',
+              color: softColors.textLight,
+              padding: '10px 4px'
             }}>
               {day}
             </div>
           ))}
         </div>
 
+        {/* 日期网格 */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 4
+          gap: 8,
+          marginBottom: '20px'
         }}>
-          {daysInMonth.map((day, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                if (day) {
+          {daysInMonth.map((day, index) => {
+            if (!day) return <div key={index} style={{ minHeight: '52px' }} />;
+            
+            const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            
+            return (
+              <button
+                key={index}
+                onClick={() => {
                   const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                   onSelectDate(selectedDate);
-                }
-              }}
-              disabled={!day}
-              style={{
-                padding: '8px 4px',
-                border: 'none',
-                borderRadius: 6,
-                background: !day ? 'transparent' :
-                  isToday(day) ? '#1a73e8' : '#f8f9fa',
-                color: !day ? 'transparent' :
-                  isToday(day) ? 'white' : '#000',
-                cursor: day ? 'pointer' : 'default',
-                fontSize: '14px',
-                minHeight: '36px'
-              }}
-            >
-              {day}
-            </button>
-          ))}
+                }}
+                style={{
+                  padding: '12px 4px',
+                  border: `1px solid ${softColors.border}`,
+                  borderRadius: '12px',
+                  background: isToday(day) ? softColors.today : softColors.background,
+                  color: isToday(day) ? '#FFFFFF' : softColors.text,
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  minHeight: '52px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                }}
+                onMouseOver={(e) => {
+                  if (!isToday(day)) {
+                    e.target.style.background = '#E8F4FD';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isToday(day)) {
+                    e.target.style.background = isToday(day) ? softColors.today : softColors.background;
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+                  }
+                }}
+              >
+                {day}
+                <DateDot date={cellDate} tasksByDate={tasksByDate} />
+              </button>
+            );
+          })}
         </div>
 
         <button
           onClick={onClose}
           style={{
             width: '100%',
-            padding: 10,
-            marginTop: 15,
-            background: '#ccc',
-            color: '#000',
+            padding: '14px',
+            background: softColors.primary,
+            color: '#FFFFFF',
             border: 'none',
-            borderRadius: 5,
-            cursor: 'pointer'
+            borderRadius: '12px',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = '#7A8FB5';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = softColors.primary;
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
           }}
         >
           关闭
@@ -3014,6 +3187,10 @@ const DatePickerModal = ({ onClose, onSelectDate }) => {
     </div>
   );
 };
+
+ 
+
+
 
 // 删除确认模态框
 const DeleteConfirmModal = ({ task, selectedDate, onClose, onDelete }) => {
@@ -8569,6 +8746,7 @@ if (isInitialized && todayTasks.length === 0) {
         <DatePickerModal
           onClose={() => setShowDatePickerModal(false)}
           onSelectDate={handleDateSelect}
+          tasksByDate={tasksByDate}  // 添加这行
         />
       )}
 
