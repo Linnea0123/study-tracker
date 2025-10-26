@@ -4939,6 +4939,17 @@ const TaskItem = ({
   const [showProgressControls, setShowProgressControls] = useState(false);
   
 
+  console.log('🔍 TaskItem 调试:', {
+    id: task.id,
+    text: task.text,
+    isCrossDate: task.isCrossDate,
+    isWeekTask: task.isWeekTask,
+    crossDateId: task.crossDateId,
+    crossDates: task.crossDates
+  });
+
+
+  
 // 在 TaskItem 组件中，修复计时器状态判断
 const isThisTaskRunning = activeTimer && (
   activeTimer.taskId === task.id || 
@@ -5050,7 +5061,11 @@ const handleTimerClick = () => {
                   fontSize: "14px",
                 }}
               >
-                {task.isCrossDate && "我 "}
+                  {task.isCrossDate && (
+            <span title="跨日期任务" style={{ flexShrink: 0 }}>
+              📅
+            </span>
+          )}
                 {task.text}
                 {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
                 {task.isWeekTask && " 🌟"}
