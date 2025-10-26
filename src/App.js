@@ -4939,15 +4939,24 @@ const TaskItem = ({
   const [showProgressControls, setShowProgressControls] = useState(false);
   
 
-  console.log('🔍 TaskItem 调试:', {
-    id: task.id,
-    text: task.text,
-    isCrossDate: task.isCrossDate,
-    isWeekTask: task.isWeekTask,
-    crossDateId: task.crossDateId,
-    crossDates: task.crossDates
+  console.log('🔍 完整任务对象:', task);
+  console.log('🎯 标识字段检查:', {
+    'task.isCrossDate': task.isCrossDate,
+    'task.isWeekTask': task.isWeekTask,
+    'typeof isCrossDate': typeof task.isCrossDate,
+    '存在isCrossDate字段': 'isCrossDate' in task,
+    '存在isWeekTask字段': 'isWeekTask' in task,
+    '所有字段': Object.keys(task)
   });
 
+  // 测试各种可能的条件
+  console.log('🧪 条件测试:', {
+    '直接判断': task.isCrossDate,
+    '严格等于true': task.isCrossDate === true,
+    '宽松等于true': task.isCrossDate === true,
+    '转换为布尔值': Boolean(task.isCrossDate),
+    '双重非运算': !!task.isCrossDate
+  });
 
   
 // 在 TaskItem 组件中，修复计时器状态判断
@@ -5061,6 +5070,20 @@ const handleTimerClick = () => {
                   fontSize: "14px",
                 }}
               >
+                 {/* 🧪 测试1: 强制显示图标 */}
+  <span title="测试图标" style={{ flexShrink: 0, color: 'red' }}>
+    🔴
+  </span>
+  
+  {/* 🧪 测试2: 检查 isCrossDate 值 */}
+  {console.log('🧪 渲染时 isCrossDate:', task.isCrossDate) || null}
+  
+  {/* 🧪 测试3: 各种条件测试 */}
+  {true && (
+    <span title="总是显示" style={{ flexShrink: 0, color: 'green' }}>
+      ✅
+    </span>
+  )}
                   {task.isCrossDate && (
             <span title="跨日期任务" style={{ flexShrink: 0 }}>
               📅
