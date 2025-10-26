@@ -1,180 +1,21 @@
-.task-li-swiped {
-  transform: translateX(-80px);
-  transition: transform 0.18s ease;
-}
-
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .task-li-swiped {
-    transform: translateX(-60px);
-  }
-  
-  /* 在小屏幕上调整统计方块的大小 */
-  .stats-container {
-    flex-direction: column;
-  }
-  
-  .stats-box {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-}
-
-/* 基础样式重置 */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background-color: #f5faff;
-}
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* 树状图样式 */
-.recharts-treemap {
-  font-size: 12px;
-}
-
-.recharts-treemap-depth-0 {
-  stroke: #fff;
-  stroke-width: 2px;
-}
-
-/* 弹窗动画 */
-.modal-enter {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
-.modal-enter-active {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.modal-exit {
-  opacity: 1;
-}
-
-.modal-exit-active {
-  opacity: 0;
-  transform: scale(0.9);
-  transition: opacity 300ms, transform 300ms;
-}
-
-/* 按钮悬停效果 */
-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
-}
-
-/* 输入框焦点效果 */
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
-  
-  /* 调整统计弹窗大小 */
-  .stats-modal {
-    width: 95% !important;
-    margin: 10px !important;
-  }
-  
-  /* 调整树状图大小 */
-  .recharts-wrapper {
-    width: 100% !important;
-  }
-}
-/* 移动端适配 */
-@media screen and (max-width: 480px) {
-  .stats-modal {
-    width: 95% !important;
-    padding: 10px !important;
-  }
-  
-  .stats-modal h2 {
-    font-size: 1.2rem !important;
-  }
-  
-  .stats-modal h3 {
-    font-size: 1rem !important;
-    margin-bottom: 5px !important;
-  }
-  
-  .recharts-surface {
-    overflow: visible !important;
-  }
-  
-  .recharts-legend-wrapper {
-    display: none !important;
-  }
-}
-/* 禁用所有元素的悬停效果 */
-button, [role="button"], label, [type="button"], [type="submit"], .btn {
-  transition: none !important;
-}
-
-button:hover, [role="button"]:hover, label:hover, 
-[type="button"]:hover, [type="submit"]:hover, .btn:hover {
-  opacity: 1 !important;
-  transform: none !important;
-  background-color: initial !important;
-  color: initial !important;
-  filter: none !important;
-}
-
-/* 强制覆盖所有按钮的点击状态 */
-button:active, 
-button:focus, 
-button:hover,
-button:active:hover,
-button:focus:hover {
-  background-color: #1a73e8 !important;
-  color: #ffffff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* 特别针对添加任务按钮 */
-.action-button:active,
-.action-button:focus,
-.action-button:hover,
-.action-button:active:hover,
-.action-button:focus:hover {
-  background-color: #1a73e8 !important;
-  color: #ffffff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
+{task.isCrossDate && (
+  <span 
+    style={{ 
+      flexShrink: 0,
+      display: "inline-block !important",
+      visibility: "visible !important",
+      opacity: "1 !important",
+      backgroundColor: "#e8f0fe",
+      color: "#1a73e8",
+      padding: "2px 6px",
+      borderRadius: "4px",
+      border: "2px solid #1a73e8",
+      fontSize: "10px",
+      fontWeight: "bold",
+      zIndex: 9999,
+      position: "relative"
+    }}
+  >
+    跨日期
+  </span>
+)}
