@@ -4701,11 +4701,20 @@ const TaskItem = ({
   const [showProgressControls, setShowProgressControls] = useState(false);
   
 
-  const isThisTaskRunning = activeTimer && (
-    activeTimer.taskId === task.id || 
-    (task.isWeekTask && activeTimer.taskText === task.text)
-  );
-  
+// 在 TaskItem 组件中，修复计时器状态判断
+const isThisTaskRunning = activeTimer && (
+  activeTimer.taskId === task.id || 
+  (task.isWeekTask && activeTimer.taskText === task.text)
+);
+
+// 在计时器按钮的点击处理中
+const handleTimerClick = () => {
+  if (isThisTaskRunning) {
+    onPauseTimer(task);
+  } else {
+    onStartTimer(task);
+  }
+};
 
 
 
@@ -4748,14 +4757,7 @@ const TaskItem = ({
   // 计算是否为长文本
   const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
 
-  // 处理计时器点击
-  const handleTimerClick = () => {
-    if (isTimerRunning) {
-      onPauseTimer(task);
-    } else {
-      onStartTimer(task);
-    }
-  };
+  
 
   // 处理进度调整
   const handleProgressAdjust = (increment) => {
@@ -5449,37 +5451,37 @@ useEffect(() => {
   
   // 在状态更新后强制渲染
  
-  const editSubTask = (task, subTaskIndex, newText) => {
-    if (newText && newText.trim() !== '') {
-      if (task.isWeekTask) {
-        const updatedTasksByDate = { ...tasksByDate };
-        Object.keys(updatedTasksByDate).forEach(date => {
-          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-            t.isWeekTask && t.text === task.text ? {
-              ...t,
-              subTasks: t.subTasks.map((st, index) => 
-                index === subTaskIndex ? { ...st, text: newText.trim() } : st
-              )
-            } : t
-          );
-        });
-        setTasksByDate(updatedTasksByDate);
-      } else {
-        setTasksByDate(prev => ({
-          ...prev,
-          [selectedDate]: prev[selectedDate].map(t =>
-            t.id === task.id ? {
-              ...t,
-              subTasks: t.subTasks.map((st, index) => 
-                index === subTaskIndex ? { ...st, text: newText.trim() } : st
-              )
-            } : t
-          )
-        }));
-      }
-    }
-  };
+// 修复 editSubTask 函数
+const editSubTask = (task, subTaskIndex, newText) => {
+  if (newText && newText.trim() !== '') {
+    const updateTaskWithSubTaskEdit = (t) => {
+      const currentSubTasks = t.subTasks || [];
+      return {
+        ...t,
+        subTasks: currentSubTasks.map((st, index) => 
+          index === subTaskIndex ? { ...st, text: newText.trim() } : st
+        )
+      };
+    };
 
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? updateTaskWithSubTaskEdit(t) : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? updateTaskWithSubTaskEdit(t) : t
+        )
+      }));
+    }
+  }
+};
 
   
 
@@ -6193,58 +6195,74 @@ useEffect(() => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [activeTimer, elapsedTime]);
   
-  // 2. 修复计时器状态恢复
-  useEffect(() => {
-    const restoreTimer = () => {
-      try {
-        const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
-        console.log('🔍 尝试恢复计时器:', saved);
-        
-        if (saved) {
-          const timerData = JSON.parse(saved);
-          
-          // 验证数据完整性
-          if (timerData.taskId && timerData.startTime) {
-            const now = Date.now();
-            const savedTime = timerData.savedAt || timerData.startTime;
-            const timeSinceSave = Math.floor((now - savedTime) / 1000);
-            
-            // 计算总时间：保存时的经过时间 + 保存后到现在的时间
-            const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
-            
-            console.log('⏱️ 恢复计时器详情:', {
-              任务ID: timerData.taskId,
-              保存时间: new Date(savedTime).toLocaleString(),
-              当前时间: new Date(now).toLocaleString(),
-              保存后经过: timeSinceSave + '秒',
-              总时间: totalElapsed + '秒'
-            });
   
-            // 恢复状态
-            setActiveTimer({
-              taskId: timerData.taskId,
-              startTime: timerData.startTime
-            });
-            setElapsedTime(totalElapsed);
-            
-            console.log('✅ 计时器恢复成功');
+
+
+// 修复计时器状态恢复的 useEffect
+useEffect(() => {
+  const restoreTimer = () => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
+      console.log('🔍 尝试恢复计时器:', saved);
+      
+      if (saved) {
+        const timerData = JSON.parse(saved);
+        
+        // 验证数据完整性 - 添加更严格的检查
+        if (timerData.taskId && timerData.startTime && timerData.savedAt) {
+          const now = Date.now();
+          const savedTime = timerData.savedAt;
+          const timeSinceSave = Math.floor((now - savedTime) / 1000);
+          
+          // 如果暂停时间超过5分钟，不恢复计时器
+          if (timeSinceSave > 300) { // 5分钟
+            console.log('⏰ 计时器暂停时间过长，不恢复');
+            localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
             return;
           }
+          
+          // 计算总时间：保存时的经过时间 + 保存后到现在的时间
+          const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
+          
+          console.log('⏱️ 恢复计时器详情:', {
+            任务ID: timerData.taskId,
+            保存时间: new Date(savedTime).toLocaleString(),
+            当前时间: new Date(now).toLocaleString(),
+            保存后经过: timeSinceSave + '秒',
+            总时间: totalElapsed + '秒'
+          });
+
+          // 恢复状态
+          setActiveTimer({
+            taskId: timerData.taskId,
+            startTime: timerData.startTime,
+            taskText: timerData.taskText,
+            isWeekTask: timerData.isWeekTask
+          });
+          setElapsedTime(totalElapsed);
+          
+          console.log('✅ 计时器恢复成功');
+          return;
         }
-      } catch (error) {
-        console.error('❌ 恢复计时器失败:', error);
       }
-      
-      // 如果没有有效数据，清理存储
-      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      setActiveTimer(null);
+    } catch (error) {
+      console.error('❌ 恢复计时器失败:', error);
+    }
     
-    };
-  
-    // 组件加载时立即恢复
-    restoreTimer();
-  }, []); // 空依赖数组，只在组件挂载时执行一次
-  
+    // 如果没有有效数据，清理存储
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+    setActiveTimer(null);
+    setElapsedTime(0);
+  };
+
+  // 组件加载时立即恢复
+  restoreTimer();
+}, []); // 空依赖数组，只在组件挂载时执行一次
+
+
+
+
+
   // 3. 修复实时计时器
   useEffect(() => {
     let intervalId = null;
@@ -6443,16 +6461,16 @@ useEffect(() => {
       return updatedTasksByDate;
     });
   
-    // 清理状态和存储
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-    setActiveTimer(null);
-    setElapsedTime(0);
-    
-    console.log('🗑️ 清理计时器存储和状态');
+    // 关键修复：在状态更新完成后再清理计时器状态
+    setTimeout(() => {
+      // 清理状态和存储
+      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+      setActiveTimer(null);
+      setElapsedTime(0);
+      
+      console.log('🗑️ 清理计时器存储和状态');
+    }, 100); // 添加短暂延迟确保状态更新完成
   };
-
-
-
 
 
 
@@ -7309,16 +7327,20 @@ const handleAddWeekTask = (text) => {
 
  
 
-// 切换任务完成状态
+
+// 修复后的 toggleDone 函数
 const toggleDone = (task) => {
   const wasDone = task.done;
 
   const updateTaskWithDone = (t, doneState) => {
+    // 确保 subTasks 存在，如果不存在则初始化为空数组
+    const currentSubTasks = t.subTasks || [];
+    
     // 如果主任务被标记为完成，所有子任务也自动完成
     // 如果主任务被取消完成，子任务状态保持不变
     const newSubTasks = doneState 
-      ? t.subTasks.map(st => ({ ...st, done: true }))
-      : t.subTasks;
+      ? currentSubTasks.map(st => ({ ...st, done: true }))
+      : currentSubTasks;
     
     return {
       ...t,
@@ -7360,13 +7382,13 @@ const toggleDone = (task) => {
 
 
 
-
-
-
-// 切换子任务完成状态
+// 修复 toggleSubTask 函数
 const toggleSubTask = (task, subTaskIndex) => {
   const updateTaskWithSubTasks = (t) => {
-    const newSubTasks = t.subTasks.map((st, index) => 
+    // 确保 subTasks 存在
+    const currentSubTasks = t.subTasks || [];
+    
+    const newSubTasks = currentSubTasks.map((st, index) => 
       index === subTaskIndex ? { ...st, done: !st.done } : st
     );
     
@@ -7397,6 +7419,10 @@ const toggleSubTask = (task, subTaskIndex) => {
     }));
   }
 };
+
+
+
+
 
 
   // 打开任务编辑模态框
