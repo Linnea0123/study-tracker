@@ -5070,25 +5070,30 @@ const handleTimerClick = () => {
                   fontSize: "14px",
                 }}
               >
-                 {/* 🧪 测试1: 强制显示图标 */}
-  <span title="测试图标" style={{ flexShrink: 0, color: 'red' }}>
-    🔴
-  </span>
-  
-  {/* 🧪 测试2: 检查 isCrossDate 值 */}
-  {console.log('🧪 渲染时 isCrossDate:', task.isCrossDate) || null}
-  
-  {/* 🧪 测试3: 各种条件测试 */}
-  {true && (
-    <span title="总是显示" style={{ flexShrink: 0, color: 'green' }}>
-      ✅
+                
+                {task.isCrossDate && (
+    <span 
+      style={{ 
+        display: "inline-block !important",
+        visibility: "visible !important",
+        opacity: "1 !important",
+        backgroundColor: "#1a73e8",
+        color: "white",
+        padding: "3px 8px",
+        borderRadius: "6px",
+        border: "2px solid #0b52b0",
+        fontSize: "11px",
+        fontWeight: "bold",
+        zIndex: 1000,
+        position: "relative",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+        minWidth: "40px",
+        textAlign: "center"
+      }}
+    >
+      📅跨日期
     </span>
   )}
-                  {task.isCrossDate && (
-            <span title="跨日期任务" style={{ flexShrink: 0 }}>
-              📅
-            </span>
-          )}
                 {task.text}
                 {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
                 {task.isWeekTask && " 🌟"}
