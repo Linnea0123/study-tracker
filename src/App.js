@@ -4939,6 +4939,20 @@ const TaskItem = ({
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const [showProgressControls, setShowProgressControls] = useState(false);
   
+
+// 详细检查移动端的数据差异
+if (isMobile) {
+  console.log('📱 移动端任务检查:', {
+    文本: task.text,
+    crossDateId: task.crossDateId,
+    isCrossDate: task.isCrossDate,
+    id: task.id,
+    所有字段: Object.keys(task)
+  });
+}
+
+
+
 // 在 TaskItem 中添加更详细的调试
 console.log('🔍 详细对比:', {
   任务文本: task.text,
@@ -5083,29 +5097,49 @@ const handleTimerClick = () => {
                 }}
               >
                 
-                {isMobile && task.isCrossDate && (
-    <span 
-      style={{ 
-        display: "inline-block !important",
-        visibility: "visible !important",
-        opacity: "1 !important",
-        backgroundColor: "#1a73e8",
-        color: "white",
-        padding: "3px 8px",
-        borderRadius: "6px",
-        border: "2px solid #0b52b0",
-        fontSize: "11px",
-        fontWeight: "bold",
-        zIndex: 1000,
-        position: "relative",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-        minWidth: "40px",
-        textAlign: "center"
-      }}
-    >
-      📅跨日期
+       {/* 🧪 测试1: 所有有 crossDateId 的任务 */}
+  {isMobile && task.crossDateId && (
+    <div style={{
+      backgroundColor: "red",
+      color: "white",
+      padding: "2px 6px",
+      borderRadius: "4px",
+      fontSize: "10px",
+      marginBottom: "2px"
+    }}>
+      有ID: {task.crossDateId.slice(0, 6)}...
+    </div>
+  )}
+
+  {/* 🧪 测试2: 真正的跨日期任务（有 crossDates 数组） */}
+  {isMobile && task.crossDates && task.crossDates.length > 0 && (
+    <div style={{
+      backgroundColor: "green", 
+      color: "white",
+      padding: "2px 6px",
+      borderRadius: "4px",
+      fontSize: "10px",
+      marginBottom: "2px"
+    }}>
+      真跨日期: {task.crossDates.length}天
+    </div>
+  )}
+
+  {/* 🧪 测试3: 原始逻辑 */}
+  {task.isCrossDate && (
+    <span style={{ 
+      backgroundColor: "#1a73e8",
+      color: "white",
+      padding: "3px 8px",
+      borderRadius: "6px",
+      fontSize: "11px",
+      fontWeight: "bold"
+    }}>
+      跨日期
     </span>
   )}
+    >
+    
                 {task.text}
                 {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
                 {task.isWeekTask && " 🌟"}
@@ -5717,6 +5751,31 @@ function App() {
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
   
+
+
+// 修复后的代码
+useEffect(() => {
+  const checkMobileDataDiff = () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) return;
+    
+    console.log('📱 移动端数据详细检查:');
+    Object.entries(tasksByDate).forEach(([date, tasks]) => {
+      tasks.forEach(task => {
+        console.log(`  ${date} - "${task.text}":`, {
+          crossDateId: task.crossDateId,
+          isCrossDate: task.isCrossDate,
+          id: task.id
+        });
+      });
+    });
+  };
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    setTimeout(checkMobileDataDiff, 1000);
+  }
+}, [tasksByDate]); // 只需要 tasksByDate 作为依赖
 
 
 
