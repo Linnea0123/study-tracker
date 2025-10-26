@@ -5050,7 +5050,7 @@ const handleTimerClick = () => {
                   fontSize: "14px",
                 }}
               >
-                {task.isCrossDate && "📅 "}
+                {task.isCrossDate && "我 "}
                 {task.text}
                 {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
                 {task.isWeekTask && " 🌟"}
