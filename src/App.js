@@ -5811,14 +5811,11 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
   );
 };
 
-
-
-// 在 App 组件中添加跨日期任务函数
 const handleCrossDateTask = (task, targetDates) => {
-  const taskId = task.id || `cross_${Date.now()}`;
-
-  console.log('创建跨日期任务:', {
-    任务文本: task.text,
+  const taskId = task.crossDateId || task.id || `cross_${Date.now()}`;
+  
+  console.log('创建/更新跨日期任务:', {
+    任务: task.text,
     跨日期ID: taskId,
     目标日期: targetDates
   });
@@ -5826,25 +5823,36 @@ const handleCrossDateTask = (task, targetDates) => {
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
-    // 在所有目标日期创建任务
     targetDates.forEach(date => {
       if (!newTasksByDate[date]) {
         newTasksByDate[date] = [];
       }
       
-      // 检查是否已存在相同任务
-      const exists = newTasksByDate[date].some(
-        t => t.crossDateId === taskId || (t.text === task.text && t.category === task.category)
+      // 查找是否已存在相同任务（按文本和分类）
+      const existingTaskIndex = newTasksByDate[date].findIndex(
+        t => t.text === task.text && t.category === task.category
       );
       
-      if (!exists) {
+      if (existingTaskIndex !== -1) {
+        // 更新现有任务为跨日期任务
+        console.log(`更新现有任务在 ${date}`);
+        newTasksByDate[date][existingTaskIndex] = {
+          ...newTasksByDate[date][existingTaskIndex],
+          crossDateId: taskId,
+          isCrossDate: true,
+          crossDates: targetDates,
+          done: task.done // 保持原有完成状态
+        };
+      } else {
+        // 创建新的跨日期任务
+        console.log(`创建新任务在 ${date}`);
         newTasksByDate[date].push({
           ...task,
           id: `${taskId}_${date}`,
-          crossDateId: taskId, // 用于标识是同一个跨日期任务
+          crossDateId: taskId,
           isCrossDate: true,
-          crossDates: targetDates, // 记录所有显示日期
-          done: task.done || false // 保持原有完成状态或设为未完成
+          crossDates: targetDates,
+          done: false // 新创建的任务默认未完成
         });
       }
     });
@@ -5854,7 +5862,6 @@ const handleCrossDateTask = (task, targetDates) => {
   
   alert(`任务已设置在 ${targetDates.length} 个日期显示`);
 };
-
 
 
 // 修改 toggleDone 函数，支持跨日期任务同步
