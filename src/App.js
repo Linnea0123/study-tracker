@@ -5424,7 +5424,29 @@ function App() {
   const [editingAchievement, setEditingAchievement] = useState(null);
   
 
-
+// 添加 beforeunload 事件监听，在页面关闭前保存
+useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (activeTimer) {
+        const timerData = {
+          taskId: activeTimer.taskId,
+          startTime: activeTimer.startTime,
+          elapsedBeforeStart: elapsedTime,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+        console.log('🔒 页面关闭，保存计时器状态');
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [activeTimer, elapsedTime]);
+  
+  // 这里就是 export default App; 应该紧接着出现
   
   // 在状态更新后强制渲染
  
@@ -5940,63 +5962,82 @@ useEffect(() => {
   };
 }, [activeTimer, elapsedTime]);
 
-
 // 恢复计时器状态
 useEffect(() => {
-  const restoreTimerState = async () => {
-    try {
-      const savedTimer = await loadMainData('activeTimer');
-      if (savedTimer && savedTimer.taskId && savedTimer.startTime) {
-        const currentTime = Date.now();
-        const timeSinceStart = Math.floor((currentTime - savedTimer.startTime) / 1000);
-        
-        // 直接使用保存的已用时间 + 从保存到现在的时间
-        const totalElapsed = (savedTimer.elapsedBeforeStart || 0) + timeSinceStart;
-        
-        setElapsedTime(totalElapsed);
-        setActiveTimer({
-          taskId: savedTimer.taskId,
-          startTime: savedTimer.startTime
-        });
-        
-        console.log('⏱️ 恢复计时器:', {
-          任务ID: savedTimer.taskId,
-          已保存时间: savedTimer.elapsedBeforeStart,
-          恢复后运行时间: timeSinceStart,
-          总时间: totalElapsed
-        });
+    const restoreTimerState = async () => {
+      try {
+        const savedTimerData = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
+        if (savedTimerData) {
+          const savedTimer = JSON.parse(savedTimerData);
+          
+          if (savedTimer && savedTimer.taskId && savedTimer.startTime) {
+            const currentTime = Date.now();
+            const timeSinceStart = Math.floor((currentTime - savedTimer.startTime) / 1000);
+            
+            // 计算总经过时间
+            const totalElapsed = (savedTimer.elapsedBeforeStart || 0) + timeSinceStart;
+            
+            console.log('⏱️ 恢复计时器状态:', {
+              任务ID: savedTimer.taskId,
+              开始时间: new Date(savedTimer.startTime).toLocaleString(),
+              已运行时间: timeSinceStart,
+              总经过时间: totalElapsed
+            });
+            
+            setElapsedTime(totalElapsed);
+            setActiveTimer({
+              taskId: savedTimer.taskId,
+              startTime: savedTimer.startTime
+            });
+            
+            // 验证任务是否存在
+            const todayTasks = tasksByDate[selectedDate] || [];
+            const taskExists = todayTasks.some(task => task.id === savedTimer.taskId);
+            
+            if (!taskExists) {
+              console.warn('❌ 计时器对应的任务不存在，清理计时器状态');
+              localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+              setActiveTimer(null);
+              setElapsedTime(0);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('恢复计时器状态失败:', error);
+        // 如果恢复失败，清理可能损坏的数据
+        localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
       }
-    } catch (error) {
-      console.error('恢复计时器状态失败:', error);
+    };
+  
+    if (isInitialized) {
+      restoreTimerState();
     }
-  };
+  }, [isInitialized, tasksByDate, selectedDate]);
 
-  if (isInitialized) {
-    restoreTimerState();
-  }
-}, [isInitialized]);
-
-// 保存计时器状态
+// 正确的计时器保存逻辑应该放在组件主体内，确保能访问到状态变量
 useEffect(() => {
-  const saveTimerState = async () => {
-    if (activeTimer) {
-      const timerData = {
-        taskId: activeTimer.taskId,
-        startTime: activeTimer.startTime,
-        elapsedBeforeStart: elapsedTime,
-        savedAt: new Date().toISOString()
-      };
-      await saveMainData('activeTimer', timerData);
-    } else {
-      // 没有活动计时器时清除存储
-      await saveMainData('activeTimer', null);
+    const saveTimerState = async () => {
+      if (activeTimer) {
+        const timerData = {
+          taskId: activeTimer.taskId,
+          startTime: activeTimer.startTime,
+          savedAt: Date.now()
+        };
+        await saveMainData('activeTimer', timerData);
+        console.log('💾 保存计时器状态:', {
+          任务ID: activeTimer.taskId,
+          开始时间: new Date(activeTimer.startTime).toLocaleString()
+        });
+      } else {
+        // 没有活动计时器时清除存储
+        await saveMainData('activeTimer', null);
+      }
+    };
+  
+    if (isInitialized) {
+      saveTimerState();
     }
-  };
-
-  if (isInitialized) {
-    saveTimerState();
-  }
-}, [activeTimer, elapsedTime, isInitialized]);
+  }, [activeTimer, isInitialized]); // activeTimer 必须在依赖数组中
 
 
 // 暴露实例给全局调试
@@ -6197,97 +6238,113 @@ useEffect(() => {
   };
   
   
-  // 在开始计时时添加调试
-const handleStartTimer = (task) => {
-  // 停止其他正在运行的计时器
-  if (activeTimer && activeTimer.taskId !== task.id) {
-    handlePauseTimer({ id: activeTimer.taskId });
-  }
-
-  const startTime = Date.now();
-  setActiveTimer({ taskId: task.id, startTime });
-  setElapsedTime(0);
-
-  const newRecord = {
-    id: Date.now().toString(),
-    taskId: task.id,
-    taskText: task.text,
-    category: task.category,
-    startTime: new Date().toISOString(),
-    endTime: null,
-    duration: 0
+  const handleStartTimer = (task) => {
+    // 停止其他正在运行的计时器
+    if (activeTimer && activeTimer.taskId !== task.id) {
+      handlePauseTimer({ id: activeTimer.taskId });
+    }
+  
+    const startTime = Date.now();
+    setActiveTimer({ taskId: task.id, startTime });
+    setElapsedTime(0);
+  
+    // 立即保存计时器状态到 localStorage
+    const timerData = {
+      taskId: task.id,
+      startTime: startTime,
+      elapsedBeforeStart: 0,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+  
+    const newRecord = {
+      id: Date.now().toString(),
+      taskId: task.id,
+      taskText: task.text,
+      category: task.category,
+      startTime: new Date().toISOString(),
+      endTime: null,
+      duration: 0
+    };
+    setTimerRecords(prev => [newRecord, ...prev]);
+    
+    // 添加到任务的 timeSegments
+    const newSegment = {
+      startTime: new Date().toISOString(),
+      endTime: null,
+      duration: 0
+    };
+  
+    setTasksByDate(prev => {
+      const currentTasks = prev[selectedDate] || [];
+      const updatedTasks = currentTasks.map(t =>
+        t.id === task.id ? {
+          ...t,
+          timeSegments: [...(t.timeSegments || []), newSegment]
+        } : t
+      );
+      return {
+        ...prev,
+        [selectedDate]: updatedTasks
+      };
+    });
   };
-  setTimerRecords(prev => [newRecord, ...prev]);
- // 添加到任务的 timeSegments
- const newSegment = {
-  startTime: new Date().toISOString(),
-  endTime: null,
-  duration: 0
-};
 
-setTasksByDate(prev => {
-  const currentTasks = prev[selectedDate] || [];
-  const updatedTasks = currentTasks.map(t =>
-    t.id === task.id ? {
-      ...t,
-      timeSegments: [...(t.timeSegments || []), newSegment]
-    } : t
-  );
-  return {
-    ...prev,
-    [selectedDate]: updatedTasks
-  };
-});
-  
-};
-  
-  
- // 在 handlePauseTimer 函数中修改，更新时间段：
-const handlePauseTimer = (task) => {
-  if (!activeTimer || activeTimer.taskId !== task.id) return;
 
-  const endTime = Date.now();
-  const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
-  
-  // 更新计时记录
-  setTimerRecords(prev => prev.map(record => 
-    record.taskId === task.id && !record.endTime 
-      ? {...record, endTime: new Date().toISOString(), duration: timeSpentThisSession}
-      : record
-  ));
 
-  // 更新任务的 timeSegments
-  setTasksByDate(prev => {
-    const currentTasks = prev[selectedDate] || [];
-    const updatedTasks = currentTasks.map(t => {
-      if (t.id === task.id && t.timeSegments && t.timeSegments.length > 0) {
-        const updatedSegments = [...t.timeSegments];
-        const lastSegment = updatedSegments[updatedSegments.length - 1];
-        if (lastSegment && !lastSegment.endTime) {
-          updatedSegments[updatedSegments.length - 1] = {
-            ...lastSegment,
-            endTime: new Date().toISOString(),
-            duration: timeSpentThisSession
+
+  
+  const handlePauseTimer = (task) => {
+    if (!activeTimer || activeTimer.taskId !== task.id) return;
+  
+    const endTime = Date.now();
+    const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
+    
+    // 更新计时记录
+    setTimerRecords(prev => prev.map(record => 
+      record.taskId === task.id && !record.endTime 
+        ? {...record, endTime: new Date().toISOString(), duration: timeSpentThisSession}
+        : record
+    ));
+  
+    // 清除保存的计时器状态
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+  
+    // 更新任务的 timeSegments
+    setTasksByDate(prev => {
+      const currentTasks = prev[selectedDate] || [];
+      const updatedTasks = currentTasks.map(t => {
+        if (t.id === task.id && t.timeSegments && t.timeSegments.length > 0) {
+          const updatedSegments = [...t.timeSegments];
+          const lastSegment = updatedSegments[updatedSegments.length - 1];
+          if (lastSegment && !lastSegment.endTime) {
+            updatedSegments[updatedSegments.length - 1] = {
+              ...lastSegment,
+              endTime: new Date().toISOString(),
+              duration: timeSpentThisSession
+            };
+          }
+          return {
+            ...t,
+            timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
+            timeSegments: updatedSegments
           };
         }
-        return {
-          ...t,
-          timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
-          timeSegments: updatedSegments
-        };
-      }
-      return t;
+        return t;
+      });
+  
+      return {
+        ...prev,
+        [selectedDate]: updatedTasks
+      };
     });
+  
+    setActiveTimer(null);
+    setElapsedTime(0);
+  };
+ 
 
-    return {
-      ...prev,
-      [selectedDate]: updatedTasks
-    };
-  });
-
-  setActiveTimer(null);
-  setElapsedTime(0);
-};
+  
 
 
 
@@ -10261,4 +10318,7 @@ if (isInitialized && todayTasks.length === 0) {
   );
 }
 
-export default App;
+
+  
+  
+  export default App;
