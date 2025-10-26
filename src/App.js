@@ -539,12 +539,38 @@ const TimerRecordsModal = ({ records, onClose }) => {
       <div style={{
         backgroundColor: 'white',
         padding: 20,
-        borderRadius: 10,
+        borderRadius: 15,
         width: '90%',
         maxWidth: 500,
         maxHeight: '80vh',
-        overflow: 'auto'
+        overflow: 'auto',
+        position: 'relative' // 添加相对定位
       }}>
+         {/* 右上角关闭按钮 */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            background: 'transparent',
+            border: 'none',
+            fontSize: '24px',
+            cursor: 'pointer',
+            color: '#666',
+            width: '30px',
+            height: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            zIndex: 1001
+          }}
+          title="关闭"
+        >
+          ×
+        </button>
+
         <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
           ⏱️ 计时记录
         </h3>
@@ -591,23 +617,7 @@ const TimerRecordsModal = ({ records, onClose }) => {
           </div>
         )}
         
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '12px',
-            marginTop: '15px',
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }}
-        >
-          关闭
-        </button>
+    
       </div>
     </div>
   );
@@ -818,8 +828,37 @@ const AchievementsModal = ({
         maxWidth: 500,
         maxHeight: '80vh',
         overflow: 'auto',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative' // 添加相对定位
       }}>
+ {/* 右上角关闭按钮 */}
+ <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            background: 'transparent',
+            border: 'none',
+            fontSize: '24px',
+            cursor: 'pointer',
+            color: '#666',
+            width: '30px',
+            height: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            zIndex: 1001
+          }}
+          title="关闭"
+        >
+          ×
+        </button>
+
+
+
+
         {isNew && achievements.length > 0 && (
           <div style={{ fontSize: 24, marginBottom: 10, color: '#ff6b6b', fontWeight: 'bold' }}>
             🎉 成就解锁！
@@ -992,22 +1031,7 @@ const AchievementsModal = ({
           })}
         </div>
         
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }}
-        >
-          {isNew ? '太棒了！继续努力！' : '关闭'}
-        </button>
+      
       </div>
     </div>
   );
@@ -1382,6 +1406,28 @@ const getWeekDates = (monday) => {
 // 时间表页面组件
 const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds }) => {
   const weekDates = getWeekDates(currentMonday);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null); // 新增状态
+
+
+
+// 添加详细调试
+console.log('=== 时间表调试开始 ===');
+console.log('当前周一:', currentMonday);
+console.log('周日期范围:', weekDates);
+console.log('所有任务数据:', tasksByDate);
+
+weekDates.forEach(day => {
+  const dayTasks = tasksByDate[day.date] || [];
+  console.log(`日期 ${day.date} 的任务数量:`, dayTasks.length);
+  dayTasks.forEach((task, index) => {
+    console.log(` 任务 ${index}: "${task.text}"`, {
+      timeSegments: task.timeSegments,
+      scheduledTime: task.scheduledTime
+    });
+  });
+});
+console.log('=== 时间表调试结束 ===');
+
 
   // 生成时间槽：从6:00到22:00，每30分钟一个间隔
   const timeSlots = [];
@@ -1392,88 +1438,162 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     }
   }
 
-  // 获取任务在时间表中的位置信息
+ 
   const getTaskTimeInfo = (task, date) => {
     if (!task) return null;
-
+  
     // 如果有计划时间，使用计划时间
     if (task.scheduledTime) {
       const [startTime, endTime] = task.scheduledTime.split('-');
       return { startTime, endTime, type: 'scheduled' };
     }
-
+  
     // 如果有计时时间段，显示每个时间段
     if (task.timeSegments && task.timeSegments.length > 0) {
-      // 返回第一个时间段
-      const segment = task.timeSegments[0];
-      if (segment.startTime && segment.endTime) {
-        const startTimeDate = new Date(segment.startTime);
-        const startTime = `${startTimeDate.getHours().toString().padStart(2, '0')}:${startTimeDate.getMinutes().toString().padStart(2, '0')}`;
-
-        const endTimeDate = new Date(segment.endTime);
-        const endTime = `${endTimeDate.getHours().toString().padStart(2, '0')}:${endTimeDate.getMinutes().toString().padStart(2, '0')}`;
-
-        return { startTime, endTime, type: 'actual' };
+      // 查找该日期对应的计时时间段
+      const dateSegments = task.timeSegments.filter(segment => {
+        if (segment.startTime) {
+          // 直接使用本地时间，不要手动加8小时
+          const localDate = new Date(segment.startTime);
+          const segmentDate = localDate.toISOString().split('T')[0];
+          return segmentDate === date;
+        }
+        return false;
+      });
+  
+      if (dateSegments.length > 0) {
+        // 使用第一个有效时间段
+        const segment = dateSegments[0];
+        if (segment.startTime && segment.endTime) {
+          // 使用本地时间
+          const startTimeLocal = new Date(segment.startTime);
+          const endTimeLocal = new Date(segment.endTime);
+          
+          const startTime = `${startTimeLocal.getHours().toString().padStart(2, '0')}:${startTimeLocal.getMinutes().toString().padStart(2, '0')}`;
+          const endTime = `${endTimeLocal.getHours().toString().padStart(2, '0')}:${endTimeLocal.getMinutes().toString().padStart(2, '0')}`;
+  
+          console.log('本地时间段:', { 
+            original: `${segment.startTime} - ${segment.endTime}`,
+            local: `${startTime} - ${endTime}`,
+            本地小时: startTimeLocal.getHours(),
+            本地分钟: startTimeLocal.getMinutes()
+          });
+          
+          return { startTime, endTime, type: 'actual' };
+        }
       }
     }
-
+  
     return null;
   };
 
-  // 检查时间是否在区间内
-  const isTimeInRange = (time, startTime, endTime) => {
-    const [timeHour, timeMinute] = time.split(':').map(Number);
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [endHour, endMinute] = endTime.split(':').map(Number);
 
-    const timeValue = timeHour * 60 + timeMinute;
-    const startValue = startHour * 60 + startMinute;
-    const endValue = endHour * 60 + endMinute;
 
-    return timeValue >= startValue && timeValue < endValue;
+
+
+// 检查时间是否在区间内
+const isTimeInRange = (time, startTime, endTime) => {
+  const [timeHour, timeMinute] = time.split(':').map(Number);
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+
+  const timeValue = timeHour * 60 + timeMinute;
+  const startValue = startHour * 60 + startMinute;
+  const endValue = endHour * 60 + endMinute;
+
+  const result = timeValue >= startValue && timeValue < endValue;
+  console.log(`⏰ 时间比较: ${time} (${timeValue}) 在 ${startTime}-${endTime} (${startValue}-${endValue}) 之间?`, result);
+
+  return result;
+};
+  
+  
+// 在 SchedulePage 组件中修改 getTasksForTimeSlot 函数
+const getTasksForTimeSlot = (time, dayIndex) => {
+  const date = weekDates[dayIndex].date;
+  const dayTasks = tasksByDate[date] || [];
+
+  return dayTasks.filter(task => {
+    const timeInfo = getTaskTimeInfo(task, date);
+    if (!timeInfo) return false;
+
+    // 对于实际计时任务，即使时间段很短也显示
+    if (timeInfo.type === 'actual') {
+      const [timeHour, timeMinute] = time.split(':').map(Number);
+      const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
+      
+      const timeValue = timeHour * 60 + timeMinute;
+      const startValue = startHour * 60 + startMinute;
+      
+      // 如果当前时间槽包含任务的开始时间，就显示（即使很短）
+      const timeSlotDuration = 30; // 每个时间槽30分钟
+      const isAtStartTime = timeValue >= startValue && timeValue < startValue + timeSlotDuration;
+      
+      if (isAtStartTime) {
+        console.log(`✅ 显示短时间段任务 "${task.text}" 在时间槽 ${time}`);
+        return true;
+      }
+    }
+
+    // 对于计划任务，使用原来的逻辑
+    return isTimeInRange(time, timeInfo.startTime, timeInfo.endTime);
+  });
+};
+
+
+
+
+
+const getTaskStyle = (task, timeInfo) => {
+  const baseStyle = {
+    padding: '2px 4px',
+    margin: '1px 0',
+    borderRadius: '3px',
+    fontSize: '10px',
+    color: 'white',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer'
   };
 
-  // 获取时间单元格的任务
-  const getTasksForTimeSlot = (time, dayIndex) => {
-    const date = weekDates[dayIndex].date;
-    const dayTasks = tasksByDate[date] || [];
+  // 按类别颜色显示
+  const category = categories.find(cat => cat.name === task.category);
+  const categoryColor = category ? category.color : '#666';
 
-    return dayTasks.filter(task => {
-      const timeInfo = getTaskTimeInfo(task, date);
-      if (!timeInfo) return false;
-
-      return isTimeInRange(time, timeInfo.startTime, timeInfo.endTime);
-    });
-  };
-
-  // 获取任务显示样式
-  const getTaskStyle = (task, timeInfo) => {
-    const baseStyle = {
-      padding: '2px 4px',
-      margin: '1px 0',
-      borderRadius: '3px',
-      fontSize: '10px',
-      color: 'white',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      cursor: 'pointer'
+  if (timeInfo.type === 'scheduled') {
+    return {
+      ...baseStyle,
+      backgroundColor: task.done ? '#4CAF50' : categoryColor, // 使用类别颜色
+      border: task.done ? '1px solid #45a049' : `1px solid ${categoryColor}`
     };
-
-    if (timeInfo.type === 'scheduled') {
+  } else {
+    // 实际计时任务 - 根据时间段长度调整样式
+    const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
+    const [endHour, endMinute] = timeInfo.endTime.split(':').map(Number);
+    const duration = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+    
+    // 短时间段用细条表示
+    if (duration < 30) {
       return {
         ...baseStyle,
-        backgroundColor: task.done ? '#4CAF50' : '#FF9800',
-        border: task.done ? '1px solid #45a049' : '1px solid #e68900'
+        backgroundColor: categoryColor, // 使用类别颜色
+        border: `1px solid ${categoryColor}`,
+        height: '8px',
+        minHeight: '8px',
+        fontSize: '8px',
+        padding: '1px 2px',
+        lineHeight: '1'
       };
     } else {
       return {
         ...baseStyle,
-        backgroundColor: '#2196F3',
-        border: '1px solid #1976D2'
+        backgroundColor: categoryColor, // 使用类别颜色
+        border: `1px solid ${categoryColor}`
       };
     }
-  };
+  }
+};
 
   return (
     <div style={{
@@ -1590,36 +1710,50 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                 {time}
               </div>
 
-              {/* 每天的单元格 */}
-              {weekDates.map((day, dayIndex) => {
-                const tasks = getTasksForTimeSlot(time, dayIndex);
-                return (
-                  <div
-                    key={day.date}
-                    style={{
-                      padding: '2px',
-                      minHeight: '40px',
-                      borderRight: dayIndex < 6 ? '1px solid #e0e0e0' : 'none',
-                      backgroundColor: tasks.length > 0 ? '#f8f9fa' : 'transparent'
-                    }}
-                  >
-                    {tasks.map((task, taskIndex) => {
-                      const timeInfo = getTaskTimeInfo(task, day.date);
-                      if (!timeInfo) return null;
 
-                      return (
-                        <div
-                          key={taskIndex}
-                          style={getTaskStyle(task, timeInfo)}
-                          title={`${task.text} (${task.category}) ${timeInfo.startTime}-${timeInfo.endTime}`}
-                        >
-                          {task.text}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+              
+            
+{weekDates.map((day, dayIndex) => {
+  const tasks = getTasksForTimeSlot(time, dayIndex);
+  return (
+    <div
+      key={day.date}
+      style={{
+        padding: '2px',
+        minHeight: '40px',
+        borderRight: dayIndex < 6 ? '1px solid #e0e0e0' : 'none',
+        backgroundColor: tasks.length > 0 ? '#f8f9fa' : 'transparent',
+        cursor: tasks.length > 0 ? 'pointer' : 'default' // 添加点击指针
+      }}
+      onClick={() => {
+        if (tasks.length > 0) {
+          setSelectedTimeSlot({
+            time,
+            date: day.date,
+            dateLabel: day.fullLabel,
+            tasks: tasks
+          });
+        }
+      }}
+    >
+      {tasks.map((task, taskIndex) => {
+        const timeInfo = getTaskTimeInfo(task, day.date);
+        if (!timeInfo) return null;
+
+        return (
+          <div
+            key={taskIndex}
+            style={getTaskStyle(task, timeInfo)}
+            title={`${task.text} (${task.category}) ${timeInfo.startTime}-${timeInfo.endTime}`}
+          >
+            {task.text}
+          </div>
+        );
+      })}
+    </div>
+  );
+})}
+
             </div>
           ))}
         </div>
@@ -1643,6 +1777,10 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
               }, 0)
             } 个
           </div>
+
+
+
+
           <div>
             <strong>已完成:</strong> {
               weekDates.reduce((total, day) => {
@@ -1671,6 +1809,118 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
           </div>
         </div>
       </div>
+
+ {/* === 时间线详情弹窗 - 放在这里 === */}
+ {selectedTimeSlot && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }} onClick={() => setSelectedTimeSlot(null)}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: 20,
+          borderRadius: 10,
+          width: '90%',
+          maxWidth: 400,
+          maxHeight: '80vh',
+          overflow: 'auto'
+        }} onClick={e => e.stopPropagation()}>
+          <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+            ⏱️ 时间段详情
+          </h3>
+          
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 5 }}>
+              {selectedTimeSlot.dateLabel} {selectedTimeSlot.time}
+            </div>
+            <div style={{ fontSize: 12, color: '#666' }}>
+              共 {selectedTimeSlot.tasks.length} 个任务
+            </div>
+          </div>
+
+          <div style={{ maxHeight: 300, overflow: 'auto' }}>
+            {selectedTimeSlot.tasks.map((task, index) => {
+              const timeInfo = getTaskTimeInfo(task, selectedTimeSlot.date);
+              return (
+                <div key={index} style={{
+                  padding: '12px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  marginBottom: '8px',
+                  backgroundColor: '#f8f9fa'
+                }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                    {task.text}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                    📚 {task.category}
+                  </div>
+                  {timeInfo && (
+                    <>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                        🕐 {timeInfo.startTime} - {timeInfo.endTime}
+                      </div>
+                      
+                    </>
+                  )}
+                  {task.timeSegments && task.timeSegments.map((segment, segIndex) => {
+                    const startLocal = new Date(segment.startTime);
+                    const endLocal = new Date(segment.endTime);
+                    return (
+                      <div key={segIndex} style={{
+                        fontSize: '11px',
+                        color: '#888',
+                        padding: '4px',
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginTop: '4px'
+                      }}>
+                        <div>记录 {segIndex + 1}:</div>
+                        <div>开始: {startLocal.toLocaleString()}</div>
+                        <div>结束: {endLocal.toLocaleString()}</div>
+                        <div>时长: {formatTimeNoSeconds(segment.duration)}</div>
+                      </div>
+                    );
+                  })}
+                  {task.note && (
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px', fontStyle: 'italic' }}>
+                      备注: {task.note}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => setSelectedTimeSlot(null)}
+            style={{
+              width: '100%',
+              padding: '10px',
+              marginTop: '15px',
+              backgroundColor: '#1a73e8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    )}
+
+
+
     </div>
   );
 };
@@ -5366,10 +5616,10 @@ const generateDailyLog = () => {
   const totalMinutes = Math.floor(totalTime / 60);
 
   // 原始格式内容（用于界面显示）
-  let logContent = `📅 ${selectedDate} 学习日志\n\n`;
+  let logContent = `📅 ${selectedDate} 学习日志\n`;
 
   // Markdown 格式内容（用于复制）
-  let markdownContent = `# ${selectedDate} 学习日志\n\n`;
+  let markdownContent = `# ${selectedDate} 学习日志\n`;
 
   // 添加评分和感想
   if (dailyRating > 0) {
@@ -5930,48 +6180,79 @@ const handleStartTimer = (task) => {
     duration: 0
   };
   setTimerRecords(prev => [newRecord, ...prev]);
+ // 添加到任务的 timeSegments
+ const newSegment = {
+  startTime: new Date().toISOString(),
+  endTime: null,
+  duration: 0
+};
 
+setTasksByDate(prev => {
+  const currentTasks = prev[selectedDate] || [];
+  const updatedTasks = currentTasks.map(t =>
+    t.id === task.id ? {
+      ...t,
+      timeSegments: [...(t.timeSegments || []), newSegment]
+    } : t
+  );
+  return {
+    ...prev,
+    [selectedDate]: updatedTasks
+  };
+});
   
 };
   
   
-  const handlePauseTimer = (task) => {
-    if (!activeTimer || activeTimer.taskId !== task.id) return;
+ // 在 handlePauseTimer 函数中修改，更新时间段：
+const handlePauseTimer = (task) => {
+  if (!activeTimer || activeTimer.taskId !== task.id) return;
+
+  const endTime = Date.now();
+  const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
   
-    const endTime = Date.now();
-    const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
-    
-    // 在这里添加更新记录 ↓
+  // 更新计时记录
   setTimerRecords(prev => prev.map(record => 
     record.taskId === task.id && !record.endTime 
       ? {...record, endTime: new Date().toISOString(), duration: timeSpentThisSession}
       : record
   ));
 
-    // 只使用本次会话的时间，elapsedTime已经在实时更新中包含了
-    const totalTimeSpent = timeSpentThisSession;
-  
-    // 更新任务时间
-    setTasksByDate(prev => {
-      const currentTasks = prev[selectedDate] || [];
-      const updatedTasks = currentTasks.map(t =>
-        t.id === task.id ? {
+  // 更新任务的 timeSegments
+  setTasksByDate(prev => {
+    const currentTasks = prev[selectedDate] || [];
+    const updatedTasks = currentTasks.map(t => {
+      if (t.id === task.id && t.timeSegments && t.timeSegments.length > 0) {
+        const updatedSegments = [...t.timeSegments];
+        const lastSegment = updatedSegments[updatedSegments.length - 1];
+        if (lastSegment && !lastSegment.endTime) {
+          updatedSegments[updatedSegments.length - 1] = {
+            ...lastSegment,
+            endTime: new Date().toISOString(),
+            duration: timeSpentThisSession
+          };
+        }
+        return {
           ...t,
-          timeSpent: (t.timeSpent || 0) + totalTimeSpent
-        } : t
-      );
-  
-      return {
-        ...prev,
-        [selectedDate]: updatedTasks
-      };
+          timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
+          timeSegments: updatedSegments
+        };
+      }
+      return t;
     });
-  
-    setActiveTimer(null);
-    setElapsedTime(0);
-  
-   
-  };
+
+    return {
+      ...prev,
+      [selectedDate]: updatedTasks
+    };
+  });
+
+  setActiveTimer(null);
+  setElapsedTime(0);
+};
+
+
+
 
 
   //修改 - 恢复计时器状态
@@ -6442,6 +6723,21 @@ useEffect(() => {
   const weekTasks = getWeekTasks();
   const pinnedTasks = todayTasks.filter(task => task.pinned);
   const weekDates = getWeekDates(currentMonday);
+
+  // 详细调试：检查每个日期的任务
+  console.log('=== 时间表详细调试 ===');
+  weekDates.forEach(day => {
+    const dayTasks = tasksByDate[day.date] || [];
+    console.log(`日期 ${day.date} (${day.label}):`, {
+      任务数量: dayTasks.length,
+      任务列表: dayTasks.map(t => ({
+        文本: t.text,
+        timeSegments: t.timeSegments,
+        scheduledTime: t.scheduledTime
+      }))
+    });
+  });
+  console.log('=== 调试结束 ===');
 
   // 计算积分荣誉
   const calculateHonorPoints = () => {
@@ -7365,33 +7661,24 @@ const handleExportData = async () => {
 };
   
   
-// 每日日志汇总模态框
+
 const DailyLogModal = ({ logData, onClose, onCopy }) => {
   if (!logData) return null;
 
-  // 生成 Markdown 格式的日志内容
-  const generateMarkdownContent = () => {
-    let markdownContent = `# ${logData.date} 学习日志\n\n`;
-
-    // 添加评分和感想
-    if (logData.stats.dailyRating > 0) {
-      const stars = '⭐'.repeat(logData.stats.dailyRating);
-      markdownContent += `## 今日评分: ${stars} (${logData.stats.dailyRating}星)\n\n`;
-    }
-    
-    if (logData.stats.dailyReflection) {
-      markdownContent += `## 今日感想\n${logData.stats.dailyReflection}\n\n`;
-    }
-
-    // 将任务列表转换为 Markdown 复选框
-    const markdownTasks = logData.content
-      .replace(/✅/g, '- [x]')
-      .replace(/❌/g, '- [ ]')
-      .replace(/📚/g, '##')
-      .replace(/📊/g, '##');
-
-    return markdownContent + markdownTasks;
+  // 重新生成日志内容
+  const generateFormattedContent = () => {
+    // 直接去掉✅符号，保留原有格式
+    return logData.content.replace(/✅/g, '');
   };
+
+  // 生成 Markdown 格式（用于复制）
+  const generateMarkdownContent = () => {
+    // 直接去掉✅符号，保留原有格式
+    return logData.content.replace(/✅/g, '');
+  };
+
+  const totalHours = (logData.stats.totalMinutes / 60).toFixed(1);
+  const formattedContent = generateFormattedContent();
 
   return (
     <div style={{
@@ -7400,7 +7687,7 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.8)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -7409,65 +7696,71 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
       <div style={{
         backgroundColor: 'white',
         padding: 20,
-        borderRadius: 10,
-        width: '80%',
-        maxWidth: 400,
+        borderRadius: 15,
+        width: '95%',
+        maxWidth: 500,
         maxHeight: '80vh',
-        overflow: 'auto'
+        overflow: 'auto',
+        textAlign: 'center'
       }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+        <h3 style={{ 
+          textAlign: 'center', 
+          marginBottom: 20, 
+          color: '#1a73e8',
+          fontSize: '18px'
+        }}>
           📅 {logData.date} 学习汇总
         </h3>
 
-        {/* 统计卡片 */}
+        {/* 统计卡片 - 4个一排 */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 10,
-          marginBottom: 15
+          marginBottom: 20
         }}>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 10,
+            padding: 12,
             borderRadius: 8,
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666' }}>完成任务</div>
-            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>完成任务</div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.completedTasks} 个
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 10,
+            padding: 12,
             borderRadius: 8,
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666' }}>总任务数</div>
-            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>总任务数</div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.totalTasks} 个
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 10,
+            padding: 12,
             borderRadius: 8,
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666' }}>完成率</div>
-            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>完成率</div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.completionRate}%
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 10,
+            padding: 12,
             borderRadius: 8,
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666' }}>学习时长</div>
-            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#1a73e8' }}>
-              {logData.stats.totalMinutes} 分钟
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>学习时长</div>
+            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+              {totalHours}h
             </div>
           </div>
         </div>
@@ -7475,16 +7768,17 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         {/* 日志内容 */}
         <div style={{
           backgroundColor: '#f8f9fa',
-          padding: 10,
-          borderRadius: 6,
-          marginBottom: 15,
-          maxHeight: 200,
+          padding: 15,
+          borderRadius: 8,
+          marginBottom: 20,
+          maxHeight: 300,
           overflow: 'auto',
           fontSize: 12,
           lineHeight: 1.4,
-          whiteSpace: 'pre-wrap'
+          whiteSpace: 'pre-wrap',
+          textAlign: 'left'
         }}>
-          {logData.content}
+          {formattedContent}
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
@@ -7492,12 +7786,14 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
             onClick={onClose}
             style={{
               flex: 1,
-              padding: 10,
-              backgroundColor: '#ccc',
-              color: '#000',
+              padding: 12,
+              backgroundColor: '#6c757d',
+              color: '#fff',
               border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
             }}
           >
             关闭
@@ -7509,12 +7805,14 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
             }}
             style={{
               flex: 1,
-              padding: 10,
+              padding: 12,
               backgroundColor: '#28a745',
               color: '#fff',
               border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
             }}
           >
             📋 复制日志
@@ -7524,6 +7822,8 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     </div>
   );
 };
+
+
 
   // 添加模板
   const handleAddTemplate = (template) => {
