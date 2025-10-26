@@ -1406,30 +1406,48 @@ const getWeekDates = (monday) => {
 
 
 
-// 时间表页面组件 - 手机适配版本
+// 时间表页面组件 - 竖版充分利用空间
 const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds }) => {
   const weekDates = getWeekDates(currentMonday);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
+  const [containerHeight, setContainerHeight] = useState(window.innerHeight);
 
-  // 监听窗口大小变化
+  // 监听窗口高度变化
   useEffect(() => {
     const handleResize = () => {
-      setContainerWidth(window.innerWidth);
+      setContainerHeight(window.innerHeight);
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 生成时间槽
-  const timeSlots = [];
-  for (let hour = 6; hour <= 22; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      timeSlots.push(timeString);
+  // 根据可用高度计算时间槽数量
+  const calculateTimeSlots = () => {
+    const headerHeight = 120; // 头部区域高度
+    const footerHeight = 80;  // 底部统计区域高度
+    const availableHeight = containerHeight - headerHeight - footerHeight;
+    const minSlotHeight = 25; // 每个时间槽最小高度
+    
+    const maxSlots = Math.floor(availableHeight / minSlotHeight);
+    
+    // 从6:00开始，根据可用高度决定结束时间
+    let endHour = 22;
+    if (maxSlots < 32) { // 6:00-22:00 共32个时间槽
+      endHour = 6 + Math.floor(maxSlots / 2); // 每小时2个时间槽
     }
-  }
+    
+    const timeSlots = [];
+    for (let hour = 6; hour <= endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        timeSlots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+      }
+    }
+    
+    return timeSlots;
+  };
+
+  const timeSlots = calculateTimeSlots();
 
   const getTaskTimeInfo = (task, date) => {
     if (!task) return null;
@@ -1507,18 +1525,17 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
   };
 
   const getTaskStyle = (task, timeInfo) => {
-    const isMobile = containerWidth <= 768;
-    
     const baseStyle = {
-      padding: isMobile ? '1px 2px' : '2px 4px',
+      padding: '2px 3px',
       margin: '1px 0',
       borderRadius: '2px',
-      fontSize: isMobile ? '8px' : '10px',
+      fontSize: '10px',
       color: 'white',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      lineHeight: '1.1'
     };
 
     const category = categories.find(cat => cat.name === task.category);
@@ -1540,10 +1557,10 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
           ...baseStyle,
           backgroundColor: categoryColor,
           border: `1px solid ${categoryColor}`,
-          height: '6px',
-          minHeight: '6px',
-          fontSize: '6px',
-          padding: '0 1px',
+          height: '8px',
+          minHeight: '8px',
+          fontSize: '8px',
+          padding: '1px 2px',
           lineHeight: '1'
         };
       } else {
@@ -1556,110 +1573,110 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
     }
   };
 
-  // 响应式配置
-  const getResponsiveConfig = () => {
-    if (containerWidth <= 480) {
-      // 手机端 - 超紧凑布局
-      return {
-        timeColumnWidth: '40px',
-        dateColumnWidth: '1fr',
-        timeFontSize: '9px',
-        dateFontSize: '9px',
-        headerHeight: '35px',
-        timeSlotHeight: '22px',
-        containerPadding: '8px'
-      };
-    } else if (containerWidth <= 768) {
-      // 平板端
-      return {
-        timeColumnWidth: '50px',
-        dateColumnWidth: '1fr',
-        timeFontSize: '10px',
-        dateFontSize: '11px',
-        headerHeight: '40px',
-        timeSlotHeight: '25px',
-        containerPadding: '12px'
-      };
-    } else {
-      // 桌面端
-      return {
-        timeColumnWidth: '60px',
-        dateColumnWidth: '1fr',
-        timeFontSize: '11px',
-        dateFontSize: '12px',
-        headerHeight: '45px',
-        timeSlotHeight: '30px',
-        containerPadding: '15px'
-      };
-    }
+  // 计算时间槽高度以填满可用空间
+  const calculateSlotHeight = () => {
+    const headerHeight = 120;
+    const footerHeight = 80;
+    const availableHeight = containerHeight - headerHeight - footerHeight;
+    return Math.max(25, Math.floor(availableHeight / timeSlots.length));
   };
 
-  const config = getResponsiveConfig();
+  const slotHeight = calculateSlotHeight();
 
   return (
     <div style={{
       width: '100%',
-      margin: '0 auto',
-      padding: config.containerPadding,
+      height: '100vh',
+      margin: 0,
+      padding: '10px',
       fontFamily: 'sans-serif',
       backgroundColor: '#f5faff',
       boxSizing: 'border-box',
-      overflow: 'hidden'
+      display: 'flex',
+      flexDirection: 'column'
     }}>
+      {/* 头部 - 固定高度 */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15
+        flexShrink: 0,
+        marginBottom: '10px'
       }}>
-        <button
-          onClick={onClose}
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: containerWidth <= 480 ? '16px' : '20px'
-          }}
-        >
-          ⬅️
-        </button>
-        <h1 style={{
-          textAlign: 'center',
-          color: '#1a73e8',
-          fontSize: containerWidth <= 480 ? '14px' : '18px',
-          margin: 0
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '8px'
         }}>
-          📅 本周时间表
-        </h1>
-        <div style={{ width: containerWidth <= 480 ? '20px' : '30px' }}></div>
+          <button
+            onClick={onClose}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
+            ⬅️
+          </button>
+          <h1 style={{
+            textAlign: 'center',
+            color: '#1a73e8',
+            fontSize: '16px',
+            margin: 0
+          }}>
+            📅 本周时间表
+          </h1>
+          <div style={{ width: '30px' }}></div>
+        </div>
+
+        {/* 简化的图例 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '10px',
+          fontSize: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ width: '8px', height: '8px', backgroundColor: '#FF9800', borderRadius: '1px' }}></div>
+            <span>计划</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ width: '8px', height: '8px', backgroundColor: '#4CAF50', borderRadius: '1px' }}></div>
+            <span>完成</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ width: '8px', height: '8px', backgroundColor: '#2196F3', borderRadius: '1px' }}></div>
+            <span>实际</span>
+          </div>
+        </div>
       </div>
 
-      {/* 时间表容器 - 关键修改：确保7天完整显示 */}
+      {/* 时间表主体 - 占据剩余空间 */}
       <div style={{
+        flex: 1,
         backgroundColor: 'white',
         borderRadius: '8px',
-        overflow: 'auto', // 只在需要时显示滚动
+        overflow: 'hidden',
         border: '1px solid #e0e0e0',
-        minWidth: '320px' // 确保最小宽度
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        {/* 表头 - 使用响应式网格 */}
+        {/* 表头 */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: `${config.timeColumnWidth} repeat(7, ${config.dateColumnWidth})`,
+          gridTemplateColumns: '50px repeat(7, 1fr)',
           backgroundColor: '#1a73e8',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: config.dateFontSize,
-          minWidth: '100%' // 确保表头完整显示
+          fontSize: '11px',
+          flexShrink: 0
         }}>
           <div style={{ 
-            padding: '8px 4px', 
+            padding: '6px 2px', 
             textAlign: 'center', 
             borderRight: '1px solid #0b52b0',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            height: config.headerHeight
+            justifyContent: 'center'
           }}>
             时间
           </div>
@@ -1667,34 +1684,27 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
             <div
               key={day.date}
               style={{
-                padding: '6px 2px',
+                padding: '6px 1px',
                 textAlign: 'center',
                 borderRight: index < 6 ? '1px solid #0b52b0' : 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: config.headerHeight,
                 flexDirection: 'column',
                 gap: '1px'
               }}
             >
-              <div style={{ fontSize: config.dateFontSize }}>
-                {containerWidth <= 480 ? day.label : day.label}
-              </div>
-              <div style={{ 
-                fontSize: Math.max(config.dateFontSize - 2, 8), 
-                opacity: 0.9,
-                lineHeight: '1'
-              }}>
+              <div>{day.label}</div>
+              <div style={{ fontSize: '9px', opacity: 0.9 }}>
                 {day.date.slice(5)}
               </div>
             </div>
           ))}
         </div>
 
-        {/* 时间表内容 */}
+        {/* 时间表内容 - 自动填充高度 */}
         <div style={{ 
-          maxHeight: containerWidth <= 480 ? '50vh' : '60vh', 
+          flex: 1,
           overflow: 'auto'
         }}>
           {timeSlots.map((time, timeIndex) => (
@@ -1702,18 +1712,18 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
               key={time}
               style={{
                 display: 'grid',
-                gridTemplateColumns: `${config.timeColumnWidth} repeat(7, ${config.dateColumnWidth})`,
+                gridTemplateColumns: '50px repeat(7, 1fr)',
                 borderBottom: timeIndex < timeSlots.length - 1 ? '1px solid #f0f0f0' : 'none',
                 backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white',
-                minHeight: config.timeSlotHeight,
-                minWidth: '100%' // 确保每行完整显示
+                height: `${slotHeight}px`,
+                minHeight: `${slotHeight}px`
               }}
             >
               {/* 时间列 */}
               <div style={{
-                padding: '4px 2px',
+                padding: '2px',
                 textAlign: 'center',
-                fontSize: config.timeFontSize,
+                fontSize: '10px',
                 fontWeight: 'bold',
                 color: '#666',
                 borderRight: '1px solid #e0e0e0',
@@ -1725,7 +1735,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                 {time}
               </div>
 
-              {/* 日期列 - 确保7天都显示 */}
+              {/* 日期列 */}
               {weekDates.map((day, dayIndex) => {
                 const tasks = getTasksForTimeSlot(time, dayIndex);
                 return (
@@ -1733,13 +1743,13 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                     key={day.date}
                     style={{
                       padding: '1px',
-                      minHeight: config.timeSlotHeight,
                       borderRight: dayIndex < 6 ? '1px solid #e0e0e0' : 'none',
                       backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white',
                       cursor: tasks.length > 0 ? 'pointer' : 'default',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0px'
+                      gap: '1px',
+                      height: '100%'
                     }}
                     onClick={() => {
                       if (tasks.length > 0) {
@@ -1762,11 +1772,7 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
                           style={getTaskStyle(task, timeInfo)}
                           title={`${task.text} (${task.category}) ${timeInfo.startTime}-${timeInfo.endTime}`}
                         >
-                          {containerWidth <= 480 ? (
-                            task.text.length > 3 ? task.text.substring(0, 3) + '...' : task.text
-                          ) : (
-                            task.text.length > 6 ? task.text.substring(0, 6) + '...' : task.text
-                          )}
+                          {task.text.length > 6 ? task.text.substring(0, 6) + '...' : task.text}
                         </div>
                       );
                     })}
@@ -1778,16 +1784,17 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
         </div>
       </div>
 
-      {/* 简化的统计信息 */}
+      {/* 底部统计 - 固定高度 */}
       <div style={{
-        marginTop: '12px',
-        padding: '10px',
+        flexShrink: 0,
+        marginTop: '8px',
+        padding: '8px',
         backgroundColor: 'white',
         borderRadius: '6px',
         border: '1px solid #e0e0e0',
-        fontSize: containerWidth <= 480 ? '10px' : '12px'
+        fontSize: '11px'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '5px' }}>
           <div><strong>计划任务:</strong> {
             weekDates.reduce((total, day) => {
               const dayTasks = tasksByDate[day.date] || [];
