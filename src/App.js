@@ -3580,8 +3580,191 @@ const MoveSelectModal = ({ task, categories, onClose, onMove }) => {
     </div>
   );
 };
+
+
+
+
+
+// 任务迁移模态框组件
+const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
+  const [moveOption, setMoveOption] = useState('single'); // 'single' 或 'category'
+  const [targetDate, setTargetDate] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(task.category);
+
+  // 生成未来7天的日期选项
+  const getDateOptions = () => {
+    const options = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const formattedDate = `${date.getMonth() + 1}月${date.getDate()}日`;
+      
+      options.push({
+        value: dateStr,
+        label: i === 0 ? `今天 (${formattedDate})` : 
+               i === 1 ? `明天 (${formattedDate})` : formattedDate
+      });
+    }
+    return options;
+  };
+
+  const handleMove = () => {
+    if (!targetDate) {
+      alert('请选择目标日期');
+      return;
+    }
+
+    onMove(task, targetDate, moveOption, selectedCategory);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 400
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+          📅 迁移任务
+        </h3>
+
+        {/* 迁移选项 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>迁移方式:</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="radio"
+                checked={moveOption === 'single'}
+                onChange={() => setMoveOption('single')}
+              />
+              <span>仅迁移此任务</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="radio"
+                checked={moveOption === 'category'}
+                onChange={() => setMoveOption('category')}
+              />
+              <span>迁移整个分类</span>
+            </label>
+          </div>
+        </div>
+
+        {/* 分类选择（仅当选择迁移整个分类时显示） */}
+        {moveOption === 'category' && (
+          <div style={{ marginBottom: 15 }}>
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>选择分类:</div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: 8,
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 14
+              }}
+            >
+              {categories.map(cat => (
+                <option key={cat.name} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* 目标日期选择 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>目标日期:</div>
+          <select
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            style={{
+              width: '100%',
+              padding: 8,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14
+            }}
+          >
+            <option value="">请选择日期</option>
+            {getDateOptions().map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 说明文字 */}
+        <div style={{
+          fontSize: 12,
+          color: '#666',
+          marginBottom: 15,
+          padding: 8,
+          backgroundColor: '#f5f5f5',
+          borderRadius: 4
+        }}>
+          {moveOption === 'single' 
+            ? '仅将当前任务移动到目标日期'
+            : `将 "${selectedCategory}" 分类的所有任务移动到目标日期`
+          }
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+            onClick={onClose}
+          >
+            取消
+          </button>
+          <button
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#1a73e8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+            onClick={handleMove}
+          >
+            确认迁移
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 任务编辑模态框
-const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal }) => {
+const TaskEditModal = ({ task, categories, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
     category: task.category || categories[0].name,
@@ -3593,6 +3776,7 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
     reminderMonth: task.reminderTime?.month || '',
     reminderDay: task.reminderTime?.day || '',
     reminderHour: task.reminderTime?.hour || '',
+    
     reminderMinute: task.reminderTime?.minute || '',
     subTasks: task.subTasks || [], // 确保子任务初始状态
     // 计划时间字段
@@ -3727,12 +3911,41 @@ const TaskEditModal = ({ task, categories, onClose, onSave, onTogglePinned, onIm
             fontSize: 18,
             fontWeight: "600"
           }}>
-            ✏️ 编辑任务
+            编辑
           </h3>
 
           {/* 右上角按钮组 */}
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {/* 置顶按钮 */}
+           
+
+           
+  {/* 迁移按钮 */}
+  <button
+    onClick={() => {
+      onClose();
+      setTimeout(() => {
+        setShowMoveTaskModal(task);
+      }, 100);
+    }}
+    style={{
+      width: '32px',
+      height: '32px',
+      padding: 0,
+      backgroundColor: '#f8f9fa', // 改为灰色背景
+      color: '#666', // 改为灰色文字
+      border: "1px solid #e0e0e0",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: "16px",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }}
+    title="迁移任务"
+  >
+    📤
+  </button>
             <button
               onClick={() => {
                 onTogglePinned(task);
@@ -5193,129 +5406,128 @@ const handleTimerClick = () => {
         </div>
       )}
 
-      {task.note && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEditModal(task);
-          }}
-          style={{
-            fontSize: 12,
-            color: "#666",
-            marginTop: 4,
-            marginBottom: 4,
-            cursor: "pointer",
-            marginLeft: "28px", // 调整为24px，与任务文本对齐
-            backgroundColor: 'transparent',
-            lineHeight: "1.3",
-            whiteSpace: "pre-wrap"
-          }}
-        >
-          {task.note}
-        </div>
-      )}
 
- 
-{task.subTasks && task.subTasks.length > 0 && (
-  <div style={{ 
-    marginLeft: '28px', 
-    marginTop: -2,  // 减少上边距
-    marginBottom: 0,  // 减少下边距
-    borderLeft: '2px solid #e0e0e0', 
-    paddingLeft: 8  // 减少内边距
-  }}>
-    {task.subTasks.map((subTask, index) => (
-      <div key={index} style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 1, //子任务和复选框的距离
-        marginBottom: 2,  // 减少子任务之间的间距
-        fontSize: 12, 
-        color: task.done ? '#999' : '#666',
-        minHeight: '18px'
-      }}>
-        <input
-          type="checkbox"
-          checked={subTask.done}
-          onChange={() => onToggleSubTask(task, index)}
-          style={{ transform: 'scale(0.8)' }}
-        />
-        
-        {editingSubTaskIndex === index ? (
+{/* 备注、感想和子任务的容器 */}
+<div style={{ marginLeft: "28px" }}>
+  {task.note && (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenEditModal(task);
+      }}
+      style={{
+        fontSize: 12,
+        color: "#666",
+        marginTop: 4,
+        marginBottom: 4,
+        cursor: "pointer",
+        backgroundColor: 'transparent',
+        lineHeight: "1.3",
+        whiteSpace: "pre-wrap"
+      }}
+    >
+      {task.note}
+    </div>
+  )}
+  
+  {task.reflection && (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenEditModal(task);
+        const newReflection = window.prompt("编辑感想", task.reflection);
+        if (newReflection !== null) {
+          onEditReflection(task, newReflection);
+        }
+      }}
+      style={{
+        fontSize: 12,
+        color: "#000",
+        marginTop: task.note ? 2 : 4, // 有备注时上边距小，没有时正常
+        marginBottom: 4,
+        cursor: "pointer",
+        backgroundColor: '#fff9c4',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        lineHeight: "1.3",
+        whiteSpace: "pre-wrap",
+        border: '1px solid #ffd54f'
+      }}
+    >
+      💭 {task.reflection}
+    </div>
+  )}
+
+  {task.subTasks && task.subTasks.length > 0 && (
+    <div style={{ 
+      marginTop: (task.note || task.reflection) ? 2 : -2, // 根据是否有备注/感想调整上边距
+      marginBottom: 0,
+      borderLeft: '2px solid #e0e0e0', 
+      paddingLeft: 8
+    }}>
+      {task.subTasks.map((subTask, index) => (
+        <div key={index} style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          marginBottom: 2,
+          fontSize: 12, 
+          color: task.done ? '#999' : '#666',
+          minHeight: '18px'
+        }}>
           <input
-            type="text"
-            value={editSubTaskText}
-            onChange={(e) => setEditSubTaskText(e.target.value)}
-            onBlur={saveEditSubTask}
-            onKeyDown={handleKeyPress}
-            autoFocus
-            style={{
-              flex: 1,
-              padding: '1px 4px',  // 减少内边距
-              border: '1px solid #1a73e8',
-              borderRadius: '3px',
-              fontSize: '12px',
-              outline: 'none',
-              height: '20px'  // 固定高度
-            }}
+            type="checkbox"
+            checked={subTask.done}
+            onChange={() => onToggleSubTask(task, index)}
+            style={{ transform: 'scale(0.8)' }}
           />
-        ) : (
-          <span 
-            onClick={() => startEditSubTask(index, subTask.text)}
-            style={{ 
-              textDecoration: subTask.done ? 'line-through' : 'none',
-              cursor: 'pointer',
-              flex: 1,
-              padding: '3px 4px 1px 4px',  // 修改：上内边距3px，下内边距1px
-              borderRadius: '3px',
-              transition: 'background-color 0.2s',
-              minHeight: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              lineHeight: '1.2'  // 调整行高
-            }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-          >
-            {subTask.text}
-          </span>
-        )}
-      </div>
-    ))}
-  </div>
-)} 
-
-
-
-
-      {task.reflection && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEditModal(task);
-            const newReflection = window.prompt("编辑感想", task.reflection);
-            if (newReflection !== null) {
-              onEditReflection(task, newReflection);
-            }
-          }}
-          style={{
-            fontSize: 12,
-            color: "#000",
-            marginTop: 4,
-            marginBottom: 4,
-            cursor: "pointer",
-            backgroundColor: '#fff9c4',
-            padding: '6px 8px',
-            borderRadius: '4px',
-            lineHeight: "1.3",
-            marginLeft: "28px", // 调整为24px，与任务文本对齐
-            whiteSpace: "pre-wrap",
-            border: '1px solid #ffd54f'
-          }}
-        >
-          💭 {task.reflection}
+          
+          {editingSubTaskIndex === index ? (
+            <input
+              type="text"
+              value={editSubTaskText}
+              onChange={(e) => setEditSubTaskText(e.target.value)}
+              onBlur={saveEditSubTask}
+              onKeyDown={handleKeyPress}
+              autoFocus
+              style={{
+                flex: 1,
+                padding: '1px 4px',
+                border: '1px solid #1a73e8',
+                borderRadius: '3px',
+                fontSize: '12px',
+                outline: 'none',
+                height: '20px'
+              }}
+            />
+          ) : (
+            <span 
+              onClick={() => startEditSubTask(index, subTask.text)}
+              style={{ 
+                textDecoration: subTask.done ? 'line-through' : 'none',
+                cursor: 'pointer',
+                flex: 1,
+                padding: '3px 4px 1px 4px',
+                borderRadius: '3px',
+                transition: 'background-color 0.2s',
+                minHeight: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                lineHeight: '1.2'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              {subTask.text}
+            </span>
+          )}
         </div>
-      )}
+      ))}
+    </div>
+  )}
+</div>
+ 
+
 
       {task.scheduledTime && (
         <div style={{
@@ -5377,11 +5589,12 @@ function App() {
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
   const [showHonorModal, setShowHonorModal] = useState(false);
-  
+  const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
+  
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [repeatConfig, setRepeatConfig] = useState({
     frequency: "daily",
@@ -5423,6 +5636,89 @@ function App() {
   const [editingAchievement, setEditingAchievement] = useState(null);
   
 
+// 迁移任务函数
+const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
+  if (moveOption === 'single') {
+    // 迁移单个任务
+    if (task.isWeekTask) {
+      // 本周任务需要特殊处理
+      const updatedTasksByDate = { ...tasksByDate };
+      
+      // 从所有日期中移除该任务
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].filter(
+          t => !(t.isWeekTask && t.text === task.text)
+        );
+      });
+      
+      // 在目标日期添加任务
+      if (!updatedTasksByDate[targetDate]) {
+        updatedTasksByDate[targetDate] = [];
+      }
+      updatedTasksByDate[targetDate].push({
+        ...task,
+        isWeekTask: false // 不再是本周任务
+      });
+      
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      // 普通任务
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        
+        // 从原日期移除
+        if (newTasksByDate[selectedDate]) {
+          newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(
+            t => t.id !== task.id
+          );
+        }
+        
+        // 添加到目标日期
+        if (!newTasksByDate[targetDate]) {
+          newTasksByDate[targetDate] = [];
+        }
+        newTasksByDate[targetDate].push(task);
+        
+        return newTasksByDate;
+      });
+    }
+  } else {
+    // 迁移整个分类
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      
+      // 从原日期移除该分类的所有任务
+      if (newTasksByDate[selectedDate]) {
+        newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(
+          t => t.category !== selectedCategory
+        );
+      }
+      
+      // 将原日期的该分类任务添加到目标日期
+      const originalTasks = prev[selectedDate] || [];
+      const categoryTasks = originalTasks.filter(t => t.category === selectedCategory);
+      
+      if (!newTasksByDate[targetDate]) {
+        newTasksByDate[targetDate] = [];
+      }
+      
+      // 添加任务到目标日期，避免重复
+      categoryTasks.forEach(task => {
+        const exists = newTasksByDate[targetDate].some(
+          t => t.text === task.text && t.category === task.category
+        );
+        if (!exists) {
+          newTasksByDate[targetDate].push(task);
+        }
+      });
+      
+      return newTasksByDate;
+    });
+  }
+  
+  alert('任务迁移成功！');
+};
+  
   
 
 // 添加 beforeunload 事件监听，在页面关闭前保存
@@ -9119,6 +9415,19 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
 
+{/* 迁移任务模态框 */}
+{showMoveTaskModal && (
+      <TaskMoveModal
+        task={showMoveTaskModal}
+        onClose={() => setShowMoveTaskModal(null)}
+        onMove={moveTaskToDate}
+        categories={categories}
+        tasksByDate={tasksByDate}
+      />
+    )}
+
+
+
 {console.log('渲染时 showCustomAchievementModal:', showCustomAchievementModal) || null}
 {showCustomAchievementModal && (
   <CustomAchievementModal
@@ -9266,17 +9575,19 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
 
-      {showTaskEditModal && (
-        <TaskEditModal
-          task={showTaskEditModal}
-          categories={categories}
-          onClose={() => setShowTaskEditModal(null)}
-          onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
-          onTogglePinned={togglePinned}
-          onImageUpload={handleImageUpload}
-          setShowDeleteModal={setShowDeleteModal}
-        />
-      )}
+{showTaskEditModal && (
+  <TaskEditModal
+    task={showTaskEditModal}
+    categories={categories}
+    onClose={() => setShowTaskEditModal(null)}
+    onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
+    onTogglePinned={togglePinned}
+    onImageUpload={handleImageUpload}
+    setShowDeleteModal={setShowDeleteModal}
+    // ==== 添加这行 ====
+    setShowMoveTaskModal={setShowMoveTaskModal}
+  />
+)}
 
       {showMoveModal && (
         <MoveSelectModal
