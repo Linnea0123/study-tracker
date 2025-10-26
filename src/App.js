@@ -5753,6 +5753,25 @@ function App() {
   
 
 
+  // 检查所有原有任务的跨日期状态
+const checkOldTasks = () => {
+  console.log('🔍 检查原有任务的跨日期状态:');
+  Object.entries(tasksByDate).forEach(([date, tasks]) => {
+    tasks.forEach(task => {
+      if (task.crossDateId) {
+        console.log(`📅 ${date} - "${task.text}":`, {
+          crossDateId: task.crossDateId,
+          isCrossDate: task.isCrossDate,
+          crossDates: task.crossDates,
+          // 检查是否是旧数据格式
+          创建时间: task.id ? new Date(parseInt(task.id)).toLocaleString() : '未知'
+        });
+      }
+    });
+  });
+};
+
+
 // 修复后的代码
 useEffect(() => {
   const checkMobileDataDiff = () => {
@@ -5927,13 +5946,14 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
 };
 
 const handleCrossDateTask = (task, targetDates) => {
-  const taskId = task.crossDateId || task.id || `cross_${Date.now()}`;
-  
-  console.log('创建/更新跨日期任务:', {
+  console.log('🎯 更新跨日期任务 - 原有任务:', {
     任务: task.text,
-    跨日期ID: taskId,
-    目标日期: targetDates
+    原有ID: task.id,
+    原有crossDateId: task.crossDateId,
+    原有isCrossDate: task.isCrossDate
   });
+
+  const taskId = task.crossDateId || `cross_${Date.now()}`;
   
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
@@ -5943,39 +5963,68 @@ const handleCrossDateTask = (task, targetDates) => {
         newTasksByDate[date] = [];
       }
       
-      // 查找是否已存在相同任务（按文本和分类）
       const existingTaskIndex = newTasksByDate[date].findIndex(
         t => t.text === task.text && t.category === task.category
       );
       
       if (existingTaskIndex !== -1) {
-        // 更新现有任务为跨日期任务
-        console.log(`更新现有任务在 ${date}`);
-        newTasksByDate[date][existingTaskIndex] = {
+        // 🎯 关键修复：确保更新原有任务的所有字段
+        const updatedTask = {
           ...newTasksByDate[date][existingTaskIndex],
           crossDateId: taskId,
           isCrossDate: true,
           crossDates: targetDates,
-          done: task.done // 保持原有完成状态
+          // 保留原有状态
+          done: newTasksByDate[date][existingTaskIndex].done,
+          timeSpent: newTasksByDate[date][existingTaskIndex].timeSpent
         };
+        
+        console.log(`✅ 更新原有任务在 ${date}:`, updatedTask);
+        newTasksByDate[date][existingTaskIndex] = updatedTask;
       } else {
         // 创建新的跨日期任务
-        console.log(`创建新任务在 ${date}`);
-        newTasksByDate[date].push({
+        const newTask = {
           ...task,
           id: `${taskId}_${date}`,
           crossDateId: taskId,
           isCrossDate: true,
           crossDates: targetDates,
-          done: false // 新创建的任务默认未完成
-        });
+          done: false
+        };
+        console.log(`🆕 创建新任务在 ${date}:`, newTask);
+        newTasksByDate[date].push(newTask);
       }
     });
     
     return newTasksByDate;
   });
-  
-  alert(`任务已设置在 ${targetDates.length} 个日期显示`);
+};
+
+// 修复所有跨日期任务的标识
+const fixAllCrossDateTasks = () => {
+  console.log('🔧 开始修复所有跨日期任务...');
+  setTasksByDate(prev => {
+    const fixedTasks = {};
+    let fixedCount = 0;
+    
+    Object.entries(prev).forEach(([date, tasks]) => {
+      fixedTasks[date] = tasks.map(task => {
+        // 如果任务有 crossDateId 但 isCrossDate 不是 true，修复它
+        if (task.crossDateId && task.crossDateId.trim() !== '' && task.isCrossDate !== true) {
+          console.log(`🔧 修复任务: ${date} - "${task.text}"`);
+          fixedCount++;
+          return {
+            ...task,
+            isCrossDate: true
+          };
+        }
+        return task;
+      });
+    });
+    
+    console.log(`✅ 修复了 ${fixedCount} 个任务的跨日期标识`);
+    return fixedTasks;
+  });
 };
 
 
@@ -7404,13 +7453,31 @@ useEffect(() => {
       // 加载任务数据
       const savedTasks = await loadMainData('tasks');
       console.log('✅ 加载的任务数据:', savedTasks);
-      if (savedTasks) {
-        setTasksByDate(savedTasks);
-        console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
-      } else {
-        console.log('ℹ️ 没有任务数据，使用空对象');
-        setTasksByDate({});
+      // 在加载任务数据的 useEffect 中
+if (savedTasks) {
+  const fixedTasks = {};
+  let fixedCount = 0;
+  
+  Object.entries(savedTasks).forEach(([date, tasks]) => {
+    fixedTasks[date] = tasks.map(task => {
+      // 自动修复：有 crossDateId 但没有 isCrossDate 的任务
+      if (task.crossDateId && task.crossDateId.trim() !== '' && task.isCrossDate !== true) {
+        fixedCount++;
+        return {
+          ...task,
+          isCrossDate: true
+        };
       }
+      return task;
+    });
+  });
+  
+  if (fixedCount > 0) {
+    console.log(`🔧 自动修复了 ${fixedCount} 个跨日期任务`);
+  }
+  
+  setTasksByDate(fixedTasks);
+}
       
       // 加载模板数据
       const savedTemplates = await loadMainData('templates');
@@ -11197,6 +11264,35 @@ if (isInitialized && todayTasks.length === 0) {
   }}
 >
   检查跨日期状态
+</button>
+<button
+  onClick={fixAllCrossDateTasks}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#28a745",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    cursor: "pointer"
+  }}
+>
+  修复跨日期任务
+</button>
+
+<button
+  onClick={checkOldTasks}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#17a2b8",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    cursor: "pointer"
+  }}
+>
+  检查原有任务
 </button>
       </div>
     </div>
