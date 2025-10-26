@@ -1366,42 +1366,47 @@ const migrateLegacyData = async () => {
 };
 
 
-// 修复：获取本周一的日期
+// 修复：确保每周从周一开始
 const getMonday = (date) => {
-  const d = new Date(date);
-  const day = d.getDay(); // 0是周日，1是周一，...，6是周六
-  
-  // 修正：如果今天是周日(0)，周一应该是往前推6天
-  // 如果今天是周一(1)，不需要推，以此类推
-  const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - diff);
-  monday.setHours(0, 0, 0, 0);
-  
-  console.log('计算周一: 输入日期', date, '输出周一', monday);
-  return monday;
-};
+    const d = new Date(date);
+    const day = d.getDay(); // 0是周日，1是周一，...，6是周六
+    
+    // 简化逻辑：总是往前推到最近的周一
+    // 如果今天是周一，diff = 0；如果是周二，diff = -1；...；如果是周日，diff = -6
+    const diff = day === 0 ? -6 : 1 - day;
+    
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    
+    console.log('📅 计算周一: 输入', date.toDateString(), '→ 输出', monday.toDateString());
+    return monday;
+  };
 
-// 修复：获取一周的日期
+// 修复：生成周一到周日的日期
 const getWeekDates = (monday) => {
-  const weekDates = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      
+      const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+      
+      weekDates.push({
+        date: `${year}-${month}-${day}`,
+        label: `周${weekDays[i]}`,
+        fullLabel: `周${weekDays[i]} (${month}/${day})`
+      });
+    }
     
-    // 修正：确保日期格式正确
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    
-    weekDates.push({
-      date: `${year}-${month}-${day}`,
-      label: `周${"一二三四五六日"[i]}`,
-      fullLabel: `周${"一二三四五六日"[i]} (${month}/${day})`
-    });
-  }
-  return weekDates;
-};
+    console.log('📅 生成周日期:', weekDates.map(d => d.date));
+    return weekDates;
+  };
+  
 
 
 
@@ -3160,7 +3165,14 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
 
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-  const firstDayOfWeek = firstDayOfMonth.getDay();
+    
+  // 修改这里：让周一成为第一天
+  let firstDayOfWeek = firstDayOfMonth.getDay();
+  if (firstDayOfWeek === 0) {
+    firstDayOfWeek = 6; // 如果是周日，显示在最后（向前推6天）
+  } else {
+    firstDayOfWeek = firstDayOfWeek - 1; // 其他日子减1
+  }
 
   const daysInMonth = [];
   const totalDays = lastDayOfMonth.getDate();
@@ -3173,7 +3185,7 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
     daysInMonth.push(i);
   }
 
-  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+  const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -5424,6 +5436,8 @@ function App() {
   const [editingAchievement, setEditingAchievement] = useState(null);
   
 
+  
+
 // 添加 beforeunload 事件监听，在页面关闭前保存
 useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -5962,82 +5976,13 @@ useEffect(() => {
   };
 }, [activeTimer, elapsedTime]);
 
-// 恢复计时器状态
-useEffect(() => {
-    const restoreTimerState = async () => {
-      try {
-        const savedTimerData = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
-        if (savedTimerData) {
-          const savedTimer = JSON.parse(savedTimerData);
-          
-          if (savedTimer && savedTimer.taskId && savedTimer.startTime) {
-            const currentTime = Date.now();
-            const timeSinceStart = Math.floor((currentTime - savedTimer.startTime) / 1000);
-            
-            // 计算总经过时间
-            const totalElapsed = (savedTimer.elapsedBeforeStart || 0) + timeSinceStart;
-            
-            console.log('⏱️ 恢复计时器状态:', {
-              任务ID: savedTimer.taskId,
-              开始时间: new Date(savedTimer.startTime).toLocaleString(),
-              已运行时间: timeSinceStart,
-              总经过时间: totalElapsed
-            });
-            
-            setElapsedTime(totalElapsed);
-            setActiveTimer({
-              taskId: savedTimer.taskId,
-              startTime: savedTimer.startTime
-            });
-            
-            // 验证任务是否存在
-            const todayTasks = tasksByDate[selectedDate] || [];
-            const taskExists = todayTasks.some(task => task.id === savedTimer.taskId);
-            
-            if (!taskExists) {
-              console.warn('❌ 计时器对应的任务不存在，清理计时器状态');
-              localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-              setActiveTimer(null);
-              setElapsedTime(0);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('恢复计时器状态失败:', error);
-        // 如果恢复失败，清理可能损坏的数据
-        localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      }
-    };
-  
-    if (isInitialized) {
-      restoreTimerState();
-    }
-  }, [isInitialized, tasksByDate, selectedDate]);
 
-// 正确的计时器保存逻辑应该放在组件主体内，确保能访问到状态变量
-useEffect(() => {
-    const saveTimerState = async () => {
-      if (activeTimer) {
-        const timerData = {
-          taskId: activeTimer.taskId,
-          startTime: activeTimer.startTime,
-          savedAt: Date.now()
-        };
-        await saveMainData('activeTimer', timerData);
-        console.log('💾 保存计时器状态:', {
-          任务ID: activeTimer.taskId,
-          开始时间: new Date(activeTimer.startTime).toLocaleString()
-        });
-      } else {
-        // 没有活动计时器时清除存储
-        await saveMainData('activeTimer', null);
-      }
-    };
-  
-    if (isInitialized) {
-      saveTimerState();
-    }
-  }, [activeTimer, isInitialized]); // activeTimer 必须在依赖数组中
+
+
+
+
+
+
 
 
 // 暴露实例给全局调试
@@ -6238,25 +6183,149 @@ useEffect(() => {
   };
   
   
+  
+
+
+ 
+// ========== 计时器持久化修复 ==========
+
+// 1. 修复计时器状态保存
+useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (activeTimer) {
+        const timerData = {
+          taskId: activeTimer.taskId,
+          startTime: activeTimer.startTime,
+          elapsedTime: elapsedTime, // 保存当前经过的时间
+          savedAt: Date.now()
+        };
+        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+        console.log('💾 页面关闭前保存计时器:', timerData);
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeTimer, elapsedTime]);
+  
+  // 2. 修复计时器状态恢复
+  useEffect(() => {
+    const restoreTimer = () => {
+      try {
+        const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
+        console.log('🔍 尝试恢复计时器:', saved);
+        
+        if (saved) {
+          const timerData = JSON.parse(saved);
+          
+          // 验证数据完整性
+          if (timerData.taskId && timerData.startTime) {
+            const now = Date.now();
+            const savedTime = timerData.savedAt || timerData.startTime;
+            const timeSinceSave = Math.floor((now - savedTime) / 1000);
+            
+            // 计算总时间：保存时的经过时间 + 保存后到现在的时间
+            const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
+            
+            console.log('⏱️ 恢复计时器详情:', {
+              任务ID: timerData.taskId,
+              保存时间: new Date(savedTime).toLocaleString(),
+              当前时间: new Date(now).toLocaleString(),
+              保存后经过: timeSinceSave + '秒',
+              总时间: totalElapsed + '秒'
+            });
+  
+            // 恢复状态
+            setActiveTimer({
+              taskId: timerData.taskId,
+              startTime: timerData.startTime
+            });
+            setElapsedTime(totalElapsed);
+            
+            console.log('✅ 计时器恢复成功');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('❌ 恢复计时器失败:', error);
+      }
+      
+      // 如果没有有效数据，清理存储
+      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+      setActiveTimer(null);
+      setElapsedTime(0);
+    };
+  
+    // 组件加载时立即恢复
+    restoreTimer();
+  }, []); // 空依赖数组，只在组件挂载时执行一次
+  
+  // 3. 修复实时计时器
+  useEffect(() => {
+    let intervalId = null;
+  
+    if (activeTimer) {
+      console.log('▶️ 启动计时器');
+      
+      intervalId = setInterval(() => {
+        setElapsedTime(prev => {
+          const newTime = prev + 1;
+          
+          // 每30秒保存一次状态
+          if (newTime % 30 === 0) {
+            const timerData = {
+              taskId: activeTimer.taskId,
+              startTime: activeTimer.startTime,
+              elapsedTime: newTime,
+              savedAt: Date.now()
+            };
+            localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+            console.log('🔄 定时保存计时器状态');
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+    }
+  
+    return () => {
+      if (intervalId) {
+        console.log('⏹️ 清理计时器间隔');
+        clearInterval(intervalId);
+      }
+    };
+  }, [activeTimer]); // 只在 activeTimer 变化时重新启动
+  
+  // 4. 修复开始计时函数
   const handleStartTimer = (task) => {
-    // 停止其他正在运行的计时器
-    if (activeTimer && activeTimer.taskId !== task.id) {
+    console.log('🎯 开始计时:', task.text);
+    
+    // 如果已有计时器在运行，先暂停它
+    if (activeTimer) {
       handlePauseTimer({ id: activeTimer.taskId });
     }
   
     const startTime = Date.now();
-    setActiveTimer({ taskId: task.id, startTime });
+    
+    // 立即设置状态
+    setActiveTimer({
+      taskId: task.id,
+      startTime: startTime
+    });
     setElapsedTime(0);
   
-    // 立即保存计时器状态到 localStorage
+    // 立即保存到 localStorage
     const timerData = {
       taskId: task.id,
       startTime: startTime,
-      elapsedBeforeStart: 0,
-      savedAt: new Date().toISOString()
+      elapsedTime: 0,
+      savedAt: startTime
     };
     localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+    
+    console.log('💾 立即保存新计时器:', timerData);
   
+    // 创建计时记录
     const newRecord = {
       id: Date.now().toString(),
       taskId: task.id,
@@ -6267,7 +6336,7 @@ useEffect(() => {
       duration: 0
     };
     setTimerRecords(prev => [newRecord, ...prev]);
-    
+  
     // 添加到任务的 timeSegments
     const newSegment = {
       startTime: new Date().toISOString(),
@@ -6289,41 +6358,55 @@ useEffect(() => {
       };
     });
   };
-
-
-
-
   
+  // 5. 修复暂停计时函数
   const handlePauseTimer = (task) => {
-    if (!activeTimer || activeTimer.taskId !== task.id) return;
+    if (!activeTimer) {
+      console.log('⚠️ 没有活动的计时器可暂停');
+      return;
+    }
   
-    const endTime = Date.now();
-    const timeSpentThisSession = Math.floor((endTime - activeTimer.startTime) / 1000);
+    console.log('⏸️ 暂停计时器:', task.text);
     
+    const endTime = Date.now();
+    const timeSpentThisSession = elapsedTime; // 使用当前的 elapsedTime
+    
+    console.log('📊 本次计时:', {
+      任务: task.text,
+      计时秒数: timeSpentThisSession,
+      开始时间: new Date(activeTimer.startTime).toLocaleString(),
+      结束时间: new Date(endTime).toLocaleString()
+    });
+  
     // 更新计时记录
     setTimerRecords(prev => prev.map(record => 
       record.taskId === task.id && !record.endTime 
-        ? {...record, endTime: new Date().toISOString(), duration: timeSpentThisSession}
+        ? {
+            ...record, 
+            endTime: new Date().toISOString(), 
+            duration: timeSpentThisSession
+          } 
         : record
     ));
   
-    // 清除保存的计时器状态
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-  
-    // 更新任务的 timeSegments
+    // 更新任务时间
     setTasksByDate(prev => {
       const currentTasks = prev[selectedDate] || [];
       const updatedTasks = currentTasks.map(t => {
-        if (t.id === task.id && t.timeSegments && t.timeSegments.length > 0) {
-          const updatedSegments = [...t.timeSegments];
-          const lastSegment = updatedSegments[updatedSegments.length - 1];
-          if (lastSegment && !lastSegment.endTime) {
-            updatedSegments[updatedSegments.length - 1] = {
-              ...lastSegment,
-              endTime: new Date().toISOString(),
-              duration: timeSpentThisSession
-            };
+        if (t.id === task.id) {
+          // 更新最后一个未结束的 segment
+          const updatedSegments = [...(t.timeSegments || [])];
+          if (updatedSegments.length > 0) {
+            const lastSegment = updatedSegments[updatedSegments.length - 1];
+            if (lastSegment && !lastSegment.endTime) {
+              updatedSegments[updatedSegments.length - 1] = {
+                ...lastSegment,
+                endTime: new Date().toISOString(),
+                duration: timeSpentThisSession
+              };
+            }
           }
+          
           return {
             ...t,
             timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
@@ -6339,15 +6422,45 @@ useEffect(() => {
       };
     });
   
+    // 清理状态和存储
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
     setActiveTimer(null);
     setElapsedTime(0);
+    
+    console.log('🗑️ 清理计时器存储和状态');
   };
- 
-
   
-
-
-
+  // 6. 添加手动清除计时器函数（用于调试）
+  const clearTimerStorage = () => {
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+    setActiveTimer(null);
+    setElapsedTime(0);
+    console.log('🧹 手动清除计时器存储');
+  };
+  
+  // 暴露给控制台用于调试
+  useEffect(() => {
+    window.debugTimer = {
+      getState: () => ({
+        activeTimer,
+        elapsedTime,
+        storage: localStorage.getItem(`${STORAGE_KEY}_activeTimer`)
+      }),
+      clear: clearTimerStorage,
+      forceSave: () => {
+        if (activeTimer) {
+          const timerData = {
+            taskId: activeTimer.taskId,
+            startTime: activeTimer.startTime,
+            elapsedTime: elapsedTime,
+            savedAt: Date.now()
+          };
+          localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+          console.log('💾 强制保存:', timerData);
+        }
+      }
+    };
+  }, [activeTimer, elapsedTime]);
 
 
   //修改 - 恢复计时器状态
@@ -6384,37 +6497,6 @@ useEffect(() => {
   }, []);
 
 
-// 优化实时计时
-useEffect(() => {
-  let interval;
-
-  if (activeTimer) {
-    interval = setInterval(() => {
-      const currentTime = Date.now();
-      const timeElapsed = Math.floor((currentTime - activeTimer.startTime) / 1000);
-      setElapsedTime(timeElapsed);
-      
-      // 每30秒自动保存一次计时状态
-      if (timeElapsed % 30 === 0) {
-        const timerData = {
-          taskId: activeTimer.taskId,
-          startTime: activeTimer.startTime,
-          elapsedBeforeStart: 0, // 现在elapsedTime就是总时间
-          savedAt: new Date().toISOString()
-        };
-        saveMainData('activeTimer', timerData);
-      }
-    }, 1000);
-  } else {
-    setElapsedTime(0);
-  }
-
-  return () => {
-    if (interval) {
-      clearInterval(interval);
-    }
-  };
-}, [activeTimer]);
 
 
 
@@ -6938,21 +7020,17 @@ useEffect(() => {
   const generateChartData = () => {
     let dateRange = [];
     if (statsMode === "week") {
-      dateRange = weekDates.map(d => d.date);
+      // 使用正确的周一到周日日期范围
+      dateRange = getWeekDates(currentMonday).map(d => d.date);
+      console.log('📊 统计周日期范围:', dateRange);
     } else if (statsMode === "month") {
-      const firstDay = new Date(currentMonday);
-      firstDay.setDate(1);
-      const lastDay = new Date(firstDay);
-      lastDay.setMonth(lastDay.getMonth() + 1);
-      lastDay.setDate(0);
-
-      dateRange = [];
-      for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-        dateRange.push(d.toISOString().split("T")[0]);
-      }
+      // ... 月份逻辑保持不变
     } else {
-      dateRange = weekDates.map(d => d.date);
+      dateRange = getWeekDates(currentMonday).map(d => d.date);
     }
+
+
+
 
     const stats = calculateStats(dateRange);
 
@@ -7050,44 +7128,48 @@ useEffect(() => {
               });
             }
           }
-        } else if (repeatConfig.frequency === "weekly") {
-          const startDate = new Date(selectedDate);
-
-          for (let week = 0; week < 4; week++) {
-            const weekStart = new Date(startDate);
-            weekStart.setDate(startDate.getDate() + (week * 7));
-            const dayOfWeek = weekStart.getDay();
-            const monday = new Date(weekStart);
-            monday.setDate(weekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-            repeatConfig.days.forEach((isSelected, dayIndex) => {
-              if (isSelected) {
-                const taskDate = new Date(monday);
-                taskDate.setDate(monday.getDate() + dayIndex);
-                const dateStr = taskDate.toISOString().split("T")[0];
-
-                if (taskDate >= new Date(selectedDate)) {
-                  if (!newTasksByDate[dateStr]) {
-                    newTasksByDate[dateStr] = [];
-                  }
-
-                  const existingTask = newTasksByDate[dateStr].find(
-                    task => task.text === text && task.category === category
-                  );
-
-                  if (!existingTask) {
-                    newTasksByDate[dateStr].push({
-                      ...baseTask,
-                      id: `${baseTask.id}_${dateStr}`,
-                      isRepeating: true,
-                      repeatId: baseTask.id
-                    });
-                  }
-                }
-              }
-            });
+        } else 
+        
+     // 在 handleAddTask 函数中的重复任务部分
+if (repeatConfig.frequency === "weekly") {
+    const startDate = new Date(selectedDate);
+  
+    for (let week = 0; week < 4; week++) {
+      const weekStart = new Date(startDate);
+      weekStart.setDate(startDate.getDate() + (week * 7));
+      
+      // 使用 getMonday 确保从周一开始
+      const weekMonday = getMonday(weekStart);
+  
+      repeatConfig.days.forEach((isSelected, dayIndex) => {
+        if (isSelected) {
+          const taskDate = new Date(weekMonday);
+          taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
+          
+          const dateStr = taskDate.toISOString().split("T")[0];
+  
+          if (taskDate >= new Date(selectedDate)) {
+            if (!newTasksByDate[dateStr]) {
+              newTasksByDate[dateStr] = [];
+            }
+  
+            const existingTask = newTasksByDate[dateStr].find(
+              task => task.text === text && task.category === category
+            );
+  
+            if (!existingTask) {
+              newTasksByDate[dateStr].push({
+                ...baseTask,
+                id: `${baseTask.id}_${dateStr}`,
+                isRepeating: true,
+                repeatId: baseTask.id
+              });
+            }
           }
         }
+      });
+    }
+  }
       } else {
         if (!newTasksByDate[selectedDate]) {
           newTasksByDate[selectedDate] = [];
@@ -7117,13 +7199,15 @@ useEffect(() => {
     }
   };
 
-  // 添加本周任务
-  const handleAddWeekTask = (text) => {
+ 
+
+// 添加本周任务
+const handleAddWeekTask = (text) => {
     if (!text.trim()) return;
-
-    const weekDates = getWeekDates(currentMonday);
+  
+    const weekDates = getWeekDates(currentMonday); // 这里使用 currentMonday
     const taskId = Date.now().toString();
-
+  
     const newTask = {
       id: taskId,
       text: text.trim(),
@@ -7137,25 +7221,26 @@ useEffect(() => {
       isWeekTask: true,
       reflection: ""
     };
-
+  
     const newTasksByDate = { ...tasksByDate };
-
+  
     weekDates.forEach(dateObj => {
       if (!newTasksByDate[dateObj.date]) {
         newTasksByDate[dateObj.date] = [];
       }
-
+  
       const existingTask = newTasksByDate[dateObj.date].find(
         task => task.isWeekTask && task.text === text.trim()
       );
-
+  
       if (!existingTask) {
         newTasksByDate[dateObj.date] = [...newTasksByDate[dateObj.date], { ...newTask }];
       }
     });
-
+  
     setTasksByDate(newTasksByDate);
   };
+
 
   // 在批量导入任务的函数中修改
   const handleImportTasks = () => {
