@@ -4936,27 +4936,39 @@ const TaskItem = ({
 }) => {
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const [showProgressControls, setShowProgressControls] = useState(false);
   
+// 在 TaskItem 中添加更详细的调试
+console.log('🔍 详细对比:', {
+  任务文本: task.text,
+  任务ID: task.id,
+  isCrossDate: task.isCrossDate,
+  crossDateId: task.crossDateId,
+  'isCrossDate === true': task.isCrossDate === true,
+  'isCrossDate == true': task.isCrossDate === true,
+  '!!isCrossDate': !!task.isCrossDate,
+  'Boolean(isCrossDate)': Boolean(task.isCrossDate)
+});
 
-  console.log('🔍 完整任务对象:', task);
-  console.log('🎯 标识字段检查:', {
-    'task.isCrossDate': task.isCrossDate,
-    'task.isWeekTask': task.isWeekTask,
-    'typeof isCrossDate': typeof task.isCrossDate,
-    '存在isCrossDate字段': 'isCrossDate' in task,
-    '存在isWeekTask字段': 'isWeekTask' in task,
-    '所有字段': Object.keys(task)
-  });
 
-  // 测试各种可能的条件
-  console.log('🧪 条件测试:', {
-    '直接判断': task.isCrossDate,
-    '严格等于true': task.isCrossDate === true,
-    '宽松等于true': task.isCrossDate === true,
-    '转换为布尔值': Boolean(task.isCrossDate),
-    '双重非运算': !!task.isCrossDate
-  });
+
+
+// 检查跨日期任务是否有特殊属性影响渲染
+console.log('🔍 跨日期任务特殊属性:', {
+  文本: task.text,
+  crossDateId: task.crossDateId,
+  isCrossDate: task.isCrossDate,
+  crossDates: task.crossDates,
+  // 检查是否有其他影响渲染的属性
+  所有属性: Object.keys(task)
+});
+
+
+// 特别检查跨日期任务
+if (task.crossDateId) {
+  console.log('🎯 这是跨日期任务，但 isCrossDate 是:', task.isCrossDate);
+}
 
   
 // 在 TaskItem 组件中，修复计时器状态判断
@@ -5071,7 +5083,7 @@ const handleTimerClick = () => {
                 }}
               >
                 
-                {task.isCrossDate && (
+                {isMobile && task.isCrossDate && (
     <span 
       style={{ 
         display: "inline-block !important",
