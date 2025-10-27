@@ -5604,10 +5604,14 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
   const [pointHistory, setPointHistory] = useState([]);
+  const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
+  const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
+  const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
+  const [showBulkInput, setShowBulkInput] = useState(false); // 控制是否显示批量导入框
   const [newTaskCategory, setNewTaskCategory] = useState(categories[0].name);
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
-  const [showBulkInput, setShowBulkInput] = useState(false);
+  
   const [showStats, setShowStats] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
@@ -10703,41 +10707,235 @@ if (isInitialized && todayTasks.length === 0) {
         </div>
       )}
 
-      {/* 批量导入输入框（展开时显示） */}
-      {showBulkInput && (
-        <div ref={bulkInputRef} style={{ marginTop: 8 }}>
-          <textarea
-            value={bulkText}
-            onChange={(e) => setBulkText(e.target.value)}
-            placeholder="第一行写类别，其余每行一条任务"
-            style={{
-              width: "100%",
-              minHeight: 80,
-              padding: 6,
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              fontSize: "16px"
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleImportTasks();
-            }}
-            style={{
-              marginTop: 6,
-              padding: 6,
-              width: "100%",
-              backgroundColor: "#1a73e8",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer"
-            }}
-          >
-            导入任务
-          </button>
+     
+     {showBulkInput && (
+  <div ref={bulkInputRef} style={{ marginTop: 8 }}>
+    <textarea
+      value={bulkText}
+      onChange={(e) => setBulkText(e.target.value)}
+      placeholder="第一行写类别，其余每行一条任务"
+      style={{
+        width: "100%",
+        minHeight: 80,
+        padding: 6,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        fontSize: "16px"
+      }}
+      onClick={(e) => e.stopPropagation()}
+    />
+
+    {/* 标签选择区域 */}
+    <div style={{ margin: "8px 0" }}>
+      <div style={{ marginBottom: 5, fontWeight: "bold", fontSize: 14 }}>选择标签:</div>
+
+     {/* 标签显示 + 添加标签 */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "stretch",   // 两边高度一致
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 8,
+    width: "100%"
+  }}
+>
+  {/* 已选标签显示 */}
+  <div
+    style={{
+      flex: "0 0 50%",      // 占 50%
+      width: "50%",         // 保底
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 4,
+      minHeight: 25,
+      padding: "4px 8px",
+      border: "1px solid #ccc",
+      borderRadius: 6,
+      alignItems: "center",
+      boxSizing: "border-box",
+      backgroundColor: "#fafafa"
+    }}
+  >
+    {bulkTags?.map((tag, index) => (
+      <span
+        key={index}
+        style={{
+          fontSize: 12,
+          padding: "2px 8px",
+          backgroundColor: tag.color || "#e0e0e0",
+          color: "#333",
+          borderRadius: 12,
+          border: "1px solid #ccc",
+          display: "flex",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        {tag.name}
+        <button
+          type="button"
+          onClick={() => {
+            const newTags = [...bulkTags];
+            newTags.splice(index, 1);
+            setBulkTags(newTags);
+          }}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 12,
+            padding: 0,
+            width: 16,
+            height: 16,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          ×
+        </button>
+      </span>
+    ))}
+    {(!bulkTags || bulkTags.length === 0) && (
+      <span style={{ fontSize: 12, color: "#999" }}>暂无标签，可在右侧添加</span>
+    )}
+  </div>
+
+  {/* 添加新标签 */}
+  <div
+    style={{
+      flex: "0 0 50%",    // 占 50%
+      width: "50%",
+      display: "flex",
+      gap: 4,
+      alignItems: "center",
+      justifyContent: "space-between",
+      boxSizing: "border-box"
+    }}
+  >
+    <input
+      type="text"
+      placeholder="标签名"
+      value={bulkNewTagName}
+      onChange={(e) => setBulkNewTagName(e.target.value)}
+      style={{
+        flex: 1,
+        padding: "6px 8px",
+        border: "1px solid #ccc",
+        borderRadius: 4,
+        fontSize: 12
+      }}
+    />
+    <input
+      type="color"
+      value={bulkNewTagColor}
+      onChange={(e) => setBulkNewTagColor(e.target.value)}
+      style={{
+        width: 34,
+        height: 34,
+        padding: 0,
+        border: "1px solid #ccc",
+        borderRadius: 4
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => {
+        if (bulkNewTagName?.trim()) {
+          const newTag = {
+            name: bulkNewTagName.trim(),
+            color: bulkNewTagColor || "#e0e0e0"
+          };
+          const updatedTags = [...(bulkTags || []), newTag];
+          setBulkTags(updatedTags);
+          setBulkNewTagName("");
+          setBulkNewTagColor("#e0e0e0");
+        }
+      }}
+      style={{
+        padding: "6px 8px",
+        backgroundColor: "#1a73e8",
+        color: "#fff",
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        fontSize: 12,
+        whiteSpace: "nowrap"
+      }}
+    >
+      添加
+    </button>
+  </div>
+</div>
+
+
+
+
+     
+      {/* 常用标签 */}
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>常用标签:</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {[
+            { name: "重要", color: "#ff4444" },
+            { name: "紧急", color: "#ff9800" },
+            { name: "复习", color: "#4caf50" },
+            { name: "预习", color: "#2196f3" },
+            { name: "作业", color: "#9c27b0" },
+            { name: "考试", color: "#e91e63" },
+            { name: "背诵", color: "#795548" },
+            { name: "练习", color: "#607d8b" }
+          ].map((tag, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => {
+                const existingTags = bulkTags || [];
+                const isAlreadyAdded = existingTags.some((t) => t.name === tag.name);
+                if (!isAlreadyAdded) {
+                  setBulkTags([...existingTags, tag]);
+                }
+              }}
+              style={{
+                padding: "4px 8px",
+                backgroundColor: tag.color,
+                color: "#fff",
+                border: "none",
+                borderRadius: 12,
+                cursor: "pointer",
+                fontSize: 11
+              }}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* 导入任务按钮 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleImportTasks();
+      }}
+      style={{
+        marginTop: 6,
+        padding: 6,
+        width: "100%",
+        backgroundColor: "#1a73e8",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer"
+      }}
+    >
+      导入任务
+    </button>
+
+
 
           {/* 展开状态下显示的评分和感想 */}
           <div style={{
