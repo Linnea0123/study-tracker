@@ -5557,33 +5557,47 @@ const saveEditSubTask = () => {
             </div>
           ) : (
             <span 
-              onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const newNote = window.prompt("添加备注", subTask.note || "");
-                if (newNote !== null) {
-                  onEditSubTask(task, index, subTask.text, newNote);
-                }
-              }}
-              style={{ 
-                textDecoration: "none",
-                cursor: 'pointer',
-                flex: 1,
-                padding: '3px 4px 1px 4px',
-                borderRadius: '3px',
-                transition: 'background-color 0.2s',
-                minHeight: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                lineHeight: '1.2'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-              onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              title="左键编辑文本，右键添加备注"
-            >
-              {subTask.text}
-            </span>
+  onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
+  onContextMenu={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newNote = window.prompt("添加备注", subTask.note || "");
+    if (newNote !== null) {
+      onEditSubTask(task, index, subTask.text, newNote);
+    }
+  }}
+  onTouchStart={(e) => {
+    // 记录触摸开始时间
+    e.touchStartTime = Date.now();
+  }}
+  onTouchEnd={(e) => {
+    // 长按判断（超过500ms）
+    if (Date.now() - e.touchStartTime > 500) {
+      e.preventDefault();
+      const newNote = window.prompt("添加备注", subTask.note || "");
+      if (newNote !== null) {
+        onEditSubTask(task, index, subTask.text, newNote);
+      }
+    }
+  }}
+  style={{ 
+    textDecoration: "none",
+    cursor: 'pointer',
+    flex: 1,
+    padding: '3px 4px 1px 4px',
+    borderRadius: '3px',
+    transition: 'background-color 0.2s',
+    minHeight: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    lineHeight: '1.2'
+  }}
+  onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+  title="左键编辑文本，右键/长按添加备注"
+>
+  {subTask.text}
+</span>
           )}
         </div>
         
@@ -5768,6 +5782,57 @@ function App() {
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
   
+
+// 在 App 组件中添加这个函数
+const handleImportTasks = () => {
+  if (!bulkText.trim()) return;
+
+  const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+
+  // 默认分类为 Shelddi
+  const category = "Shelddi";
+  
+  // 第一行是主任务，第二行开始是子任务
+  const mainTaskText = lines[0];
+  const subTasks = lines.slice(1)
+    .filter(line => line.trim() !== '')
+    .map((line, index) => {
+      // 用 | 分隔子任务和备注
+      const [taskText, note] = line.split('|').map(s => s.trim());
+      return {
+        text: taskText || line,
+        note: note || "",
+        done: false
+      };
+    });
+
+  const newTask = {
+    id: Date.now().toString(),
+    text: mainTaskText,
+    category,
+    done: false,
+    timeSpent: 0,
+    note: "",
+    image: null,
+    scheduledTime: "",
+    pinned: false,
+    reflection: "",
+    tags: bulkTags && bulkTags.length > 0 ? bulkTags : [{ name: '导入', color: '#6B7280', textColor: '#fff' }],
+    subTasks: subTasks
+  };
+
+  setTasksByDate(prev => ({
+    ...prev,
+    [selectedDate]: [...(prev[selectedDate] || []), newTask]
+  }));
+
+  setBulkText("");
+  setBulkTags([]);
+  setShowBulkInput(false);
+  
+  alert(`成功导入任务！\n主任务: ${mainTaskText}\n子任务: ${subTasks.length} 个`);
+};
 
 
 
@@ -8079,45 +8144,6 @@ const handleAddWeekTask = (text) => {
 
 
 
-  // 在批量导入任务的函数中修改
-  const handleImportTasks = () => {
-    if (!bulkText.trim()) return;
-
-    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-
-    let category = categories[0].name;
-    for (const c of categories) {
-      if (lines[0].includes(c.name)) {
-        category = c.name;
-        break;
-      }
-    }
-
-    const newTasks = lines.slice(1).map((line, index) => ({
-      id: Date.now().toString() + index,
-      text: line,
-      category,
-      done: false,
-      timeSpent: 0,
-      note: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      reflection: "",
-      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
-    }));
-
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
-    }));
-
-    setBulkText("");
-    setShowBulkInput(false);
-  };
-
- 
  
 
 
