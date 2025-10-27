@@ -10775,7 +10775,8 @@ if (isInitialized && todayTasks.length === 0) {
         {tag.name}
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation(); // 阻止事件冒泡
             const newTags = [...bulkTags];
             newTags.splice(index, 1);
             setBulkTags(newTags);
