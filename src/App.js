@@ -5783,58 +5783,49 @@ function App() {
   const [editingAchievement, setEditingAchievement] = useState(null);
   
 
-// 在 App 组件中添加这个函数
-const handleImportTasks = () => {
-  if (!bulkText.trim()) return;
 
-  const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-  if (lines.length === 0) return;
-
-  // 默认分类为 Shelddi
-  const category = "Shelddi";
   
-  // 第一行是主任务，第二行开始是子任务
-  const mainTaskText = lines[0];
-  const subTasks = lines.slice(1)
-    .filter(line => line.trim() !== '')
-    .map((line, index) => {
-      // 用 | 分隔子任务和备注
-      const [taskText, note] = line.split('|').map(s => s.trim());
-      return {
-        text: taskText || line,
-        note: note || "",
-        done: false
-      };
-    });
+ // 在批量导入任务的函数中修改
+ const handleImportTasks = () => {
+    if (!bulkText.trim()) return;
 
-  const newTask = {
-    id: Date.now().toString(),
-    text: mainTaskText,
-    category,
-    done: false,
-    timeSpent: 0,
-    note: "",
-    image: null,
-    scheduledTime: "",
-    pinned: false,
-    reflection: "",
-    tags: bulkTags && bulkTags.length > 0 ? bulkTags : [{ name: '导入', color: '#6B7280', textColor: '#fff' }],
-    subTasks: subTasks
+    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    let category = categories[0].name;
+    for (const c of categories) {
+      if (lines[0].includes(c.name)) {
+        category = c.name;
+        break;
+      }
+    }
+
+    const newTasks = lines.slice(1).map((line, index) => ({
+      id: Date.now().toString() + index,
+      text: line,
+      category,
+      done: false,
+      timeSpent: 0,
+      note: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      reflection: "",
+      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
+    }));
+
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
+    }));
+
+    setBulkText("");
+    setShowBulkInput(false);
   };
 
-  setTasksByDate(prev => ({
-    ...prev,
-    [selectedDate]: [...(prev[selectedDate] || []), newTask]
-  }));
 
-  setBulkText("");
-  setBulkTags([]);
-  setShowBulkInput(false);
+
   
-  alert(`成功导入任务！\n主任务: ${mainTaskText}\n子任务: ${subTasks.length} 个`);
-};
-
-
 
   // 修复：成就检查逻辑
 useEffect(() => {
@@ -7955,9 +7946,9 @@ useEffect(() => {
   };
 
   // 添加任务
-  const handleAddTask = (template = null) => {
+const handleAddTask = (template = null) => {
     let text, category;
-
+  
     if (template) {
       text = template.content;
       category = template.category;
@@ -7966,7 +7957,7 @@ useEffect(() => {
       category = newTaskCategory;
       if (!text) return;
     }
-
+  
     const baseTask = {
       id: Date.now().toString(),
       text,
@@ -7992,29 +7983,30 @@ useEffect(() => {
         unit: "%"
       }
     };
-
+  
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
-
-      const hasRepeatConfig = repeatConfig.frequency &&
-        (repeatConfig.frequency === "" ||
-          (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
-
+  
+      // 修复：正确判断是否有重复配置
+      const hasRepeatConfig = repeatConfig.frequency && 
+        (repeatConfig.frequency === "daily" || 
+         (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
+  
       if (hasRepeatConfig) {
         if (repeatConfig.frequency === "daily") {
           for (let i = 0; i < 7; i++) {
             const date = new Date(selectedDate);
             date.setDate(date.getDate() + i);
             const dateStr = date.toISOString().split("T")[0];
-
+  
             if (!newTasksByDate[dateStr]) {
               newTasksByDate[dateStr] = [];
             }
-
+  
             const existingTask = newTasksByDate[dateStr].find(
               task => task.text === text && task.category === category
             );
-
+  
             if (!existingTask) {
               newTasksByDate[dateStr].push({
                 ...baseTask,
@@ -8025,78 +8017,84 @@ useEffect(() => {
               });
             }
           }
-        } else 
+        } else if (repeatConfig.frequency === "weekly") {
+          const startDate = new Date(selectedDate);
         
-     // 在 handleAddTask 函数中的重复任务部分
-if (repeatConfig.frequency === "weekly") {
-    const startDate = new Date(selectedDate);
-  
-    for (let week = 0; week < 4; week++) {
-      const weekStart = new Date(startDate);
-      weekStart.setDate(startDate.getDate() + (week * 7));
-      
-      // 使用 getMonday 确保从周一开始
-      const weekMonday = getMonday(weekStart);
-  
-      repeatConfig.days.forEach((isSelected, dayIndex) => {
-        if (isSelected) {
-          const taskDate = new Date(weekMonday);
-          taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
-          
-          const dateStr = taskDate.toISOString().split("T")[0];
-  
-          if (taskDate >= new Date(selectedDate)) {
-            if (!newTasksByDate[dateStr]) {
-              newTasksByDate[dateStr] = [];
-            }
-  
-            const existingTask = newTasksByDate[dateStr].find(
-              task => task.text === text && task.category === category
-            );
-  
-            if (!existingTask) {
-              newTasksByDate[dateStr].push({
-                ...baseTask,
-                id: `${baseTask.id}_${dateStr}`,
-                isRepeating: true,
-                repeatId: baseTask.id
-              });
-            }
+          for (let week = 0; week < 4; week++) {
+            const weekStart = new Date(startDate);
+            weekStart.setDate(startDate.getDate() + (week * 7));
+            
+            // 使用 getMonday 确保从周一开始
+            const weekMonday = getMonday(weekStart);
+        
+            repeatConfig.days.forEach((isSelected, dayIndex) => {
+              if (isSelected) {
+                const taskDate = new Date(weekMonday);
+                taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
+                
+                const dateStr = taskDate.toISOString().split("T")[0];
+        
+                if (taskDate >= new Date(selectedDate)) {
+                  if (!newTasksByDate[dateStr]) {
+                    newTasksByDate[dateStr] = [];
+                  }
+        
+                  const existingTask = newTasksByDate[dateStr].find(
+                    task => task.text === text && task.category === category
+                  );
+        
+                  if (!existingTask) {
+                    newTasksByDate[dateStr].push({
+                      ...baseTask,
+                      id: `${baseTask.id}_${dateStr}`,
+                      isRepeating: true,
+                      repeatId: baseTask.id
+                    });
+                  }
+                }
+              }
+            });
           }
         }
-      });
-    }
-  }
       } else {
+        // 没有重复配置：只添加到当前日期
         if (!newTasksByDate[selectedDate]) {
           newTasksByDate[selectedDate] = [];
         }
-
+  
         const existingTask = newTasksByDate[selectedDate].find(
           task => task.text === text && task.category === category
         );
-
+  
         if (!existingTask) {
           newTasksByDate[selectedDate].push(baseTask);
         }
       }
-
+  
       return newTasksByDate;
     });
-
+  
     if (!template) {
       setNewTaskText("");
       setShowAddInput(false);
+      // 修复：重置重复配置时，frequency 设为空字符串，避免默认重复
       setRepeatConfig({
-        frequency: "daily",
+        frequency: "", // 改为空字符串，默认不重复
         days: [false, false, false, false, false, false, false],
         startTime: "",
-        endTime: ""
+        endTime: "",
+        reminderYear: "",
+        reminderMonth: "", 
+        reminderDay: "",
+        reminderHour: "",
+        reminderMinute: "",
       });
     }
   };
 
- 
+
+
+
 
 // 添加本周任务
 const handleAddWeekTask = (text) => {
