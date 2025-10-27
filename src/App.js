@@ -6377,12 +6377,13 @@ const generateDailyLog = () => {
     markdownContent += `### ${category}\n`;
     
     tasks.forEach((task, index) => {
-      const timeText = task.timeSpent ? `${Math.floor(task.timeSpent / 60)}m` : '0m';
+      const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+      const timeText = `【${minutes}m】`; // 改为【Xm】格式
       const status = task.done ? '✅' : '❌';
       const markdownStatus = task.done ? '- [x]' : '- [ ]';
       
-      logContent += `  ${index + 1}. ${status} ${task.text} - ${timeText}\n`;
-      markdownContent += `${markdownStatus} ${task.text} - ${timeText}\n`;
+      logContent += `  ${index + 1}. ${status} ${task.text} ${timeText}\n`;
+      markdownContent += `${markdownStatus} ${task.text} ${timeText}\n`;
       
       if (task.note) {
         logContent += `     备注: ${task.note}\n`;
@@ -11321,36 +11322,7 @@ if (isInitialized && todayTasks.length === 0) {
         >
           我的成就
         </button>
-        <button
-  onClick={() => {
-    const tasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks'));
-    const friday = tasks['2025-10-25'] || [];
-    const saturday = tasks['2025-10-26'] || [];
-    
-    console.log('=== 跨日期任务状态检查 ===');
-    friday.filter(t => t.isCrossDate).forEach(ft => {
-      const sameInSaturday = saturday.find(st => st.crossDateId === ft.crossDateId);
-      if (sameInSaturday) {
-        console.log(`任务: "${ft.text}"`);
-        console.log(`  Friday (${ft.done}): ${ft.id}`);
-        console.log(`  Saturday (${sameInSaturday.done}): ${sameInSaturday.id}`);
-        console.log(`  crossDateId: ${ft.crossDateId}`);
-      }
-    });
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#17a2b8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    cursor: "pointer",
-    marginLeft: 10
-  }}
->
-  检查跨日期状态
-</button>
+
       </div>
     </div>
   );
