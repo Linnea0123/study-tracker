@@ -10518,35 +10518,39 @@ if (isInitialized && todayTasks.length === 0) {
           backgroundColor: "#f8f9fa",
           borderRadius: "8px"
         }}>
-          {/* 今日评分 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-              今日评分:
-            </div>
-            <select
-              value={dailyRating}
-              onChange={(e) => setDailyRating(parseInt(e.target.value))}
-              style={{
-                width: "100%",
-                padding: "6px 8px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "12px",
-                backgroundColor: "white"
-              }}
-            >
-              <option value="0">评分</option>
-              <option value="1">⭐</option>
-              <option value="2">⭐⭐</option>
-              <option value="3">⭐⭐⭐</option>
-              <option value="4">⭐⭐⭐⭐</option>
-              <option value="5">⭐⭐⭐⭐⭐</option>
-            </select>
-          </div>
+          
 
-         {/* 今日感想 */}
+{/* 今日评分 */}
+<div style={{ flex: 1 }}>
+  <div style={{ fontSize: "12px", marginBottom: "8px", color: "#666", paddingLeft: "1px" }}>
+    今日评分:
+  </div>
+  <select
+    value={dailyRating}
+    onChange={(e) => setDailyRating(parseInt(e.target.value))}
+    style={{
+      width: "100%",
+      padding: "6px 8px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      fontSize: "12px",
+      backgroundColor: "white",
+      height: "32px",
+      boxSizing: "border-box"
+    }}
+  >
+    <option value="0">评分</option>
+    <option value="1">⭐</option>
+    <option value="2">⭐⭐</option>
+    <option value="3">⭐⭐⭐</option>
+    <option value="4">⭐⭐⭐⭐</option>
+    <option value="5">⭐⭐⭐⭐⭐</option>
+  </select>
+</div>
+
+{/* 今日感想 */}
 <div style={{ flex: 2 }}>
-  <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
+  <div style={{ fontSize: "12px", marginBottom: "8px", color: "#666", paddingLeft: "1px" }}>
     今日感想:
   </div>
   <input
@@ -10559,10 +10563,17 @@ if (isInitialized && todayTasks.length === 0) {
       padding: "6px 8px",
       border: "1px solid #ddd",
       borderRadius: "4px",
-      fontSize: "12px"
+      fontSize: "12px",
+      height: "32px",
+      boxSizing: "border-box"
     }}
-            />
-          </div>
+  />
+</div>
+          
+
+
+
+
         </div>
       )}
 
