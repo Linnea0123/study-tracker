@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
@@ -5939,6 +5940,8 @@ useEffect(() => {
 
    
 
+
+    
    
 
     // 测试存储函数
@@ -5956,6 +5959,25 @@ useEffect(() => {
     testStorage();
 }, []);
   
+
+
+// 添加强制数据加载的 useEffect
+useEffect(() => {
+  console.log('📱 手机端强制数据加载开始...');
+  
+  const loadAllData = async () => {
+    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+    
+    for (const key of keys) {
+      console.log(`🔄 加载 ${key}...`);
+      const data = await SyncService.loadData('user_123', key);
+      console.log(`📦 ${key} 加载结果:`, data ? '✅ 成功' : '❌ 失败');
+    }
+  };
+  
+  // 延迟执行，确保其他初始化完成
+  setTimeout(loadAllData, 1000);
+}, []);
 
   // 修复：成就检查逻辑
 useEffect(() => {
