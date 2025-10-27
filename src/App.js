@@ -49,47 +49,58 @@ class SyncService {
     }
   }
 
+  
+
   static async loadData(userId, key) {
     try {
-      const storageKey = `study-tracker-${userId}-${key}`
+      const storageKey = `study-tracker-${userId}-${key}`;
       
-      console.log('🔄 正在从 Supabase 加载数据:', { userId, key, storageKey })
+      console.log('🔄 正在从 Supabase 加载数据:', { userId, key, storageKey });
       
-      // 1. 先尝试从 localStorage 加载
-      const localData = localStorage.getItem(storageKey)
-      if (localData) {
-        console.log('✅ 从本地存储加载数据:', key)
-        return JSON.parse(localData)
-      }
-      
-      // 2. 如果本地没有，从 Supabase 加载
+      // 1. 优先从 Supabase 加载最新数据
       const { data: supabaseData, error } = await supabase
         .from('user_data')
-        .select('data_value')
+        .select('data_value, updated_at')
         .eq('user_id', userId)
         .eq('data_key', storageKey)
-        .single()
+        .single();
       
       if (error) {
-        console.log('ℹ️ Supabase 无数据或加载失败:', key, error.message)
-        return null
+        console.log('ℹ️ Supabase 无数据或加载失败:', key, error.message);
+        // 失败时回退到本地数据
+        const localData = localStorage.getItem(storageKey);
+        if (localData) {
+          console.log('✅ 使用本地存储数据:', key);
+          return JSON.parse(localData);
+        }
+        return null;
       }
       
-      if (!supabaseData) {
-        console.log('ℹ️ Supabase 无数据:', key)
-        return null
+      if (supabaseData && supabaseData.data_value) {
+        // Supabase 有数据，更新本地存储
+        console.log('✅ 从 Supabase 加载成功:', key);
+        localStorage.setItem(storageKey, JSON.stringify(supabaseData.data_value));
+        return supabaseData.data_value;
       }
       
-      // 保存到 localStorage 备用
-      localStorage.setItem(storageKey, JSON.stringify(supabaseData.data_value))
-      console.log('✅ 从 Supabase 加载成功:', key)
-      return supabaseData.data_value
+      // 2. 如果 Supabase 没有数据，使用本地数据
+      const localData = localStorage.getItem(storageKey);
+      if (localData) {
+        console.log('ℹ️ Supabase 无数据，使用本地存储:', key);
+        return JSON.parse(localData);
+      }
+      
+      console.log('ℹ️ 无数据:', key);
+      return null;
       
     } catch (error) {
-      console.error('❌ 加载数据失败:', error)
-      return null
+      console.error('❌ 加载数据失败:', error);
+      // 出错时也回退到本地数据
+      const localData = localStorage.getItem(`study-tracker-${userId}-${key}`);
+      return localData ? JSON.parse(localData) : null;
     }
   }
+
 }
 // ========== Supabase 代码结束 ==========
 
