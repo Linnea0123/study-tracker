@@ -4,11 +4,12 @@ import './App.css';
 
 
 const categories = [
-  { name: "语文", color: "#4a90e2" },
-  { name: "数学", color: "#357ABD" },
+  { name: "Shelddi", color: "#8B5CF6" }, // 新增紫色分类
+  { name: "中文", color: "#4a90e2" },
+  { name: "日语", color: "#357ABD" },
   { name: "英语", color: "#1e73be" },
-  { name: "科学", color: "#00aaff" },
-  { name: "体育", color: "#3399ff" },
+  { name: "其他", color: "#00aaff" },
+  { name: "锻炼", color: "#3399ff" },
 ];
 
 // ========== 成就系统配置 ==========
@@ -4940,7 +4941,7 @@ const TaskItem = ({
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
-  
+  const [editingSubTaskNoteIndex, setEditingSubTaskNoteIndex] = useState(null);
 
 // 在 TaskItem 组件中，修复计时器状态判断
 const isThisTaskRunning = activeTimer && (
@@ -4969,14 +4970,21 @@ const handleTimerClick = () => {
     setEditSubTaskText(currentText);
   };
 
-  // 保存子任务编辑
-  const saveEditSubTask = () => {
-    if (editSubTaskText.trim() && editingSubTaskIndex !== null) {
-      onEditSubTask(task, editingSubTaskIndex, editSubTaskText.trim());
-    }
-    setEditingSubTaskIndex(null);
-    setEditSubTaskText('');
-  };
+// 修改保存子任务函数
+const saveEditSubTask = () => {
+  if (editSubTaskText.trim() && editingSubTaskIndex !== null) {
+    // 获取当前子任务的备注
+    const currentSubTask = task.subTasks[editingSubTaskIndex];
+    const currentNote = currentSubTask?.note || '';
+    
+    // 保存文本和备注
+    onEditSubTask(task, editingSubTaskIndex, editSubTaskText.trim(), currentNote);
+  }
+  setEditingSubTaskIndex(null);
+  setEditSubTaskText('');
+};
+
+
 
   // 取消编辑
   const cancelEditSubTask = () => {
@@ -5046,7 +5054,7 @@ const handleTimerClick = () => {
                   wordBreak: "break-word",
                   whiteSpace: "normal",
                   cursor: "pointer",
-                  textDecoration: task.done ? "line-through" : "none",
+                textDecoration: "none",
                   color: task.done ? "#999" : "#000",
                   fontWeight: task.pinned ? "bold" : "normal",
                   lineHeight: "1.4",
@@ -5190,7 +5198,7 @@ const handleTimerClick = () => {
                 wordBreak: "break-word",
                 whiteSpace: "normal",
                 cursor: "pointer",
-                textDecoration: task.done ? "line-through" : "none",
+                textDecoration: "none",
                 color: task.done ? "#999" : "#000",
                 fontWeight: task.pinned ? "bold" : "normal",
                 lineHeight: "1.4",
@@ -5487,23 +5495,24 @@ const handleTimerClick = () => {
     </div>
   )}
 
-  {task.subTasks && task.subTasks.length > 0 && (
-    <div style={{ 
-      marginTop: (task.note || task.reflection) ? 2 : -2, // 根据是否有备注/感想调整上边距
-      marginBottom: 0,
-      borderLeft: '2px solid #e0e0e0', 
-      paddingLeft: 8
-    }}>
-      {task.subTasks.map((subTask, index) => (
-        <div key={index} style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1,
-          marginBottom: 2,
-          fontSize: 12, 
-          color: task.done ? '#999' : '#666',
-          minHeight: '18px'
-        }}>
+{task.subTasks && task.subTasks.length > 0 && (
+  <div style={{ 
+    marginTop: (task.note || task.reflection) ? 2 : -2,
+    marginBottom: 0,
+    borderLeft: '2px solid #e0e0e0', 
+    paddingLeft: 8
+  }}>
+    {task.subTasks.map((subTask, index) => (
+      <div key={index} style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: 1,
+        marginBottom: 4,
+        fontSize: 12, 
+        color: task.done ? '#999' : '#666',
+        minHeight: '18px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <input
             type="checkbox"
             checked={subTask.done}
@@ -5512,28 +5521,53 @@ const handleTimerClick = () => {
           />
           
           {editingSubTaskIndex === index ? (
-            <input
-              type="text"
-              value={editSubTaskText}
-              onChange={(e) => setEditSubTaskText(e.target.value)}
-              onBlur={saveEditSubTask}
-              onKeyDown={handleKeyPress}
-              autoFocus
-              style={{
-                flex: 1,
-                padding: '1px 4px',
-                border: '1px solid #1a73e8',
-                borderRadius: '3px',
-                fontSize: '12px',
-                outline: 'none',
-                height: '20px'
-              }}
-            />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <input
+                type="text"
+                value={editSubTaskText}
+                onChange={(e) => setEditSubTaskText(e.target.value)}
+                onBlur={saveEditSubTask}
+                onKeyDown={handleKeyPress}
+                autoFocus
+                style={{
+                  padding: '1px 4px',
+                  border: '1px solid #1a73e8',
+                  borderRadius: '3px',
+                  fontSize: '12px',
+                  outline: 'none',
+                  height: '20px'
+                }}
+              />
+              {/* 编辑模式下也显示备注 */}
+              {subTask.note && (
+                <div style={{ 
+                  fontSize: '11px', 
+                  color: '#333',
+                  marginLeft: '0px',
+                  padding: '2px 6px',
+                  backgroundColor: '#fff9c4',
+                  borderRadius: '3px',
+                  border: '1px solid #ffd54f',
+                
+                  lineHeight: '1.3'
+                }}>
+                  💭 {subTask.note}
+                </div>
+              )}
+            </div>
           ) : (
             <span 
-              onClick={() => startEditSubTask(index, subTask.text)}
+              onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const newNote = window.prompt("添加备注", subTask.note || "");
+                if (newNote !== null) {
+                  onEditSubTask(task, index, subTask.text, newNote);
+                }
+              }}
               style={{ 
-                textDecoration: subTask.done ? 'line-through' : 'none',
+                textDecoration: "none",
                 cursor: 'pointer',
                 flex: 1,
                 padding: '3px 4px 1px 4px',
@@ -5546,16 +5580,82 @@ const handleTimerClick = () => {
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
               onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              title="左键编辑文本，右键添加备注"
             >
               {subTask.text}
             </span>
           )}
         </div>
-      ))}
-    </div>
-  )}
+        
+        {/* 非编辑模式下备注显示在子任务下面 - 内联编辑版本 */}
+        {editingSubTaskIndex !== index && subTask.note && (
+          <div style={{ 
+            marginLeft: '20px'
+          }}>
+            {editingSubTaskNoteIndex === index ? (
+              <input
+                type="text"
+                defaultValue={subTask.note}
+                onBlur={(e) => {
+                  const newNote = e.target.value.trim();
+                  if (newNote !== subTask.note) {
+                    onEditSubTask(task, index, subTask.text, newNote);
+                  }
+                  setEditingSubTaskNoteIndex(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const newNote = e.target.value.trim();
+                    if (newNote !== subTask.note) {
+                      onEditSubTask(task, index, subTask.text, newNote);
+                    }
+                    setEditingSubTaskNoteIndex(null);
+                  } else if (e.key === 'Escape') {
+                    setEditingSubTaskNoteIndex(null);
+                  }
+                }}
+                autoFocus
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  border: '1px solid #1a73e8',
+                  borderRadius: '3px',
+                  outline: 'none',
+                  width: '100%',
+                  backgroundColor: '#fff9c4'
+                }}
+              />
+            ) : (
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingSubTaskNoteIndex(index);
+                }}
+                style={{ 
+                  fontSize: '11px', 
+                  color: '#333',
+                  padding: '2px 6px',
+                  backgroundColor: '#fff9c4',
+                  borderRadius: '3px',
+                  border: '1px solid #ffd54f',
+                 
+                  lineHeight: '1.3',
+                  cursor: 'pointer'
+                }}
+                title="点击编辑备注"
+              >
+                💭 {subTask.note}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
 </div>
- 
+
+
 
 
       {task.scheduledTime && (
@@ -6133,15 +6233,21 @@ useEffect(() => {
   
   // 在状态更新后强制渲染
  
-// 修复 editSubTask 函数
-const editSubTask = (task, subTaskIndex, newText) => {
+
+ const editSubTask = (task, subTaskIndex, newText, newNote = '') => {
+  console.log('保存子任务:', { newText, newNote, subTaskIndex }); // 添加日志
+  
   if (newText && newText.trim() !== '') {
     const updateTaskWithSubTaskEdit = (t) => {
       const currentSubTasks = t.subTasks || [];
       return {
         ...t,
         subTasks: currentSubTasks.map((st, index) => 
-          index === subTaskIndex ? { ...st, text: newText.trim() } : st
+          index === subTaskIndex ? { 
+            ...st, 
+            text: newText.trim(),
+            note: newNote // 确保备注被保存
+          } : st
         )
       };
     };
@@ -6164,8 +6270,6 @@ const editSubTask = (task, subTaskIndex, newText) => {
     }
   }
 };
-
-  
 
 // ========== 自定义成就处理函数 ==========
 const handleAddCustomAchievement = (achievement) => {
@@ -7970,6 +8074,11 @@ const handleAddWeekTask = (text) => {
   };
 
 
+  
+
+
+
+
   // 在批量导入任务的函数中修改
   const handleImportTasks = () => {
     if (!bulkText.trim()) return;
@@ -8008,6 +8117,7 @@ const handleAddWeekTask = (text) => {
     setShowBulkInput(false);
   };
 
+ 
  
 
 
@@ -10794,7 +10904,8 @@ if (isInitialized && todayTasks.length === 0) {
     <textarea
       value={bulkText}
       onChange={(e) => setBulkText(e.target.value)}
-      placeholder="第一行写类别，其余每行一条任务"
+      placeholder="第一行：主任务内容
+第二行及以后：子任务（每行一个子任务）"
       style={{
         width: "100%",
         minHeight: 80,
