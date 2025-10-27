@@ -4,12 +4,12 @@ import './App.css';
 
 
 const categories = [
-  { name: "Shelddi", color: "#8B5CF6" }, // 新增紫色分类
-  { name: "中文", color: "#4a90e2" },
-  { name: "日语", color: "#357ABD" },
-  { name: "英语", color: "#1e73be" },
-  { name: "其他", color: "#00aaff" },
-  { name: "锻炼", color: "#3399ff" },
+{ name: "语文", color: "#8B5CF6" },    // 保持紫色
+{ name: "数学", color: "#4F86F7" },       // 蓝色系
+{ name: "英语", color: "#5D8BF7" },       // 稍浅蓝
+{ name: "科学", color: "#6B90F8" },       // 再浅蓝
+{ name: "其他", color: "#7995F9" },       // 更浅蓝
+{ name: "体育", color: "#879AFA" },       // 最浅蓝
 ];
 
 // ========== 成就系统配置 ==========
