@@ -163,42 +163,45 @@ const ACHIEVEMENTS_CONFIG = {
 
   // 特殊成就
   special: [
-    {
-      id: 'early_bird',
-      name: '早起的鸟儿',
-      description: '在早上8点前开始学习',
-      icon: '🐦',
-      condition: (userData) => {
-        // 简化条件：只要有早上8点前的任务
-        return Math.random() > 0.7; // 随机解锁用于演示
-      },
-      points: 25
+   {
+    id: 'early_bird',
+    name: '早起的鸟儿',
+    description: '在早上6-8点之间完成任务',
+    icon: '🐦',
+    condition: (userData) => {
+      const allTasks = Object.values(userData.tasksByDate).flat();
+      return allTasks.some(task => {
+        if (task.done && task.timeSegments) {
+          return task.timeSegments.some(segment => {
+            if (segment.startTime) {
+              const hour = new Date(segment.startTime).getHours();
+              return hour >= 6 && hour < 8; // 早上6-8点
+            }
+            return false;
+          });
+        }
+        return false;
+      });
     },
-
-    
+    points: 25
+  },
     {
-      id: 'night_owl',
-      name: '夜猫子',
-      description: '在晚上10点后还在学习',
-      icon: '🦉',
-      condition: (userData) => {
-        // 简化条件
-        return Math.random() > 0.7; // 随机解锁用于演示
-      },
-      points: 25
+    id: 'weekend_hero',
+    name: '周末英雄',
+    description: '在周末完成5个任务',
+    icon: '🎪',
+    condition: (userData) => {
+      const weekendTasks = Object.entries(userData.tasksByDate)
+        .filter(([date]) => {
+          const day = new Date(date).getDay();
+          return day === 0 || day === 6; // 周六或周日
+        })
+        .flatMap(([_, tasks]) => tasks.filter(task => task.done));
+      
+      return weekendTasks.length >= 5;
     },
-    {
-      id: 'weekend_hero',
-      name: '周末英雄',
-      description: '周末完成5小时学习',
-      icon: '🎪',
-      condition: (userData) => {
-        // 简化条件
-        return Math.random() > 0.8; // 随机解锁用于演示
-      },
-      points: 35
-    }
-    
+    points: 35
+  }
   ]
 };
 //成就系统end
@@ -5668,6 +5671,63 @@ function App() {
 
 
 
+  // 修复：成就检查逻辑
+useEffect(() => {
+  const checkAndUnlockAchievements = () => {
+    console.log('🔍 开始成就检查:', {
+      isInitialized,
+      任务天数: Object.keys(tasksByDate).length,
+      已解锁成就: unlockedAchievements.length
+    });
+
+    if (isInitialized && Object.keys(tasksByDate).length > 0) {
+      const userData = {
+        tasksByDate,
+        templates,
+        pointHistory,
+        exchangeItems
+      };
+      
+      const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
+      
+      console.log('🎯 新解锁成就检查结果:', newlyUnlocked);
+      
+      if (newlyUnlocked.length > 0) {
+        console.log('🎉 发现新成就，准备解锁:', newlyUnlocked.map(a => a.name));
+        
+        // 修复：确保状态更新和存储保存
+        const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
+        const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
+        
+        // 先更新状态
+        setUnlockedAchievements(updatedUnlocked);
+        setNewAchievements(newlyUnlocked);
+        
+        // 然后保存到存储
+        saveMainData('unlockedAchievements', updatedUnlocked)
+          .then(() => {
+            console.log('✅ 成就数据保存成功');
+            setShowAchievementsModal(true);
+          })
+          .catch(error => {
+            console.error('❌ 成就数据保存失败:', error);
+          });
+      }
+    }
+  };
+
+  // 延迟检查，确保数据完全加载
+  if (isInitialized) {
+    const timer = setTimeout(checkAndUnlockAchievements, 1500);
+    return () => clearTimeout(timer);
+  }
+  
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [tasksByDate, isInitialized]);
+
+
+  
+
 // 跨日期任务模态框
 const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
   const [selectedDays, setSelectedDays] = useState([new Date(selectedDate).getDay()]);
@@ -6138,18 +6198,14 @@ const handleOpenCustomAchievementModal = (achievement = null) => {
 };
 
 
-
-  // ========== 修复成就系统 ==========
+// ========== 修复成就系统 ==========
 
 // 强制日期更新 - 放在组件最前面
 useEffect(() => {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   
-  
-  
   if (selectedDate !== todayStr) {
-   
     setSelectedDate(todayStr);
     setCurrentMonday(getMonday(today));
     
@@ -6170,9 +6226,6 @@ useEffect(() => {
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
-  
-
-
 
 // 加载已解锁的成就
 useEffect(() => {
@@ -6181,7 +6234,6 @@ useEffect(() => {
       const savedAchievements = await loadMainData('unlockedAchievements');
       if (savedAchievements) {
         setUnlockedAchievements(savedAchievements);
-      
       }
     } catch (error) {
       console.error('加载成就数据失败:', error);
@@ -6193,26 +6245,17 @@ useEffect(() => {
   }
 }, [isInitialized]);
 
-
-
 // 保存已解锁的成就
 useEffect(() => {
   const saveUnlockedAchievements = async () => {
     if (isInitialized && unlockedAchievements.length > 0) {
       await saveMainData('unlockedAchievements', unlockedAchievements);
-      
     }
   };
 
   saveUnlockedAchievements();
 }, [unlockedAchievements, isInitialized]);
 
-
-     
-        
-  
-
-  
 // 调试函数 - 在控制台测试成就
 useEffect(() => {
   window.debugAchievements = {
@@ -6246,33 +6289,43 @@ useEffect(() => {
       }
     }
   };
-// 添加延迟检查，确保数据完全加载
-const timer = setTimeout(() => {
+}, [tasksByDate, templates, pointHistory, exchangeItems, unlockedAchievements]);
+
+// 修复：成就检查 - 只在任务数据变化时检查
+useEffect(() => {
   if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    console.log('🔄 任务数据变化，检查成就...');
+    
     const userData = {
       tasksByDate,
-      templates,
-      pointHistory,
-      exchangeItems
+      templates: templates || [],
+      pointHistory: pointHistory || [],
+      exchangeItems: exchangeItems || []
     };
     
-    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
+    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements || []);
     
     if (newlyUnlocked.length > 0) {
-      setNewAchievements(newlyUnlocked);
-      setUnlockedAchievements(prev => [
-        ...prev,
-        ...newlyUnlocked.map(ach => ach.id)
-      ]);
+      console.log('🎉 解锁新成就:', newlyUnlocked.map(a => a.name));
       
+      // 更新状态
+      const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
+      const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
+      
+      setUnlockedAchievements(updatedUnlocked);
+      setNewAchievements(newlyUnlocked);
+      
+      // 保存到存储
+      saveMainData('unlockedAchievements', updatedUnlocked);
+      
+      // 显示成就弹窗
       setTimeout(() => {
         setShowAchievementsModal(true);
-      }, 1000);
+      }, 500);
     }
   }
-}, 2000);
-return () => clearTimeout(timer);
-}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [tasksByDate, isInitialized]);
 
 
 
@@ -7361,7 +7414,12 @@ if (savedUnlockedAchievements) {
       await autoBackup();
       
       // 设置定时备份
-      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+      localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
+console.log('✅ 初始化状态已保存到存储');
+setIsInitialized(true);
+console.log('✅ isInitialized 设置为 true');
+
+const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
       
       // 清理函数
       return () => {
@@ -7375,6 +7433,8 @@ if (savedUnlockedAchievements) {
     
     setIsInitialized(true);
     console.log('✅ isInitialized 设置为 true');
+
+    
   };
 
   initializeApp();
@@ -8417,6 +8477,12 @@ const clearAllData = async () => {
     }]);
     setActiveTimer(null);
     setElapsedTime(0);
+
+     // 修复：清空成就数据
+    setUnlockedAchievements([]);
+    setNewAchievements([]);
+    setCustomAchievements([]);
+    
     
     // 清空所有存储
     await saveMainData('tasks', {});
@@ -8429,6 +8495,9 @@ const clearAllData = async () => {
       totalAfterChange: 0
     }]);
     await saveMainData('activeTimer', null);
+
+     // 清空初始化状态
+    localStorage.removeItem('study-tracker-PAGE_A-v2_isInitialized');
     
     // 清空每日数据
     const today = new Date().toISOString().split("T")[0];
