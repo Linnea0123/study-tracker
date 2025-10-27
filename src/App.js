@@ -3,6 +3,96 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import './App.css';
 
 
+// ========== 直接嵌入 Supabase 代码 ==========
+import { createClient } from '@supabase/supabase-js'
+
+// 保持这样就行
+const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
+const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
+
+const supabase = createClient(
+  'https://rktotbfhdvvmazabyvme.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrdG90YmZoZHZ2bWF6YWJ5dm1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1OTgyMjksImV4cCI6MjA3NjE3NDIyOX0.bTUxD6-1S2vM3zyC2uhqf4hfln97rH5fqJbptbSZIVQ'
+)
+
+class SyncService {
+  static async saveData(userId, key, data) {
+    try {
+      const storageKey = `study-tracker-${userId}-${key}`
+      console.log('🔄 正在保存数据到 Supabase:', { userId, key, storageKey })
+      
+      // 1. 保存到 localStorage
+      localStorage.setItem(storageKey, JSON.stringify(data))
+      
+      // 2. 同步到 Supabase
+      const { error } = await supabase
+        .from('user_data')
+        .upsert({
+          user_id: userId,
+          data_key: storageKey,
+          data_value: data,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id, data_key'
+        })
+      
+      if (error) {
+        console.warn('⚠️ Supabase 保存失败，使用本地存储:', error.message)
+        return false
+      } else {
+        console.log('✅ Supabase 同步成功:', key)
+        return true
+      }
+    } catch (error) {
+      console.error('❌ 保存数据失败:', error)
+      return false
+    }
+  }
+
+  static async loadData(userId, key) {
+    try {
+      const storageKey = `study-tracker-${userId}-${key}`
+      
+      console.log('🔄 正在从 Supabase 加载数据:', { userId, key, storageKey })
+      
+      // 1. 先尝试从 localStorage 加载
+      const localData = localStorage.getItem(storageKey)
+      if (localData) {
+        console.log('✅ 从本地存储加载数据:', key)
+        return JSON.parse(localData)
+      }
+      
+      // 2. 如果本地没有，从 Supabase 加载
+      const { data: supabaseData, error } = await supabase
+        .from('user_data')
+        .select('data_value')
+        .eq('user_id', userId)
+        .eq('data_key', storageKey)
+        .single()
+      
+      if (error) {
+        console.log('ℹ️ Supabase 无数据或加载失败:', key, error.message)
+        return null
+      }
+      
+      if (!supabaseData) {
+        console.log('ℹ️ Supabase 无数据:', key)
+        return null
+      }
+      
+      // 保存到 localStorage 备用
+      localStorage.setItem(storageKey, JSON.stringify(supabaseData.data_value))
+      console.log('✅ 从 Supabase 加载成功:', key)
+      return supabaseData.data_value
+      
+    } catch (error) {
+      console.error('❌ 加载数据失败:', error)
+      return null
+    }
+  }
+}
+// ========== Supabase 代码结束 ==========
+
 const categories = [
 { name: "语文", color: "#8B5CF6" },    // 保持紫色
 { name: "数学", color: "#4F86F7" },       // 蓝色系
@@ -1046,15 +1136,6 @@ const AchievementsModal = ({
 
 
 
-
-
-
-
-
-// 保持这样就行
-const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
-const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
-
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
@@ -1307,31 +1388,43 @@ const getWeekNumber = (date) => {
 };
 
 
-// 统一的存储函数
+
+
+
+// 统一的存储函数 - 修复版本
 const saveMainData = async (key, data) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data);
-  } catch (error) {
-    console.error(`数据保存失败: ${key}`, error);
-  }
+    const storageKey = `${STORAGE_KEY}_${key}`;
+    
+    try {
+        // 原有的 localStorage 保存
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log(`✅ 本地保存成功: ${key}`);
+        
+        // 新增：同步到 Supabase - 修复这里！
+        const syncResult = await SyncService.saveData(PAGE_ID, key, data);
+        if (syncResult) {
+            console.log(`✅ Supabase 同步成功: ${key}`);
+        } else {
+            console.log(`⚠️ Supabase 同步失败，仅本地保存: ${key}`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error(`❌ 数据保存失败: ${key}`, error);
+        return false;
+    }
 };
 
 const loadMainData = async (key) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
-  try {
-    const data = localStorage.getItem(storageKey);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error(`数据加载失败: ${key}`, error);
-    return null;
-  }
+    try {
+        // 使用 SyncService 加载数据（会尝试 Supabase）
+        const data = await SyncService.loadData(PAGE_ID, key);
+        return data;
+    } catch (error) {
+        console.error(`❌ 数据加载失败: ${key}`, error);
+        return null;
+    }
 };
-
-
-
-
 
 
  
@@ -5824,7 +5917,33 @@ function App() {
   };
 
 
+// 在 App 组件的 useEffect 中添加调试
+useEffect(() => {
+    console.log('🔍 App 组件 Supabase 调试:');
+    console.log('- PAGE_ID:', PAGE_ID);
+    console.log('- SyncService:', typeof SyncService);
+    console.log('- saveMainData:', typeof saveMainData);
+    console.log('- loadMainData:', typeof loadMainData);
+    console.log('- supabase:', typeof supabase);
 
+   
+
+   
+
+    // 测试存储函数
+    const testStorage = async () => {
+        console.log('🧪 测试存储函数...');
+        const testData = { test: 'App 组件测试', time: new Date().toISOString() };
+        
+        const saveResult = await saveMainData('app_test', testData);
+        console.log('保存测试:', saveResult ? '✅ 成功' : '❌ 失败');
+        
+        const loadResult = await loadMainData('app_test');
+        console.log('加载测试:', loadResult ? '✅ 成功' : '❌ 失败');
+    };
+
+    testStorage();
+}, []);
   
 
   // 修复：成就检查逻辑
@@ -7495,8 +7614,20 @@ useEffect(() => {
 
 
 useEffect(() => {
-  const initializeApp = async () => {
-   
+    const initializeApp = async () => {
+        // 测试 Supabase 连接
+        try {
+          console.log('🔄 测试 Supabase 连接...');
+          // eslint-disable-next-line no-unused-vars
+          const { data: supabaseData, error } = await supabase.from('user_data').select('count').limit(1);
+          if (error) {
+            console.log('⚠️ Supabase 连接失败，使用本地模式:', error.message);
+          } else {
+            console.log('✅ Supabase 连接成功，启用数据同步');
+          }
+        } catch (error) {
+          console.log('⚠️ Supabase 不可用，使用本地存储模式');
+        }
     
     // 先迁移旧数据
     await migrateLegacyData();
