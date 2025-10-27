@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import './App.css';
 
 
-// ========== 直接嵌入 Supabase 代码 ==========
+// ========== 直接嵌22入 Supabase 代码 ==========
 import { createClient } from '@supabase/supabase-js'
 
 // 保持这样就行
