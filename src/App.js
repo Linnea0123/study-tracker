@@ -6146,10 +6146,12 @@ function App() {
 const [dailyMood, setDailyMood] = useState('');
   const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
  const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
+
 const [categories, setCategories] = useState(baseCategories.map(cat => ({
   ...cat,
   subCategories: []
 })));
+
 
 
   // 修复：成就检查逻辑
@@ -7801,127 +7803,117 @@ useEffect(() => {
 
 
 
+// 6. 添加手动清除计时器函数（用于调试）
+const clearTimerStorage = () => {
+  localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+  setActiveTimer(null);
+  setElapsedTime(0);
+  console.log('🧹 手动清除计时器存储');
+};
 
-  // 6. 添加手动清除计时器函数（用于调试）
-  const clearTimerStorage = () => {
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-    setActiveTimer(null);
-    setElapsedTime(0);
-    console.log('🧹 手动清除计时器存储');
-  };
-  
-  // 暴露给控制台用于调试
-  useEffect(() => {
-    window.debugTimer = {
-      getState: () => ({
-        activeTimer,
-        elapsedTime,
-        storage: localStorage.getItem(`${STORAGE_KEY}_activeTimer`)
-      }),
-      clear: clearTimerStorage,
-      forceSave: () => {
-        if (activeTimer) {
-          const timerData = {
-            taskId: activeTimer.taskId,
-            startTime: activeTimer.startTime,
-            elapsedTime: elapsedTime,
-            savedAt: Date.now()
-          };
-          localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-          console.log('💾 强制保存:', timerData);
-        }
+// 暴露给控制台用于调试
+useEffect(() => {
+  window.debugTimer = {
+    getState: () => ({
+      activeTimer,
+      elapsedTime,
+      storage: localStorage.getItem(`${STORAGE_KEY}_activeTimer`)
+    }),
+    clear: clearTimerStorage,
+    forceSave: () => {
+      if (activeTimer) {
+        const timerData = {
+          taskId: activeTimer.taskId,
+          startTime: activeTimer.startTime,
+          elapsedTime: elapsedTime,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+        console.log('💾 强制保存:', timerData);
       }
-    };
-  }, [activeTimer, elapsedTime]);
+    }
+  };
+}, [activeTimer, elapsedTime]);
 
+// 修改 - 恢复计时器状态
+useEffect(() => {
+  // 检查是否有未完成的计时器
+  const keys = Object.keys(localStorage);
+  const timerKeys = keys.filter(key => key.startsWith('timer_'));
 
-  //修改 - 恢复计时器状态
-  useEffect(() => {
-    // 检查是否有未完成的计时器
-    const keys = Object.keys(localStorage);
-    const timerKeys = keys.filter(key => key.startsWith('timer_'));
+  if (timerKeys.length > 0) {
+    timerKeys.forEach(key => {
+      const taskId = key.replace('timer_', '');
+      const startTime = parseInt(localStorage.getItem(key));
+      const currentTime = Date.now();
+      const timeSpent = Math.floor((currentTime - startTime) / 1000);
 
-    if (timerKeys.length > 0) {
-      timerKeys.forEach(key => {
-        const taskId = key.replace('timer_', '');
-        const startTime = parseInt(localStorage.getItem(key));
-        const currentTime = Date.now();
-        const timeSpent = Math.floor((currentTime - startTime) / 1000);
-
-        // 更新任务时间
-        setTasksByDate(prev => {
-          const updatedTasksByDate = { ...prev };
-          Object.keys(updatedTasksByDate).forEach(date => {
-            updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-              t.id === taskId ? {
-                ...t,
-                timeSpent: (t.timeSpent || 0) + timeSpent
-              } : t
-            );
-          });
-          return updatedTasksByDate;
+      // 更新任务时间
+      setTasksByDate(prev => {
+        const updatedTasksByDate = { ...prev };
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.id === taskId ? {
+              ...t,
+              timeSpent: (t.timeSpent || 0) + timeSpent
+            } : t
+          );
         });
-
-        // 重新开始计时
-        setActiveTimer({ taskId, startTime: Date.now() - timeSpent * 1000 });
+        return updatedTasksByDate;
       });
-    }
-  }, []);
 
+      // 重新开始计时
+      setActiveTimer({ taskId, startTime: Date.now() - timeSpent * 1000 });
+    });
+  }
+}, []);
 
+// 修改 - 统一修改时间显示格式
+const formatTimeNoSeconds = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m${remainingSeconds}s`;
+};
 
+// 修改 - 添加新的时间格式化函数，显示分钟和秒数
+const formatTimeWithSeconds = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m${remainingSeconds}s`;
+};
 
+// 新增：分类标题专用时间格式（去掉0s）
+const formatCategoryTime = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m${remainingSeconds}s`;
+};
 
-  //修改 - 统一修改时间显示格式
-  const formatTimeNoSeconds = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m${remainingSeconds}s`;
-  };
+// 格式化时间为小时
+const formatTimeInHours = (seconds) => {
+  const hours = (seconds / 3600).toFixed(1);
+  return `${hours}h`;
+};
 
-  //修改 - 添加新的时间格式化函数，显示分钟和秒数
-  const formatTimeWithSeconds = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m${remainingSeconds}s`;
-  };
-
-  // 新增：分类标题专用时间格式（去掉0s）
-  const formatCategoryTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m${remainingSeconds}s`;
-  };
-
-  // 格式化时间为小时
-  const formatTimeInHours = (seconds) => {
-    const hours = (seconds / 3600).toFixed(1);
-    return `${hours}h`;
-  };
-
-
-
-  // 移动任务函数
-  const moveTask = (task, targetCategory) => {
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? { ...t, category: targetCategory } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, category: targetCategory } : t
-        )
-      }));
-    }
-  };
-
-
+// 移动任务函数
+const moveTask = (task, targetCategory) => {
+  if (task.isWeekTask) {
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? { ...t, category: targetCategory } : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { ...t, category: targetCategory } : t
+      )
+    }));
+  }
+};
 
 // 修复任务数据保存
 useEffect(() => {
@@ -7968,7 +7960,6 @@ useEffect(() => {
   savePointHistory();
 }, [pointHistory]);
 
-
 // 读取每日数据
 useEffect(() => {
   const loadDailyData = async () => {
@@ -7984,24 +7975,19 @@ useEffect(() => {
   loadDailyData();
 }, [selectedDate]);
 
-
 useEffect(() => {
   const initializeApp = async () => {
-   
-    
     // 先迁移旧数据
     await migrateLegacyData();
     
     try {
-     
-
-       // 加载今日数据
-    const today = new Date().toISOString().split("T")[0];
-    const savedDailyData = await loadMainData(`daily_${today}`);
-    if (savedDailyData) {
-      setDailyRating(savedDailyData.rating || 0);
-      setDailyReflection(savedDailyData.reflection || '');
-    }
+      // 加载今日数据
+      const today = new Date().toISOString().split("T")[0];
+      const savedDailyData = await loadMainData(`daily_${today}`);
+      if (savedDailyData) {
+        setDailyRating(savedDailyData.rating || 0);
+        setDailyReflection(savedDailyData.reflection || '');
+      }
       
       // 加载任务数据
       const savedTasks = await loadMainData('tasks');
@@ -8016,14 +8002,12 @@ useEffect(() => {
       
       // 加载模板数据
       const savedTemplates = await loadMainData('templates');
-      
       if (savedTemplates) {
         setTemplates(savedTemplates);
       }
       
       // 加载积分历史
       const savedPointHistory = await loadMainData('pointHistory');
-      
       if (savedPointHistory) {
         setPointHistory(savedPointHistory);
       } else {
@@ -8037,69 +8021,91 @@ useEffect(() => {
       
       // 加载兑换物品
       const savedExchangeItems = await loadMainData('exchange');
-      
       if (savedExchangeItems) {
         setExchangeItems(savedExchangeItems);
       }
-      
 
+      // 加载自定义成就
+      const savedCustomAchievements = await loadMainData('customAchievements');
+      if (savedCustomAchievements) {
+        setCustomAchievements(savedCustomAchievements);
+      } else {
+        setCustomAchievements([]);
+      }
 
+      // 加载已解锁成就
+      const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
+      console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
+      if (savedUnlockedAchievements) {
+        setUnlockedAchievements(savedUnlockedAchievements);
+      } else {
+        setUnlockedAchievements([]);
+      }
 
- // 加载自定义成就
-   // 加载自定义成就
-   const savedCustomAchievements = await loadMainData('customAchievements');
- 
-   if (savedCustomAchievements) {
-     setCustomAchievements(savedCustomAchievements);
-   } else {
-     setCustomAchievements([]); // 如果没有数据，设为空数组
-   }
- // ========== 结束添加 ==========
-
-
- // 在数据初始化的useEffect中，检查这行代码是否存在：
-const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
-console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
-if (savedUnlockedAchievements) {
-  setUnlockedAchievements(savedUnlockedAchievements);
-} else {
-  setUnlockedAchievements([]);
-}
-
-
+      // ==== 新增：加载分类数据（包含子类别）====
+      const savedCategories = await loadMainData('categories');
+      if (savedCategories) {
+        setCategories(savedCategories);
+      } else {
+        // 初始化预设子类别
+        const categoriesWithSubCategories = baseCategories.map(cat => {
+          let subCategories = [];
+          // 为不同分类添加预设子类别
+          switch(cat.name) {
+            case '校内':
+              subCategories = ['语文', '数学', '英语', '锻炼'];
+              break;
+            case '语文':
+              subCategories = ['阅读理解', '作文', '古诗词', '基础知识'];
+              break;
+            case '数学':
+              subCategories = ['代数', '几何', '应用题', '计算题'];
+              break;
+            case '英语':
+              subCategories = ['听力', '阅读', '写作', '语法', '单词'];
+              break;
+            case '科学':
+              subCategories = ['物理', '化学', '生物', '实验'];
+              break;
+            case '锻炼':
+              subCategories = ['跑步', '跳绳', '球类', '体能训练'];
+              break;
+            default:
+              subCategories = [];
+          }
+          return { ...cat, subCategories };
+        });
+        
+        setCategories(categoriesWithSubCategories);
+        await saveMainData('categories', categoriesWithSubCategories);
+      }
 
       console.log('🎉 应用初始化完成');
-
 
       await autoBackup();
       
       // 设置定时备份
       localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
-console.log('✅ 初始化状态已保存到存储');
-setIsInitialized(true);
-console.log('✅ isInitialized 设置为 true');
+      console.log('✅ 初始化状态已保存到存储');
+      setIsInitialized(true);
+      console.log('✅ isInitialized 设置为 true');
 
-const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
       
       // 清理函数
       return () => {
         clearInterval(backupTimer);
       };
 
-      
     } catch (error) {
       console.error('初始化失败:', error);
     }
-    
-    setIsInitialized(true);
-    console.log('✅ isInitialized 设置为 true');
-
-    
   };
 
   initializeApp();
 }, []);
 //初始化end
+
 
 
 
@@ -9134,7 +9140,7 @@ const saveTaskEdit = (task, editData) => {
     todayTasks.filter(t => t.category === catName);
 
 
-// 按子类别分组任务
+// 修改 getTasksBySubCategory 函数
 const getTasksBySubCategory = (catName) => {
   const catTasks = todayTasks.filter(t => t.category === catName);
   const grouped = {};
@@ -11406,83 +11412,94 @@ if (isInitialized && todayTasks.length === 0) {
 </span>
 </div>
 
+
 {!isCollapsed && (
-<div style={{ padding: 8 }}>
-  {(() => {
-    const subCategoryTasks = getTasksBySubCategory(c.name);
-    const subCategoryKeys = Object.keys(subCategoryTasks);
-    
-    return subCategoryKeys.map((subCat) => {
-      const subCatTasks = subCategoryTasks[subCat];
-      const subCatKey = `${c.name}_${subCat}`;
-      const isSubCollapsed = collapsedSubCategories[subCatKey];
+  <div style={{ padding: 8 }}>
+    {(() => {
+      const subCategoryTasks = getTasksBySubCategory(c.name);
+      const subCategoryKeys = Object.keys(subCategoryTasks);
       
-      return (
-        <div key={subCat} style={{ marginBottom: 8 }}>
-          <div
-            onClick={() => setCollapsedSubCategories(prev => ({
-              ...prev,
-              [subCatKey]: !prev[subCatKey]
-            }))}
-            style={{
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              padding: '4px 8px',
-              fontWeight: 'bold',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              borderRadius: '6px',
-              fontSize: '12px',
-              marginBottom: '4px'
-            }}
-          >
-            <span>
-              {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
-            </span>
-            <span>{isSubCollapsed ? '▶' : '▼'}</span>
-          </div>
-          
-          {!isSubCollapsed && (
-            <ul style={{
-              listStyle: "none",
-              padding: "0 0 0 8px",
-              margin: 0,
-              borderLeft: "2px solid #e0e0e0"
-            }}>
-              {subCatTasks
-.sort((a, b) => {
-  if (a.pinned && !b.pinned) return -1;
-  if (!a.pinned && b.pinned) return 1;
-  return 0;
-})
-.map((task) => (
-  <TaskItem
-    key={task.id}
-    task={task}
-    onEditTime={editTaskTime}
-    onEditNote={editTaskNote}
-    onEditReflection={editTaskReflection}
-    onOpenEditModal={openTaskEditModal}
-    onShowImageModal={setShowImageModal}
-    toggleDone={toggleDone}
-    formatTimeNoSeconds={formatTimeNoSeconds}
-    formatTimeWithSeconds={formatTimeWithSeconds}
-    onMoveTask={moveTask}
-    categories={baseCategories}
-    activeTimer={activeTimer}
-    setShowMoveModal={setShowMoveModal}
-    onUpdateProgress={handleUpdateProgress}
-    onStartTimer={handleStartTimer}
-    onPauseTimer={handlePauseTimer}
-    onEditSubTask={editSubTask}
-    onToggleSubTask={toggleSubTask}
-    isTimerRunning={activeTimer?.taskId === task.id}
-    elapsedTime={elapsedTime}
-  />
-))}
-            </ul>
+      return subCategoryKeys.map((subCat) => {
+        const subCatTasks = subCategoryTasks[subCat];
+        const subCatKey = `${c.name}_${subCat}`;
+        const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
+        
+        // 自动折叠逻辑：如果全部完成且用户没有手动展开，则自动折叠
+        const isSubCollapsed = collapsedSubCategories[subCatKey] !== undefined 
+          ? collapsedSubCategories[subCatKey] 
+          : allDone; // 如果用户没有手动设置，全部完成时自动折叠
+        
+        return (
+          <div key={subCat} style={{ marginBottom: 8 }}>
+            <div
+              onClick={() => setCollapsedSubCategories(prev => ({
+                ...prev,
+                [subCatKey]: !isSubCollapsed
+              }))}
+              style={{
+                backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
+                color: '#333',
+                padding: '4px 8px',
+                fontWeight: 'bold',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderRadius: '6px',
+                fontSize: '12px',
+                marginBottom: '4px',
+                border: allDone ? '1px solid #4CAF50' : 'none'
+              }}
+            >
+              <span>
+                {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+                {allDone && " ✓"}
+              </span>
+              <span>{isSubCollapsed ? '▶' : '▼'}</span>
+            </div>
+            
+            {!isSubCollapsed && (
+              <ul style={{
+                listStyle: "none",
+                padding: "0 0 0 8px",
+                margin: 0,
+                borderLeft: "2px solid #e0e0e0"
+              }}>
+                {subCatTasks
+                  .sort((a, b) => {
+                    if (a.pinned && !b.pinned) return -1;
+                    if (!a.pinned && b.pinned) return 1;
+                    return 0;
+                  })
+                  .map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onEditTime={editTaskTime}
+                      onEditNote={editTaskNote}
+                      onEditReflection={editTaskReflection}
+                      onOpenEditModal={openTaskEditModal}
+                      onShowImageModal={setShowImageModal}
+                      toggleDone={toggleDone}
+                      formatTimeNoSeconds={formatTimeNoSeconds}
+                      formatTimeWithSeconds={formatTimeWithSeconds}
+                      onMoveTask={moveTask}
+                      categories={baseCategories}
+                      activeTimer={activeTimer}
+                      setShowMoveModal={setShowMoveModal}
+                      onUpdateProgress={handleUpdateProgress}
+                      onStartTimer={handleStartTimer}
+                      onPauseTimer={handlePauseTimer}
+                      onEditSubTask={editSubTask}
+                      onToggleSubTask={toggleSubTask}
+                      isTimerRunning={activeTimer?.taskId === task.id}
+                      elapsedTime={elapsedTime}
+                    />
+                  ))}
+              </ul>
+
+
+
           )}
         </div>
       );
