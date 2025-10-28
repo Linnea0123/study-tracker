@@ -700,16 +700,21 @@ const CustomAchievementModal = ({ onSave, onClose, editAchievement = null }) => 
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 9999,
+      zIndex: 1000,
+      padding: '10px'
     }}>
       <div style={{
         backgroundColor: 'white',
         padding: 20,
         borderRadius: 15,
-        width: '90%',
-        maxWidth: 400,
-        maxHeight: '80vh',
-        overflow: 'auto'
+        width: '95%',
+        maxWidth: 500,
+        // 修改高度设置
+        maxHeight: '90vh', // 改为90vh而不是固定高度
+        overflow: 'auto', // 整个模态框可以滚动
+        display: 'flex',
+        flexDirection: 'column',
+        textAlign: 'center'
       }}>
         <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#1a73e8' }}>
           创建自定义成就
@@ -6971,8 +6976,7 @@ useEffect(() => {
 }, [tasksByDate, isInitialized]);
 
 
-
-// 完整的 generateDailyLog 函数 - ✅ 符号版本
+// 完整的 generateDailyLog 函数
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
 
@@ -7023,9 +7027,9 @@ const generateDailyLog = () => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
         
-        // 使用 ✅ 符号代替复选框
-        logContent += `  ✅ ${task.text}${timeText}\n`;
-        markdownContent += `- ✅ ${task.text}${timeText}\n`;
+        // 使用 ✓ 符号
+        logContent += `  ✓ ${task.text}${timeText}\n`;
+        markdownContent += `- ✓ ${task.text}${timeText}\n`;
       });
     }
 
@@ -7043,9 +7047,9 @@ const generateDailyLog = () => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
 
-        // 使用 ✅ 符号代替复选框
-        logContent += `    ✅ ${task.text}${timeText}\n`;
-        markdownContent += `  - ✅ ${task.text}${timeText}\n`;
+        // 使用 ✓ 符号
+        logContent += `    ✓ ${task.text}${timeText}\n`;
+        markdownContent += `  - ✓ ${task.text}${timeText}\n`;
       });
       
       if (Object.keys(categoryData.withSubCategories).length > 1) {
@@ -7090,7 +7094,6 @@ const generateDailyLog = () => {
     }
   });
 };
-
 
 
 
@@ -9434,9 +9437,11 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         borderRadius: 15,
         width: '95%',
         maxWidth: 500,
-        maxHeight: '85vh',
-        overflow: 'hidden',
+     
+        
         display: 'flex',
+        maxHeight: '90vh', // ← 新增：限制最大高度
+  overflow: 'auto',  // ← 新增：添加滚动条
         flexDirection: 'column',
         textAlign: 'center'
       }}>
@@ -9520,29 +9525,33 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           </div>
         </div>
 
-        {/* 日志内容区域 */}
-        <div style={{
-          backgroundColor: '#f8f9fa',
-          padding: 15,
-          borderRadius: 8,
-          marginBottom: 15,
-          maxHeight: 200,
-          overflow: 'auto',
-          fontSize: 12,
-          lineHeight: 1.4,
-          whiteSpace: 'pre-wrap',
-          textAlign: 'left',
-          flex: 1
-        }}>
-          {formattedContent}
-        </div>
+       
+<div style={{
+  backgroundColor: '#f8f9fa',
+  padding: 15,
+  borderRadius: 8,
+  marginBottom: 15,
+  // 移除 maxHeight 和 overflow
+  // maxHeight: 200,
+  // overflow: 'auto',
+  fontSize: 12,
+  lineHeight: 1.4,
+  whiteSpace: 'pre-wrap',
+  textAlign: 'left',
+  flex: 1,
+  // 添加自动高度
+  minHeight: 'auto'
+}}>
+  {formattedContent}
+</div>
 
         {/* 今日心情、评分、复盘区域 */}
         <div style={{
           backgroundColor: '#f8f9fa',
           padding: 12,
           borderRadius: 8,
-          marginBottom: 15
+          marginBottom: 15,
+          flexShrink: 0  // ← 新增：防止被压缩
         }}>
           <div style={{
             display: 'grid',
@@ -11405,7 +11414,7 @@ if (isInitialized && todayTasks.length === 0) {
   }}
   style={{
     background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.5)',
+    border: 'none', // 改为无边框
     color: '#fff',
     borderRadius: '4px',
     cursor: 'pointer',
