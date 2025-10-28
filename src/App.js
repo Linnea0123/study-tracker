@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
@@ -6130,9 +6130,6 @@ function App() {
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
-
- 
-  const [isFocused, setIsFocused] = useState(false); // 控制复
   const bulkInputRef = useRef(null);
   const [dailyRating, setDailyRating] = useState(0);
   const [dailyReflection, setDailyReflection] = useState('');
@@ -9282,23 +9279,109 @@ const handleExportData = async () => {
 };
   
   
+
+// 修改 DailyLogModal 组件
 const DailyLogModal = ({ logData, onClose, onCopy }) => {
+  const [dailyMood, setDailyMood] = useState('');
+  const [dailyRating, setDailyRating] = useState(0);
+  const [dailyReview, setDailyReview] = useState('');
+  const [editingReview, setEditingReview] = useState(false);
+
+  const formatDateKey = (dateString) => {
+    try {
+      return new Date(dateString).toISOString().split('T')[0];
+    } catch {
+      return dateString?.trim?.() || '';
+    }
+  };
+
+  const dateKey = useMemo(() => logData?.date || '', [logData]);
+
+  // 加载保存的数据
+  useEffect(() => {
+    if (!dateKey) return;
+    const key = `${STORAGE_KEY}_daily_${formatDateKey(dateKey)}`;
+    const savedData = localStorage.getItem(key);
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        setDailyMood(data.mood || '');
+        setDailyRating(data.rating || 0);
+        setDailyReview(data.review || '');
+      } catch (error) {
+        console.error('解析每日数据失败:', error);
+      }
+    } else {
+      setDailyMood('');
+      setDailyRating(0);
+      setDailyReview('');
+    }
+  }, [dateKey]);
+
+  // 保存数据函数
+  const saveData = useCallback(
+    (newData = {}) => {
+      if (!dateKey) return;
+      const key = `${STORAGE_KEY}_daily_${formatDateKey(dateKey)}`;
+      const data = {
+        mood: newData.mood ?? dailyMood,
+        rating: newData.rating ?? dailyRating,
+        review: newData.review ?? dailyReview,
+        date: dateKey
+      };
+      localStorage.setItem(key, JSON.stringify(data));
+    },
+    [dateKey, dailyMood, dailyRating, dailyReview]
+  );
+
+  // 处理心情变化
+  const handleMoodChange = (e) => {
+    const newMood = e.target.value;
+    setDailyMood(newMood);
+    saveData({ mood: newMood });
+  };
+
+  // 处理评分变化
+  const handleRatingChange = (e) => {
+    const newRating = parseInt(e.target.value);
+    setDailyRating(newRating);
+    saveData({ rating: newRating });
+  };
+
+  // 处理复盘变化
+  const handleReviewChange = (e) => {
+    const newReview = e.target.value;
+    setDailyReview(newReview);
+    saveData({ review: newReview });
+  };
+
+  // 复盘编辑完成
+  const handleReviewBlur = () => {
+    setEditingReview(false);
+    saveData();
+  };
+
   if (!logData) return null;
 
-  // 重新生成日志内容
-  const generateFormattedContent = () => {
-    // 直接去掉✅符号，保留原有格式
-    return logData.content.replace(/✅/g, '');
-  };
-
-  // 生成 Markdown 格式（用于复制）
-  const generateMarkdownContent = () => {
-    // 直接去掉✅符号，保留原有格式
-    return logData.content.replace(/✅/g, '');
-  };
-
   const totalHours = (logData.stats.totalMinutes / 60).toFixed(1);
+
+  const generateFormattedContent = () => {
+    return logData.content.replace(/✅/g, '');
+  };
+
   const formattedContent = generateFormattedContent();
+
+  const moodOptions = [
+    { value: '', label: '选择心情', emoji: '' },
+    { value: 'excited', label: '兴奋', emoji: '😆' },
+    { value: 'happy', label: '开心', emoji: '😊' },
+    { value: 'neutral', label: '平静', emoji: '😐' },
+    { value: 'tired', label: '疲惫', emoji: '😴' },
+    { value: 'stressed', label: '压力', emoji: '😥' },
+    { value: 'proud', label: '自豪', emoji: '🥰' },
+    { value: 'satisfied', label: '满意', emoji: '😌' },
+    { value: 'motivated', label: '动力', emoji: '💪' }
+  ];
 
   return (
     <div style={{
@@ -9336,67 +9419,83 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           📅 {logData.date} 学习汇总
         </h3>
 
-        {/* 统计卡片 - 4个一排 */}
+        {/* 统计卡片 */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 10,
+          gap: 8,
           marginBottom: 20,
           flexShrink: 0
         }}>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 12,
+            padding: 8,
             borderRadius: 8,
-            textAlign: 'center'
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>完成任务</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成任务</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.completedTasks} 个
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 12,
+            padding: 8,
             borderRadius: 8,
-            textAlign: 'center'
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>总任务数</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>总任务数</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.totalTasks} 个
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 12,
+            padding: 8,
             borderRadius: 8,
-            textAlign: 'center'
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>完成率</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成率</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
               {logData.stats.completionRate}%
             </div>
           </div>
           <div style={{
             backgroundColor: '#e8f0fe',
-            padding: 12,
+            padding: 8,
             borderRadius: 8,
-            textAlign: 'center'
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>学习时长</div>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>学习时长</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
               {totalHours}h
             </div>
           </div>
         </div>
 
-        {/* 日志内容 */}
+        {/* 日志内容区域 */}
         <div style={{
           backgroundColor: '#f8f9fa',
           padding: 15,
           borderRadius: 8,
-          marginBottom: 20,
-          maxHeight: 300,
+          marginBottom: 15,
+          maxHeight: 200,
           overflow: 'auto',
           fontSize: 12,
           lineHeight: 1.4,
@@ -9407,6 +9506,120 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           {formattedContent}
         </div>
 
+        {/* 今日心情、评分、复盘区域 */}
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          padding: 12,
+          borderRadius: 8,
+          marginBottom: 15
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 10,
+            marginBottom: 12
+          }}>
+            {/* 今日心情 */}
+            <div>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
+                今日心情
+              </div>
+              <select
+                value={dailyMood}
+                onChange={handleMoodChange}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  backgroundColor: 'white'
+                }}
+              >
+                {moodOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.emoji} {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 今日评分 */}
+            <div>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
+                今日评分
+              </div>
+              <select
+                value={dailyRating}
+                onChange={handleRatingChange}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  backgroundColor: 'white'
+                }}
+              >
+                <option value="0">请选择评分</option>
+                <option value="1">⭐ (1星)</option>
+                <option value="2">⭐⭐ (2星)</option>
+                <option value="3">⭐⭐⭐ (3星)</option>
+                <option value="4">⭐⭐⭐⭐ (4星)</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 今日复盘 */}
+          <div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
+              今日复盘
+            </div>
+            {editingReview ? (
+              <textarea
+                value={dailyReview}
+                onChange={handleReviewChange}
+                onBlur={handleReviewBlur}
+                autoFocus
+                placeholder="记录今天的收获和反思..."
+                style={{
+                  width: '100%',
+                  minHeight: '60px',
+                  padding: '8px',
+                  border: '1px solid #1a73e8',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  resize: 'vertical',
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            ) : (
+              <div
+                onClick={() => setEditingReview(true)}
+                style={{
+                  width: '100%',
+                  minHeight: '60px',
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  backgroundColor: dailyReview ? '#fff9c4' : 'white',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  borderLeft: dailyReview ? '4px solid #ffd54f' : '1px solid #ddd'
+                }}
+              >
+                {dailyReview || '点击记录今日复盘...'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 按钮区域 */}
         <div style={{ 
           display: 'flex', 
           gap: 10,
@@ -9430,7 +9643,8 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           </button>
           <button
             onClick={() => {
-              const markdownContent = generateMarkdownContent();
+              saveData();
+              const markdownContent = formattedContent;
               onCopy(markdownContent);
             }}
             style={{
@@ -9452,6 +9666,9 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     </div>
   );
 };
+
+
+
 
 
 
@@ -11344,163 +11561,7 @@ marginTop: 10
 </div>
 
 
-      {/* 默认显示的评分和感想（没有展开输入框时） */}
-      {!showAddInput && !showBulkInput && (
-        <div style={{
-          display: "flex",
-          gap: "10px",
-          marginTop: "10px",
-          alignItems: "center",
-          padding: "10px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px"
-        }}>
-          
-<div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        marginTop: "10px",
-        width: "100%"
-      }}
-    >
-      {/* 第一排：评分和心情在同一行，各占50% */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "stretch",
-          gap: "10px",
-          width: "100%"
-        }}
-      >
-        {/* 今日评分 */}
-        <div
-          style={{
-            flex: "0 0 50%",
-            width: "50%",
-            display: "flex",
-            flexDirection: "column"
-          }}
-        >
-          <div
-            style={{
-              fontSize: "12px",
-              marginBottom: "4px",
-              color: "#666",
-              fontWeight: "500"
-            }}
-          >
-            今日评分
-          </div>
-          <select
-            value={dailyRating}
-            onChange={(e) => setDailyRating(parseInt(e.target.value))}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              fontSize: "12px",
-              backgroundColor: "white",
-              height: "36px",
-              boxSizing: "border-box"
-            }}
-          >
-            <option value="0">请选择评分</option>
-            <option value="1">⭐ (1星)</option>
-            <option value="2">⭐⭐ (2星)</option>
-            <option value="3">⭐⭐⭐ (3星)</option>
-            <option value="4">⭐⭐⭐⭐ (4星)</option>
-            <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
-          </select>
-        </div>
-
-        {/* 今日心情 */}
-        <div
-          style={{
-            flex: "0 0 50%",
-            width: "50%",
-            display: "flex",
-            flexDirection: "column"
-          }}
-        >
-          <div
-            style={{
-              fontSize: "12px",
-              marginBottom: "4px",
-              color: "#666",
-              fontWeight: "500"
-            }}
-          >
-            今日心情
-          </div>
-          <select
-            value={dailyMood}
-            onChange={(e) => setDailyMood(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              fontSize: "12px",
-              backgroundColor: "white",
-              height: "36px",
-              boxSizing: "border-box"
-            }}
-          >
-            <option value="">选择心情</option>
-            <option value="😊">😊 开心</option>
-            <option value="😄">😄 兴奋</option>
-            <option value="😌">😌 平静</option>
-            <option value="😔">😔 低落</option>
-            <option value="😤">😤 烦躁</option>
-            <option value="😴">😴 疲惫</option>
-            <option value="🤔">🤔 思考</option>
-            <option value="🎯">🎯 专注</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 第二排：今日复盘占满一行（对齐右边） */}
-      <div style={{ width: "100%" }}>
-        <div
-          style={{
-            fontSize: "12px",
-            marginBottom: "4px",
-            color: "#666",
-            fontWeight: "500"
-          }}
-        >
-          今日复盘
-        </div>
-        <textarea
-          value={dailyReflection}
-          onChange={(e) => setDailyReflection(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            if (dailyReflection.trim() === "") setIsFocused(false);
-          }}
-          placeholder="记录今日的收获、感悟和改进..."
-          style={{
-            width: "100%", // 保证右边与“心情”框对齐
-            padding: "8px",
-            border: "1px solid #ddd",
-            borderRadius: "6px",
-            fontSize: "12px",
-            backgroundColor: "white",
-            boxSizing: "border-box",
-            resize: "none",
-            height: isFocused ? "80px" : "36px", // 👈 点击后变高
-            transition: "height 0.2s ease",
-            fontFamily: "inherit",
-            lineHeight: "1.4"
-          }}
-        />
-      </div>
-    </div></div>
-      )}
+  
 
       {/* 添加任务输入框（展开时显示） */}
       {showAddInput && (
@@ -11688,64 +11749,6 @@ marginTop: 10
   </div>
 )}
 
-
-
-          {/* 展开状态下显示的评分和感想 */}
-          <div style={{
-            display: "flex",
-            gap: "10px",
-            marginTop: "10px",
-            alignItems: "center",
-            padding: "10px",
-            backgroundColor: "#f8f9fa",
-            borderRadius: "8px"
-          }}>
-            {/* 今日评分 */}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-                今日评分:
-              </div>
-              <select
-                value={dailyRating}
-                onChange={(e) => setDailyRating(parseInt(e.target.value))}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                  backgroundColor: "white"
-                }}
-              >
-                <option value="0">评分</option>
-                <option value="1">⭐</option>
-                <option value="2">⭐⭐</option>
-                <option value="3">⭐⭐⭐</option>
-                <option value="4">⭐⭐⭐⭐</option>
-                <option value="5">⭐⭐⭐⭐⭐</option>
-              </select>
-            </div>
-
-            {/* 今日感想 */}
-            <div style={{ flex: 2 }}>
-              <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-                今日感想:
-              </div>
-              <input
-                type="text"
-                value={dailyReflection}
-                onChange={(e) => setDailyReflection(e.target.value)}
-                placeholder="记录今天的收获和感悟..."
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "12px"
-                }}
-              />
-            </div>
-          </div>
         </div>
       )}
 
@@ -11783,80 +11786,98 @@ marginTop: 10
     width: "100%"
   }}
 >
+  
+{/* 标签显示 + 添加标签 */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    gap: 8,
+    marginBottom: 8
+  }}
+>
   {/* 已选标签显示 */}
   <div
     style={{
-      flex: "0 0 50%",      // 占 50%
-      width: "50%",         // 保底
+      flex: "0 0 50%",
+      width: "50%",
       display: "flex",
-      flexWrap: "wrap",
-      gap: 4,
-      minHeight: 25,
-      padding: "4px 8px",
-      border: "1px solid #ccc",
-      borderRadius: 6,
       alignItems: "center",
+      gap: 4,
+      padding: "4px 8px",
+      border: "1px solid #ddd",
+      borderRadius: 6,
+      backgroundColor: "#fafafa",
+      height: 36,                // ✅ 固定高度
       boxSizing: "border-box",
-      backgroundColor: "#fafafa"
+      overflowX: "auto",         // ✅ 横向滚动
+      whiteSpace: "nowrap",      // ✅ 不换行
+      scrollbarWidth: "thin"     // 🔹 Firefox 细滚动条
     }}
   >
-    {bulkTags?.map((tag, index) => (
-      <span
-        key={index}
-        style={{
-          fontSize: 12,
-          padding: "2px 8px",
-          backgroundColor: tag.color || "#e0e0e0",
-          color: "#333",
-          borderRadius: 12,
-          border: "1px solid #ccc",
-          display: "flex",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        {tag.name}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation(); // 阻止事件冒泡
-            const newTags = [...bulkTags];
-            newTags.splice(index, 1);
-            setBulkTags(newTags);
-          }}
+    {bulkTags?.length > 0 ? (
+      bulkTags.map((tag, index) => (
+        <span
+          key={index}
           style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 12,
-            padding: 0,
-            width: 16,
-            height: 16,
-            borderRadius: "50%",
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center"
+            gap: 3,
+            fontSize: 11,            // ✅ 更小
+            padding: "2px 6px",      // ✅ 紧凑
+            backgroundColor: tag.color || "#e0e0e0",
+            color: "#333",
+            borderRadius: 10,
+            border: "1px solid #ccc",
+            height: 20,
+            lineHeight: "1",
+            flexShrink: 0            // ✅ 防止被压缩
           }}
         >
-          ×
-        </button>
-      </span>
-    ))}
-    {(!bulkTags || bulkTags.length === 0) && (
-      <span style={{ fontSize: 12, color: "#999" }}>暂无标签，可在右侧添加</span>
+          {tag.name}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              const newTags = [...bulkTags];
+              newTags.splice(index, 1);
+              setBulkTags(newTags);
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 11,
+              padding: 0,
+              width: 14,
+              height: 14,
+              lineHeight: "1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            ×
+          </button>
+        </span>
+      ))
+    ) : (
+      <span style={{ fontSize: 11, color: "#999" }}>暂无标签，可在右侧添加</span>
     )}
   </div>
 
   {/* 添加新标签 */}
   <div
     style={{
-      flex: "0 0 50%",    // 占 50%
+      flex: "0 0 50%",
       width: "50%",
       display: "flex",
-      gap: 4,
       alignItems: "center",
-      justifyContent: "space-between",
-      boxSizing: "border-box"
+      gap: 6,
+      boxSizing: "border-box",
+      height: 36                 // ✅ 与左侧等高
     }}
   >
     <input
@@ -11866,10 +11887,12 @@ marginTop: 10
       onChange={(e) => setBulkNewTagName(e.target.value)}
       style={{
         flex: 1,
+        height: "100%",
         padding: "6px 8px",
-        border: "1px solid #ccc",
-        borderRadius: 4,
-        fontSize: 12
+        border: "1px solid #ddd",
+        borderRadius: 6,
+        fontSize: 12,
+        boxSizing: "border-box"
       }}
     />
     <input
@@ -11878,10 +11901,11 @@ marginTop: 10
       onChange={(e) => setBulkNewTagColor(e.target.value)}
       style={{
         width: 34,
-        height: 34,
+        height: "100%",
+        border: "1px solid #ddd",
+        borderRadius: 6,
         padding: 0,
-        border: "1px solid #ccc",
-        borderRadius: 4
+        cursor: "pointer"
       }}
     />
     <button
@@ -11899,11 +11923,12 @@ marginTop: 10
         }
       }}
       style={{
-        padding: "6px 8px",
+        height: "100%",
+        padding: "0 12px",
         backgroundColor: "#1a73e8",
         color: "#fff",
         border: "none",
-        borderRadius: 4,
+        borderRadius: 6,
         cursor: "pointer",
         fontSize: 12,
         whiteSpace: "nowrap"
@@ -11913,7 +11938,7 @@ marginTop: 10
     </button>
   </div>
 </div>
-
+</div>
 
 
 
@@ -12118,6 +12143,7 @@ marginTop: 10
         </button>
         <button
           onClick={handleExportData}
+
           style={{
             padding: "6px 10px",
             backgroundColor: "#1a73e8",
