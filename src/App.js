@@ -7011,7 +7011,7 @@ const generateDailyLog = () => {
   const totalMinutes = Math.floor(totalTime / 60);
 
   // 原始格式内容（用于界面显示）
-  let logContent = `📚 学习任务\n\n`;
+  let logContent =``;
 
   // Markdown 格式内容（用于复制）
   let markdownContent = `# 学习任务\n\n`;
@@ -7063,12 +7063,7 @@ const generateDailyLog = () => {
   });
 
   // 统计信息
-  logContent += `📊 学习统计\n`;
-  logContent += `  完成任务: ${completedTasks.length} 个\n`;
-  logContent += `  总任务数: ${todayTasks.length} 个\n`;
-  logContent += `  完成率: ${Math.round((completedTasks.length / todayTasks.length) * 100)}%\n`;
-  logContent += `  学习时长: ${totalMinutes} 分钟\n`;
-  logContent += `  平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
+  
 
   markdownContent += `# 学习统计\n`;
   markdownContent += `- 完成任务: ${completedTasks.length} 个\n`;
