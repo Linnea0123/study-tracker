@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
+// 重命名文件顶部的 categories 为 baseCategories
+const baseCategories = [
+   { name: "校内", color: "#1a73e8" },
+  { name: "语文", color: "#5b8def" },
+  { name: "数学", color: "#397ef6" },
+  { name: "英语", color: "#739df9" },
+  { name: "科学", color: "#4db9e8" },
+  { name: "锻炼", color: "#7baaf7" }
+]
+;
 
-const categories = [
-  { name: "Shelddi", color: "#8B5CF6" }, // 新增紫色分类
-  { name: "中文", color: "#4a90e2" },
-  { name: "日语", color: "#357ABD" },
-  { name: "英语", color: "#1e73be" },
-  { name: "其他", color: "#00aaff" },
-  { name: "锻炼", color: "#3399ff" },
-];
 
 // ========== 成就系统配置 ==========
 const ACHIEVEMENTS_CONFIG = {
@@ -145,17 +147,17 @@ const ACHIEVEMENTS_CONFIG = {
       points: 30
     },
     {
-      id: 'balanced',
-      name: '全面发展',
-      description: '所有科目都有学习记录',
-      icon: '⚖️',
-      condition: (userData) => {
-        const allTasks = Object.values(userData.tasksByDate).flat();
-        const studiedCategories = new Set(allTasks.map(task => task.category));
-        return categories.every(cat => studiedCategories.has(cat.name));
-      },
-      points: 40
-    }
+  id: 'balanced',
+  name: '全面发展',
+  description: '所有科目都有学习记录',
+  icon: '⚖️',
+  condition: (userData) => {
+    const allTasks = Object.values(userData.tasksByDate).flat();
+    const studiedCategories = new Set(allTasks.map(task => task.category));
+    return baseCategories.every(cat => studiedCategories.has(cat.name));
+  },
+  points: 40
+}
   ],
   
   custom: [
@@ -206,6 +208,12 @@ const ACHIEVEMENTS_CONFIG = {
   ]
 };
 //成就系统end
+
+
+
+
+
+
 
 
 // 备份管理模态框组件
@@ -1052,7 +1060,7 @@ const AchievementsModal = ({
 
 
 // 保持这样就行
-const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
+const PAGE_ID = 'PAGE_A'; 
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
 // ==== 新增：自动备份配置 ====
@@ -1522,7 +1530,7 @@ const getWeekDates = (monday) => {
         lineHeight: '1.1'
       };
   
-      const category = categories.find(cat => cat.name === task.category);
+      const category = baseCategories.find(cat => cat.name === task.category);
       const categoryColor = category ? category.color : '#666';
   
       if (timeInfo.type === 'scheduled') {
@@ -2220,7 +2228,7 @@ const TimeModal = ({ config, onSave, onClose }) => {
 
 const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
   const [templateName, setTemplateName] = useState('');
-  const [templateCategory, setTemplateCategory] = useState(categories[0].name);
+  const [templateCategory, setTemplateCategory] = useState(baseCategories[0].name);
   const [templateContent, setTemplateContent] = useState('');
   const [templateTags, setTemplateTags] = useState([]);
   const [templateScheduledTime, setTemplateScheduledTime] = useState('');
@@ -2423,7 +2431,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete }) => {
                     boxSizing: 'border-box'
                   }}
                 >
-                  {categories.map(c => (
+                  {baseCategories.map(c => (
                     <option key={c.name} value={c.name}>{c.name}</option>
                   ))}
                 </select>
@@ -3687,7 +3695,7 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
                 fontSize: 14
               }}
             >
-              {categories.map(cat => (
+              {baseCategories.map(cat => (
                 <option key={cat.name} value={cat.name}>{cat.name}</option>
               ))}
             </select>
@@ -3772,6 +3780,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   const [editData, setEditData] = useState({
     text: task.text || '',
     category: task.category || categories[0].name,
+    subCategory: task.subCategory || '', // 新增子类别字段
     note: task.note || '',
     reflection: task.reflection || '',
     scheduledTime: task.scheduledTime || '',
@@ -3829,6 +3838,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     const finalEditData = {
       ...editData,
       tags: editData.tags || [],
+      subCategory: editData.subCategory || '', // 确保这行存在
       subTasks: editData.subTasks || [], // 确保子任务数据被保存
       reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
       scheduledTime: scheduledTime
@@ -4189,44 +4199,62 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           </div>
 
 
-{/* 类别和标签在同一行 */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 12,
-  alignItems: 'start'
-}}>
+
+
+
+{/* 类别和子类别在同一行 */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
+    alignItems: 'start',
+    marginBottom: 12,
+  }}
+>
   {/* 任务类别 */}
   <div>
-    <label style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: '600',
-      color: '#333',
-      fontSize: 14
-    }}>
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
       类别
     </label>
-    <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}> {/* 改成stretch对齐 */}
+
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
         value={editData.category}
-        onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            category: e.target.value,
+            subCategory: '', // 切换类别时清空子类别
+          })
+        }
         style={{
           flex: 1,
-          padding: '12px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 8,
+          height: 36,
+          padding: '0 10px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
           fontSize: 14,
-          backgroundColor: '#fafafa',
+          backgroundColor: '#fff',
           cursor: 'pointer',
           boxSizing: 'border-box',
-          height: '48px' // 固定高度
         }}
       >
-        {categories.map(cat => (
-          <option key={cat.name} value={cat.name}>{cat.name}</option>
+        {baseCategories.map((cat) => (
+          <option key={cat.name} value={cat.name}>
+            {cat.name}
+          </option>
         ))}
       </select>
+
       <button
         type="button"
         onClick={() => {
@@ -4236,68 +4264,234 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           }
         }}
         style={{
-          padding: '12px',
-          backgroundColor: '#fafafa',
+          height: 36,
+          width: 36,
+          backgroundColor: '#f9f9f9',
           color: '#333',
-          border: '2px solid #e0e0e0',
-          borderRadius: 8,
+          border: '1px solid #ccc',
+          borderRadius: 6,
           cursor: 'pointer',
-          fontSize: 12,
-          fontWeight: '500',
-          whiteSpace: 'nowrap',
-          height: '48px', // 固定高度
+          fontSize: 18,
+          fontWeight: 600,
+          lineHeight: '36px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
         }}
         title="添加新类别"
       >
-        ➕
+        +
       </button>
     </div>
   </div>
 
-  {/* 标签编辑 */}
+  {/* 子类别选择 */}
   <div>
-    <label style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: '600',
-      color: '#333',
-      fontSize: 14
-    }}>
-      标签
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
+      子类别
     </label>
-    
-    {/* 当前标签显示 */}
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 4,
-      height: '48px', // 固定高度
-      padding: '12px',
-      border: '2px solid #e0e0e0',
-      borderRadius: 8,
-      backgroundColor: '#fafafa',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      overflow: 'auto' // 内容过多时滚动
-    }}>
+
+    <select
+      value={editData.subCategory || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, subCategory: e.target.value })
+      }
+      style={{
+        width: '100%',
+        height: 36,
+        padding: '0 10px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        backgroundColor: '#fff',
+        cursor: 'pointer',
+        boxSizing: 'border-box',
+      }}
+    >
+      <option value="">选择子类别（可选）</option>
+      {categories
+        .find((c) => c.name === editData.category)
+        ?.subCategories?.map((subCat) => (
+          <option key={subCat} value={subCat}>
+            {subCat}
+          </option>
+        ))}
+    </select>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+{/* 编辑任务界面  添加标签  当前标签 */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
+    alignItems: 'start',
+    marginBottom: 12,
+  }}
+>
+  {/* 添加新标签 */}
+  <div>
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
+      添加标签
+    </label>
+
+    <div
+      style={{
+        display: 'flex',
+        gap: 8,
+        alignItems: 'center',
+      }}
+    >
+      {/* 标签名称输入框 */}
+      <input
+        type="text"
+        placeholder="输入标签名称"
+        value={editData.newTagName || ''}
+        onChange={(e) =>
+          setEditData({ ...editData, newTagName: e.target.value })
+        }
+        style={{
+          flex: 1,
+          height: 36,
+          padding: '0 10px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+
+      {/* 颜色选择器（正方形） */}
+      <input
+        type="color"
+        value={editData.newTagColor || '#e0e0e0'}
+        onChange={(e) =>
+          setEditData({ ...editData, newTagColor: e.target.value })
+        }
+        style={{
+          width: 36,
+          height: 36,
+          padding: 0,
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          cursor: 'pointer',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+
+      {/* 添加按钮（仅 +） */}
+      <button
+        type="button"
+        onClick={() => {
+          if (editData.newTagName?.trim()) {
+            const newTag = {
+              name: editData.newTagName.trim(),
+              color: editData.newTagColor || '#e0e0e0',
+              textColor: '#333',
+            };
+            const updatedTags = [...(editData.tags || []), newTag];
+            setEditData({
+              ...editData,
+              tags: updatedTags,
+              newTagName: '',
+              newTagColor: '#e0e0e0',
+            });
+          }
+        }}
+        style={{
+          height: 36,
+          width: 36,
+          backgroundColor: '#f9f9f9',
+          color: '#333',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          cursor: 'pointer',
+          fontSize: 18,
+          fontWeight: 600,
+          lineHeight: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+        }}
+      >
+        +
+      </button>
+    </div>
+  </div>
+
+  {/* 添加标签 */}
+  <div>
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
+      当前标签
+    </label>
+
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 6,
+        minHeight: 36,
+        padding: '8px 10px',
+        border: '1px solid #ccc',
+        borderRadius: 8,
+        backgroundColor: '#fafafa',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        overflow: 'auto',
+      }}
+    >
       {editData.tags?.map((tag, index) => (
         <span
           key={index}
           style={{
-            fontSize: 10,
-            padding: '2px 6px',
+            fontSize: 12,
+            padding: '4px 8px',
             backgroundColor: tag.color,
             color: tag.textColor || '#fff',
             borderRadius: 12,
-            border: 'none',
             whiteSpace: 'nowrap',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 2
+            gap: 4,
           }}
         >
           {tag.name}
@@ -4312,22 +4506,20 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              fontSize: 10,
+              fontSize: 12,
               padding: 0,
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 14,
+              height: 14,
+              lineHeight: '14px',
               color: 'inherit',
-              opacity: 0.8
+              opacity: 0.8,
             }}
           >
             ×
           </button>
         </span>
       ))}
+
       {(!editData.tags || editData.tags.length === 0) && (
         <span style={{ fontSize: 12, color: '#999', fontStyle: 'italic' }}>
           暂无标签
@@ -4338,67 +4530,13 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 </div>
 
 
-{/* 添加新标签和常用标签保持原样 */}
-<div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-  <input
-    type="text"
-    placeholder="输入标签名称"
-    value={editData.newTagName || ''}
-    onChange={(e) => setEditData({ ...editData, newTagName: e.target.value })}
-    style={{
-      flex: 1,
-      padding: '8px 12px',
-      border: '1px solid #e0e0e0',
-      borderRadius: 6,
-      fontSize: 14,
-      backgroundColor: '#fff'
-    }}
-  />
-  <input
-    type="color"
-    value={editData.newTagColor || '#e0e0e0'}
-    onChange={(e) => setEditData({ ...editData, newTagColor: e.target.value })}
-    style={{
-      width: 40,
-      height: 40,
-      padding: 0,
-      border: '1px solid #e0e0e0',
-      borderRadius: 6,
-      cursor: 'pointer'
-    }}
-  />
-  <button
-    type="button"
-    onClick={() => {
-      if (editData.newTagName?.trim()) {
-        const newTag = {
-          name: editData.newTagName.trim(),
-          color: editData.newTagColor || '#e0e0e0',
-          textColor: '#333'
-        };
-        const updatedTags = [...(editData.tags || []), newTag];
-        setEditData({
-          ...editData,
-          tags: updatedTags,
-          newTagName: '',
-          newTagColor: '#e0e0e0'
-        });
-      }
-    }}
-    style={{
-      padding: '8px 16px',
-      backgroundColor: '#1a73e8',
-      color: '#fff',
-      border: 'none',
-      borderRadius: 6,
-      cursor: 'pointer',
-      fontSize: 12,
-      fontWeight: '500'
-    }}
-  >
-    添加
-  </button>
-</div>
+
+
+
+
+
+
+
 
 {/* 常用标签保持原样 */}
 <div>
@@ -4438,466 +4576,662 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           
           </div>
 
-          {/* 计划时间 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              ⏰ 计划时间
-            </label>
-            <div style={{ 
-              display: 'flex', 
-              gap: 8, 
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexWrap: 'nowrap'
-            }}>
-              {/* 开始时间 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
-                <input
-                  type="number"
-                  placeholder="00"
-                  min="0"
-                  max="23"
-                  value={editData.startHour || ''}
-                  onChange={(e) => setEditData({ ...editData, startHour: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '10px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <span style={{ color: '#666', fontSize: 14 }}>:</span>
-                <input
-                  type="number"
-                  placeholder="00"
-                  min="0"
-                  max="59"
-                  value={editData.startMinute || ''}
-                  onChange={(e) => setEditData({ ...editData, startMinute: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '10px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              
-              <span style={{ color: '#666', fontSize: 14 }}>至</span>
-              
-              {/* 结束时间 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
-                <input
-                  type="number"
-                  placeholder="00"
-                  min="0"
-                  max="23"
-                  value={editData.endHour || ''}
-                  onChange={(e) => setEditData({ ...editData, endHour: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '10px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <span style={{ color: '#666', fontSize: 14 }}>:</span>
-                <input
-                  type="number"
-                  placeholder="00"
-                  min="0"
-                  max="59"
-                  value={editData.endMinute || ''}
-                  onChange={(e) => setEditData({ ...editData, endMinute: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '10px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 提醒时间 - 单行布局 */}
+{/* 🕓 计划时间 */}
 <div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    ⏰ 提醒时间
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    ⏰ 计划时间
   </label>
-  <div style={{
-    display: 'flex',
-    gap: 6,
-    alignItems: 'center',
-    flexWrap: 'nowrap',
-    justifyContent: 'space-between'
-  }}>
-    {/* 年 */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>年</div>
-      <input
-        type="number"
-        placeholder=""
-        min="2024"
-        max="2030"
-        value={editData.reminderYear || ''}
-        onChange={(e) => setEditData({ ...editData, reminderYear: e.target.value })}
-        style={{
-          width: '100%',
-          padding: '8px 2px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 6,
-          fontSize: 12,
-          textAlign: 'center',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
 
-    <span style={{ color: '#666', fontSize: 12, marginTop: '16px' }}>/</span>
+  <div
+    style={{
+      display: 'flex',
+      gap: 6,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'nowrap',
+    }}
+  >
+    {/* 年 */}
+    <input
+      type="number"
+      min="2024"
+      max="2030"
+      placeholder="2025"
+      value={editData.planYear || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, planYear: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+
+    <span style={{ color: '#666' }}>/</span>
 
     {/* 月 */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>月</div>
-      <input
-        type="number"
-        placeholder=""
-        min="1"
-        max="12"
-        value={editData.reminderMonth || ''}
-        onChange={(e) => setEditData({ ...editData, reminderMonth: e.target.value })}
-        style={{
-          width: '100%',
-          padding: '8px 2px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 6,
-          fontSize: 12,
-          textAlign: 'center',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
+    <input
+      type="number"
+      min="1"
+      max="12"
+      placeholder="MM"
+      value={editData.planMonth || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, planMonth: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-    <span style={{ color: '#666', fontSize: 12, marginTop: '16px' }}>/</span>
+    <span style={{ color: '#666' }}>/</span>
 
     {/* 日 */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>日</div>
-      <input
-        type="number"
-        placeholder=""
-        min="1"
-        max="31"
-        value={editData.reminderDay || ''}
-        onChange={(e) => setEditData({ ...editData, reminderDay: e.target.value })}
-        style={{
-          width: '100%',
-          padding: '8px 2px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 6,
-          fontSize: 12,
-          textAlign: 'center',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
+    <input
+      type="number"
+      min="1"
+      max="31"
+      placeholder="DD"
+      value={editData.planDay || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, planDay: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-    <span style={{ color: '#666', fontSize: 12, marginTop: '16px' }}></span>
+    <span style={{ color: '#666' }}> </span>
 
     {/* 时 */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>时</div>
-      <input
-        type="number"
-        placeholder="00"
-        min="0"
-        max="23"
-        value={editData.reminderHour || ''}
-        onChange={(e) => setEditData({ ...editData, reminderHour: e.target.value })}
-        style={{
-          width: '100%',
-          padding: '8px 2px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 6,
-          fontSize: 12,
-          textAlign: 'center',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
+    <input
+      type="number"
+      min="0"
+      max="23"
+      placeholder="HH"
+      value={editData.planHour || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, planHour: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-    <span style={{ color: '#666', fontSize: 12, marginTop: '16px' }}>:</span>
+    <span style={{ color: '#666' }}>:</span>
 
     {/* 分 */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>分</div>
-      <input
-        type="number"
-        placeholder="00"
-        min="0"
-        max="59"
-        value={editData.reminderMinute || ''}
-        onChange={(e) => setEditData({ ...editData, reminderMinute: e.target.value })}
-        style={{
-          width: '100%',
-          padding: '8px 2px',
-          border: '2px solid #e0e0e0',
-          borderRadius: 6,
-          fontSize: 12,
-          textAlign: 'center',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
+    <input
+      type="number"
+      min="0"
+      max="59"
+      placeholder="MM"
+      value={editData.planMinute || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, planMinute: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
   </div>
 </div>
-{/* 子任务编辑 - 修复版 */}
+
+{/* 🔔 提醒时间 */}
 <div>
-  <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    🔔 提醒时间
+  </label>
+
+  <div
+    style={{
+      display: 'flex',
+      gap: 6,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'nowrap',
+    }}
+  >
+    <input
+      type="number"
+      min="2024"
+      max="2030"
+      placeholder="2025"
+      value={editData.reminderYear || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderYear: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+
+    <span style={{ color: '#666' }}>/</span>
+
+    <input
+      type="number"
+      min="1"
+      max="12"
+      placeholder="MM"
+      value={editData.reminderMonth || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderMonth: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+
+    <span style={{ color: '#666' }}>/</span>
+
+    <input
+      type="number"
+      min="1"
+      max="31"
+      placeholder="DD"
+      value={editData.reminderDay || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderDay: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+
+    <span style={{ color: '#666' }}> </span>
+
+    <input
+      type="number"
+      min="0"
+      max="23"
+      placeholder="HH"
+      value={editData.reminderHour || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderHour: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+
+    <span style={{ color: '#666' }}>:</span>
+
+    <input
+      type="number"
+      min="0"
+      max="59"
+      placeholder="MM"
+      value={editData.reminderMinute || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderMinute: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+  </div>
+</div>
+
+
+        
+
+
+{/* 📋 子任务编辑 */}
+<div>
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
     📋 子任务
   </label>
 
-  {/* 添加子任务 - 放在上面 */}
-  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+  {/* 添加子任务 */}
+  <div
+    style={{
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      marginBottom: 12,
+    }}
+  >
     <input
       type="text"
       placeholder="输入子任务内容"
       value={editData.newSubTask || ''}
-      onChange={(e) => setEditData({ ...editData, newSubTask: e.target.value })}
-      style={{ 
-        flex: 1, 
-        padding: '8px 12px', 
-        border: '1px solid #e0e0e0', 
-        borderRadius: 6, 
+      onChange={(e) =>
+        setEditData({ ...editData, newSubTask: e.target.value })
+      }
+      style={{
+        flex: 1,
+        height: 36,
+        padding: '0 10px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
         fontSize: 14,
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
       }}
     />
     <button
       onClick={() => {
         if (editData.newSubTask?.trim()) {
-          const newSubTask = { text: editData.newSubTask.trim(), done: false };
-          const updatedSubTasks = [...(editData.subTasks || []), newSubTask];
-          setEditData({ ...editData, subTasks: updatedSubTasks, newSubTask: '' });
+          const newSubTask = {
+            text: editData.newSubTask.trim(),
+            done: false,
+          };
+          const updatedSubTasks = [
+            ...(editData.subTasks || []),
+            newSubTask,
+          ];
+          setEditData({
+            ...editData,
+            subTasks: updatedSubTasks,
+            newSubTask: '',
+          });
         }
       }}
-      style={{ 
-        padding: '8px 16px', 
-        backgroundColor: '#1a73e8', 
-        color: '#fff', 
-        border: 'none', 
-        borderRadius: 6, 
+      style={{
+        height: 36,
+        width: 36,
+        backgroundColor: '#f9f9f9',
+        color: '#333',
+        border: '1px solid #ccc',
+        borderRadius: 6,
         cursor: 'pointer',
-        fontSize: 14
+        fontSize: 18,
+        fontWeight: 600,
+        lineHeight: '36px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
       }}
     >
-      添加
+      +
     </button>
   </div>
 
-  {/* 子任务列表 - 放在下面 */}
-  <div>
-    {editData.subTasks?.map((subTask, index) => (
-      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <input
-          type="checkbox"
-          checked={subTask.done || false}
-          onChange={(e) => {
-            const newSubTasks = [...editData.subTasks];
-            newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked };
-            setEditData({ ...editData, subTasks: newSubTasks });
-          }}
-          style={{ transform: 'scale(1.2)' }}
-        />
-        <input
-          type="text"
-          value={subTask.text || ''}
-          onChange={(e) => {
-            const newSubTasks = [...editData.subTasks];
-            newSubTasks[index] = { ...newSubTasks[index], text: e.target.value };
-            setEditData({ ...editData, subTasks: newSubTasks });
-          }}
-          style={{ 
-            flex: 1, 
-            padding: '8px 12px', 
-            border: '1px solid #e0e0e0', 
-            borderRadius: 6, 
-            fontSize: 14,
-            backgroundColor: '#fff'
-          }}
-          placeholder="子任务内容"
-        />
-        <button
-          onClick={() => {
-            const newSubTasks = editData.subTasks.filter((_, i) => i !== index);
-            setEditData({ ...editData, subTasks: newSubTasks });
-          }}
-          style={{ 
-            padding: '8px 12px', 
-            backgroundColor: '#ff4444', 
-            color: '#fff', 
-            border: 'none', 
-            borderRadius: 6, 
-            cursor: 'pointer',
-            fontSize: 12
+  {/* 子任务列表（仅当有内容时显示） */}
+  {editData.subTasks?.length > 0 && (
+    <div>
+      {editData.subTasks.map((subTask, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 6,
           }}
         >
-          删除
-        </button>
+          <input
+            type="checkbox"
+            checked={subTask.done || false}
+            onChange={(e) => {
+              const newSubTasks = [...editData.subTasks];
+              newSubTasks[index] = {
+                ...newSubTasks[index],
+                done: e.target.checked,
+              };
+              setEditData({ ...editData, subTasks: newSubTasks });
+            }}
+            style={{
+              transform: 'scale(1.2)',
+              cursor: 'pointer',
+            }}
+          />
+          <input
+            type="text"
+            value={subTask.text || ''}
+            onChange={(e) => {
+              const newSubTasks = [...editData.subTasks];
+              newSubTasks[index] = {
+                ...newSubTasks[index],
+                text: e.target.value,
+              };
+              setEditData({ ...editData, subTasks: newSubTasks });
+            }}
+            placeholder="子任务内容"
+            style={{
+              flex: 1,
+              height: 36,
+              padding: '0 10px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              backgroundColor: '#fff',
+              boxSizing: 'border-box',
+            }}
+          />
+          <button
+            onClick={() => {
+              const newSubTasks = editData.subTasks.filter(
+                (_, i) => i !== index
+              );
+              setEditData({ ...editData, subTasks: newSubTasks });
+            }}
+            style={{
+              height: 36,
+              width: 48,
+              backgroundColor: '#f9f9f9',
+              color: '#333',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 500,
+              boxSizing: 'border-box',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+
+
+
+
+{/* 📊 进度跟踪 */}
+<div>
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    📊 进度跟踪
+  </label>
+
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: 12,
+      alignItems: 'end',
+    }}
+  >
+    {/* 初始值 */}
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        初始值
       </div>
-    ))}
-    
-    {(!editData.subTasks || editData.subTasks.length === 0) && (
-      <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '12px' }}>
-        暂无子任务
+      <input
+        type="number"
+        value={editData.progress?.initial || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              initial:
+                e.target.value === ''
+                  ? 0
+                  : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+
+    {/* 当前值 */}
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        当前值
       </div>
-    )}
+      <input
+        type="number"
+        value={editData.progress?.current || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              current:
+                e.target.value === ''
+                  ? 0
+                  : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+
+    {/* 目标值 */}
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        目标值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.target || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              target:
+                e.target.value === ''
+                  ? 0
+                  : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+
+    {/* 单位 */}
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        单位
+      </div>
+      <select
+        value={editData.progress?.unit || '%'}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              unit: e.target.value,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
+        }}
+      >
+        <option value="%">%</option>
+        <option value="页">页</option>
+        <option value="章">章</option>
+        <option value="题">题</option>
+        <option value="单元">单元</option>
+      </select>
+    </div>
   </div>
 </div>
 
 
 
-          {/* 进度跟踪 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              📊 进度跟踪
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 8,
-              marginBottom: 8
-            }}>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>初始值</div>
-                <input
-                  type="number"
-                  value={editData.progress?.initial || ''}
-                  onChange={(e) => setEditData({
-                    ...editData,
-                    progress: {
-                      ...editData.progress,
-                      initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                    }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>当前值</div>
-                <input
-                  type="number"
-                  value={editData.progress?.current || ''}
-                  onChange={(e) => setEditData({
-                    ...editData,
-                    progress: {
-                      ...editData.progress,
-                      current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                    }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>目标值</div>
-                <input
-                  type="number"
-                  value={editData.progress?.target || ''}
-                  onChange={(e) => setEditData({
-                    ...editData,
-                    progress: {
-                      ...editData.progress,
-                      target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                    }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>单位</div>
-                <select
-                  value={editData.progress?.unit || "%"}
-                  onChange={(e) => setEditData({
-                    ...editData,
-                    progress: {
-                      ...editData.progress,
-                      unit: e.target.value
-                    }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 4px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    height: 'auto',
-                    textAlign: 'center',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <option value="%">%</option>
-                  <option value="页">页</option>
-                  <option value="章">章</option>
-                  <option value="题">题</option>
-                  <option value="单元">单元</option>
-                </select>
-              </div>
-            </div>
-          </div>
+
+
+
+        
 
           
 
@@ -5061,24 +5395,26 @@ const saveEditSubTask = () => {
                   fontSize: "14px",
                 }}
               >
-                {task.text}
-                {task.pinned &&  <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
-                {task.isWeekTask && " 🌟"}
-                {task.isCrossDate && " 🔄"}  {/* 跨日期任务标识 */}
-                 {task.reminderTime && (
-      <span
-        style={{
-          fontSize: 10,
-          color: "#ff6b6b",
-          marginLeft: "6px",
-          verticalAlign: "1px"
-    
-        }}
-        title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
-      >
-        ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
-      </span>
-    )}
+              {task.text}
+{task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
+{task.isWeekTask && " 🌟"}
+{task.isCrossDate && " 🔄"}  {/* 跨日期任务标识 */}
+
+
+
+{task.reminderTime && (
+  <span
+    style={{
+      fontSize: 10,
+      color: "#ff6b6b",
+      marginLeft: "6px",
+      verticalAlign: "1px"
+    }}
+    title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
+  >
+    ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
+  </span>
+)}  
  
 
               </div>
@@ -5230,10 +5566,12 @@ const saveEditSubTask = () => {
 
           {/* 第二行：标签、计时器、时间（右下角） */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',  // 改为靠右
-            alignItems: 'center',
-            marginTop: '4px'
+             display: 'flex',
+    justifyContent: 'flex-end', 
+    gap: 4,  // ← 改为和短文本一样的4px间距
+    marginTop: 0,  // ← 去掉上边距
+    alignSelf: 'flex-start',  // ← 添加这行
+    alignItems: 'center'
           }}>
 
 
@@ -5508,7 +5846,8 @@ const saveEditSubTask = () => {
         flexDirection: 'column',
         gap: 1,
         marginBottom: 4,
-        fontSize: 12, 
+
+        fontSize: 13, 
         color: task.done ? '#999' : '#666',
         minHeight: '18px'
       }}>
@@ -5533,7 +5872,7 @@ const saveEditSubTask = () => {
                   padding: '1px 4px',
                   border: '1px solid #1a73e8',
                   borderRadius: '3px',
-                  fontSize: '12px',
+                  fontSize: '13px',
                   outline: 'none',
                   height: '20px'
                 }}
@@ -5576,7 +5915,7 @@ const saveEditSubTask = () => {
                 minHeight: '18px',
                 display: 'flex',
                 alignItems: 'center',
-                lineHeight: '1.2'
+                lineHeight: '1.5'
               }}
               onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
               onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
@@ -5711,10 +6050,10 @@ function App() {
   const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
   const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
   const [showBulkInput, setShowBulkInput] = useState(false); // 控制是否显示批量导入框
-  const [newTaskCategory, setNewTaskCategory] = useState(categories[0].name);
+  const [newTaskCategory, setNewTaskCategory] = useState(baseCategories[0].name);
   const [bulkText, setBulkText] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
-  
+  const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
   const [showStats, setShowStats] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
@@ -5767,8 +6106,12 @@ function App() {
   const [customAchievements, setCustomAchievements] = useState([]);
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
-  
-
+  const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
+ const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
+const [categories, setCategories] = useState(baseCategories.map(cat => ({
+  ...cat,
+  subCategories: []
+})));
 
 
   // 修复：成就检查逻辑
@@ -6300,6 +6643,162 @@ const handleOpenCustomAchievementModal = (achievement = null) => {
   setEditingAchievement(achievement);
   setShowCustomAchievementModal(true);
 };
+
+
+// 子类别管理模态框组件
+const SubCategoryModal = ({ category, onSave, onClose }) => {
+  const [subCategories, setSubCategories] = useState(category.subCategories || []);
+  const [newSubCategory, setNewSubCategory] = useState('');
+
+  const handleAddSubCategory = () => {
+    if (newSubCategory.trim() && !subCategories.includes(newSubCategory.trim())) {
+      setSubCategories([...subCategories, newSubCategory.trim()]);
+      setNewSubCategory('');
+    }
+  };
+
+  const handleRemoveSubCategory = (index) => {
+    const newSubCategories = [...subCategories];
+    newSubCategories.splice(index, 1);
+    setSubCategories(newSubCategories);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 400
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+          管理 {category.name} 子类别
+        </h3>
+
+        {/* 添加新子类别 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <input
+              type="text"
+              placeholder="输入子类别名称"
+              value={newSubCategory}
+              onChange={(e) => setNewSubCategory(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 14
+              }}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddSubCategory()}
+            />
+            <button
+              onClick={handleAddSubCategory}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#1a73e8',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer'
+              }}
+            >
+              添加
+            </button>
+          </div>
+        </div>
+
+        {/* 子类别列表 */}
+        <div style={{ maxHeight: 200, overflow: 'auto', marginBottom: 15 }}>
+          {subCategories.map((subCat, index) => (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                border: '1px solid #e0e0e0',
+                borderRadius: 6,
+                marginBottom: 6,
+                backgroundColor: '#f8f9fa'
+              }}
+            >
+              <span>{subCat}</span>
+              <button
+                onClick={() => handleRemoveSubCategory(index)}
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: '#dc3545',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  fontSize: 12
+                }}
+              >
+                删除
+              </button>
+            </div>
+          ))}
+          
+          {subCategories.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>
+              暂无子类别
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+            onClick={onClose}
+          >
+            取消
+          </button>
+          <button
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#1a73e8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              onSave(category.name, subCategories);
+              onClose();
+            }}
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 
 // ========== 修复成就系统 ==========
@@ -7663,7 +8162,7 @@ useEffect(() => {
   if (Object.keys(tasksByDate).length > 0) {
     checkDataIntegrity();
   }
-}, [tasksByDate]);
+}, [categories,tasksByDate]);
 
 
   
@@ -7889,6 +8388,23 @@ useEffect(() => {
     };
   };
 
+// 修复 SubCategoryModal 的 onSave
+const handleSaveSubCategories = (categoryName, subCategories) => {
+  // 更新 categories 状态
+  const updatedCategories = categories.map(cat => 
+    cat.name === categoryName 
+      ? { ...cat, subCategories }
+      : cat
+  );
+  
+  setCategories(updatedCategories);
+  
+  // 保存到本地存储
+  saveMainData('categories', updatedCategories); // 添加这行
+};
+
+
+
   // 添加任务
   const handleAddTask = (template = null) => {
     let text, category;
@@ -7902,10 +8418,23 @@ useEffect(() => {
       if (!text) return;
     }
 
+     // 检查当前选中的日期是否是今天
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  if (selectedDate !== todayStr) {
+    const confirmAdd = window.confirm(
+      `当前选中的日期是 ${selectedDate}，不是今天(${todayStr})。确定要在这个日期添加任务吗？`
+    );
+    if (!confirmAdd) {
+      return; // 用户取消添加
+    }
+  }
+
     const baseTask = {
       id: Date.now().toString(),
       text,
       category,
+      subCategory: newTaskSubCategory, // 使用新任务的子类别
       reminderYear: repeatConfig.reminderYear || "",
       reminderMonth: repeatConfig.reminderMonth || "",
       reminderDay: repeatConfig.reminderDay || "",
@@ -7956,6 +8485,7 @@ useEffect(() => {
                 id: `${baseTask.id}_${dateStr}`,
                 isRepeating: true,
                 repeatId: baseTask.id,
+                subCategory: newTaskSubCategory, // 添加这行
                 progress: null
               });
             }
@@ -7994,6 +8524,7 @@ if (repeatConfig.frequency === "weekly") {
                 ...baseTask,
                 id: `${baseTask.id}_${dateStr}`,
                 isRepeating: true,
+                subCategory: newTaskSubCategory, // 添加这行
                 repeatId: baseTask.id
               });
             }
@@ -8028,6 +8559,7 @@ if (repeatConfig.frequency === "weekly") {
         startTime: "",
         endTime: ""
       });
+      setNewTaskSubCategory(''); // 重置子类别选择
     }
   };
 
@@ -8075,50 +8607,71 @@ const handleAddWeekTask = (text) => {
 
 
   
+ const handleImportTasks = () => {
+  if (!bulkText.trim()) return;
 
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (selectedDate !== todayStr) {
+    const confirmAdd = window.confirm(
+      `当前选中的日期是 ${selectedDate}，不是今天(${todayStr})。确定要在这个日期批量导入任务吗？`
+    );
+    if (!confirmAdd) return;
+  }
 
+  const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return;
 
+  const category = "校内";
+  const firstLine = lines[0];
+  const subCategoryKeywords = ["语文", "数学", "英语", "科学", "体育", "音乐", "美术", "其他"];
+  const matched = subCategoryKeywords.find(k => firstLine.includes(k));
+  const subCategory = matched || firstLine;
 
-  // 在批量导入任务的函数中修改
-  const handleImportTasks = () => {
-    if (!bulkText.trim()) return;
-
-    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-
-    let category = categories[0].name;
-    for (const c of categories) {
-      if (lines[0].includes(c.name)) {
-        category = c.name;
-        break;
-      }
-    }
-
-    const newTasks = lines.slice(1).map((line, index) => ({
-      id: Date.now().toString() + index,
-      text: line,
+  const taskLines = lines.slice(1);
+  const newTasks = taskLines.map(line => {
+    const [taskText, note] = line.split("|").map(s => s.trim());
+    return {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      text: taskText,
       category,
+      subCategory,
       done: false,
       timeSpent: 0,
-      note: "",
+      note: note || "",
       image: null,
       scheduledTime: "",
       pinned: false,
       reflection: "",
-      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
-    }));
+      tags: bulkTags || [],
+      subTasks: []
+    };
+  });
 
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
-    }));
+  // ✅ 1. 添加任务
+  setTasksByDate(prev => ({
+    ...prev,
+    [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
+  }));
 
-    setBulkText("");
-    setShowBulkInput(false);
-  };
+  // ✅ 2. 自动把新子类别加入 categories（如果不存在）
+  setCategories(prev => {
+    const updated = [...prev];
+    const idx = updated.findIndex(c => c.name === category);
+    if (idx >= 0) {
+      const currentSubs = updated[idx].subCategories || [];
+      if (!currentSubs.includes(subCategory)) {
+        updated[idx].subCategories = [...currentSubs, subCategory];
+      }
+    }
+    return updated;
+  });
 
- 
- 
+  // ✅ 3. 清空输入与标签
+  setBulkText("");
+  setBulkTags([]);
+  setShowBulkInput(false);
+};
+
 
 
 
@@ -8360,7 +8913,7 @@ const toggleSubTask = (task, subTaskIndex) => {
     }
   };
 
-  // 保存任务编辑
+  
 const saveTaskEdit = (task, editData) => {
   if (task.isWeekTask) {
     const updatedTasksByDate = { ...tasksByDate };
@@ -8373,10 +8926,11 @@ const saveTaskEdit = (task, editData) => {
           reflection: editData.reflection,
           scheduledTime: editData.scheduledTime,
           category: editData.category,
+          subCategory: editData.subCategory || '', // 新增子类别
           progress: editData.progress,
           tags: editData.tags || [],
-          subTasks: editData.subTasks || [] , // 添加这行
-          reminderTime: editData.reminderTime // 添加这行
+          subTasks: editData.subTasks || [],
+          reminderTime: editData.reminderTime
         } : t
       );
     });
@@ -8392,15 +8946,17 @@ const saveTaskEdit = (task, editData) => {
           reflection: editData.reflection,
           scheduledTime: editData.scheduledTime,
           category: editData.category,
+          subCategory: editData.subCategory || '', // 新增子类别
           progress: editData.progress,
           tags: editData.tags || [],
-          subTasks: editData.subTasks || [] , // 添加这行
-          reminderTime: editData.reminderTime // 添加这行
+          subTasks: editData.subTasks || [],
+          reminderTime: editData.reminderTime
         } : t
       )
     }));
   }
 };
+
 
   // 编辑计划时间
   const editScheduledTime = (task) => {
@@ -8520,6 +9076,24 @@ const saveTaskEdit = (task, editData) => {
   // 获取分类任务
   const getCategoryTasks = (catName) =>
     todayTasks.filter(t => t.category === catName);
+
+
+// 按子类别分组任务
+const getTasksBySubCategory = (catName) => {
+  const catTasks = todayTasks.filter(t => t.category === catName);
+  const grouped = {};
+  
+  catTasks.forEach(task => {
+    const subCat = task.subCategory || '未分类';
+    if (!grouped[subCat]) {
+      grouped[subCat] = [];
+    }
+    grouped[subCat].push(task);
+  });
+  
+  return grouped;
+};
+
 
   // 计算分类总时间
   const totalTime = (catName) =>
@@ -9907,6 +10481,17 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
 
+{/* 子类别管理模态框 */}
+{editingCategory && (
+  <SubCategoryModal
+    category={editingCategory}
+    onSave={handleSaveSubCategories}
+    onClose={() => setEditingCategory(null)}
+  />
+)}
+
+
+
  
       {/* 成就模态框 */}
       {showAchievementsModal && (
@@ -10111,15 +10696,16 @@ if (isInitialized && todayTasks.length === 0) {
         textAlign: "center",
         color: "#1a73e8",
         fontSize: "20px",
-        marginTop: "0px",      // 确保为0
+        marginTop: "-5px",      // 确保为0
         marginBottom: "10px",  // 调整下边距
         paddingTop: "0px"      // 确保为0
       }}>
-        汤圆学习打卡系统
+        汤圆每日学习
       </h1>
       <div style={{
         textAlign: "center",
         fontSize: 13,
+        marginTop: "-5px",      // 确保为0
         marginBottom: 10
       }}>
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习计划
@@ -10468,154 +11054,225 @@ if (isInitialized && todayTasks.length === 0) {
             }}
           >
             <div
-              onClick={() => setCollapsedCategories(prev => ({
-                ...prev,
-                [c.name]: !prev[c.name]
-              }))}
-              style={{
-                backgroundColor: isComplete ? "#f0f0f0" : c.color,
-                color: isComplete ? "#888" : "#fff",
-                padding: "3px 8px",  // 上下padding改小
-                fontWeight: "bold",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                fontSize: "13px",  // 文字变小
-                minHeight: "24px"  // 控制最小高度
-              }}
-            >
-              <span>
-                {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
-                {isComplete && " ✓"}
-              </span>
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editCategoryTime(c.name);
-                }}
-                style={{
-                  fontSize: 12,
-                  color: isComplete ? "#888" : "#fff",
-                  cursor: "pointer",
-                  padding: "2px 8px",
-                  borderRadius: "4px",
-                  backgroundColor: "transparent"
-                }}
-                title="点击修改总时间"
-              >
-                {formatCategoryTime(totalTime(c.name))}
-              </span>
-            </div>
-            {!isCollapsed && (
-              <ul style={{
-                listStyle: "none",
-                padding: 8,
-                margin: 0
-              }}>
-                {catTasks
-  .sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return 0;
-  })
-  .map((task) => (
-    <TaskItem
-      key={task.id}
-      task={task}
-      onEditTime={editTaskTime}
-      onEditNote={editTaskNote}
-      onEditReflection={editTaskReflection}
-      onOpenEditModal={openTaskEditModal}
-      onShowImageModal={setShowImageModal}
-      toggleDone={toggleDone}
-      formatTimeNoSeconds={formatTimeNoSeconds}
-      formatTimeWithSeconds={formatTimeWithSeconds}
-      onMoveTask={moveTask}
-      categories={categories}
-      activeTimer={activeTimer}  // 添加这行
-      setShowMoveModal={setShowMoveModal}
-      onUpdateProgress={handleUpdateProgress}
-      onStartTimer={handleStartTimer}
-      onPauseTimer={handlePauseTimer}
-      onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
-      onToggleSubTask={toggleSubTask}
-      isTimerRunning={activeTimer?.taskId === task.id}
-      elapsedTime={elapsedTime} // 新增这行
-    />
-))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+  onClick={() => setCollapsedCategories(prev => ({
+    ...prev,
+    [c.name]: !prev[c.name]
+  }))}
+  style={{
+    backgroundColor: isComplete ? "#f0f0f0" : c.color,
+    color: isComplete ? "#888" : "#fff",
+    padding: "3px 8px",
+    fontWeight: "bold",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    fontSize: "13px",
+    minHeight: "24px"
+  }}
+>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <span>
+      {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
+      {isComplete && " ✓"}
+    </span>
+    
+  
+{/* 子类别管理按钮 */}
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    setEditingCategory(c);
+  }}
+  style={{
+    background: 'transparent',
+    border: '1px solid rgba(255,255,255,0.5)',
+    color: '#fff',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '10px',
+    padding: '1px 6px'
+  }}
+  title="管理子类别"
+>
+  📁
+</button>
+</div>
 
-      <div style={{
-        display: "flex",
-        gap: 10,
-        marginTop: 10
-      }}>
-        <button
-          className="action-button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowAddInput(!showAddInput);
-            setShowBulkInput(false);
-          }}
-          style={{
-            flex: 1,
-            padding: 8,
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer",
-            outline: "none",
-            boxShadow: "none",
-            transform: "none",
-            transition: "none"
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.target.style.backgroundColor = "#1a73e8";
-            e.target.style.color = "#fff";
-          }}
-          onMouseUp={(e) => {
-            e.target.style.backgroundColor = "#1a73e8";
-            e.target.style.color = "#fff";
-          }}
-          onFocus={(e) => {
-            e.target.style.backgroundColor = "#1a73e8";
-            e.target.style.color = "#fff";
-          }}
-          onBlur={(e) => {
-            e.target.style.backgroundColor = "#1a73e8";
-            e.target.style.color = "#fff";
-          }}
-        >
-          {showAddInput ? "取消添加" : "添加任务"}
-        </button>
-        <button
-          className="action-button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowBulkInput(!showBulkInput);
-            setShowAddInput(false);
-          }}
-          style={{
-            flex: 1,
-            padding: 8,
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer"
-          }}
-        >
-          {showBulkInput ? "取消批量" : "批量导入"}
-        </button>
-      </div>
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    editCategoryTime(c.name);
+  }}
+  style={{
+    fontSize: 12,
+    color: isComplete ? "#888" : "#fff",
+    cursor: "pointer",
+    padding: "2px 8px",
+    borderRadius: "4px",
+    backgroundColor: "transparent"
+  }}
+  title="点击修改总时间"
+>
+  {formatCategoryTime(totalTime(c.name))}
+</span>
+</div>
+
+{!isCollapsed && (
+<div style={{ padding: 8 }}>
+  {(() => {
+    const subCategoryTasks = getTasksBySubCategory(c.name);
+    const subCategoryKeys = Object.keys(subCategoryTasks);
+    
+    return subCategoryKeys.map((subCat) => {
+      const subCatTasks = subCategoryTasks[subCat];
+      const subCatKey = `${c.name}_${subCat}`;
+      const isSubCollapsed = collapsedSubCategories[subCatKey];
+      
+      return (
+        <div key={subCat} style={{ marginBottom: 8 }}>
+          <div
+            onClick={() => setCollapsedSubCategories(prev => ({
+              ...prev,
+              [subCatKey]: !prev[subCatKey]
+            }))}
+            style={{
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              padding: '4px 8px',
+              fontWeight: 'bold',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              borderRadius: '6px',
+              fontSize: '12px',
+              marginBottom: '4px'
+            }}
+          >
+            <span>
+              {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+            </span>
+            <span>{isSubCollapsed ? '▶' : '▼'}</span>
+          </div>
+          
+          {!isSubCollapsed && (
+            <ul style={{
+              listStyle: "none",
+              padding: "0 0 0 8px",
+              margin: 0,
+              borderLeft: "2px solid #e0e0e0"
+            }}>
+              {subCatTasks
+.sort((a, b) => {
+  if (a.pinned && !b.pinned) return -1;
+  if (!a.pinned && b.pinned) return 1;
+  return 0;
+})
+.map((task) => (
+  <TaskItem
+    key={task.id}
+    task={task}
+    onEditTime={editTaskTime}
+    onEditNote={editTaskNote}
+    onEditReflection={editTaskReflection}
+    onOpenEditModal={openTaskEditModal}
+    onShowImageModal={setShowImageModal}
+    toggleDone={toggleDone}
+    formatTimeNoSeconds={formatTimeNoSeconds}
+    formatTimeWithSeconds={formatTimeWithSeconds}
+    onMoveTask={moveTask}
+    categories={baseCategories}
+    activeTimer={activeTimer}
+    setShowMoveModal={setShowMoveModal}
+    onUpdateProgress={handleUpdateProgress}
+    onStartTimer={handleStartTimer}
+    onPauseTimer={handlePauseTimer}
+    onEditSubTask={editSubTask}
+    onToggleSubTask={toggleSubTask}
+    isTimerRunning={activeTimer?.taskId === task.id}
+    elapsedTime={elapsedTime}
+  />
+))}
+            </ul>
+          )}
+        </div>
+      );
+    });
+  })()}
+</div>
+)}
+</div>
+);
+})}
+
+<div style={{
+display: "flex",
+gap: 10,
+marginTop: 10
+}}>
+<button
+  className="action-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowAddInput(!showAddInput);
+    setShowBulkInput(false);
+  }}
+  style={{
+    flex: 1,
+    padding: 8,
+    backgroundColor: "#1a73e8",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+    outline: "none",
+    boxShadow: "none",
+    transform: "none",
+    transition: "none"
+  }}
+  onMouseDown={(e) => {
+    e.preventDefault();
+    e.target.style.backgroundColor = "#1a73e8";
+    e.target.style.color = "#fff";
+  }}
+  onMouseUp={(e) => {
+    e.target.style.backgroundColor = "#1a73e8";
+    e.target.style.color = "#fff";
+  }}
+  onFocus={(e) => {
+    e.target.style.backgroundColor = "#1a73e8";
+    e.target.style.color = "#fff";
+  }}
+  onBlur={(e) => {
+    e.target.style.backgroundColor = "#1a73e8";
+    e.target.style.color = "#fff";
+  }}
+>
+  {showAddInput ? "取消添加" : "添加任务"}
+</button>
+<button
+  className="action-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowBulkInput(!showBulkInput);
+    setShowAddInput(false);
+  }}
+  style={{
+    flex: 1,
+    padding: 8,
+    backgroundColor: "#1a73e8",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer"
+  }}
+>
+  {showBulkInput ? "取消批量" : "批量导入"}
+</button>
+</div>
+
 
       {/* 默认显示的评分和感想（没有展开输入框时） */}
       {!showAddInput && !showBulkInput && (
@@ -10837,6 +11494,42 @@ if (isInitialized && todayTasks.length === 0) {
               </button>
             ))}
           </div>
+
+
+
+{/* 在添加任务按钮区域后面添加子类别选择 */}
+{newTaskCategory && categories.find(c => c.name === newTaskCategory)?.subCategories?.length > 0 && (
+  <div style={{ marginBottom: 8 }}>
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: '600',
+      color: '#333',
+      fontSize: 14
+    }}>
+      子类别
+    </label>
+    <select
+      value={newTaskSubCategory || ''}
+      onChange={(e) => setNewTaskSubCategory(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '8px 12px',
+        border: '2px solid #e0e0e0',
+        borderRadius: 6,
+        fontSize: 14,
+        backgroundColor: '#fafafa',
+        cursor: 'pointer'
+      }}
+    >
+      <option value="">选择子类别（可选）</option>
+      {categories.find(c => c.name === newTaskCategory)?.subCategories?.map(subCat => (
+        <option key={subCat} value={subCat}>{subCat}</option>
+      ))}
+    </select>
+  </div>
+)}
+
 
 
           {/* 展开状态下显示的评分和感想 */}
