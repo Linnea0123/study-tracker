@@ -1,117 +1,15 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
 
-// ========== 直接嵌入 Supabase 代码 ==========
-import { createClient } from '@supabase/supabase-js'
-
-// 保持这样就行
-const PAGE_ID = 'user_123';
-const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
-
-const supabase = createClient(
-  'https://rktotbfhdvvmazabyvme.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrdG90YmZoZHZ2bWF6YWJ5dm1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1OTgyMjksImV4cCI6MjA3NjE3NDIyOX0.bTUxD6-1S2vM3zyC2uhqf4hfln97rH5fqJbptbSZIVQ'
-)
-
-class SyncService {
-  static async saveData(userId, key, data) {
-    try {
-      const storageKey = `study-tracker-${userId}-${key}`
-      console.log('🔄 正在保存数据到 Supabase:', { userId, key, storageKey })
-      
-      // 1. 保存到 localStorage
-      localStorage.setItem(storageKey, JSON.stringify(data))
-      
-      // 2. 同步到 Supabase
-      const { error } = await supabase
-        .from('user_data')
-        .upsert({
-          user_id: userId,
-          data_key: storageKey,
-          data_value: data,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id, data_key'
-        })
-      
-      if (error) {
-        console.warn('⚠️ Supabase 保存失败，使用本地存储:', error.message)
-        return false
-      } else {
-        console.log('✅ Supabase 同步成功:', key)
-        return true
-      }
-    } catch (error) {
-      console.error('❌ 保存数据失败:', error)
-      return false
-    }
-  }
-
-  
-
-  static async loadData(userId, key) {
-    try {
-      const storageKey = `study-tracker-${userId}-${key}`;
-      
-      console.log('🔄 正在从 Supabase 加载数据:', { userId, key, storageKey });
-      
-      // 1. 优先从 Supabase 加载最新数据
-      const { data: supabaseData, error } = await supabase
-        .from('user_data')
-        .select('data_value, updated_at')
-        .eq('user_id', userId)
-        .eq('data_key', storageKey)
-        .single();
-      
-      if (error) {
-        console.log('ℹ️ Supabase 无数据或加载失败:', key, error.message);
-        // 失败时回退到本地数据
-        const localData = localStorage.getItem(storageKey);
-        if (localData) {
-          console.log('✅ 使用本地存储数据:', key);
-          return JSON.parse(localData);
-        }
-        return null;
-      }
-      
-      if (supabaseData && supabaseData.data_value) {
-        // Supabase 有数据，更新本地存储
-        console.log('✅ 从 Supabase 加载成功:', key);
-        localStorage.setItem(storageKey, JSON.stringify(supabaseData.data_value));
-        return supabaseData.data_value;
-      }
-      
-      // 2. 如果 Supabase 没有数据，使用本地数据
-      const localData = localStorage.getItem(storageKey);
-      if (localData) {
-        console.log('ℹ️ Supabase 无数据，使用本地存储:', key);
-        return JSON.parse(localData);
-      }
-      
-      console.log('ℹ️ 无数据:', key);
-      return null;
-      
-    } catch (error) {
-      console.error('❌ 加载数据失败:', error);
-      // 出错时也回退到本地数据
-      const localData = localStorage.getItem(`study-tracker-${userId}-${key}`);
-      return localData ? JSON.parse(localData) : null;
-    }
-  }
-
-}
-// ========== Supabase 代码结束 ==========
-
 const categories = [
-{ name: "语文", color: "#8B5CF6" },    // 保持紫色
-{ name: "数学", color: "#4F86F7" },       // 蓝色系
-{ name: "英语", color: "#5D8BF7" },       // 稍浅蓝
-{ name: "科学", color: "#6B90F8" },       // 再浅蓝
-{ name: "其他", color: "#7995F9" },       // 更浅蓝
-{ name: "体育", color: "#879AFA" },       // 最浅蓝
+  { name: "Shelddi", color: "#8B5CF6" }, // 新增紫色分类
+  { name: "中文", color: "#4a90e2" },
+  { name: "日语", color: "#357ABD" },
+  { name: "英语", color: "#1e73be" },
+  { name: "其他", color: "#00aaff" },
+  { name: "锻炼", color: "#3399ff" },
 ];
 
 // ========== 成就系统配置 ==========
@@ -1148,6 +1046,15 @@ const AchievementsModal = ({
 
 
 
+
+
+
+
+
+// 保持这样就行
+const PAGE_ID = window.location.pathname.includes('page2') ? 'PAGE_B' : 'PAGE_A';
+const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
+
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
@@ -1400,43 +1307,31 @@ const getWeekNumber = (date) => {
 };
 
 
-
-
-
-// 统一的存储函数 - 修复版本
+// 统一的存储函数
 const saveMainData = async (key, data) => {
-    const storageKey = `${STORAGE_KEY}_${key}`;
-    
-    try {
-        // 原有的 localStorage 保存
-        localStorage.setItem(storageKey, JSON.stringify(data));
-        console.log(`✅ 本地保存成功: ${key}`);
-        
-        // 新增：同步到 Supabase - 修复这里！
-        const syncResult = await SyncService.saveData(PAGE_ID, key, data);
-        if (syncResult) {
-            console.log(`✅ Supabase 同步成功: ${key}`);
-        } else {
-            console.log(`⚠️ Supabase 同步失败，仅本地保存: ${key}`);
-        }
-        
-        return true;
-    } catch (error) {
-        console.error(`❌ 数据保存失败: ${key}`, error);
-        return false;
-    }
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    console.log(`数据保存成功: ${key}`, data);
+  } catch (error) {
+    console.error(`数据保存失败: ${key}`, error);
+  }
 };
 
 const loadMainData = async (key) => {
-    try {
-        // 使用 SyncService 加载数据（会尝试 Supabase）
-        const data = await SyncService.loadData(PAGE_ID, key);
-        return data;
-    } catch (error) {
-        console.error(`❌ 数据加载失败: ${key}`, error);
-        return null;
-    }
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    const data = localStorage.getItem(storageKey);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`数据加载失败: ${key}`, error);
+    return null;
+  }
 };
+
+
+
+
 
 
  
@@ -5662,47 +5557,33 @@ const saveEditSubTask = () => {
             </div>
           ) : (
             <span 
-  onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
-  onContextMenu={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const newNote = window.prompt("添加备注", subTask.note || "");
-    if (newNote !== null) {
-      onEditSubTask(task, index, subTask.text, newNote);
-    }
-  }}
-  onTouchStart={(e) => {
-    // 记录触摸开始时间
-    e.touchStartTime = Date.now();
-  }}
-  onTouchEnd={(e) => {
-    // 长按判断（超过500ms）
-    if (Date.now() - e.touchStartTime > 500) {
-      e.preventDefault();
-      const newNote = window.prompt("添加备注", subTask.note || "");
-      if (newNote !== null) {
-        onEditSubTask(task, index, subTask.text, newNote);
-      }
-    }
-  }}
-  style={{ 
-    textDecoration: "none",
-    cursor: 'pointer',
-    flex: 1,
-    padding: '3px 4px 1px 4px',
-    borderRadius: '3px',
-    transition: 'background-color 0.2s',
-    minHeight: '18px',
-    display: 'flex',
-    alignItems: 'center',
-    lineHeight: '1.2'
-  }}
-  onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-  title="左键编辑文本，右键/长按添加备注"
->
-  {subTask.text}
-</span>
+              onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const newNote = window.prompt("添加备注", subTask.note || "");
+                if (newNote !== null) {
+                  onEditSubTask(task, index, subTask.text, newNote);
+                }
+              }}
+              style={{ 
+                textDecoration: "none",
+                cursor: 'pointer',
+                flex: 1,
+                padding: '3px 4px 1px 4px',
+                borderRadius: '3px',
+                transition: 'background-color 0.2s',
+                minHeight: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                lineHeight: '1.2'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              title="左键编辑文本，右键添加备注"
+            >
+              {subTask.text}
+            </span>
           )}
         </div>
         
@@ -5889,95 +5770,6 @@ function App() {
   
 
 
-  
- // 在批量导入任务的函数中修改
- const handleImportTasks = () => {
-    if (!bulkText.trim()) return;
-
-    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-
-    let category = categories[0].name;
-    for (const c of categories) {
-      if (lines[0].includes(c.name)) {
-        category = c.name;
-        break;
-      }
-    }
-
-    const newTasks = lines.slice(1).map((line, index) => ({
-      id: Date.now().toString() + index,
-      text: line,
-      category,
-      done: false,
-      timeSpent: 0,
-      note: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      reflection: "",
-      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
-    }));
-
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
-    }));
-
-    setBulkText("");
-    setShowBulkInput(false);
-  };
-
-
-// 在 App 组件的 useEffect 中添加调试
-useEffect(() => {
-    console.log('🔍 App 组件 Supabase 调试:');
-    console.log('- PAGE_ID:', PAGE_ID);
-    console.log('- SyncService:', typeof SyncService);
-    console.log('- saveMainData:', typeof saveMainData);
-    console.log('- loadMainData:', typeof loadMainData);
-    console.log('- supabase:', typeof supabase);
-
-   
-
-
-    
-   
-
-    // 测试存储函数
-    const testStorage = async () => {
-        console.log('🧪 测试存储函数...');
-        const testData = { test: 'App 组件测试', time: new Date().toISOString() };
-        
-        const saveResult = await saveMainData('app_test', testData);
-        console.log('保存测试:', saveResult ? '✅ 成功' : '❌ 失败');
-        
-        const loadResult = await loadMainData('app_test');
-        console.log('加载测试:', loadResult ? '✅ 成功' : '❌ 失败');
-    };
-
-    testStorage();
-}, []);
-  
-
-
-// 添加强制数据加载的 useEffect
-useEffect(() => {
-  console.log('📱 手机端强制数据加载开始...');
-  
-  const loadAllData = async () => {
-    const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
-    
-    for (const key of keys) {
-      console.log(`🔄 加载 ${key}...`);
-      const data = await SyncService.loadData('user_123', key);
-      console.log(`📦 ${key} 加载结果:`, data ? '✅ 成功' : '❌ 失败');
-    }
-  };
-  
-  // 延迟执行，确保其他初始化完成
-  setTimeout(loadAllData, 1000);
-}, []);
 
   // 修复：成就检查逻辑
 useEffect(() => {
@@ -7647,20 +7439,8 @@ useEffect(() => {
 
 
 useEffect(() => {
-    const initializeApp = async () => {
-        // 测试 Supabase 连接
-        try {
-          console.log('🔄 测试 Supabase 连接...');
-          // eslint-disable-next-line no-unused-vars
-          const { data: supabaseData, error } = await supabase.from('user_data').select('count').limit(1);
-          if (error) {
-            console.log('⚠️ Supabase 连接失败，使用本地模式:', error.message);
-          } else {
-            console.log('✅ Supabase 连接成功，启用数据同步');
-          }
-        } catch (error) {
-          console.log('⚠️ Supabase 不可用，使用本地存储模式');
-        }
+  const initializeApp = async () => {
+   
     
     // 先迁移旧数据
     await migrateLegacyData();
@@ -8110,9 +7890,9 @@ useEffect(() => {
   };
 
   // 添加任务
-const handleAddTask = (template = null) => {
+  const handleAddTask = (template = null) => {
     let text, category;
-  
+
     if (template) {
       text = template.content;
       category = template.category;
@@ -8121,7 +7901,7 @@ const handleAddTask = (template = null) => {
       category = newTaskCategory;
       if (!text) return;
     }
-  
+
     const baseTask = {
       id: Date.now().toString(),
       text,
@@ -8147,22 +7927,60 @@ const handleAddTask = (template = null) => {
         unit: "%"
       }
     };
-  
+
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
-  
-      // 修复：正确判断是否有重复配置
-      const hasRepeatConfig = repeatConfig.frequency && 
-        (repeatConfig.frequency === "daily" || 
-         (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
-  
+
+      const hasRepeatConfig = repeatConfig.frequency &&
+        (repeatConfig.frequency === "" ||
+          (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
+
       if (hasRepeatConfig) {
         if (repeatConfig.frequency === "daily") {
           for (let i = 0; i < 7; i++) {
             const date = new Date(selectedDate);
             date.setDate(date.getDate() + i);
             const dateStr = date.toISOString().split("T")[0];
+
+            if (!newTasksByDate[dateStr]) {
+              newTasksByDate[dateStr] = [];
+            }
+
+            const existingTask = newTasksByDate[dateStr].find(
+              task => task.text === text && task.category === category
+            );
+
+            if (!existingTask) {
+              newTasksByDate[dateStr].push({
+                ...baseTask,
+                id: `${baseTask.id}_${dateStr}`,
+                isRepeating: true,
+                repeatId: baseTask.id,
+                progress: null
+              });
+            }
+          }
+        } else 
+        
+     // 在 handleAddTask 函数中的重复任务部分
+if (repeatConfig.frequency === "weekly") {
+    const startDate = new Date(selectedDate);
   
+    for (let week = 0; week < 4; week++) {
+      const weekStart = new Date(startDate);
+      weekStart.setDate(startDate.getDate() + (week * 7));
+      
+      // 使用 getMonday 确保从周一开始
+      const weekMonday = getMonday(weekStart);
+  
+      repeatConfig.days.forEach((isSelected, dayIndex) => {
+        if (isSelected) {
+          const taskDate = new Date(weekMonday);
+          taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
+          
+          const dateStr = taskDate.toISOString().split("T")[0];
+  
+          if (taskDate >= new Date(selectedDate)) {
             if (!newTasksByDate[dateStr]) {
               newTasksByDate[dateStr] = [];
             }
@@ -8176,89 +7994,44 @@ const handleAddTask = (template = null) => {
                 ...baseTask,
                 id: `${baseTask.id}_${dateStr}`,
                 isRepeating: true,
-                repeatId: baseTask.id,
-                progress: null
+                repeatId: baseTask.id
               });
             }
           }
-        } else if (repeatConfig.frequency === "weekly") {
-          const startDate = new Date(selectedDate);
-        
-          for (let week = 0; week < 4; week++) {
-            const weekStart = new Date(startDate);
-            weekStart.setDate(startDate.getDate() + (week * 7));
-            
-            // 使用 getMonday 确保从周一开始
-            const weekMonday = getMonday(weekStart);
-        
-            repeatConfig.days.forEach((isSelected, dayIndex) => {
-              if (isSelected) {
-                const taskDate = new Date(weekMonday);
-                taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
-                
-                const dateStr = taskDate.toISOString().split("T")[0];
-        
-                if (taskDate >= new Date(selectedDate)) {
-                  if (!newTasksByDate[dateStr]) {
-                    newTasksByDate[dateStr] = [];
-                  }
-        
-                  const existingTask = newTasksByDate[dateStr].find(
-                    task => task.text === text && task.category === category
-                  );
-        
-                  if (!existingTask) {
-                    newTasksByDate[dateStr].push({
-                      ...baseTask,
-                      id: `${baseTask.id}_${dateStr}`,
-                      isRepeating: true,
-                      repeatId: baseTask.id
-                    });
-                  }
-                }
-              }
-            });
-          }
         }
+      });
+    }
+  }
       } else {
-        // 没有重复配置：只添加到当前日期
         if (!newTasksByDate[selectedDate]) {
           newTasksByDate[selectedDate] = [];
         }
-  
+
         const existingTask = newTasksByDate[selectedDate].find(
           task => task.text === text && task.category === category
         );
-  
+
         if (!existingTask) {
           newTasksByDate[selectedDate].push(baseTask);
         }
       }
-  
+
       return newTasksByDate;
     });
-  
+
     if (!template) {
       setNewTaskText("");
       setShowAddInput(false);
-      // 修复：重置重复配置时，frequency 设为空字符串，避免默认重复
       setRepeatConfig({
-        frequency: "", // 改为空字符串，默认不重复
+        frequency: "daily",
         days: [false, false, false, false, false, false, false],
         startTime: "",
-        endTime: "",
-        reminderYear: "",
-        reminderMonth: "", 
-        reminderDay: "",
-        reminderHour: "",
-        reminderMinute: "",
+        endTime: ""
       });
     }
   };
 
-
-
-
+ 
 
 // 添加本周任务
 const handleAddWeekTask = (text) => {
@@ -8306,6 +8079,45 @@ const handleAddWeekTask = (text) => {
 
 
 
+  // 在批量导入任务的函数中修改
+  const handleImportTasks = () => {
+    if (!bulkText.trim()) return;
+
+    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    let category = categories[0].name;
+    for (const c of categories) {
+      if (lines[0].includes(c.name)) {
+        category = c.name;
+        break;
+      }
+    }
+
+    const newTasks = lines.slice(1).map((line, index) => ({
+      id: Date.now().toString() + index,
+      text: line,
+      category,
+      done: false,
+      timeSpent: 0,
+      note: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      reflection: "",
+      tags: [{ name: '作业', color: '#9c27b0', textColor: '#fff' }] // 添加默认标签
+    }));
+
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), ...newTasks]
+    }));
+
+    setBulkText("");
+    setShowBulkInput(false);
+  };
+
+ 
  
 
 
