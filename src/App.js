@@ -4110,93 +4110,103 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           gap: 16
         }}>
           {/* 任务内容 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              📝 任务内容
-            </label>
-            <textarea
-              value={editData.text}
-              onChange={(e) => setEditData({ ...editData, text: e.target.value })}
-              placeholder="请输入任务内容..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    📝 任务内容
+  </label>
+  <textarea
+    value={editData.text}
+    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+    placeholder="请输入任务内容..."
+    rows={Math.max(2, editData.text.split('\n').length)} // 根据内容自动调整行数
+    style={{
+      width: '100%',
+      padding: '12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      resize: 'vertical', // 允许垂直调整大小
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      minHeight: '60px', // 最小高度
+      maxHeight: '200px', // 最大高度
+      overflow: 'auto' // 内容过多时显示滚动条
+    }}
+  />
+</div>
 
-          {/* 备注和感想 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              备注
-            </label>
-            <textarea
-              value={editData.note}
-              onChange={(e) => setEditData({ ...editData, note: e.target.value })}
-              placeholder="输入备注..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+{/* 备注 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    备注
+  </label>
+  <textarea
+    value={editData.note}
+    onChange={(e) => setEditData({ ...editData, note: e.target.value })}
+    placeholder="输入备注..."
+    rows={Math.max(2, editData.note.split('\n').length)}
+    style={{
+      width: '100%',
+      padding: '12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      resize: 'vertical',
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      minHeight: '60px',
+      maxHeight: '150px',
+      overflow: 'auto'
+    }}
+  />
+</div>
 
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              感想
-            </label>
-            <textarea
-              value={editData.reflection}
-              onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
-              placeholder="输入感想..."
-              rows="1"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                resize: 'vertical',
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+{/* 感想 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    感想
+  </label>
+  <textarea
+    value={editData.reflection}
+    onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
+    placeholder="输入感想..."
+    rows={Math.max(2, editData.reflection.split('\n').length)}
+    style={{
+      width: '100%',
+      padding: '12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      resize: 'vertical',
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      minHeight: '60px',
+      maxHeight: '150px',
+      overflow: 'auto'
+    }}
+  />
+</div>
 
 
 
