@@ -7027,9 +7027,9 @@ const generateDailyLog = () => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
         
-        // 使用 ✓ 符号
-        logContent += `  ✓ ${task.text}${timeText}\n`;
-        markdownContent += `- ✓ ${task.text}${timeText}\n`;
+        // 使用 ☑️ 符号
+        logContent += `  ☑️ ${task.text}${timeText}\n`;
+        markdownContent += `- ☑️ ${task.text}${timeText}\n`;
       });
     }
 
@@ -7047,9 +7047,9 @@ const generateDailyLog = () => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
 
-        // 使用 ✓ 符号
-        logContent += `    ✓ ${task.text}${timeText}\n`;
-        markdownContent += `  - ✓ ${task.text}${timeText}\n`;
+        // 使用 ☑️ 符号
+        logContent += `    ☑️ ${task.text}${timeText}\n`;
+        markdownContent += `  - ☑️ ${task.text}${timeText}\n`;
       });
       
       if (Object.keys(categoryData.withSubCategories).length > 1) {
