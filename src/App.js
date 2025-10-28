@@ -6972,9 +6972,7 @@ useEffect(() => {
 
 
 
-
-
-// 在 App 组件中的 generateDailyLog 函数
+// 完整的 generateDailyLog 函数 - ✅ 符号版本
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
 
@@ -6983,73 +6981,97 @@ const generateDailyLog = () => {
     return;
   }
 
+  // 按分类和子分类组织任务
   const tasksByCategory = {};
-  todayTasks.forEach(task => {
+  completedTasks.forEach(task => {
     if (!tasksByCategory[task.category]) {
-      tasksByCategory[task.category] = [];
+      tasksByCategory[task.category] = {
+        withSubCategories: {},  // 有子分类的任务
+        withoutSubCategories: [] // 没有子分类的任务
+      };
     }
-    tasksByCategory[task.category].push(task);
+    
+    if (task.subCategory) {
+      // 有子分类的任务
+      if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
+        tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
+      }
+      tasksByCategory[task.category].withSubCategories[task.subCategory].push(task);
+    } else {
+      // 没有子分类的任务
+      tasksByCategory[task.category].withoutSubCategories.push(task);
+    }
   });
 
   const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
   const totalMinutes = Math.floor(totalTime / 60);
 
   // 原始格式内容（用于界面显示）
-  let logContent = `📅 ${selectedDate} 学习日志\n`;
+  let logContent = `📚 学习任务\n\n`;
 
   // Markdown 格式内容（用于复制）
-  let markdownContent = `# ${selectedDate} 学习日志\n`;
+  let markdownContent = `# 学习任务\n\n`;
 
-  // 添加评分和感想
-  if (dailyRating > 0) {
-    const stars = '⭐'.repeat(dailyRating);
-    logContent += `🌟 今日评分: ${stars}\n`;
-    markdownContent += `## 今日评分: ${stars} \n\n`;
-  }
-  
-  if (dailyReflection) {
-    logContent += `💭 今日感想: ${dailyReflection}\n`;
-    markdownContent += `## 今日感想\n${dailyReflection}\n\n`;
-  }
-  
-  logContent += '\n';
-  markdownContent += `## 任务完成情况\n\n`;
-
-  Object.entries(tasksByCategory).forEach(([category, tasks]) => {
-    logContent += `📚 ${category}:\n`;
-    markdownContent += `### ${category}\n`;
+  // 遍历每个分类
+  Object.entries(tasksByCategory).forEach(([category, categoryData]) => {
+    logContent += `${category}\n`;
+    markdownContent += `## ${category}\n`;
     
-    tasks.forEach((task, index) => {
-      const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-      const timeText = `【${minutes}m】`; // 改为【Xm】格式
-      const status = task.done ? '✅' : '❌';
-      const markdownStatus = task.done ? '- [x]' : '- [ ]';
+    // 1️⃣ 先显示没有子分类的任务（缩进一格）
+    if (categoryData.withoutSubCategories.length > 0) {
+      categoryData.withoutSubCategories.forEach((task) => {
+        const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+        const timeText = minutes > 0 ? `【${minutes}m】` : "";
+        
+        // 使用 ✅ 符号代替复选框
+        logContent += `  ✅ ${task.text}${timeText}\n`;
+        markdownContent += `- ✅ ${task.text}${timeText}\n`;
+      });
+    }
+
+    // 2️⃣ 再显示有子分类的任务（与上面任务对齐）
+    if (categoryData.withoutSubCategories.length > 0 && Object.keys(categoryData.withSubCategories).length > 0) {
+      logContent += '\n';
+      markdownContent += '\n';
+    }
+
+    Object.entries(categoryData.withSubCategories).forEach(([subCategory, subTasks]) => {
+      logContent += `  - ${subCategory}\n`;
+      markdownContent += `### - ${subCategory}\n`;
+
+      subTasks.forEach((task) => {
+        const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+        const timeText = minutes > 0 ? `【${minutes}m】` : "";
+
+        // 使用 ✅ 符号代替复选框
+        logContent += `    ✅ ${task.text}${timeText}\n`;
+        markdownContent += `  - ✅ ${task.text}${timeText}\n`;
+      });
       
-      logContent += `  ${index + 1}. ${status} ${task.text} ${timeText}\n`;
-      markdownContent += `${markdownStatus} ${task.text} ${timeText}\n`;
-      
-      if (task.note) {
-        logContent += `     备注: ${task.note}\n`;
-        markdownContent += `  - 备注: ${task.note}\n`;
+      if (Object.keys(categoryData.withSubCategories).length > 1) {
+        logContent += '\n';
+        markdownContent += '\n';
       }
     });
+    
     logContent += '\n';
     markdownContent += '\n';
   });
 
-  logContent += `📊 今日统计:\n`;
-  logContent += `   完成任务: ${completedTasks.length} 个\n`;
-  logContent += `   总任务数: ${todayTasks.length} 个\n`;
-  logContent += `   完成率: ${Math.round((completedTasks.length / todayTasks.length) * 100)}%\n`;
-  logContent += `   学习时长: ${totalMinutes} 分钟\n`;
-  logContent += `   平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟\n`;
+  // 统计信息
+  logContent += `📊 学习统计\n`;
+  logContent += `  完成任务: ${completedTasks.length} 个\n`;
+  logContent += `  总任务数: ${todayTasks.length} 个\n`;
+  logContent += `  完成率: ${Math.round((completedTasks.length / todayTasks.length) * 100)}%\n`;
+  logContent += `  学习时长: ${totalMinutes} 分钟\n`;
+  logContent += `  平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
 
-  markdownContent += `## 统计汇总\n`;
+  markdownContent += `# 学习统计\n`;
   markdownContent += `- 完成任务: ${completedTasks.length} 个\n`;
   markdownContent += `- 总任务数: ${todayTasks.length} 个\n`;
   markdownContent += `- 完成率: ${Math.round((completedTasks.length / todayTasks.length) * 100)}%\n`;
   markdownContent += `- 学习时长: ${totalMinutes} 分钟\n`;
-  markdownContent += `- 平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟\n`;
+  markdownContent += `- 平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
 
   setShowDailyLogModal({
     visible: true,
@@ -7068,6 +7090,9 @@ const generateDailyLog = () => {
     }
   });
 };
+
+
+
 
 
   // 添加 ReminderModal 组件
