@@ -4337,15 +4337,12 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 
 
 
-
-
 {/* 编辑任务界面  添加标签  当前标签 */}
 <div
   style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 16,
-    alignItems: 'start',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
     marginBottom: 12,
   }}
 >
@@ -4354,10 +4351,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     <label
       style={{
         display: 'block',
-        marginBottom: 8,
+        marginBottom: 6,
         fontWeight: 600,
         color: '#333',
-        fontSize: 14,
+        fontSize: 13,
       }}
     >
       添加标签
@@ -4366,27 +4363,28 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     <div
       style={{
         display: 'flex',
-        gap: 8,
+        gap: 6,
         alignItems: 'center',
       }}
     >
       {/* 标签名称输入框 */}
       <input
         type="text"
-        placeholder="输入标签名称"
+        placeholder="标签名称"
         value={editData.newTagName || ''}
         onChange={(e) =>
           setEditData({ ...editData, newTagName: e.target.value })
         }
         style={{
           flex: 1,
-          height: 36,
-          padding: '0 10px',
+          height: 32,
+          padding: '0 8px',
           border: '1px solid #ccc',
           borderRadius: 6,
-          fontSize: 14,
+          fontSize: 13,
           backgroundColor: '#fff',
           boxSizing: 'border-box',
+          minWidth: 0, // 防止输入框溢出
         }}
       />
 
@@ -4398,14 +4396,15 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           setEditData({ ...editData, newTagColor: e.target.value })
         }
         style={{
-          width: 36,
-          height: 36,
+          width: 32,
+          height: 32,
           padding: 0,
           border: '1px solid #ccc',
           borderRadius: 6,
           cursor: 'pointer',
           backgroundColor: '#fff',
           boxSizing: 'border-box',
+          flexShrink: 0,
         }}
       />
 
@@ -4429,20 +4428,20 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           }
         }}
         style={{
-          height: 36,
-          width: 36,
+          height: 32,
+          width: 32,
           backgroundColor: '#f9f9f9',
           color: '#333',
           border: '1px solid #ccc',
           borderRadius: 6,
           cursor: 'pointer',
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: 600,
-          lineHeight: '36px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxSizing: 'border-box',
+          flexShrink: 0,
         }}
       >
         +
@@ -4450,15 +4449,15 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     </div>
   </div>
 
-  {/* 添加标签 */}
+  {/* 当前标签 */}
   <div>
     <label
       style={{
         display: 'block',
-        marginBottom: 8,
+        marginBottom: 6,
         fontWeight: 600,
         color: '#333',
-        fontSize: 14,
+        fontSize: 13,
       }}
     >
       当前标签
@@ -4468,14 +4467,15 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: 6,
-        minHeight: 36,
-        padding: '8px 10px',
+        gap: 4,
+        minHeight: 32,
+        padding: '6px 8px',
         border: '1px solid #ccc',
-        borderRadius: 8,
+        borderRadius: 6,
         backgroundColor: '#fafafa',
         alignItems: 'center',
         boxSizing: 'border-box',
+        maxHeight: 80,
         overflow: 'auto',
       }}
     >
@@ -4483,15 +4483,16 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
         <span
           key={index}
           style={{
-            fontSize: 12,
-            padding: '4px 8px',
+            fontSize: 11,
+            padding: '3px 6px',
             backgroundColor: tag.color,
             color: tag.textColor || '#fff',
-            borderRadius: 12,
+            borderRadius: 10,
             whiteSpace: 'nowrap',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 3,
+            flexShrink: 0,
           }}
         >
           {tag.name}
@@ -4506,11 +4507,13 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: 11,
               padding: 0,
-              width: 14,
-              height: 14,
-              lineHeight: '14px',
+              width: 12,
+              height: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               color: 'inherit',
               opacity: 0.8,
             }}
@@ -4521,16 +4524,13 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       ))}
 
       {(!editData.tags || editData.tags.length === 0) && (
-        <span style={{ fontSize: 12, color: '#999', fontStyle: 'italic' }}>
+        <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>
           暂无标签
         </span>
       )}
     </div>
   </div>
 </div>
-
-
-
 
 
 
@@ -9223,7 +9223,6 @@ const handleExportData = async () => {
 };
   
   
-
 const DailyLogModal = ({ logData, onClose, onCopy }) => {
   if (!logData) return null;
 
@@ -9253,7 +9252,8 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      padding: '10px'
     }}>
       <div style={{
         backgroundColor: 'white',
@@ -9261,15 +9261,18 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         borderRadius: 15,
         width: '95%',
         maxWidth: 500,
-        maxHeight: '80vh',
-        overflow: 'auto',
+        maxHeight: '85vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
         textAlign: 'center'
       }}>
         <h3 style={{ 
           textAlign: 'center', 
           marginBottom: 20, 
           color: '#1a73e8',
-          fontSize: '18px'
+          fontSize: '18px',
+          flexShrink: 0
         }}>
           📅 {logData.date} 学习汇总
         </h3>
@@ -9279,7 +9282,8 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 10,
-          marginBottom: 20
+          marginBottom: 20,
+          flexShrink: 0
         }}>
           <div style={{
             backgroundColor: '#e8f0fe',
@@ -9338,12 +9342,17 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           fontSize: 12,
           lineHeight: 1.4,
           whiteSpace: 'pre-wrap',
-          textAlign: 'left'
+          textAlign: 'left',
+          flex: 1
         }}>
           {formattedContent}
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: 10,
+          flexShrink: 0
+        }}>
           <button
             onClick={onClose}
             style={{
@@ -9384,6 +9393,8 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     </div>
   );
 };
+
+
 
 
 
