@@ -4109,7 +4109,8 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           flexDirection: 'column',
           gap: 16
         }}>
-          {/* 任务内容 */}
+         
+{/* 任务内容 */}
 <div>
   <label style={{
     display: 'block',
@@ -4120,26 +4121,34 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     📝 任务内容
   </label>
-  <textarea
-    value={editData.text}
-    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
-    placeholder="请输入任务内容..."
-    rows={Math.max(2, editData.text.split('\n').length)} // 根据内容自动调整行数
+  <div
+    onClick={() => {
+      const newText = window.prompt("编辑任务内容", editData.text || "");
+      if (newText !== null) {
+        setEditData({ ...editData, text: newText });
+      }
+    }}
     style={{
       width: '100%',
       padding: '12px',
       border: '2px solid #e0e0e0',
       borderRadius: 8,
       fontSize: 14,
-      resize: 'vertical', // 允许垂直调整大小
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      minHeight: '60px', // 最小高度
-      maxHeight: '200px', // 最大高度
-      overflow: 'auto' // 内容过多时显示滚动条
+      minHeight: '44px',
+      cursor: 'pointer',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+      overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 3,
+      WebkitBoxOrient: 'vertical'
     }}
-  />
+  >
+    {editData.text || "请输入任务内容..."}
+  </div>
 </div>
 
 {/* 备注 */}
@@ -4153,26 +4162,34 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     备注
   </label>
-  <textarea
-    value={editData.note}
-    onChange={(e) => setEditData({ ...editData, note: e.target.value })}
-    placeholder="输入备注..."
-    rows={Math.max(2, editData.note.split('\n').length)}
+  <div
+    onClick={() => {
+      const newNote = window.prompt("编辑备注", editData.note || "");
+      if (newNote !== null) {
+        setEditData({ ...editData, note: newNote });
+      }
+    }}
     style={{
       width: '100%',
       padding: '12px',
       border: '2px solid #e0e0e0',
       borderRadius: 8,
       fontSize: 14,
-      resize: 'vertical',
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      minHeight: '60px',
-      maxHeight: '150px',
-      overflow: 'auto'
+      minHeight: '44px',
+      cursor: 'pointer',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+      overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical'
     }}
-  />
+  >
+    {editData.note || "输入备注..."}
+  </div>
 </div>
 
 {/* 感想 */}
@@ -4186,27 +4203,36 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     感想
   </label>
-  <textarea
-    value={editData.reflection}
-    onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
-    placeholder="输入感想..."
-    rows={Math.max(2, editData.reflection.split('\n').length)}
+  <div
+    onClick={() => {
+      const newReflection = window.prompt("编辑感想", editData.reflection || "");
+      if (newReflection !== null) {
+        setEditData({ ...editData, reflection: newReflection });
+      }
+    }}
     style={{
       width: '100%',
       padding: '12px',
       border: '2px solid #e0e0e0',
       borderRadius: 8,
       fontSize: 14,
-      resize: 'vertical',
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      minHeight: '60px',
-      maxHeight: '150px',
-      overflow: 'auto'
+      minHeight: '44px',
+      cursor: 'pointer',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+      overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical'
     }}
-  />
+  >
+    {editData.reflection || "输入感想..."}
+  </div>
 </div>
+
 
 
 
@@ -6104,6 +6130,9 @@ function App() {
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
+
+ 
+  const [isFocused, setIsFocused] = useState(false); // 控制复
   const bulkInputRef = useRef(null);
   const [dailyRating, setDailyRating] = useState(0);
   const [dailyReflection, setDailyReflection] = useState('');
@@ -6116,6 +6145,8 @@ function App() {
   const [customAchievements, setCustomAchievements] = useState([]);
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
+  // 在现有的状态定义附近添加
+const [dailyMood, setDailyMood] = useState('');
   const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
  const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 const [categories, setCategories] = useState(baseCategories.map(cat => ({
@@ -7403,25 +7434,35 @@ useEffect(() => {
   }
 }, [tasksByDate]);
 
-  // 保存到本地存储
-  useEffect(() => {
-    const dailyData = {
-      rating: dailyRating,
-      reflection: dailyReflection,
-      date: selectedDate
-    };
-    localStorage.setItem(`${STORAGE_KEY}_daily_${selectedDate}`, JSON.stringify(dailyData));
-  }, [dailyRating, dailyReflection, selectedDate]);
+  
+// 保存到本地存储
+useEffect(() => {
+  const dailyData = {
+    rating: dailyRating,
+    mood: dailyMood,
+    reflection: dailyReflection,
+    date: selectedDate
+  };
+  localStorage.setItem(`${STORAGE_KEY}_daily_${selectedDate}`, JSON.stringify(dailyData));
+}, [dailyRating, dailyMood, dailyReflection, selectedDate]);
 
-  // 读取数据
-  useEffect(() => {
-    const savedData = localStorage.getItem(`${STORAGE_KEY}_daily_${selectedDate}`);
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      setDailyRating(data.rating || 0);
-      setDailyReflection(data.reflection || '');
-    }
-  }, [selectedDate]);
+// 读取数据
+useEffect(() => {
+  const savedData = localStorage.getItem(`${STORAGE_KEY}_daily_${selectedDate}`);
+  if (savedData) {
+    const data = JSON.parse(savedData);
+    setDailyRating(data.rating || 0);
+    setDailyMood(data.mood || '');
+    setDailyReflection(data.reflection || '');
+  } else {
+    // 如果没有保存的数据，重置为默认值
+    setDailyRating(0);
+    setDailyMood('');
+    setDailyReflection('');
+  }
+}, [selectedDate]);
+
+
 
 
 
@@ -7956,6 +7997,14 @@ useEffect(() => {
     
     try {
      
+
+       // 加载今日数据
+    const today = new Date().toISOString().split("T")[0];
+    const savedDailyData = await loadMainData(`daily_${today}`);
+    if (savedDailyData) {
+      setDailyRating(savedDailyData.rating || 0);
+      setDailyReflection(savedDailyData.reflection || '');
+    }
       
       // 加载任务数据
       const savedTasks = await loadMainData('tasks');
@@ -11307,62 +11356,150 @@ marginTop: 10
           borderRadius: "8px"
         }}>
           
-
-{/* 今日评分 */}
-<div style={{ flex: 1 }}>
-  <div style={{ fontSize: "12px", marginBottom: "8px", color: "#666", paddingLeft: "1px" }}>
-    今日评分:
-  </div>
-  <select
-    value={dailyRating}
-    onChange={(e) => setDailyRating(parseInt(e.target.value))}
-    style={{
-      width: "100%",
-      padding: "6px 8px",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
-      fontSize: "12px",
-      backgroundColor: "white",
-      height: "32px",
-      boxSizing: "border-box"
-    }}
-  >
-    <option value="0">评分</option>
-    <option value="1">⭐</option>
-    <option value="2">⭐⭐</option>
-    <option value="3">⭐⭐⭐</option>
-    <option value="4">⭐⭐⭐⭐</option>
-    <option value="5">⭐⭐⭐⭐⭐</option>
-  </select>
-</div>
-
-{/* 今日感想 */}
-<div style={{ flex: 2 }}>
-  <div style={{ fontSize: "12px", marginBottom: "8px", color: "#666", paddingLeft: "1px" }}>
-    今日感想:
-  </div>
-  <input
-    type="text"
-    value={dailyReflection}
-    onChange={(e) => setDailyReflection(e.target.value)}
-    placeholder="记录今天的收获和感悟..."
-    style={{
-      width: "100%",
-      padding: "6px 8px",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
-      fontSize: "12px",
-      height: "32px",
-      boxSizing: "border-box"
-    }}
-  />
-</div>
-          
-
-
-
-
+<div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        marginTop: "10px",
+        width: "100%"
+      }}
+    >
+      {/* 第一排：评分和心情在同一行，各占50% */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "stretch",
+          gap: "10px",
+          width: "100%"
+        }}
+      >
+        {/* 今日评分 */}
+        <div
+          style={{
+            flex: "0 0 50%",
+            width: "50%",
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              marginBottom: "4px",
+              color: "#666",
+              fontWeight: "500"
+            }}
+          >
+            今日评分
+          </div>
+          <select
+            value={dailyRating}
+            onChange={(e) => setDailyRating(parseInt(e.target.value))}
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid #ddd",
+              borderRadius: "6px",
+              fontSize: "12px",
+              backgroundColor: "white",
+              height: "36px",
+              boxSizing: "border-box"
+            }}
+          >
+            <option value="0">请选择评分</option>
+            <option value="1">⭐ (1星)</option>
+            <option value="2">⭐⭐ (2星)</option>
+            <option value="3">⭐⭐⭐ (3星)</option>
+            <option value="4">⭐⭐⭐⭐ (4星)</option>
+            <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+          </select>
         </div>
+
+        {/* 今日心情 */}
+        <div
+          style={{
+            flex: "0 0 50%",
+            width: "50%",
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              marginBottom: "4px",
+              color: "#666",
+              fontWeight: "500"
+            }}
+          >
+            今日心情
+          </div>
+          <select
+            value={dailyMood}
+            onChange={(e) => setDailyMood(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              border: "1px solid #ddd",
+              borderRadius: "6px",
+              fontSize: "12px",
+              backgroundColor: "white",
+              height: "36px",
+              boxSizing: "border-box"
+            }}
+          >
+            <option value="">选择心情</option>
+            <option value="😊">😊 开心</option>
+            <option value="😄">😄 兴奋</option>
+            <option value="😌">😌 平静</option>
+            <option value="😔">😔 低落</option>
+            <option value="😤">😤 烦躁</option>
+            <option value="😴">😴 疲惫</option>
+            <option value="🤔">🤔 思考</option>
+            <option value="🎯">🎯 专注</option>
+          </select>
+        </div>
+      </div>
+
+      {/* 第二排：今日复盘占满一行（对齐右边） */}
+      <div style={{ width: "100%" }}>
+        <div
+          style={{
+            fontSize: "12px",
+            marginBottom: "4px",
+            color: "#666",
+            fontWeight: "500"
+          }}
+        >
+          今日复盘
+        </div>
+        <textarea
+          value={dailyReflection}
+          onChange={(e) => setDailyReflection(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => {
+            if (dailyReflection.trim() === "") setIsFocused(false);
+          }}
+          placeholder="记录今日的收获、感悟和改进..."
+          style={{
+            width: "100%", // 保证右边与“心情”框对齐
+            padding: "8px",
+            border: "1px solid #ddd",
+            borderRadius: "6px",
+            fontSize: "12px",
+            backgroundColor: "white",
+            boxSizing: "border-box",
+            resize: "none",
+            height: isFocused ? "80px" : "36px", // 👈 点击后变高
+            transition: "height 0.2s ease",
+            fontFamily: "inherit",
+            lineHeight: "1.4"
+          }}
+        />
+      </div>
+    </div></div>
       )}
 
       {/* 添加任务输入框（展开时显示） */}
