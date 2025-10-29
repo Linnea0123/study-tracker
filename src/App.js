@@ -12,7 +12,9 @@ const baseCategories = [
   { name: "锻炼", color: "#7baaf7" }
 ]
 ;
-
+// 保持这样就行
+const PAGE_ID = 'PAGE_A'; 
+const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
 // ========== 成就系统配置 ==========
 const ACHIEVEMENTS_CONFIG = {
@@ -1064,9 +1066,7 @@ const AchievementsModal = ({
 
 
 
-// 保持这样就行
-const PAGE_ID = 'PAGE_A'; 
-const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
+
 
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
@@ -1936,7 +1936,7 @@ const ImageModal = ({ imageUrl, onClose }) => (
 
 // 重复设置模态框
 const RepeatModal = ({ config, onSave, onClose }) => {
-  const [frequency, setFrequency] = useState(config.frequency);
+  const [frequency, setFrequency] = useState(config.frequency|| '');
   const [days, setDays] = useState([...config.days]);
 
 
@@ -2007,6 +2007,22 @@ const RepeatModal = ({ config, onSave, onClose }) => {
               onClick={() => setFrequency('weekly')}
             >
               每周
+            </button>
+             {/* 添加不重复选项 */}
+            <button
+              style={{
+                flex: 1,
+                padding: 10,
+                background: !frequency ? '#1a73e8' : '#f0f0f0',
+                color: !frequency ? '#fff' : '#000',
+                border: 'none',
+                borderRadius: 6,
+                fontSize: 14,
+                cursor: 'pointer'
+              }}
+              onClick={() => setFrequency('')}
+            >
+              不重复
             </button>
           </div>
         </div>
@@ -6285,7 +6301,7 @@ function App() {
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
 const [repeatConfig, setRepeatConfig] = useState({
-  frequency: "daily",
+  frequency: "", // 改为空字符串，默认不重复
   days: [false, false, false, false, false, false, false],
   startHour: "",
   startMinute: "",
@@ -7254,8 +7270,8 @@ const generateDailyLog = () => {
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
         
         // 使用 ☑️ 符号
-        logContent += `  √ ${task.text}${timeText}\n`;
-        markdownContent += `- √ ${task.text}${timeText}\n`;
+        logContent += `  ● ${task.text}${timeText}\n`;
+        markdownContent += `- ● ${task.text}${timeText}\n`;
       });
     }
 
@@ -7274,8 +7290,8 @@ const generateDailyLog = () => {
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
 
         // 使用 ☑️ 符号
-        logContent += `    ✅ ${task.text}${timeText}\n`;
-        markdownContent += `  - √ ${task.text}${timeText}\n`;
+        logContent += `    ● ${task.text}${timeText}\n`;
+        markdownContent += `  - ● ${task.text}${timeText}\n`;
       });
       
       if (Object.keys(categoryData.withSubCategories).length > 1) {
@@ -8743,17 +8759,16 @@ const handleAddTask = (template = null) => {
     }
   }
 
-// 在这里定义 hasRepeatConfig 变量
-  const hasRepeatConfig = repeatConfig.frequency && 
-    (repeatConfig.frequency === "daily" || 
-     (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
+// 修改为：只有当明确设置了重复频率时才创建重复任务
+const hasRepeatConfig = repeatConfig.frequency === "daily" || 
+  (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day));
 
-  console.log('🔄 重复配置检查:', {
-    有重复配置: hasRepeatConfig,
-    频率: repeatConfig.frequency,
-    选择的天数: repeatConfig.days,
-    开始日期: selectedDate
-  });
+console.log('🔄 重复配置检查:', {
+  有重复配置: hasRepeatConfig,
+  频率: repeatConfig.frequency,
+  选择的天数: repeatConfig.days,
+  开始日期: selectedDate
+});
 
 
 
@@ -8790,7 +8805,8 @@ const handleAddTask = (template = null) => {
     const newTasksByDate = { ...prev };
     const startDate = new Date(selectedDate);
 
-    // 检查是否有重复配置
+    
+ // 检查是否有重复配置
     const hasRepeatConfig = repeatConfig.frequency && 
       (repeatConfig.frequency === "daily" || 
        (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
@@ -8927,7 +8943,7 @@ const handleAddTask = (template = null) => {
     setShowAddInput(false);
     // 重置重复配置
     setRepeatConfig({
-      frequency: "daily",
+      frequency: "", // 改为空字符串，默认不重复
       days: [false, false, false, false, false, false, false],
       startHour: "",
       startMinute: "",
@@ -8951,7 +8967,6 @@ const handleAddTask = (template = null) => {
   }
 };
 
- 
 
 
 
