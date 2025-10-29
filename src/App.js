@@ -6048,146 +6048,170 @@ const TaskItem = ({
       {/* 短文本布局 */}
       {!isLongText ? (
         <div>
-          {/* 第一排：任务内容和操作（没有备注感想时） */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            {/* 左侧：复选框和任务内容 */}
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-              <input
-                type="checkbox"
-                checked={task.done}
-                onChange={() => toggleDone(task)}
-                style={{ marginTop: "2px" }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ marginBottom: (task.note || task.reflection) ? "4px" : "0" }}>
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenEditModal(task);
-                    }}
-                    style={{
-                      wordBreak: "break-word",
-                      whiteSpace: "normal",
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      color: task.done ? "#999" : "#000",
-                      fontWeight: task.pinned ? "bold" : "normal",
-                      lineHeight: "1.4",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {task.text}
-                    {task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
-                    {task.isWeekTask && " 🌟"}
-                    {task.isCrossDate && " 🔄"}
-                    
-                    {task.reminderTime && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: "#ff6b6b",
-                          marginLeft: "6px",
-                          verticalAlign: "1px"
-                        }}
-                        title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
-                      >
-                        ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
-                      </span>
-                    )}  
-                  </div>
-                </div>
-              </div>
-            </div>
+         
+{/* 第一排：任务内容和操作（没有备注感想时） */}
+<div
+  style={{
+    display: "flex",
+    flexWrap: "wrap", // ✅ 允许自动换行
+    alignItems: "flex-start",
+    gap: 8,
+  }}
+>
+  {/* 左侧：复选框和任务内容 */}
+  <div
+    style={{
+      display: "flex",
+      gap: 8,
+      alignItems: "flex-start",
+      flex: 1,
+      minWidth: 0,
+    }}
+  >
+    <input
+      type="checkbox"
+      checked={task.done}
+      onChange={() => toggleDone(task)}
+      style={{ marginTop: "2px" }}
+    />
+    {/* ✅ 左侧文字部分 */}
+    <div style={{ flex: 1, minWidth: "200px", wordBreak: "break-word" }}>
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenEditModal(task);
+        }}
+        style={{
+          wordBreak: "break-word",
+          whiteSpace: "normal",
+          cursor: "pointer",
+          textDecoration: "none",
+          color: task.done ? "#999" : "#000",
+          fontWeight: task.pinned ? "bold" : "normal",
+          lineHeight: "1.4",
+          fontSize: "14px",
+        }}
+      >
+        {task.text}
+        {task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>}
+        {task.isWeekTask && " 🌟"}
+        {task.isCrossDate && " 🔄"}
 
-            {/* 如果没有备注和感想，右侧操作在第一排 */}
-            {!task.note && !task.reflection && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 4,
-                alignSelf: 'flex-start',
-                alignItems: 'center'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: 3,
-                  flexWrap: 'wrap',
-                  maxWidth: '80px'
-                }}>
-                  {task.tags?.map((tag, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        fontSize: 9,
-                        padding: '1px 4px',
-                        backgroundColor: tag.color,
-                        color: '#fff',
-                        borderRadius: 6,
-                        border: 'none',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        maxWidth: '40px'
-                      }}
-                      title={tag.name}
-                    >
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
+        {task.reminderTime && (
+          <span
+            style={{
+              fontSize: 10,
+              color: "#ff6b6b",
+              marginLeft: "6px",
+              verticalAlign: "1px",
+            }}
+            title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0)
+              .toString()
+              .padStart(2, "0")}`}
+          >
+            ⏰ {task.reminderTime.month}/{task.reminderTime.day}{" "}
+            {task.reminderTime.hour}:
+            {(task.reminderTime.minute || 0).toString().padStart(2, "0")}
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleTimerClick();
-                    e.target.blur();
-                  }}
-                  style={{
-                    fontSize: 12,
-                    padding: "2px 6px",
-                    border: "none",
-                    borderRadius: "4px",
-                    backgroundColor: "transparent",
-                    color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-                    cursor: "pointer",
-                    flexShrink: 0
-                  }}
-                  title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-                >
-                  {isThisTaskRunning ? "⏸️" : "⏱️"}
-                </button>
+  {/* ✅ 右侧按钮部分 */}
+  {!task.note && !task.reflection && (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 4,
+        alignItems: "center",
+        justifyContent: "flex-end",
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 3,
+          flexWrap: "wrap",
+          maxWidth: "80px",
+        }}
+      >
+        {task.tags?.map((tag, index) => (
+          <span
+            key={index}
+            style={{
+              fontSize: 9,
+              padding: "1px 4px",
+              backgroundColor: tag.color,
+              color: "#fff",
+              borderRadius: 6,
+              border: "none",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              maxWidth: "40px",
+            }}
+            title={tag.name}
+          >
+            {tag.name}
+          </span>
+        ))}
+      </div>
 
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onEditTime) {
-                      onEditTime(task);
-                    }
-                  }}
-                  style={{
-                    fontSize: 12,
-                    color: "#333",
-                    cursor: "pointer",
-                    padding: "2px 8px",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "4px",
-                    backgroundColor: "#f5f5f5",
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap'
-                  }}
-                  title="点击修改时间"
-                >
-                  {isThisTaskRunning
-                    ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                    : formatTimeNoSeconds(task.timeSpent || 0)
-                  }
-                </span>
-              </div>
-            )}
-          </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleTimerClick();
+          e.target.blur();
+        }}
+        style={{
+          fontSize: 12,
+          padding: "2px 6px",
+          border: "none",
+          borderRadius: "4px",
+          backgroundColor: "transparent",
+          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
+        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+      >
+        {isThisTaskRunning ? "⏸️" : "⏱️"}
+      </button>
+
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onEditTime) onEditTime(task);
+        }}
+        style={{
+          fontSize: 12,
+          color: "#333",
+          cursor: "pointer",
+          padding: "2px 8px",
+          border: "1px solid #e0e0e0",
+          borderRadius: "4px",
+          backgroundColor: "#f5f5f5",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+        title="点击修改时间"
+      >
+        {isThisTaskRunning
+          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+          : formatTimeNoSeconds(task.timeSpent || 0)}
+      </span>
+    </div>
+  )}
+</div>
+
+
+
 
           {/* 第二排：备注和感想 */}
           {(task.note || task.reflection) && (
