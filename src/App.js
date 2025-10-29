@@ -5942,8 +5942,6 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   );
 };
 
-
-
 // 任务项组件
 const TaskItem = ({
   task,
@@ -6590,6 +6588,8 @@ const TaskItem = ({
     </li>
   );
 };
+
+
 
 
 
@@ -8400,98 +8400,6 @@ useEffect(() => {
       console.log('🗑️ 清理计时器存储和状态');
     }, 100); // 添加短暂延迟确保状态更新完成
   };
-
-
-// 子分类计时功能
-const handleStartSubCategoryTimer = (categoryName, subCategoryName) => {
-  console.log('🎯 开始子分类计时:', categoryName, subCategoryName);
-  
-  // 如果已有计时器在运行，先暂停它
-  if (activeTimer) {
-    if (activeTimer.taskId) {
-      handlePauseTimer({ id: activeTimer.taskId });
-    } else if (activeTimer.category) {
-      handlePauseCategoryTimer(activeTimer.category);
-    } else if (activeTimer.subCategory) {
-      handlePauseSubCategoryTimer(activeTimer.subCategory);
-    }
-  }
-
-  const startTime = Date.now();
-  const subCategoryKey = `${categoryName}_${subCategoryName}`;
-  
-  // 设置子分类计时器状态
-  setActiveTimer({
-    subCategory: subCategoryKey,
-    category: categoryName,
-    subCategoryName: subCategoryName,
-    startTime: startTime
-  });
-  setElapsedTime(0);
-
-  // 保存到 localStorage
-  const timerData = {
-    subCategory: subCategoryKey,
-    category: categoryName,
-    subCategoryName: subCategoryName,
-    startTime: startTime,
-    elapsedTime: 0,
-    savedAt: startTime
-  };
-  localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-};
-
-const handlePauseSubCategoryTimer = (subCategoryKey) => {
-  if (!activeTimer || activeTimer.subCategory !== subCategoryKey) {
-    console.log('⚠️ 没有该子分类的计时器可暂停');
-    return;
-  }
-  
-  console.log('⏸️ 暂停子分类计时器:', subCategoryKey);
-  
-  const endTime = Date.now();
-  const accurateElapsedTime = Math.floor((endTime - activeTimer.startTime) / 1000);
-  
-  console.log('📊 子分类计时结果:', {
-    子分类: activeTimer.subCategoryName,
-    计时秒数: accurateElapsedTime
-  });
-
-  // 将时间平均分配到该子分类的所有任务
-  const subCategoryTasks = getTasksBySubCategory(activeTimer.category)[activeTimer.subCategoryName] || [];
-  if (subCategoryTasks.length > 0) {
-    const timePerTask = Math.floor(accurateElapsedTime / subCategoryTasks.length);
-    
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      const todayTasks = newTasksByDate[selectedDate] || [];
-      
-      newTasksByDate[selectedDate] = todayTasks.map(t => 
-        t.category === activeTimer.category && t.subCategory === activeTimer.subCategoryName
-          ? { 
-              ...t, 
-              timeSpent: (t.timeSpent || 0) + timePerTask,
-              timeSegments: [...(t.timeSegments || []), {
-                startTime: new Date(activeTimer.startTime).toISOString(),
-                endTime: new Date().toISOString(),
-                duration: accurateElapsedTime
-              }]
-            } 
-          : t
-      );
-      
-      return newTasksByDate;
-    });
-  }
-
-  // 清理状态和存储
-  setTimeout(() => {
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-    setActiveTimer(null);
-    setElapsedTime(0);
-    console.log('🗑️ 清理子分类计时器存储和状态');
-  }, 100);
-};
 
 
 // 分类计时功能
@@ -12307,7 +12215,33 @@ if (isInitialized && todayTasks.length === 0) {
 >
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
    
+
 {/* 在子类别标题部分 */}
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    // 子类别计时 - 使用分类计时功能
+    if (activeTimer?.category === c.name) {
+      handlePauseCategoryTimer(c.name);
+    } else {
+      handleStartCategoryTimer(c.name);
+    }
+  }}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    color: '#333',
+    cursor: 'pointer',
+    fontSize: '10px',
+    padding: '1px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}
+  title={activeTimer?.category === c.name ? "暂停分类计时" : "开始分类计时"}
+>
+  {activeTimer?.category === c.name ? "⏸️" : "⏱️"}
+</button>
 
     
     <span>
@@ -12315,12 +12249,6 @@ if (isInitialized && todayTasks.length === 0) {
       {isComplete && " ✓"}
     </span>
     
-
-
-
-
-
-
     {/* 子类别管理按钮 */}
     <button
       onClick={(e) => {
@@ -12428,17 +12356,14 @@ if (isInitialized && todayTasks.length === 0) {
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-     
-     
-              <button
+     <button
   onClick={(e) => {
     e.stopPropagation();
-    // 子分类计时 - 使用子分类标识
-    const subCategoryKey = `${c.name}_${subCat}`;
-    if (activeTimer?.subCategory === subCategoryKey) {
-      handlePauseSubCategoryTimer(subCategoryKey);
+    // 直接使用分类计时功能
+    if (activeTimer?.category === c.name) {
+      handlePauseCategoryTimer(c.name);
     } else {
-      handleStartSubCategoryTimer(c.name, subCat);
+      handleStartCategoryTimer(c.name);
     }
   }}
   style={{
@@ -12452,12 +12377,11 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: 'center',
     justifyContent: 'center'
   }}
-  title={activeTimer?.subCategory === `${c.name}_${subCat}` ? "暂停子分类计时" : "开始子分类计时"}
-  >
-    {activeTimer?.subCategory === `${c.name}_${subCat}` ? "⏸️" : "⏱️"}
-  </button>
-
-    
+  title={activeTimer?.category === c.name ? "暂停分类计时" : "开始分类计时"}
+>
+  {activeTimer?.category === c.name ? "⏸️" : "⏱️"}
+</button>
+               
                
                
                 {/* add - 子类别计时器开始 */}
@@ -12488,7 +12412,6 @@ if (isInitialized && todayTasks.length === 0) {
                       }
                     }
                   }}
-   
                   style={{
                     fontSize: '11px',
                     color: '#666',
@@ -12501,15 +12424,18 @@ if (isInitialized && todayTasks.length === 0) {
                   }}
                   title="点击修改子类别总时间"
                 >
-                  {(() => {
+{(() => {
     const baseTime = subCategoryTotalTime;
-    // 如果这个子分类正在计时，加上实时计时
-    if (activeTimer?.subCategory === `${c.name}_${subCat}`) {
+    // 如果这个分类正在计时，加上实时计时
+    if (activeTimer?.category === c.name) {
       return formatCategoryTime(baseTime + elapsedTime);
     }
     return formatCategoryTime(baseTime);
   })()}
 </span>
+
+
+
                  
         
                 {/* end - 子类别计时器结束 */}
@@ -12636,8 +12562,6 @@ marginTop: 10
 </button>
 </div>
 
-
-  
 
   
 
