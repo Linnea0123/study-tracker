@@ -6039,48 +6039,64 @@ const saveEditSubTask = () => {
               style={{ marginTop: "2px" }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenEditModal(task);
-                }}
-                style={{
-                  wordBreak: "break-word",
-                  whiteSpace: "normal",
-                  cursor: "pointer",
-                textDecoration: "none",
-                  color: task.done ? "#999" : "#000",
-                  fontWeight: task.pinned ? "bold" : "normal",
-                  lineHeight: "1.4",
-                  fontSize: "14px",
-                }}
-              >
-              {task.text}
-{task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
-{task.isWeekTask && " 🌟"}
-{task.isCrossDate && " 🔄"}  {/* 跨日期任务标识 */}
-
-
-
-{task.reminderTime && (
-  <span
-    style={{
-      fontSize: 10,
-      color: "#ff6b6b",
-      marginLeft: "6px",
-      verticalAlign: "1px"
+            <div style={{ marginBottom: task.note ? "4px" : "0" }}>
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      onOpenEditModal(task);
     }}
-    title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
+    style={{
+      wordBreak: "break-word",
+      whiteSpace: "normal",
+      cursor: "pointer",
+      textDecoration: "none",
+      color: task.done ? "#999" : "#000",
+      fontWeight: task.pinned ? "bold" : "normal",
+      lineHeight: "1.4",
+      fontSize: "14px",
+    }}
   >
-    ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
-  </span>
-)}  
- 
+    {task.text}
+    {task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>} 
+    {task.isWeekTask && " 🌟"}
+    {task.isCrossDate && " 🔄"}
+    
+    {task.reminderTime && (
+      <span
+        style={{
+          fontSize: 10,
+          color: "#ff6b6b",
+          marginLeft: "6px",
+          verticalAlign: "1px"
+        }}
+        title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
+      >
+        ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
+      </span>
+    )}  
+  </div>
 
-              </div>
-
-            </div>
-          </div>
+  {/* 备注显示在任务文字下方 */}
+  {task.note && (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenEditModal(task);
+      }}
+      style={{
+        fontSize: 12,
+        color: "#666",
+        cursor: "pointer",
+        backgroundColor: 'transparent',
+        lineHeight: "1.3",
+        whiteSpace: "pre-wrap",
+        marginTop: "2px"
+      }}
+    >
+      {task.note}
+    </div>
+  )}
+</div>
 
           {/* 右侧：标签、计时器、时间 */}
           <div style={{
@@ -6177,48 +6193,73 @@ const saveEditSubTask = () => {
         /* 长文本布局 - 时间信息在右下角 */
         <div>
           {/* 第一行：任务内容 */}
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: "2px" }}
-            />
+          <div style={{ marginBottom: task.note ? "8px" : "0" }}>
+  {/* 第一行：任务内容 */}
+  <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+    <input
+      type="checkbox"
+      checked={task.done}
+      onChange={() => toggleDone(task)}
+      style={{ marginTop: "2px" }}
+    />
 
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(task);
-              }}
-              style={{
-                wordBreak: "break-word",
-                whiteSpace: "normal",
-                cursor: "pointer",
-                textDecoration: "none",
-                color: task.done ? "#999" : "#000",
-                fontWeight: task.pinned ? "bold" : "normal",
-                lineHeight: "1.4",
-                fontSize: "14px",
-              }}
-            >
-              {task.text}
-              {task.pinned && " 📌"}  {/* 确保这行存在 */}
-              {task.isWeekTask && " 🌟"}
-               {task.reminderTime && (
-      <span
-        style={{
-          fontSize: 10,
-          color: "#ff6b6b",
-          marginLeft: "6px",
-          verticalAlign: "1px"
-        }}
-        title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
-      >
-        ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
-      </span>
-    )}
-            </div>
-          </div>
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenEditModal(task);
+      }}
+      style={{
+        wordBreak: "break-word",
+        whiteSpace: "normal",
+        cursor: "pointer",
+        textDecoration: "none",
+        color: task.done ? "#999" : "#000",
+        fontWeight: task.pinned ? "bold" : "normal",
+        lineHeight: "1.4",
+        fontSize: "14px",
+      }}
+    >
+      {task.text}
+      {task.pinned && " 📌"}
+      {task.isWeekTask && " 🌟"}
+      {task.reminderTime && (
+        <span
+          style={{
+            fontSize: 10,
+            color: "#ff6b6b",
+            marginLeft: "6px",
+            verticalAlign: "1px"
+          }}
+          title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
+        >
+          ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
+        </span>
+      )}
+    </div>
+  </div>
+
+  {/* 第二行：备注（长文布局） */}
+  {task.note && (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenEditModal(task);
+      }}
+      style={{
+        fontSize: 12,
+        color: "#666",
+        cursor: "pointer",
+        backgroundColor: 'transparent',
+        lineHeight: "1.3",
+        whiteSpace: "pre-wrap",
+        marginTop: "4px",
+        marginLeft: "28px" // 与复选框对齐
+      }}
+    >
+      {task.note}
+    </div>
+  )}
+</div>
 
 
 
@@ -6444,26 +6485,7 @@ const saveEditSubTask = () => {
 
 {/* 备注、感想和子任务的容器 */}
 <div style={{ marginLeft: "28px" }}>
-  {task.note && (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpenEditModal(task);
-      }}
-      style={{
-        fontSize: 12,
-        color: "#666",
-        marginTop: 4,
-        marginBottom: 4,
-        cursor: "pointer",
-        backgroundColor: 'transparent',
-        lineHeight: "1.3",
-        whiteSpace: "pre-wrap"
-      }}
-    >
-      {task.note}
-    </div>
-  )}
+ 
   
   {task.reflection && (
     <div
