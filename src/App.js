@@ -9396,7 +9396,7 @@ const handleAddWeekTask = (text) => {
   }
 
   // 3. 确定分类和子分类
-  const category = "Shelddi"; // 固定分类
+  const category = "校内"; // 固定分类
   let subCategory = "未分类";
   
   // 尝试从第一行提取子分类
