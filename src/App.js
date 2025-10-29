@@ -1382,23 +1382,34 @@ const migrateLegacyData = async () => {
   }
 };
 
-
-// 修复：确保每周从周一开始
+// 修复：正确的周一计算
 const getMonday = (date) => {
-    const d = new Date(date);
-    const day = d.getDay(); // 0是周日，1是周一，...，6是周六
-    
-    // 简化逻辑：总是往前推到最近的周一
-    // 如果今天是周一，diff = 0；如果是周二，diff = -1；...；如果是周日，diff = -6
-    const diff = day === 0 ? -6 : 1 - day;
-    
-    const monday = new Date(d);
-    monday.setDate(d.getDate() + diff);
-    monday.setHours(0, 0, 0, 0);
-    
-    console.log('📅 计算周一: 输入', date.toDateString(), '→ 输出', monday.toDateString());
-    return monday;
-  };
+  const d = new Date(date);
+  const day = d.getDay(); // 0=周日, 1=周一, 2=周二, 3=周三, 4=周四, 5=周五, 6=周六
+  
+  // 计算到本周一的差值
+  // 如果是周日(0)，需要往前推6天；如果是周一(1)，差值为0；以此类推
+  const diff = day === 0 ? -6 : 1 - day;
+  
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  
+  console.log('📅 计算周一:', {
+    输入日期: date.toDateString(),
+    星期: ['日','一','二','三','四','五','六'][day],
+    差值: diff,
+    输出周一: monday.toDateString()
+  });
+  
+  return monday;
+};
+
+
+
+
+
+
 
 // 修复：生成周一到周日的日期
 const getWeekDates = (monday) => {
@@ -1918,15 +1929,27 @@ const ImageModal = ({ imageUrl, onClose }) => (
   </div>
 );
 
+
+
+
+
+
 // 重复设置模态框
 const RepeatModal = ({ config, onSave, onClose }) => {
   const [frequency, setFrequency] = useState(config.frequency);
   const [days, setDays] = useState([...config.days]);
 
-  const toggleDay = (index) => {
-    const newDays = [...days];
-    newDays[index] = !newDays[index];
-    setDays(newDays);
+
+
+  // 修复：确保至少选择一天
+  const handleSave = () => {
+    if (frequency === 'weekly' && !days.some(day => day)) {
+      alert('请至少选择一天！');
+      return;
+    }
+    
+    onSave({ frequency, days });
+    onClose();
   };
 
   return (
@@ -1936,19 +1959,19 @@ const RepeatModal = ({ config, onSave, onClose }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // 修改这里
+      backgroundColor: 'rgba(0,0,0,0.5)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000
-    }} onClick={onClose}>  {/* 修复：直接使用 onClose */}
+    }} onClick={onClose}>
       <div style={{
         backgroundColor: 'white',
         padding: 20,
         borderRadius: 10,
         width: '80%',
         maxWidth: 350
-      }} onClick={e => e.stopPropagation()}>  {/* 修复：移除多余的 > */}
+      }} onClick={e => e.stopPropagation()}>
         <h3 style={{ textAlign: 'center', marginBottom: 15 }}>重复设置</h3>
 
         {/* 重复频率选择 */}
@@ -1988,40 +2011,44 @@ const RepeatModal = ({ config, onSave, onClose }) => {
           </div>
         </div>
 
-        {/* 星期选择 - 始终显示 */}
-        <div style={{ marginBottom: 15 }}>
-          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>选择星期:</div>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            justifyContent: 'center'
-          }}>
-            {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-              <button
-                key={day}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: days[index] ? '#1a73e8' : '#f0f0f0',
-                  color: days[index] ? '#fff' : '#000',
-                  border: 'none',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  transition: 'none'
-                }}
-                onClick={() => toggleDay(index)}
-                onMouseOver={(e) => {
-                  e.target.style.opacity = '1';
-                  e.target.style.transform = 'none';
-                }}
-              >
-                周{day}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 星期选择 */}
+<div style={{ marginBottom: 15 }}>
+  <div style={{ marginBottom: 8, fontWeight: 'bold' }}>选择星期:</div>
+  <div style={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center'
+  }}>
+    {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+      <button
+        key={day}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: days[index] ? '#1a73e8' : '#f0f0f0',
+          color: days[index] ? '#fff' : '#000',
+          border: 'none',
+          fontSize: 14,
+          cursor: frequency === 'daily' ? 'default' : 'pointer',
+          opacity: frequency === 'daily' ? 0.5 : 1
+        }}
+        onClick={() => {
+          if (frequency === 'weekly') {
+            const newDays = [...days];
+            newDays[index] = !newDays[index]; // 切换选中状态
+            setDays(newDays);
+          }
+        }}
+        disabled={frequency === 'daily'}
+        title={frequency === 'daily' ? '每日重复时自动选择所有日期' : `周${day}`}
+      >
+        周{day}
+      </button>
+    ))}
+  </div>
+</div>
 
         {/* 说明文字 */}
         <div style={{
@@ -2029,9 +2056,17 @@ const RepeatModal = ({ config, onSave, onClose }) => {
           color: '#666',
           textAlign: 'center',
           marginBottom: 15,
-          lineHeight: 1.4
+          lineHeight: 1.4,
+          padding: 8,
+          backgroundColor: '#f5f5f5',
+          borderRadius: 4
         }}>
-          {frequency === 'daily' ? '任务将在未来7天重复' : '选择任务重复的星期'}
+          {frequency === 'daily' 
+            ? '任务将在未来7天重复创建' 
+            : days.some(day => day) 
+              ? `已选择：${days.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
+              : '请选择重复的星期'
+          }
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -2059,12 +2094,11 @@ const RepeatModal = ({ config, onSave, onClose }) => {
               border: 'none',
               borderRadius: 6,
               fontSize: 14,
-              cursor: 'pointer'
+              cursor: (frequency === 'weekly' && !days.some(day => day)) ? 'not-allowed' : 'pointer',
+              opacity: (frequency === 'weekly' && !days.some(day => day)) ? 0.5 : 1
             }}
-            onClick={() => {
-              onSave({ frequency, days });
-              onClose();
-            }}
+            onClick={handleSave}
+            disabled={frequency === 'weekly' && !days.some(day => day)}
           >
             确定
           </button>
@@ -3788,13 +3822,15 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     subCategory: task.subCategory || '', // 新增子类别字段
     note: task.note || '',
     reflection: task.reflection || '',
+    
     scheduledTime: task.scheduledTime || '',
     tags: task.tags || [],
     reminderYear: task.reminderTime?.year || '',
     reminderMonth: task.reminderTime?.month || '',
     reminderDay: task.reminderTime?.day || '',
     reminderHour: task.reminderTime?.hour || '',
-    
+     repeatFrequency: task.repeatFrequency || '', // 'daily', 'weekly', or ''
+  repeatDays: task.repeatDays || [false, false, false, false, false, false, false],
     reminderMinute: task.reminderTime?.minute || '',
     subTasks: task.subTasks || [], // 确保子任务初始状态
     // 计划时间字段
@@ -3840,14 +3876,17 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       scheduledTime = `${formatTime(editData.startHour, editData.startMinute)}-${formatTime(editData.endHour, editData.endMinute)}`;
     }
 
-    const finalEditData = {
-      ...editData,
-      tags: editData.tags || [],
-      subCategory: editData.subCategory || '', // 确保这行存在
-      subTasks: editData.subTasks || [], // 确保子任务数据被保存
-      reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-      scheduledTime: scheduledTime
-    };
+  const finalEditData = {
+  ...editData,
+  tags: editData.tags || [],
+  subCategory: editData.subCategory || '',
+  subTasks: editData.subTasks || [],
+  reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+  scheduledTime: scheduledTime,
+  // 确保重复设置被保存
+  repeatFrequency: editData.repeatFrequency || '',
+  repeatDays: editData.repeatDays || [false, false, false, false, false, false, false]
+};
 
     onSave(finalEditData);
     onClose();
@@ -4616,6 +4655,142 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 
           
           </div>
+
+
+{/* 重复设置 */}
+<div style={{ marginBottom: 15 }}>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14,
+  }}>
+    🔄 重复设置
+  </label>
+  
+  {/* 重复频率选择 */}
+  <div style={{ marginBottom: 10 }}>
+    <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>重复频率:</div>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
+      >
+        每天
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
+      >
+        每周
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
+          color: !editData.repeatFrequency ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
+      >
+        不重复
+      </button>
+    </div>
+  </div>
+
+{/* 星期选择（仅在每周重复时显示） */}
+{/* 星期选择（仅在每周重复时显示） */}
+{editData.repeatFrequency === 'weekly' && (
+  <div style={{ marginBottom: 10 }}>
+    <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
+    <div style={{
+      display: 'flex',
+      flexWrap: 'nowrap', // 改为不换行
+      gap: 4, // 缩小间距
+      justifyContent: 'space-between', // 水平均匀分布
+      overflowX: 'auto' // 允许水平滚动
+    }}>
+      {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+        <button
+          key={day}
+          type="button"
+          style={{
+            width: 32, // 稍微缩小宽度
+            height: 32, // 稍微缩小高度
+            borderRadius: '50%',
+            background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
+            color: editData.repeatDays?.[index] ? '#fff' : '#000',
+            border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
+            fontSize: 12,
+            cursor: 'pointer',
+            flexShrink: 0 // 防止按钮被压缩
+          }}
+          onClick={() => {
+            // 修复：确保 repeatDays 数组存在
+            const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
+            const newRepeatDays = [...currentRepeatDays];
+            newRepeatDays[index] = !newRepeatDays[index];
+            setEditData({ 
+              ...editData, 
+              repeatDays: newRepeatDays 
+            });
+          }}
+          title={`周${day}`}
+        >
+          {day} {/* 只显示数字，去掉"周"字 */}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+  {/* 重复说明 */}
+  {editData.repeatFrequency && (
+    <div style={{
+      fontSize: 11,
+      color: '#666',
+      textAlign: 'center',
+      padding: '6px 8px',
+      backgroundColor: '#f5f5f5',
+      borderRadius: 4
+    }}>
+      {editData.repeatFrequency === 'daily' 
+        ? '任务将在未来7天重复创建' 
+        : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
+          ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
+          : '请选择重复的星期'
+      }
+    </div>
+  )}
+</div>
+
+
 
 {/* 🕓 计划时间 */}
 <div>
@@ -6109,19 +6284,70 @@ function App() {
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
-  const [repeatConfig, setRepeatConfig] = useState({
-    frequency: "daily",
-    days: [false, false, false, false, false, false, false],
-    startHour: "",
-    startMinute: "",
-    endHour: "",
-    endMinute: "",
-    reminderYear: "", // 新增
-    reminderMonth: "", // 新增
-    reminderDay: "", // 新增
-    reminderHour: "", // 新增
-    reminderMinute: "", // 新增
-  });
+const [repeatConfig, setRepeatConfig] = useState({
+  frequency: "daily",
+  days: [false, false, false, false, false, false, false],
+  startHour: "",
+  startMinute: "",
+  endHour: "",
+  endMinute: "",
+  reminderYear: "",
+  reminderMonth: "",
+  reminderDay: "",
+  reminderHour: "",
+  reminderMinute: "",
+});
+
+// 在 App 组件内部，但不在任何函数内部添加：
+
+// 调试函数验证星期对应关系
+window.testWeekDays = () => {
+  console.log('=== 星期对应关系测试 ===');
+  const testDate = new Date(); // 今天
+  
+  // 测试 getMonday 函数
+  const monday = getMonday(testDate);
+  console.log('今天:', testDate.toDateString(), '星期:', ['日','一','二','三','四','五','六'][testDate.getDay()]);
+  console.log('本周一:', monday.toDateString());
+  
+  // 测试一周的每一天
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(monday);
+    dayDate.setDate(monday.getDate() + i);
+    console.log(`索引 ${i}: ${dayDate.toDateString()} (周${['一','二','三','四','五','六','日'][i]})`);
+  }
+  
+  // 测试重复配置
+  console.log('当前重复配置:', repeatConfig);
+  console.log('选择的星期:', repeatConfig.days.map((selected, idx) => 
+    selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
+  ).filter(Boolean));
+};
+
+// 添加调试函数来检查重复任务创建
+useEffect(() => {
+  window.debugRepeatTasks = () => {
+    console.log('重复配置:', repeatConfig);
+    console.log('任务数据:', tasksByDate);
+    
+    // 检查重复任务
+    const repeatingTasks = Object.entries(tasksByDate).flatMap(([date, tasks]) => 
+      tasks.filter(task => task.isRepeating).map(task => ({ date, task: task.text }))
+    );
+    console.log('重复任务:', repeatingTasks);
+  };
+}, [repeatConfig, tasksByDate]);
+
+
+
+
+
+
+
+
+
+
+
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(null);
@@ -7028,8 +7254,8 @@ const generateDailyLog = () => {
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
         
         // 使用 ☑️ 符号
-        logContent += `  ☑️ ${task.text}${timeText}\n`;
-        markdownContent += `- ☑️ ${task.text}${timeText}\n`;
+        logContent += `  √ ${task.text}${timeText}\n`;
+        markdownContent += `- √ ${task.text}${timeText}\n`;
       });
     }
 
@@ -7048,8 +7274,8 @@ const generateDailyLog = () => {
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
 
         // 使用 ☑️ 符号
-        logContent += `    ☑️ ${task.text}${timeText}\n`;
-        markdownContent += `  - ☑️ ${task.text}${timeText}\n`;
+        logContent += `    ✅ ${task.text}${timeText}\n`;
+        markdownContent += `  - √ ${task.text}${timeText}\n`;
       });
       
       if (Object.keys(categoryData.withSubCategories).length > 1) {
@@ -8490,20 +8716,22 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
 
 
 
-  // 添加任务
-  const handleAddTask = (template = null) => {
-    let text, category;
 
-    if (template) {
-      text = template.content;
-      category = template.category;
-    } else {
-      text = newTaskText.trim();
-      category = newTaskCategory;
-      if (!text) return;
-    }
+        
+// 添加任务
+const handleAddTask = (template = null) => {
+  let text, category;
 
-     // 检查当前选中的日期是否是今天
+  if (template) {
+    text = template.content;
+    category = template.category;
+  } else {
+    text = newTaskText.trim();
+    category = newTaskCategory;
+    if (!text) return;
+  }
+
+  // 检查当前选中的日期是否是今天
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   if (selectedDate !== todayStr) {
@@ -8511,144 +8739,222 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
       `当前选中的日期是 ${selectedDate}，不是今天(${todayStr})。确定要在这个日期添加任务吗？`
     );
     if (!confirmAdd) {
-      return; // 用户取消添加
+      return;
     }
   }
 
-    const baseTask = {
-      id: Date.now().toString(),
-      text,
-      category,
-      subCategory: newTaskSubCategory, // 使用新任务的子类别
-      reminderYear: repeatConfig.reminderYear || "",
-      reminderMonth: repeatConfig.reminderMonth || "",
-      reminderDay: repeatConfig.reminderDay || "",
-      reminderHour: repeatConfig.reminderHour || "",
-      reminderMinute: repeatConfig.reminderMinute || "",
-      done: false,
-      timeSpent: 0,
-      subTasks: [], // 新增子任务数组
-      note: "",
-      reflection: "",
-      image: null,
-      scheduledTime: repeatConfig.startTime && repeatConfig.endTime ?
-        `${repeatConfig.startTime}-${repeatConfig.endTime}` : "",
-      pinned: false,
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      }
-    };
+// 在这里定义 hasRepeatConfig 变量
+  const hasRepeatConfig = repeatConfig.frequency && 
+    (repeatConfig.frequency === "daily" || 
+     (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
 
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
+  console.log('🔄 重复配置检查:', {
+    有重复配置: hasRepeatConfig,
+    频率: repeatConfig.frequency,
+    选择的天数: repeatConfig.days,
+    开始日期: selectedDate
+  });
 
-      const hasRepeatConfig = repeatConfig.frequency &&
-        (repeatConfig.frequency === "" ||
-          (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
 
-      if (hasRepeatConfig) {
-        if (repeatConfig.frequency === "daily") {
-          for (let i = 0; i < 7; i++) {
-            const date = new Date(selectedDate);
-            date.setDate(date.getDate() + i);
-            const dateStr = date.toISOString().split("T")[0];
 
-            if (!newTasksByDate[dateStr]) {
-              newTasksByDate[dateStr] = [];
-            }
 
-            const existingTask = newTasksByDate[dateStr].find(
-              task => task.text === text && task.category === category
-            );
 
-            if (!existingTask) {
-              newTasksByDate[dateStr].push({
-                ...baseTask,
-                id: `${baseTask.id}_${dateStr}`,
-                isRepeating: true,
-                repeatId: baseTask.id,
-                subCategory: newTaskSubCategory, // 添加这行
-                progress: null
-              });
-            }
-          }
-        } else 
-        
-     // 在 handleAddTask 函数中的重复任务部分
-if (repeatConfig.frequency === "weekly") {
-    const startDate = new Date(selectedDate);
-  
-    for (let week = 0; week < 4; week++) {
-      const weekStart = new Date(startDate);
-      weekStart.setDate(startDate.getDate() + (week * 7));
-      
-      // 使用 getMonday 确保从周一开始
-      const weekMonday = getMonday(weekStart);
-  
-      repeatConfig.days.forEach((isSelected, dayIndex) => {
-        if (isSelected) {
-          const taskDate = new Date(weekMonday);
-          taskDate.setDate(weekMonday.getDate() + dayIndex); // dayIndex 0=周一, 1=周二, ... 6=周日
-          
-          const dateStr = taskDate.toISOString().split("T")[0];
-  
-          if (taskDate >= new Date(selectedDate)) {
-            if (!newTasksByDate[dateStr]) {
-              newTasksByDate[dateStr] = [];
-            }
-  
-            const existingTask = newTasksByDate[dateStr].find(
-              task => task.text === text && task.category === category
-            );
-  
-            if (!existingTask) {
-              newTasksByDate[dateStr].push({
-                ...baseTask,
-                id: `${baseTask.id}_${dateStr}`,
-                isRepeating: true,
-                subCategory: newTaskSubCategory, // 添加这行
-                repeatId: baseTask.id
-              });
-            }
-          }
-        }
-      });
-    }
-  }
-      } else {
-        if (!newTasksByDate[selectedDate]) {
-          newTasksByDate[selectedDate] = [];
-        }
-
-        const existingTask = newTasksByDate[selectedDate].find(
-          task => task.text === text && task.category === category
-        );
-
-        if (!existingTask) {
-          newTasksByDate[selectedDate].push(baseTask);
-        }
-      }
-
-      return newTasksByDate;
-    });
-
-    if (!template) {
-      setNewTaskText("");
-      setShowAddInput(false);
-      setRepeatConfig({
-        frequency: "daily",
-        days: [false, false, false, false, false, false, false],
-        startTime: "",
-        endTime: ""
-      });
-      setNewTaskSubCategory(''); // 重置子类别选择
+  const baseTask = {
+    id: Date.now().toString(),
+    text,
+    category,
+    subCategory: newTaskSubCategory,
+    reminderYear: repeatConfig.reminderYear || "",
+    reminderMonth: repeatConfig.reminderMonth || "",
+    reminderDay: repeatConfig.reminderDay || "",
+    reminderHour: repeatConfig.reminderHour || "",
+    reminderMinute: repeatConfig.reminderMinute || "",
+    done: false,
+    timeSpent: 0,
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: null,
+    scheduledTime: repeatConfig.startHour && repeatConfig.endHour ?
+      `${repeatConfig.startHour.toString().padStart(2, '0')}:${repeatConfig.startMinute.toString().padStart(2, '0')}-${repeatConfig.endHour.toString().padStart(2, '0')}:${repeatConfig.endMinute.toString().padStart(2, '0')}` : "",
+    pinned: false,
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
     }
   };
 
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    const startDate = new Date(selectedDate);
+
+    // 检查是否有重复配置
+    const hasRepeatConfig = repeatConfig.frequency && 
+      (repeatConfig.frequency === "daily" || 
+       (repeatConfig.frequency === "weekly" && repeatConfig.days.some(day => day)));
+
+    console.log('🔄 重复配置检查:', {
+      有重复配置: hasRepeatConfig,
+      频率: repeatConfig.frequency,
+      选择的天数: repeatConfig.days,
+      开始日期: selectedDate
+    });
+
+    if (hasRepeatConfig) {
+      if (repeatConfig.frequency === "daily") {
+        // 修复：每日重复 - 未来7天
+        console.log('📅 创建每日重复任务');
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          const dateStr = date.toISOString().split("T")[0];
+
+          if (!newTasksByDate[dateStr]) {
+            newTasksByDate[dateStr] = [];
+          }
+
+          // 检查是否已存在相同任务
+          const existingTask = newTasksByDate[dateStr].find(
+            task => task.text === text && task.category === category
+          );
+
+          if (!existingTask) {
+            console.log(`✅ 在 ${dateStr} 创建任务: ${text}`);
+            newTasksByDate[dateStr].push({
+              ...baseTask,
+              id: `${baseTask.id}_${dateStr}`,
+              isRepeating: true,
+              repeatId: baseTask.id
+            });
+          } else {
+            console.log(`⏩ 跳过 ${dateStr}，任务已存在`);
+          }
+        }
+      
+
+
+
+} else if (repeatConfig.frequency === "weekly") {
+  console.log('📅 创建每周重复任务 - 开始');
+  console.log('选择的星期:', repeatConfig.days.map((selected, idx) => 
+    selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
+  ).filter(Boolean));
+
+  for (let week = 0; week < 4; week++) {
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + (week * 7));
+    
+    const weekMonday = getMonday(weekStart);
+    console.log(`第${week + 1}周，周一: ${weekMonday.toDateString()}`);
+
+    repeatConfig.days.forEach((isSelected, dayIndex) => {
+      if (isSelected) {
+        const taskDate = new Date(weekMonday);
+        taskDate.setDate(weekMonday.getDate() + dayIndex);
+        
+        // 直接内联日期格式化，避免定义新函数
+        const year = taskDate.getFullYear();
+        const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+        const day = String(taskDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
+        const weekDayName = ['一','二','三','四','五','六','日'][dayIndex];
+        
+        const actualDayOfWeek = taskDate.getDay();
+        console.log(`  期望:周${weekDayName}(index=${dayIndex}), 实际:周${['日','一','二','三','四','五','六'][actualDayOfWeek]}, 日期:${dateStr}`);
+
+        const today = new Date(selectedDate);
+        today.setHours(0, 0, 0, 0);
+        const taskDateClean = new Date(taskDate);
+        taskDateClean.setHours(0, 0, 0, 0);
+
+        if (taskDateClean >= today) {
+          if (!newTasksByDate[dateStr]) {
+            newTasksByDate[dateStr] = [];
+          }
+
+          const existingTask = newTasksByDate[dateStr].find(
+            task => task.text === text && task.category === category
+          );
+
+          if (!existingTask) {
+            console.log(`  ✅ 在 ${dateStr} (周${weekDayName}) 创建任务: ${text}`);
+            newTasksByDate[dateStr].push({
+              ...baseTask,
+              id: `${baseTask.id}_${dateStr}`,
+              isRepeating: true,
+              repeatId: baseTask.id
+            });
+          } else {
+            console.log(`  ⏩ 跳过 ${dateStr}，任务已存在`);
+          }
+        } else {
+          console.log(`  ⏩ 跳过 ${dateStr}，日期在过去`);
+        }
+      }
+    });
+  }
+  console.log('📅 每周重复任务创建完成');
+}
+
+
+
+
+    } else {
+      // 不重复，只创建单个任务
+      console.log('📝 创建单个任务');
+      if (!newTasksByDate[selectedDate]) {
+        newTasksByDate[selectedDate] = [];
+      }
+
+      const existingTask = newTasksByDate[selectedDate].find(
+        task => task.text === text && task.category === category
+      );
+
+      if (!existingTask) {
+        newTasksByDate[selectedDate].push(baseTask);
+        console.log(`✅ 在 ${selectedDate} 创建单个任务: ${text}`);
+      }
+    }
+
+    return newTasksByDate;
+  });
+
+  if (!template) {
+    setNewTaskText("");
+    setShowAddInput(false);
+    // 重置重复配置
+    setRepeatConfig({
+      frequency: "daily",
+      days: [false, false, false, false, false, false, false],
+      startHour: "",
+      startMinute: "",
+      endHour: "",
+      endMinute: "",
+      reminderYear: "",
+      reminderMonth: "",
+      reminderDay: "",
+      reminderHour: "",
+      reminderMinute: "",
+    });
+    setNewTaskSubCategory('');
+  }
+
+  // 显示成功消息
+  if (hasRepeatConfig) {
+    const repeatType = repeatConfig.frequency === 'daily' ? '每日' : '每周';
+    setTimeout(() => {
+      alert(`✅ 任务创建成功！${repeatType}重复任务已添加到未来日期。`);
+    }, 300);
+  }
+};
+
  
+
+
+
 
 // 添加本周任务
 const handleAddWeekTask = (text) => {
@@ -8998,50 +9304,176 @@ const toggleSubTask = (task, subTaskIndex) => {
     }
   };
 
-  
-const saveTaskEdit = (task, editData) => {
-  if (task.isWeekTask) {
-    const updatedTasksByDate = { ...tasksByDate };
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-        t.isWeekTask && t.text === task.text ? {
-          ...t,
-          text: editData.text,
-          note: editData.note,
-          reflection: editData.reflection,
-          scheduledTime: editData.scheduledTime,
-          category: editData.category,
-          subCategory: editData.subCategory || '', // 新增子类别
-          progress: editData.progress,
-          tags: editData.tags || [],
-          subTasks: editData.subTasks || [],
-          reminderTime: editData.reminderTime
-        } : t
-      );
+ const saveTaskEdit = (task, editData) => {
+  // 如果有重复设置，先删除原有的重复任务（如果是重复任务的话）
+  if (task.repeatId) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].filter(t => 
+          !(t.repeatId === task.repeatId)
+        );
+      });
+      return newTasksByDate;
     });
-    setTasksByDate(updatedTasksByDate);
+  }
+
+  // 如果有新的重复设置，创建重复任务
+  if (editData.repeatFrequency) {
+    const baseTask = {
+      id: task.id || Date.now().toString(),
+      text: editData.text,
+      category: editData.category,
+      subCategory: editData.subCategory || '',
+      done: false,
+      timeSpent: 0,
+      subTasks: editData.subTasks || [],
+      note: editData.note || "",
+      reflection: editData.reflection || "",
+      image: task.image || null,
+      scheduledTime: editData.scheduledTime || "",
+      pinned: editData.pinned || false,
+      progress: editData.progress || {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      },
+      tags: editData.tags || [],
+      reminderTime: editData.reminderTime || null,
+      repeatFrequency: editData.repeatFrequency,
+      repeatDays: editData.repeatDays || [false, false, false, false, false, false, false],
+      isRepeating: true,
+      repeatId: task.repeatId || `repeat_${Date.now()}`
+    };
+
+    const startDate = new Date(selectedDate);
+    
+    if (editData.repeatFrequency === 'daily') {
+      // 每日重复 - 未来7天
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split("T")[0];
+
+        setTasksByDate(prev => {
+          const newTasksByDate = { ...prev };
+          if (!newTasksByDate[dateStr]) {
+            newTasksByDate[dateStr] = [];
+          }
+
+          // 检查是否已存在相同任务
+          const existingTask = newTasksByDate[dateStr].find(
+            t => t.repeatId === baseTask.repeatId
+          );
+
+          if (!existingTask) {
+            newTasksByDate[dateStr].push({
+              ...baseTask,
+              id: `${baseTask.repeatId}_${dateStr}`
+            });
+          }
+
+          return newTasksByDate;
+        });
+      }
+    } else if (editData.repeatFrequency === 'weekly') {
+      // 每周重复
+      for (let week = 0; week < 4; week++) {
+        const weekStart = new Date(startDate);
+        weekStart.setDate(startDate.getDate() + (week * 7));
+        const weekMonday = getMonday(weekStart);
+
+        editData.repeatDays.forEach((isSelected, dayIndex) => {
+          if (isSelected) {
+            const taskDate = new Date(weekMonday);
+            taskDate.setDate(weekMonday.getDate() + dayIndex);
+            
+            const year = taskDate.getFullYear();
+            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taskDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            const today = new Date(selectedDate);
+            today.setHours(0, 0, 0, 0);
+            const taskDateClean = new Date(taskDate);
+            taskDateClean.setHours(0, 0, 0, 0);
+
+            if (taskDateClean >= today) {
+              setTasksByDate(prev => {
+                const newTasksByDate = { ...prev };
+                if (!newTasksByDate[dateStr]) {
+                  newTasksByDate[dateStr] = [];
+                }
+
+                const existingTask = newTasksByDate[dateStr].find(
+                  t => t.repeatId === baseTask.repeatId
+                );
+
+                if (!existingTask) {
+                  newTasksByDate[dateStr].push({
+                    ...baseTask,
+                    id: `${baseTask.repeatId}_${dateStr}`
+                  });
+                }
+
+                return newTasksByDate;
+              });
+            }
+          }
+        });
+      }
+    }
   } else {
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? {
-          ...t,
-          text: editData.text,
-          note: editData.note,
-          reflection: editData.reflection,
-          scheduledTime: editData.scheduledTime,
-          category: editData.category,
-          subCategory: editData.subCategory || '', // 新增子类别
-          progress: editData.progress,
-          tags: editData.tags || [],
-          subTasks: editData.subTasks || [],
-          reminderTime: editData.reminderTime
-        } : t
-      )
-    }));
+    // 没有重复设置，只更新当前任务
+    if (task.isWeekTask) {
+      const updatedTasksByDate = { ...tasksByDate };
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? {
+            ...t,
+            text: editData.text,
+            note: editData.note,
+            reflection: editData.reflection,
+            scheduledTime: editData.scheduledTime,
+            category: editData.category,
+            subCategory: editData.subCategory || '',
+            progress: editData.progress,
+            tags: editData.tags || [],
+            subTasks: editData.subTasks || [],
+            reminderTime: editData.reminderTime,
+            repeatFrequency: '',
+            repeatDays: [false, false, false, false, false, false, false],
+            isRepeating: false
+          } : t
+        );
+      });
+      setTasksByDate(updatedTasksByDate);
+    } else {
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? {
+            ...t,
+            text: editData.text,
+            note: editData.note,
+            reflection: editData.reflection,
+            scheduledTime: editData.scheduledTime,
+            category: editData.category,
+            subCategory: editData.subCategory || '',
+            progress: editData.progress,
+            tags: editData.tags || [],
+            subTasks: editData.subTasks || [],
+            reminderTime: editData.reminderTime,
+            repeatFrequency: '',
+            repeatDays: [false, false, false, false, false, false, false],
+            isRepeating: false
+          } : t
+        )
+      }));
+    }
   }
 };
-
 
   // 编辑计划时间
   const editScheduledTime = (task) => {
