@@ -4170,6 +4170,9 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
           gap: 16
         }}>
          
+
+
+
 {/* 任务内容 */}
 <div>
   <label style={{
@@ -4181,13 +4184,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     📝 任务内容
   </label>
-  <div
-    onClick={() => {
-      const newText = window.prompt("编辑任务内容", editData.text || "");
-      if (newText !== null) {
-        setEditData({ ...editData, text: newText });
-      }
-    }}
+  <textarea
+    value={editData.text}
+    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+    placeholder="请输入任务内容..."
     style={{
       width: '100%',
       padding: '12px',
@@ -4197,18 +4197,22 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
+      height: editData.text && editData.text.split('\n').length > 1 ? 'auto' : '44px',
       minHeight: '44px',
-      cursor: 'pointer',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-      overflow: 'hidden',
-      display: '-webkit-box',
-      WebkitLineClamp: 3,
-      WebkitBoxOrient: 'vertical'
+      resize: editData.text && editData.text.split('\n').length > 1 ? 'vertical' : 'none',
+      outline: 'none',
+      lineHeight: '1.4',
+      overflow: 'hidden'
     }}
-  >
-    {editData.text || "请输入任务内容..."}
-  </div>
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+    }}
+  />
 </div>
 
 {/* 备注 */}
@@ -4222,13 +4226,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     备注
   </label>
-  <div
-    onClick={() => {
-      const newNote = window.prompt("编辑备注", editData.note || "");
-      if (newNote !== null) {
-        setEditData({ ...editData, note: newNote });
-      }
-    }}
+  <textarea
+    value={editData.note}
+    onChange={(e) => setEditData({ ...editData, note: e.target.value })}
+    placeholder="输入备注..."
     style={{
       width: '100%',
       padding: '12px',
@@ -4238,18 +4239,22 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
+      height: editData.note && editData.note.split('\n').length > 1 ? 'auto' : '44px',
       minHeight: '44px',
-      cursor: 'pointer',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-      overflow: 'hidden',
-      display: '-webkit-box',
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: 'vertical'
+      resize: editData.note && editData.note.split('\n').length > 1 ? 'vertical' : 'none',
+      outline: 'none',
+      lineHeight: '1.4',
+      overflow: 'hidden'
     }}
-  >
-    {editData.note || "输入备注..."}
-  </div>
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+    }}
+  />
 </div>
 
 {/* 感想 */}
@@ -4263,37 +4268,37 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
   }}>
     感想
   </label>
-  <div
-    onClick={() => {
-      const newReflection = window.prompt("编辑感想", editData.reflection || "");
-      if (newReflection !== null) {
-        setEditData({ ...editData, reflection: newReflection });
-      }
-    }}
+  <textarea
+    value={editData.reflection}
+    onChange={(e) => setEditData({ ...editData, reflection: e.target.value })}
+    placeholder="输入感想..."
     style={{
       width: '100%',
       padding: '12px',
       border: '2px solid #e0e0e0',
       borderRadius: 8,
       fontSize: 14,
-      backgroundColor: '#fafafa',
+      backgroundColor: '#fff9c4',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
+      height: editData.reflection && editData.reflection.split('\n').length > 1 ? 'auto' : '44px',
       minHeight: '44px',
-      cursor: 'pointer',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-      overflow: 'hidden',
-      display: '-webkit-box',
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: 'vertical'
+      resize: editData.reflection && editData.reflection.split('\n').length > 1 ? 'vertical' : 'none',
+      outline: 'none',
+      lineHeight: '1.4',
+      overflow: 'hidden'
     }}
-  >
-    {editData.reflection || "输入感想..."}
-  </div>
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fff9c4';
+    }}
+  />
 </div>
-
-
+ 
 
 
 
