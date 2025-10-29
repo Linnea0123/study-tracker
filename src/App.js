@@ -9606,7 +9606,7 @@ const handleAddWeekTask = (text) => {
   // 尝试从第一行提取子分类
   if (lines.length > 0) {
     const firstLine = lines[0];
-    const subCategoryKeywords = ["语文", "乐天", "官网", "其他"];
+    const subCategoryKeywords = ["语文", "数学", "英语", "科学", "运动"];
     const matched = subCategoryKeywords.find(k => firstLine.includes(k));
     if (matched) {
       subCategory = matched;
