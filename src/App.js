@@ -4,11 +4,12 @@ import './App.css';
 
 // 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
-  { name: "语文", color: "#8B5CF6" },
-  { name: "英语", color: "#4a90e2" },
-  { name: "数学", color: "#357ABD" },
-  { name: "科学", color: "#1e73be" },
-  { name: "运动", color: "#00aaff" },
+  { name: "校内", color: "#1a73e8" },
+  { name: "语文", color: "#5b8def" },
+  { name: "数学", color: "#397ef6" },
+  { name: "英语", color: "#739df9" },
+  { name: "科学", color: "#4db9e8" },
+  { name: "运动", color: "#7baaf7" }
 ]
 ;
 // 保持这样就行
@@ -4595,7 +4596,6 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
          
 
 
-
 {/* 任务内容 */}
 <div>
   <label style={{
@@ -4620,23 +4620,36 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      height: editData.text && editData.text.split('\n').length > 1 ? 'auto' : '44px',
+      height: '44px', // 默认固定高度
       minHeight: '44px',
-      resize: editData.text && editData.text.split('\n').length > 1 ? 'vertical' : 'none',
+      resize: 'vertical', // 始终允许垂直调整
       outline: 'none',
       lineHeight: '1.4',
-      overflow: 'hidden'
+      overflow: 'auto' // 改为 auto 而不是 hidden
     }}
     onFocus={(e) => {
       e.target.style.borderColor = '#1a73e8';
       e.target.style.backgroundColor = '#fff';
+      // 聚焦时自动调整高度
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
     onBlur={(e) => {
       e.target.style.borderColor = '#e0e0e0';
       e.target.style.backgroundColor = '#fafafa';
+      // 失焦时如果内容只有一行，恢复固定高度
+      if (editData.text.split('\n').length <= 1) {
+        e.target.style.height = '44px';
+      }
+    }}
+    onInput={(e) => {
+      // 输入时自动调整高度
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
   />
 </div>
+
 
 {/* 备注 */}
 <div>
@@ -4662,20 +4675,29 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       backgroundColor: '#fafafa',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      height: editData.note && editData.note.split('\n').length > 1 ? 'auto' : '44px',
+      height: '44px', // 默认固定高度
       minHeight: '44px',
-      resize: editData.note && editData.note.split('\n').length > 1 ? 'vertical' : 'none',
+      resize: 'vertical',
       outline: 'none',
       lineHeight: '1.4',
-      overflow: 'hidden'
+      overflow: 'auto'
     }}
     onFocus={(e) => {
       e.target.style.borderColor = '#1a73e8';
       e.target.style.backgroundColor = '#fff';
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
     onBlur={(e) => {
       e.target.style.borderColor = '#e0e0e0';
       e.target.style.backgroundColor = '#fafafa';
+      if (editData.note.split('\n').length <= 1) {
+        e.target.style.height = '44px';
+      }
+    }}
+    onInput={(e) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
   />
 </div>
@@ -4704,24 +4726,35 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
       backgroundColor: '#fff9c4',
       fontFamily: 'inherit',
       boxSizing: 'border-box',
-      height: editData.reflection && editData.reflection.split('\n').length > 1 ? 'auto' : '44px',
+      height: '44px', // 默认固定高度
       minHeight: '44px',
-      resize: editData.reflection && editData.reflection.split('\n').length > 1 ? 'vertical' : 'none',
+      resize: 'vertical',
       outline: 'none',
       lineHeight: '1.4',
-      overflow: 'hidden'
+      overflow: 'auto'
     }}
     onFocus={(e) => {
       e.target.style.borderColor = '#1a73e8';
       e.target.style.backgroundColor = '#fff';
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
     onBlur={(e) => {
       e.target.style.borderColor = '#e0e0e0';
       e.target.style.backgroundColor = '#fff9c4';
+      if (editData.reflection.split('\n').length <= 1) {
+        e.target.style.height = '44px';
+      }
+    }}
+    onInput={(e) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
     }}
   />
 </div>
- 
+
+
+
 
 
 
@@ -6039,7 +6072,8 @@ const saveEditSubTask = () => {
               style={{ marginTop: "2px" }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ marginBottom: task.note ? "4px" : "0" }}>
+              
+ <div style={{ marginBottom: task.note ? "4px" : "0" }}>
   <div
     onClick={(e) => {
       e.stopPropagation();
@@ -6097,6 +6131,11 @@ const saveEditSubTask = () => {
     </div>
   )}
 </div>
+
+          
+
+            </div>
+          </div>
 
           {/* 右侧：标签、计时器、时间 */}
           <div style={{
@@ -6193,7 +6232,8 @@ const saveEditSubTask = () => {
         /* 长文本布局 - 时间信息在右下角 */
         <div>
           {/* 第一行：任务内容 */}
-          <div style={{ marginBottom: task.note ? "8px" : "0" }}>
+          
+<div style={{ marginBottom: task.note ? "8px" : "0" }}>
   {/* 第一行：任务内容 */}
   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
     <input
@@ -6260,6 +6300,9 @@ const saveEditSubTask = () => {
     </div>
   )}
 </div>
+
+
+
 
 
 
@@ -6485,7 +6528,7 @@ const saveEditSubTask = () => {
 
 {/* 备注、感想和子任务的容器 */}
 <div style={{ marginLeft: "28px" }}>
- 
+
   
   {task.reflection && (
     <div
@@ -8767,10 +8810,10 @@ useEffect(() => {
           let subCategories = [];
           // 为不同分类添加预设子类别
           switch(cat.name) {
-            case '校内':
-              subCategories = ['语文', '数学', '科学', '英语', '运动'];
+             case '校内':
+              subCategories = ['语文', '数学', '英语', '锻炼'];
               break;
- case '语文':
+            case '语文':
               subCategories = ['阅读理解', '作文', '古诗词', '基础知识'];
               break;
             case '数学':
@@ -8781,9 +8824,6 @@ useEffect(() => {
               break;
             case '科学':
               subCategories = ['物理', '化学', '生物', '实验'];
-              break;
-            case '运动':
-              subCategories = ['跑步', '跳绳', '球类', '体能训练'];
               break;
             default:
               subCategories = [];
@@ -9356,13 +9396,13 @@ const handleAddWeekTask = (text) => {
   }
 
   // 3. 确定分类和子分类
-  const category = "校内"; // 固定分类
+  const category = "Shelddi"; // 固定分类
   let subCategory = "未分类";
   
   // 尝试从第一行提取子分类
   if (lines.length > 0) {
     const firstLine = lines[0];
-    const subCategoryKeywords = ["语文", "数学, "科学", "英语", "运动"];
+    const subCategoryKeywords = ["亚马逊", "乐天", "官网", "其他"];
     const matched = subCategoryKeywords.find(k => firstLine.includes(k));
     if (matched) {
       subCategory = matched;
@@ -9475,7 +9515,7 @@ const handleAddWeekTask = (text) => {
     window.debugImport && window.debugImport();
   }, 500);
   
-  alert(`成功导入 ${newTasks.length} 个任务到 ${selectedDate}！请检查"校内"分类。`);
+  alert(`成功导入 ${newTasks.length} 个任务到 ${selectedDate}！`);
 };
 
 
