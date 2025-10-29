@@ -5943,6 +5943,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 };
 
 
+
 // 任务项组件
 const TaskItem = ({
   task,
@@ -5986,8 +5987,7 @@ const TaskItem = ({
     }
   };
 
-  // 计算是否为长文本
-  const isLongText = task.text.length > 20; // 可以根据需要调整这个阈值
+
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -6045,509 +6045,243 @@ const TaskItem = ({
         border: "0.5px solid #e0e0e0",
       }}
     >
-      {/* 短文本布局 */}
-      {!isLongText ? (
-        <div>
-         
-{/* 第一排：任务内容和操作（没有备注感想时） */}
-<div
-  style={{
-    display: "flex",
-    flexWrap: "wrap", // ✅ 允许自动换行
-    alignItems: "flex-start",
-    gap: 8,
-  }}
->
-  {/* 左侧：复选框和任务内容 */}
-  <div
-    style={{
-      display: "flex",
-      gap: 8,
-      alignItems: "flex-start",
-      flex: 1,
-      minWidth: 0,
-    }}
-  >
-    <input
-      type="checkbox"
-      checked={task.done}
-      onChange={() => toggleDone(task)}
-      style={{ marginTop: "2px" }}
-    />
-    {/* ✅ 左侧文字部分 */}
-    <div style={{ flex: 1, minWidth: "200px", wordBreak: "break-word" }}>
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenEditModal(task);
-        }}
-        style={{
-          wordBreak: "break-word",
-          whiteSpace: "normal",
-          cursor: "pointer",
-          textDecoration: "none",
-          color: task.done ? "#999" : "#000",
-          fontWeight: task.pinned ? "bold" : "normal",
-          lineHeight: "1.4",
-          fontSize: "14px",
-        }}
-      >
-        {task.text}
-        {task.pinned && <span style={{ fontSize: "12px", marginLeft: "4px" }}>📌</span>}
-        {task.isWeekTask && " 🌟"}
-        {task.isCrossDate && " 🔄"}
-
-        {task.reminderTime && (
-          <span
-            style={{
-              fontSize: 10,
-              color: "#ff6b6b",
-              marginLeft: "6px",
-              verticalAlign: "1px",
-            }}
-            title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0)
-              .toString()
-              .padStart(2, "0")}`}
-          >
-            ⏰ {task.reminderTime.month}/{task.reminderTime.day}{" "}
-            {task.reminderTime.hour}:
-            {(task.reminderTime.minute || 0).toString().padStart(2, "0")}
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
-
-  {/* ✅ 右侧按钮部分 */}
-  {!task.note && !task.reflection && (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 4,
-        alignItems: "center",
-        justifyContent: "flex-end",
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: 3,
-          flexWrap: "wrap",
-          maxWidth: "80px",
-        }}
-      >
-        {task.tags?.map((tag, index) => (
-          <span
-            key={index}
-            style={{
-              fontSize: 9,
-              padding: "1px 4px",
-              backgroundColor: tag.color,
-              color: "#fff",
-              borderRadius: 6,
-              border: "none",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              maxWidth: "40px",
-            }}
-            title={tag.name}
-          >
-            {tag.name}
-          </span>
-        ))}
-      </div>
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleTimerClick();
-          e.target.blur();
-        }}
-        style={{
-          fontSize: 12,
-          padding: "2px 6px",
-          border: "none",
-          borderRadius: "4px",
-          backgroundColor: "transparent",
-          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-          cursor: "pointer",
-          flexShrink: 0,
-        }}
-        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-      >
-        {isThisTaskRunning ? "⏸️" : "⏱️"}
-      </button>
-
-      <span
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onEditTime) onEditTime(task);
-        }}
-        style={{
-          fontSize: 12,
-          color: "#333",
-          cursor: "pointer",
-          padding: "2px 8px",
-          border: "1px solid #e0e0e0",
-          borderRadius: "4px",
-          backgroundColor: "#f5f5f5",
-          flexShrink: 0,
-          whiteSpace: "nowrap",
-        }}
-        title="点击修改时间"
-      >
-        {isThisTaskRunning
-          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-          : formatTimeNoSeconds(task.timeSpent || 0)}
-      </span>
-    </div>
-  )}
-</div>
-
-
-
-
-          {/* 第二排：备注和感想 */}
-          {(task.note || task.reflection) && (
-            <div style={{ marginLeft: "28px", marginTop: "4px" }}>
-              {/* 备注 */}
-              {task.note && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenEditModal(task);
-                  }}
-                  style={{
-                    fontSize: 12,
-                    color: "#666",
-                    cursor: "pointer",
-                    backgroundColor: 'transparent',
-                    lineHeight: "1.3",
-                    whiteSpace: "pre-wrap"
-                  }}
-                >
-                  {task.note}
-                </div>
-              )}
-              
-              {/* 感想 */}
-              {task.reflection && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenEditModal(task);
-                    const newReflection = window.prompt("编辑感想", task.reflection);
-                    if (newReflection !== null) {
-                      onEditReflection(task, newReflection);
-                    }
-                  }}
-                  style={{
-                    fontSize: 12,
-                    color: "#000",
-                    marginTop: task.note ? "2px" : "0",
-                    cursor: "pointer",
-                    backgroundColor: '#fff9c4',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    lineHeight: "1.3",
-                    whiteSpace: "pre-wrap",
-                    border: '1px solid #ffd54f'
-                  }}
-                >
-                  💭 {task.reflection}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 如果有备注或感想，右侧操作在第二排 */}
-          {(task.note || task.reflection) && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: 4, 
-              marginTop: 4,
-              alignItems: 'center' 
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: 3,
-                flexWrap: 'wrap',
-                maxWidth: '80px'
-              }}>
-                {task.tags?.map((tag, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      fontSize: 9,
-                      padding: '1px 4px',
-                      backgroundColor: tag.color,
-                      color: '#fff',
-                      borderRadius: 6,
-                      border: 'none',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      maxWidth: '40px'
-                    }}
-                    title={tag.name}
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTimerClick();
-                  e.target.blur();
-                }}
-                style={{
-                  fontSize: 12,
-                  padding: "2px 6px",
-                  border: "none",
-                  borderRadius: "4px",
-                  backgroundColor: "transparent",
-                  color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-                  cursor: "pointer",
-                  flexShrink: 0
-                }}
-                title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-              >
-                {isThisTaskRunning ? "⏸️" : "⏱️"}
-              </button>
-
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onEditTime) {
-                    onEditTime(task);
-                  }
-                }}
-                style={{
-                  fontSize: 12,
-                  color: "#333",
-                  cursor: "pointer",
-                  padding: "2px 8px",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "4px",
-                  backgroundColor: "#f5f5f5",
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-                title="点击修改时间"
-              >
-                {isThisTaskRunning
-                  ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                  : formatTimeNoSeconds(task.timeSpent || 0)
-                }
-              </span>
-            </div>
-          )}
+      {/* 第一行：任务内容 + 复选框 */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={() => toggleDone(task)}
+          style={{ marginTop: "2px" }}
+        />
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal(task);
+          }}
+          style={{
+            wordBreak: "break-word",
+            cursor: "pointer",
+            color: task.done ? "#999" : "#000",
+            fontWeight: task.pinned ? "bold" : "normal",
+            fontSize: "14px",
+            lineHeight: 1.4,
+            flex: 1
+          }}
+        >
+          {task.text}
+          {task.pinned && " 📌"}
+          {task.isWeekTask && " 🌟"}
         </div>
-      ) : (
-        /* 长文本布局 - 时间信息在右下角 */
-        <div>
-          {/* 第一行：任务内容 */}
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: (task.note || task.reflection) ? "8px" : "0" }}>
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => toggleDone(task)}
-              style={{ marginTop: "2px" }}
-            />
+      </div>
 
+      {/* 第二行：备注和感想 */}
+      {(task.note || task.reflection) && (
+        <div style={{ 
+          marginLeft: "20px", 
+          marginBottom: 4,
+          position: "relative" // 为计时器定位做准备
+        }}>
+          {/* 备注 */}
+          {task.note && (
             <div
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenEditModal(task);
               }}
               style={{
-                wordBreak: "break-word",
-                whiteSpace: "normal",
+                fontSize: 12,
+                color: "#666",
                 cursor: "pointer",
-                textDecoration: "none",
-                color: task.done ? "#999" : "#000",
-                fontWeight: task.pinned ? "bold" : "normal",
-                lineHeight: "1.4",
-                fontSize: "14px",
+                backgroundColor: 'transparent',
+                lineHeight: "1.3",
+                whiteSpace: "pre-wrap",
+                marginBottom: task.reflection ? "2px" : "0",
+                paddingRight: "60px" // 为计时器留出空间
               }}
             >
-              {task.text}
-              {task.pinned && " 📌"}
-              {task.isWeekTask && " 🌟"}
-              {task.reminderTime && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "#ff6b6b",
-                    marginLeft: "6px",
-                    verticalAlign: "1px"
-                  }}
-                  title={`提醒时间: ${task.reminderTime.year}年${task.reminderTime.month}月${task.reminderTime.day}日 ${task.reminderTime.hour}:${(task.reminderTime.minute || 0).toString().padStart(2, '0')}`}
-                >
-                  ⏰ {task.reminderTime.month}/{task.reminderTime.day} {task.reminderTime.hour}:{(task.reminderTime.minute || 0).toString().padStart(2, '0')}
-                </span>
-              )}
+              {task.note}
             </div>
-          </div>
-
-          {/* 第二排：备注和感想 */}
-          {(task.note || task.reflection) && (
-            <div style={{ marginLeft: "28px", marginBottom: "8px" }}>
-              {/* 备注 */}
-              {task.note && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenEditModal(task);
-                  }}
-                  style={{
-                    fontSize: 12,
-                    color: "#666",
-                    cursor: "pointer",
-                    backgroundColor: 'transparent',
-                    lineHeight: "1.3",
-                    whiteSpace: "pre-wrap",
-                    marginBottom: task.reflection ? "2px" : "0"
-                  }}
-                >
-                  {task.note}
-                </div>
-              )}
-              
-              {/* 感想 */}
-              {task.reflection && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenEditModal(task);
-                    const newReflection = window.prompt("编辑感想", task.reflection);
-                    if (newReflection !== null) {
-                      onEditReflection(task, newReflection);
-                    }
-                  }}
-                  style={{
-                    fontSize: 12,
-                    color: "#000",
-                    cursor: "pointer",
-                    backgroundColor: '#fff9c4',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    lineHeight: "1.3",
-                    whiteSpace: "pre-wrap",
-                    border: '1px solid #ffd54f'
-                  }}
-                >
-                  💭 {task.reflection}
-                </div>
-              )}
+          )}
+          
+          {/* 感想 */}
+          {task.reflection && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditModal(task);
+                const newReflection = window.prompt("编辑感想", task.reflection);
+                if (newReflection !== null) {
+                  onEditReflection(task, newReflection);
+                }
+              }}
+              style={{
+                fontSize: 12,
+                color: "#000",
+                cursor: "pointer",
+                backgroundColor: '#fff9c4',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                lineHeight: "1.3",
+                whiteSpace: "pre-wrap",
+                border: '1px solid #ffd54f',
+                marginBottom: "4px",
+                paddingRight: "60px" // 为计时器留出空间
+              }}
+            >
+              💭 {task.reflection}
             </div>
           )}
 
-          {/* 第三排：标签、计时器、时间 */}
+          {/* 计时器 - 显示在右下角 */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end', 
-            gap: 4,
-            alignItems: 'center'
+            position: "absolute",
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 4
           }}>
-            <div style={{
-              display: 'flex',
-              gap: 3,
-              flexWrap: 'wrap',
-              justifyContent: 'flex-end'
-            }}>
-              {task.tags?.map((tag, index) => (
-                <span
-                  key={index}
-                  style={{
-                    fontSize: 9,
-                    padding: '1px 4px',
-                    backgroundColor: tag.color,
-                    color: '#fff',
-                    borderRadius: 6,
-                    border: 'none',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    maxWidth: '40px'
-                  }}
-                  title={tag.name}
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTimerClick();
+              }}
+              style={{
+                fontSize: 12,
+                border: "none",
+                background: "transparent",
+                color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+                cursor: "pointer",
+                padding: "2px"
+              }}
+              title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+            >
+              {isThisTaskRunning ? "⏸️" : "⏱️"}
+            </button>
 
-            <div style={{
-              display: 'flex',
-              gap: 4,
-              alignItems: 'center',
-              flexShrink: 0
-            }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTimerClick();
-                }}
-                style={{
-                  fontSize: 12,
-                  padding: "2px 6px",
-                  border: "none",
-                  borderRadius: "4px",
-                  backgroundColor: "transparent",
-                  color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-                  cursor: "pointer",
-                  flexShrink: 0
-                }}
-                title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-              >
-                {isThisTaskRunning ? "⏸️" : "⏱️"}
-              </button>
-
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditTime(task);
-                }}
-                style={{
-                  fontSize: 12,
-                  color: "#333",
-                  cursor: "pointer",
-                  padding: "2px 8px",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "4px",
-                  backgroundColor: "#f5f5f5",
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap'
-                }}
-                title="点击修改时间"
-              >
-                {isThisTaskRunning
-                  ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                  : formatTimeNoSeconds(task.timeSpent || 0)
-                }
-              </span>
-            </div>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTime?.(task);
+              }}
+              style={{
+                fontSize: 12,
+                color: "#333",
+                border: "1px solid #e0e0e0",
+                borderRadius: 4,
+                backgroundColor: "#f5f5f5",
+                padding: "2px 6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                minWidth: "45px",
+                textAlign: "center"
+              }}
+              title="点击修改时间"
+            >
+              {isThisTaskRunning
+                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+                : formatTimeNoSeconds(task.timeSpent || 0)}
+            </span>
           </div>
         </div>
       )}
 
-      {/* 进度条和其他内容（两种布局通用） */}
+      {/* 如果没有备注和感想，计时器单独一行显示在右下角 */}
+      {!task.note && !task.reflection && (
+        <div style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          marginTop: 4,
+          marginLeft: "20px"
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTimerClick();
+              }}
+              style={{
+                fontSize: 12,
+                border: "none",
+                background: "transparent",
+                color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+                cursor: "pointer",
+                padding: "2px"
+              }}
+              title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+            >
+              {isThisTaskRunning ? "⏸️" : "⏱️"}
+            </button>
+
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTime?.(task);
+              }}
+              style={{
+                fontSize: 12,
+                color: "#333",
+                border: "1px solid #e0e0e0",
+                borderRadius: 4,
+                backgroundColor: "#f5f5f5",
+                padding: "2px 6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                minWidth: "45px",
+                textAlign: "center"
+              }}
+              title="点击修改时间"
+            >
+              {isThisTaskRunning
+                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+                : formatTimeNoSeconds(task.timeSpent || 0)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* 标签显示 */}
+      {task.tags && task.tags.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: 3,
+          flexWrap: 'wrap',
+          marginLeft: "20px",
+          marginTop: 4,
+          marginBottom: 4
+        }}>
+          {task.tags.map((tag, index) => (
+            <span
+              key={index}
+              style={{
+                fontSize: 9,
+                padding: '1px 4px',
+                backgroundColor: tag.color,
+                color: '#fff',
+                borderRadius: 6,
+                border: 'none',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                maxWidth: '40px'
+              }}
+              title={tag.name}
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 进度条和其他内容 */}
       {task.progress && task.progress.target > 0 && (
         <div style={{ marginTop: 6 }}>
           <div
@@ -6660,7 +6394,7 @@ const TaskItem = ({
       )}
 
       {/* 备注、感想和子任务的容器 */}
-      <div style={{ marginLeft: "28px" }}>
+      <div style={{ marginLeft: "20px" }}>
         {task.subTasks && task.subTasks.length > 0 && (
           <div style={{ 
             marginTop: (task.note || task.reflection) ? 2 : -2,
@@ -6856,9 +6590,6 @@ const TaskItem = ({
     </li>
   );
 };
-
-
-
 
 
 
@@ -8669,6 +8400,98 @@ useEffect(() => {
       console.log('🗑️ 清理计时器存储和状态');
     }, 100); // 添加短暂延迟确保状态更新完成
   };
+
+
+// 子分类计时功能
+const handleStartSubCategoryTimer = (categoryName, subCategoryName) => {
+  console.log('🎯 开始子分类计时:', categoryName, subCategoryName);
+  
+  // 如果已有计时器在运行，先暂停它
+  if (activeTimer) {
+    if (activeTimer.taskId) {
+      handlePauseTimer({ id: activeTimer.taskId });
+    } else if (activeTimer.category) {
+      handlePauseCategoryTimer(activeTimer.category);
+    } else if (activeTimer.subCategory) {
+      handlePauseSubCategoryTimer(activeTimer.subCategory);
+    }
+  }
+
+  const startTime = Date.now();
+  const subCategoryKey = `${categoryName}_${subCategoryName}`;
+  
+  // 设置子分类计时器状态
+  setActiveTimer({
+    subCategory: subCategoryKey,
+    category: categoryName,
+    subCategoryName: subCategoryName,
+    startTime: startTime
+  });
+  setElapsedTime(0);
+
+  // 保存到 localStorage
+  const timerData = {
+    subCategory: subCategoryKey,
+    category: categoryName,
+    subCategoryName: subCategoryName,
+    startTime: startTime,
+    elapsedTime: 0,
+    savedAt: startTime
+  };
+  localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+};
+
+const handlePauseSubCategoryTimer = (subCategoryKey) => {
+  if (!activeTimer || activeTimer.subCategory !== subCategoryKey) {
+    console.log('⚠️ 没有该子分类的计时器可暂停');
+    return;
+  }
+  
+  console.log('⏸️ 暂停子分类计时器:', subCategoryKey);
+  
+  const endTime = Date.now();
+  const accurateElapsedTime = Math.floor((endTime - activeTimer.startTime) / 1000);
+  
+  console.log('📊 子分类计时结果:', {
+    子分类: activeTimer.subCategoryName,
+    计时秒数: accurateElapsedTime
+  });
+
+  // 将时间平均分配到该子分类的所有任务
+  const subCategoryTasks = getTasksBySubCategory(activeTimer.category)[activeTimer.subCategoryName] || [];
+  if (subCategoryTasks.length > 0) {
+    const timePerTask = Math.floor(accurateElapsedTime / subCategoryTasks.length);
+    
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      const todayTasks = newTasksByDate[selectedDate] || [];
+      
+      newTasksByDate[selectedDate] = todayTasks.map(t => 
+        t.category === activeTimer.category && t.subCategory === activeTimer.subCategoryName
+          ? { 
+              ...t, 
+              timeSpent: (t.timeSpent || 0) + timePerTask,
+              timeSegments: [...(t.timeSegments || []), {
+                startTime: new Date(activeTimer.startTime).toISOString(),
+                endTime: new Date().toISOString(),
+                duration: accurateElapsedTime
+              }]
+            } 
+          : t
+      );
+      
+      return newTasksByDate;
+    });
+  }
+
+  // 清理状态和存储
+  setTimeout(() => {
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+    setActiveTimer(null);
+    setElapsedTime(0);
+    console.log('🗑️ 清理子分类计时器存储和状态');
+  }, 100);
+};
 
 
 // 分类计时功能
@@ -12484,33 +12307,7 @@ if (isInitialized && todayTasks.length === 0) {
 >
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
    
-
 {/* 在子类别标题部分 */}
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    // 子类别计时 - 使用分类计时功能
-    if (activeTimer?.category === c.name) {
-      handlePauseCategoryTimer(c.name);
-    } else {
-      handleStartCategoryTimer(c.name);
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    color: '#333',
-    cursor: 'pointer',
-    fontSize: '10px',
-    padding: '1px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }}
-  title={activeTimer?.category === c.name ? "暂停分类计时" : "开始分类计时"}
->
-  {activeTimer?.category === c.name ? "⏸️" : "⏱️"}
-</button>
 
     
     <span>
@@ -12518,6 +12315,12 @@ if (isInitialized && todayTasks.length === 0) {
       {isComplete && " ✓"}
     </span>
     
+
+
+
+
+
+
     {/* 子类别管理按钮 */}
     <button
       onClick={(e) => {
@@ -12625,14 +12428,17 @@ if (isInitialized && todayTasks.length === 0) {
               </span>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-     <button
+     
+     
+              <button
   onClick={(e) => {
     e.stopPropagation();
-    // 直接使用分类计时功能
-    if (activeTimer?.category === c.name) {
-      handlePauseCategoryTimer(c.name);
+    // 子分类计时 - 使用子分类标识
+    const subCategoryKey = `${c.name}_${subCat}`;
+    if (activeTimer?.subCategory === subCategoryKey) {
+      handlePauseSubCategoryTimer(subCategoryKey);
     } else {
-      handleStartCategoryTimer(c.name);
+      handleStartSubCategoryTimer(c.name, subCat);
     }
   }}
   style={{
@@ -12646,11 +12452,12 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: 'center',
     justifyContent: 'center'
   }}
-  title={activeTimer?.category === c.name ? "暂停分类计时" : "开始分类计时"}
->
-  {activeTimer?.category === c.name ? "⏸️" : "⏱️"}
-</button>
-               
+  title={activeTimer?.subCategory === `${c.name}_${subCat}` ? "暂停子分类计时" : "开始子分类计时"}
+  >
+    {activeTimer?.subCategory === `${c.name}_${subCat}` ? "⏸️" : "⏱️"}
+  </button>
+
+    
                
                
                 {/* add - 子类别计时器开始 */}
@@ -12681,6 +12488,7 @@ if (isInitialized && todayTasks.length === 0) {
                       }
                     }
                   }}
+   
                   style={{
                     fontSize: '11px',
                     color: '#666',
@@ -12693,18 +12501,15 @@ if (isInitialized && todayTasks.length === 0) {
                   }}
                   title="点击修改子类别总时间"
                 >
-{(() => {
+                  {(() => {
     const baseTime = subCategoryTotalTime;
-    // 如果这个分类正在计时，加上实时计时
-    if (activeTimer?.category === c.name) {
+    // 如果这个子分类正在计时，加上实时计时
+    if (activeTimer?.subCategory === `${c.name}_${subCat}`) {
       return formatCategoryTime(baseTime + elapsedTime);
     }
     return formatCategoryTime(baseTime);
   })()}
 </span>
-
-
-
                  
         
                 {/* end - 子类别计时器结束 */}
@@ -12831,6 +12636,8 @@ marginTop: 10
 </button>
 </div>
 
+
+  
 
   
 
