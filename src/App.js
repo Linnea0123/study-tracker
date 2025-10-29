@@ -4,7 +4,7 @@ import './App.css';
 
 // 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
-   { name: "校内", color: "#1a73e8" },
+  { name: "校内", color: "#1a73e8" },
   { name: "语文", color: "#5b8def" },
   { name: "数学", color: "#397ef6" },
   { name: "英语", color: "#739df9" },
