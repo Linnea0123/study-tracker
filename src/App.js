@@ -8761,41 +8761,63 @@ useEffect(() => {
         setUnlockedAchievements([]);
       }
 
-      // ==== 新增：加载分类数据（包含子类别）====
-      const savedCategories = await loadMainData('categories');
-      if (savedCategories) {
-        setCategories(savedCategories);
-      } else {
-        // 初始化预设子类别
-        const categoriesWithSubCategories = baseCategories.map(cat => {
-          let subCategories = [];
-          // 为不同分类添加预设子类别
-          switch(cat.name) {
-             case '校内':
-              subCategories = ['语文', '数学', '英语', '锻炼'];
-              break;
-            case '语文':
-              subCategories = ['阅读理解', '作文', '古诗词', '基础知识'];
-              break;
-            case '数学':
-              subCategories = ['代数', '几何', '应用题', '计算题'];
-              break;
-            case '英语':
-              subCategories = ['听力', '阅读', '写作', '语法', '单词'];
-              break;
-            case '科学':
-              subCategories = ['物理', '化学', '生物', '实验'];
-              break;
-            default:
-              subCategories = [];
-          }
-          return { ...cat, subCategories };
-        });
-        
-        setCategories(categoriesWithSubCategories);
-        await saveMainData('categories', categoriesWithSubCategories);
-      }
 
+
+
+      // 在 initializeApp 函数中，找到加载分类数据的部分
+const savedCategories = await loadMainData('categories');
+if (savedCategories) {
+  // 如果已有保存的分类，确保每个分类都有子类别
+  const updatedCategories = savedCategories.map(cat => {
+    let defaultSubCategories = [];
+    switch(cat.name) {
+      case 'Shelddi':
+        defaultSubCategories = ["亚马逊", "乐天", "官网", "综合"];
+        break;
+      case '中文':
+        defaultSubCategories = ['阅读', '古诗词'];
+        break;
+      case '英语':
+        defaultSubCategories = ['听力', '阅读', '写作', '单词'];
+        break;
+      default:
+        defaultSubCategories = [];
+    }
+    
+    // 如果保存的分类没有子类别或子类别为空，使用预设值
+    return {
+      ...cat,
+      subCategories: cat.subCategories && cat.subCategories.length > 0 
+        ? cat.subCategories 
+        : defaultSubCategories
+    };
+  });
+  
+  setCategories(updatedCategories);
+  await saveMainData('categories', updatedCategories); // 保存更新后的分类
+} else {
+  // 没有保存的分类数据，使用预设值初始化
+  const categoriesWithSubCategories = baseCategories.map(cat => {
+    let subCategories = [];
+    switch(cat.name) {
+      case 'Shelddi':
+        subCategories = ["亚马逊", "乐天", "官网", "综合"];
+        break;
+      case '中文':
+        subCategories = ['阅读', '古诗词'];
+        break;
+      case '英语':
+        subCategories = ['听力', '阅读', '写作', '单词'];
+        break;
+      default:
+        subCategories = [];
+    }
+    return { ...cat, subCategories };
+  });
+  
+  setCategories(categoriesWithSubCategories);
+  await saveMainData('categories', categoriesWithSubCategories);
+}
       console.log('🎉 应用初始化完成');
 
       await autoBackup();
@@ -11996,7 +12018,6 @@ if (isInitialized && todayTasks.length === 0) {
     const isSelected = d.date === selectedDate;
     const isToday = d.date === todayStr;
     
-    
     return (
       <div
         key={d.date}
@@ -12009,8 +12030,9 @@ if (isInitialized && todayTasks.length === 0) {
           margin: "0 2px",
           fontSize: 12,
           cursor: "pointer",
-          backgroundColor: isToday ? "#1a73e8" : "transparent",
-          color: isToday ? "#fff" : "#000",
+          backgroundColor: isToday ? "#1a73e8" : (isSelected ? "#fff9c4" : "transparent"),
+          color: isToday ? "#fff" : (isSelected ? "#000" : "#000"),
+          borderRadius: isSelected ? "4px" : "0",
         }}
       >
         <div>{d.label}</div>
