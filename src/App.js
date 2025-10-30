@@ -8,7 +8,7 @@ const baseCategories = [
   { 
     name: "校内", 
     color: "#1a73e8",
-    subCategories: ["数学", "语文", "英语", "运动", "综合"]
+    subCategories: ["数学", "语文", "英语", "运动"]
   },
   { name: "语文", color: "#5b8def" },
   { name: "数学", color: "#397ef6" },
@@ -8647,57 +8647,49 @@ useEffect(() => {
         setUnlockedAchievements([]);
       }
 
-    // 在 initializeApp 函数中，找到加载分类数据的部分
-const savedCategories = await loadMainData('categories');
-if (savedCategories) {
-  // 如果已有保存的分类，确保每个分类都有子类别
-  const updatedCategories = savedCategories.map(cat => {
-    let defaultSubCategories = [];
-    switch(cat.name) {
-      case '校内':
-        defaultSubCategories = ["数学", "语文", "英语", "运动"];
-        break;
-      default:
-        defaultSubCategories = [];
-    }
-    
-    // 如果保存的分类没有子类别或子类别为空，使用预设值
-    return {
-      ...cat,
-      subCategories: cat.subCategories && cat.subCategories.length > 0 
-        ? cat.subCategories 
-        : defaultSubCategories
-    };
-  });
-  
-  setCategories(updatedCategories);
-  await saveMainData('categories', updatedCategories); // 保存更新后的分类
-} else {
-  // 没有保存的分类数据，使用预设值初始化
-  const categoriesWithSubCategories = baseCategories.map(cat => {
-    let subCategories = [];
-    switch(cat.name) {
-      case '校内':
-        subCategories = ["数学", "语文", "英语", "运动"];
-        break;
-    
-      default:
-        subCategories = [];
-    }
-    return { ...cat, subCategories };
-  });
-  
-  setCategories(categoriesWithSubCategories);
-  await saveMainData('categories', categoriesWithSubCategories);
-}
 
-
-
-      console.log('🎉 应用初始化完成');
-
-      await autoBackup();
-      
-
+      const savedCategories = await loadMainData('categories');
+      if (savedCategories) {
+        // 如果已有保存的分类，确保每个分类都有子类别
+        const updatedCategories = savedCategories.map(cat => {
+          let defaultSubCategories = [];
+          switch(cat.name) {
+            case '校内':
+              defaultSubCategories = ["数学", "语文", "英语", "运动"];
+              break;
+            default:
+              defaultSubCategories = [];
+          }
+          
+          // 如果保存的分类没有子类别或子类别为空，使用预设值
+          return {
+            ...cat,
+            subCategories: cat.subCategories && cat.subCategories.length > 0 
+              ? cat.subCategories 
+              : defaultSubCategories
+          };
+        });
+        
+        setCategories(updatedCategories);
+        await saveMainData('categories', updatedCategories); // 保存更新后的分类
+      } else {
+        // 没有保存的分类数据，使用预设值初始化
+        const categoriesWithSubCategories = baseCategories.map(cat => {
+          let subCategories = [];
+          switch(cat.name) {
+            case '校内':
+              subCategories = ["数学", "语文", "英语", "运动"];
+              break;
+          
+            default:
+              subCategories = [];
+          }
+          return { ...cat, subCategories };
+        });
+        
+        setCategories(categoriesWithSubCategories);
+        await saveMainData('categories', categoriesWithSubCategories);
+      }
 
 
       // 设置定时备份
