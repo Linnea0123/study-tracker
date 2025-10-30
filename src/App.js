@@ -2383,9 +2383,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
     { name: '练习', color: '#607d8b', textColor: '#fff' }
   ];
 
-  // 获取当前分类的子类别
-  const currentCategory = categories.find(cat => cat.name === templateCategory);
-  const subCategories = currentCategory?.subCategories || [];
+
 
   return (
     <div style={{
@@ -2675,39 +2673,47 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
               </div>
             </div>
 
-            {/* 子类别选择 */}
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: 8,
-                fontWeight: 600,
-                color: '#333',
-                fontSize: 14,
-              }}>
-                子类别
-              </label>
+         
+{/* 子类别选择 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: 600,
+    color: '#333',
+    fontSize: 14,
+  }}>
+    子类别
+  </label>
 
-              <select
-                value={templateSubCategory || ''}
-                onChange={(e) => setTemplateSubCategory(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 36,
-                  padding: '0 10px',
-                  border: '1px solid #ccc',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  backgroundColor: '#fff',
-                  cursor: 'pointer',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <option value="">选择子类别（可选）</option>
-                {subCategories.map(subCat => (
-                  <option key={subCat} value={subCat}>{subCat}</option>
-                ))}
-              </select>
-            </div>
+  <select
+  value={templateSubCategory || ''}
+  onChange={(e) => setTemplateSubCategory(e.target.value)}
+  style={{
+    width: '100%',
+    height: 36,
+    padding: '0 10px',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    fontSize: 14,
+    backgroundColor: '#fff',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+  }}
+>
+     <option value="">选择子类别（可选）</option>
+    {categories
+      .find((cat) => cat.name === templateCategory)
+      ?.subCategories?.map((subCat) => (
+        <option key={subCat} value={subCat}>
+          {subCat}
+        </option>
+      ))}
+  </select>
+</div>
+
+
+
           </div>
 
           {/* 标签编辑 */}
@@ -6064,7 +6070,9 @@ const TaskItem = ({
             fontWeight: task.pinned ? "bold" : "normal",
             fontSize: "14px",
             lineHeight: 1.4,
-            flex: 1
+            flex: 1,
+    maxWidth: "calc(100% - 40px)", // 新增：限制最大宽度
+    overflow: "hidden"
           }}
         >
           {task.text}
@@ -6143,7 +6151,11 @@ const TaskItem = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleTimerClick();
+    if (activeTimer?.taskId === task.id) {
+      handlePauseTimer(task);
+    } else {
+      handleStartTimer(task);
+    }
               }}
               style={{
                 fontSize: 12,
@@ -6611,6 +6623,40 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
   const [showStats, setShowStats] = useState(false);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const [exchangeItems, setExchangeItems] = useState([]);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
+  const [showMoveModal, setShowMoveModal] = useState(null);
+  const runningRefs = useRef({});
+  const addInputRef = useRef(null);
+  const bulkInputRef = useRef(null);
+  const [dailyRating, setDailyRating] = useState(0);
+  const [dailyReflection, setDailyReflection] = useState('');
+  const todayTasks = tasksByDate[selectedDate] || [];
+ 
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [timerRecords, setTimerRecords] = useState([]);
+  const [showTimerRecords, setShowTimerRecords] = useState(false);
+  const [customAchievements, setCustomAchievements] = useState([]);
+  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
+  const [editingAchievement, setEditingAchievement] = useState(null);
+  // 在现有的状态定义附近添加
+const [dailyMood, setDailyMood] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
+ const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
+
+const [categories, setCategories] = useState(baseCategories.map(cat => ({
+  ...cat,
+  subCategories: []
+})));
+
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
@@ -6623,6 +6669,8 @@ function App() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
+  const [activeTimer, setActiveTimer] = useState(null);
+const [elapsedTime, setElapsedTime] = useState(0);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
 const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
@@ -6639,6 +6687,305 @@ const [repeatConfig, setRepeatConfig] = useState({
 });
 
 // 在 App 组件内部，但不在任何函数内部添加：
+
+
+
+
+
+
+// ========== 全新的计时器系统 ==========
+
+
+
+// 2. 简化的恢复函数 - 只在初始化时调用一次
+const restoreTimer = useCallback(() => {
+  try {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
+    console.log('🔍 恢复计时器检查:', saved ? '有数据' : '无数据');
+    
+    if (!saved) {
+      setActiveTimer(null);
+      setElapsedTime(0);
+      return;
+    }
+
+    const timerData = JSON.parse(saved);
+    
+    // 检查是否已暂停
+    if (timerData.status === 'paused') {
+      console.log('⏸️ 计时器已暂停，不恢复');
+      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+      setActiveTimer(null);
+      setElapsedTime(0);
+      return;
+    }
+
+    // 检查是否超时（超过2分钟不恢复）
+    const now = Date.now();
+    const timeSinceSave = Math.floor((now - timerData.savedAt) / 1000);
+    if (timeSinceSave > 120) {
+      console.log('⏰ 计时器中断时间过长，不恢复');
+      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+      setActiveTimer(null);
+      setElapsedTime(0);
+      return;
+    }
+
+    // 恢复计时器
+    const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
+    
+    console.log('✅ 恢复计时器成功:', {
+      类型: timerData.taskId ? '任务' : '分类',
+      标识: timerData.taskId || timerData.category,
+      已过时间: totalElapsed + '秒'
+    });
+
+    setActiveTimer({
+      ...timerData,
+      startTime: now - (totalElapsed * 1000) // 重新计算开始时间
+    });
+    setElapsedTime(totalElapsed);
+
+  } catch (error) {
+    console.error('❌ 恢复计时器失败:', error);
+    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+    setActiveTimer(null);
+    setElapsedTime(0);
+  }
+}, []);
+
+// 3. 保存计时器状态
+const saveTimerState = useCallback((timer, currentElapsed, status = 'running') => {
+  const timerData = {
+    ...timer,
+    elapsedTime: currentElapsed,
+    savedAt: Date.now(),
+    status: status
+  };
+  
+  localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
+  console.log('💾 保存计时器状态:', status, currentElapsed + '秒');
+}, []);
+
+// 4. 清理计时器状态
+const clearTimerState = useCallback(() => {
+  localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
+  setActiveTimer(null);
+  setElapsedTime(0);
+  console.log('🗑️ 清理计时器状态');
+}, []);
+
+// 5. 开始计时 - 统一函数
+const handleStartTimer = (target) => {
+  console.log('🎯 开始计时:', target.text || target.category);
+  
+  // 如果已有计时器在运行，先暂停它
+  if (activeTimer) {
+    if (activeTimer.taskId) {
+      handlePauseTimer({ id: activeTimer.taskId });
+    } else if (activeTimer.category) {
+      handlePauseCategoryTimer(activeTimer.category, activeTimer.subCategory);
+    }
+  }
+
+  const newTimer = target.id ? {
+    taskId: target.id,
+    startTime: Date.now(),
+    taskText: target.text,
+    isWeekTask: target.isWeekTask,
+    category: target.category
+  } : {
+    category: target.category,
+    subCategory: target.subCategory || null,
+    startTime: Date.now()
+  };
+
+  setActiveTimer(newTimer);
+  setElapsedTime(0);
+  
+  // 立即保存
+  saveTimerState(newTimer, 0, 'running');
+  
+  // 创建计时记录（仅任务）
+  if (target.id) {
+    const newRecord = {
+      id: Date.now().toString(),
+      taskId: target.id,
+      taskText: target.text,
+      category: target.category,
+      startTime: new Date().toISOString(),
+      endTime: null,
+      duration: 0
+    };
+    setTimerRecords(prev => [newRecord, ...prev]);
+  }
+
+  console.log('✅ 计时器启动完成');
+};
+
+// 6. 暂停计时 - 统一函数
+const handlePauseTimer = (task) => {
+  if (!activeTimer || !activeTimer.taskId) {
+    console.log('⚠️ 没有任务计时器可暂停');
+    return;
+  }
+
+  const endTime = Date.now();
+  const sessionTime = Math.floor((endTime - activeTimer.startTime) / 1000);
+  const totalElapsed = elapsedTime + sessionTime;
+
+  console.log('⏸️ 暂停任务计时器:', {
+    任务: task.text,
+    本次计时: sessionTime + '秒',
+    总计时: totalElapsed + '秒'
+  });
+
+  // 更新计时记录
+  setTimerRecords(prev => prev.map(record => 
+    record.taskId === task.id && !record.endTime 
+      ? { ...record, endTime: new Date().toISOString(), duration: sessionTime } 
+      : record
+  ));
+
+  // 更新任务时间
+  setTasksByDate(prev => {
+    const updated = { ...prev };
+    Object.keys(updated).forEach(date => {
+      updated[date] = updated[date].map(t => {
+        if (t.id === task.id || (task.isWeekTask && t.isWeekTask && t.text === task.text)) {
+          const updatedSegments = [...(t.timeSegments || [])];
+          if (updatedSegments.length > 0) {
+            const lastSegment = updatedSegments[updatedSegments.length - 1];
+            if (lastSegment && !lastSegment.endTime) {
+              updatedSegments[updatedSegments.length - 1] = {
+                ...lastSegment,
+                endTime: new Date().toISOString(),
+                duration: sessionTime
+              };
+            }
+          }
+          
+          return {
+            ...t,
+            timeSpent: (t.timeSpent || 0) + sessionTime,
+            timeSegments: updatedSegments
+          };
+        }
+        return t;
+      });
+    });
+    return updated;
+  });
+
+  // 保存暂停状态
+  saveTimerState(activeTimer, totalElapsed, 'paused');
+  
+  // 清理状态
+  setTimeout(clearTimerState, 100);
+};
+
+// 7. 暂停分类计时器
+const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
+  if (!activeTimer || activeTimer.category !== categoryName) {
+    console.log('⚠️ 没有分类计时器可暂停');
+    return;
+  }
+  
+  const endTime = Date.now();
+  const sessionTime = Math.floor((endTime - activeTimer.startTime) / 1000);
+  const totalElapsed = elapsedTime + sessionTime;
+
+  console.log('⏸️ 暂停分类计时器:', {
+    分类: categoryName,
+    子分类: subCategoryName,
+    计时: sessionTime + '秒'
+  });
+
+  // 时间分配到任务
+  let targetTasks = [];
+  if (subCategoryName) {
+    targetTasks = getCategoryTasks(categoryName).filter(task => task.subCategory === subCategoryName);
+  } else {
+    targetTasks = getCategoryTasks(categoryName);
+  }
+
+  if (targetTasks.length > 0) {
+    const timePerTask = Math.floor(sessionTime / targetTasks.length);
+    
+    setTasksByDate(prev => {
+      const updated = { ...prev };
+      const todayTasks = updated[selectedDate] || [];
+      
+      updated[selectedDate] = todayTasks.map(t => {
+        if (t.category === categoryName && (!subCategoryName || t.subCategory === subCategoryName)) {
+          return { 
+            ...t, 
+            timeSpent: (t.timeSpent || 0) + timePerTask
+          };
+        }
+        return t;
+      });
+      
+      return updated;
+    });
+  }
+
+  // 保存暂停状态
+  saveTimerState(activeTimer, totalElapsed, 'paused');
+  
+  // 清理状态
+  setTimeout(clearTimerState, 100);
+};
+
+// 8. 实时计时器
+useEffect(() => {
+  let intervalId = null;
+
+  if (activeTimer) {
+    console.log('▶️ 启动实时计时器');
+    
+    intervalId = setInterval(() => {
+      setElapsedTime(prev => {
+        const newTime = prev + 1;
+        // 每15秒保存一次
+        if (newTime % 15 === 0) {
+          saveTimerState(activeTimer, newTime, 'running');
+        }
+        return newTime;
+      });
+    }, 1000);
+  }
+
+  return () => {
+    if (intervalId) {
+      console.log('⏹️ 停止实时计时器');
+      clearInterval(intervalId);
+    }
+  };
+}, [activeTimer, saveTimerState]);
+
+// 9. 页面关闭前保存
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    if (activeTimer) {
+      saveTimerState(activeTimer, elapsedTime, 'running');
+      console.log('🔒 页面关闭前保存计时器');
+    }
+  };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, [activeTimer, elapsedTime, saveTimerState]);
+
+// 10. 初始化时恢复计时器
+useEffect(() => {
+  if (isInitialized) {
+    console.log('🔄 初始化完成，恢复计时器...');
+    restoreTimer();
+  }
+}, [isInitialized, restoreTimer]);
+
+
 
 // 调试函数验证星期对应关系
 window.testWeekDays = () => {
@@ -6696,41 +7043,7 @@ useEffect(() => {
 
 
 
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(null);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [templates, setTemplates] = useState([]);
-  const [showExchangeModal, setShowExchangeModal] = useState(false);
-  const [exchangeItems, setExchangeItems] = useState([]);
-  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
-  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
-  const [showMoveModal, setShowMoveModal] = useState(null);
-  const runningRefs = useRef({});
-  const addInputRef = useRef(null);
-  const bulkInputRef = useRef(null);
-  const [dailyRating, setDailyRating] = useState(0);
-  const [dailyReflection, setDailyReflection] = useState('');
-  const todayTasks = tasksByDate[selectedDate] || [];
-  const [activeTimer, setActiveTimer] = useState(null); // { taskId, startTime, category, subCategory }
-  const [elapsedTime, setElapsedTime] = useState(0); // 新增：实时计时
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [timerRecords, setTimerRecords] = useState([]);
-  const [showTimerRecords, setShowTimerRecords] = useState(false);
-  const [customAchievements, setCustomAchievements] = useState([]);
-  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
-  const [editingAchievement, setEditingAchievement] = useState(null);
-  // 在现有的状态定义附近添加
-const [dailyMood, setDailyMood] = useState('');
-  const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
- const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
-
-const [categories, setCategories] = useState(baseCategories.map(cat => ({
-  ...cat,
-  subCategories: []
-})));
-
+  
 
 
   // 修复：成就检查逻辑
@@ -7169,29 +7482,8 @@ const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
   
   
 
-// 添加 beforeunload 事件监听，在页面关闭前保存
-useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      if (activeTimer) {
-        const timerData = {
-          taskId: activeTimer.taskId,
-          startTime: activeTimer.startTime,
-          elapsedBeforeStart: elapsedTime,
-          savedAt: new Date().toISOString()
-        };
-        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-        console.log('🔒 页面关闭，保存计时器状态');
-      }
-    };
-  
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [activeTimer, elapsedTime]);
-  
-  // 这里就是 export default App; 应该紧接着出现
+
+
   
   // 在状态更新后强制渲染
  
@@ -7864,20 +8156,6 @@ const generateDailyLog = () => {
     setPointHistory(prev => [historyEntry, ...prev]);
   };
 
-// 清理计时器状态
-useEffect(() => {
-  return () => {
-    // 组件卸载时，如果有活动的计时器，保存当前状态
-    if (activeTimer) {
-      const timerData = {
-        taskId: activeTimer.taskId,
-        startTime: activeTimer.startTime,
-        elapsedBeforeStart: elapsedTime
-      };
-      localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-    }
-  };
-}, [activeTimer, elapsedTime]);
 
 
 
@@ -8121,410 +8399,12 @@ useEffect(() => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [activeTimer, elapsedTime]);
   
-  
 
 
 
 
 
 
-  
-  const restoreTimer = () => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
-      console.log('🔍 尝试恢复计时器:', saved);
-      
-      if (saved) {
-        const timerData = JSON.parse(saved);
-        
-        // 验证数据完整性 - 支持任务计时器和分类计时器
-        if ((timerData.taskId && timerData.startTime) || (timerData.category && timerData.startTime)) {
-          const now = Date.now();
-          const savedTime = timerData.savedAt;
-          const timeSinceSave = Math.floor((now - savedTime) / 1000);
-          
-          // 如果暂停时间超过5分钟，不恢复计时器
-          if (timeSinceSave > 300) {
-            console.log('⏰ 计时器暂停时间过长，不恢复');
-            localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-            return;
-          }
-          
-          // 计算总时间
-          const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
-          
-          console.log('⏱️ 恢复计时器详情:', {
-            类型: timerData.taskId ? '任务计时' : '分类计时',
-            标识: timerData.taskId || timerData.category,
-            总时间: totalElapsed + '秒'
-          });
-  
-          // 恢复状态
-          if (timerData.taskId) {
-            // 任务计时器
-            setActiveTimer({
-              taskId: timerData.taskId,
-              startTime: timerData.startTime,
-              taskText: timerData.taskText,
-              isWeekTask: timerData.isWeekTask
-            });
-          } else {
-            // 分类计时器
-            setActiveTimer({
-              category: timerData.category,
-              startTime: timerData.startTime,
-              subCategory: timerData.subCategory || null
-            });
-          }
-          setElapsedTime(totalElapsed);
-          
-          console.log('✅ 计时器恢复成功');
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('❌ 恢复计时器失败:', error);
-    }
-    
-    // 如果没有有效数据，清理存储
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-    setActiveTimer(null);
-    setElapsedTime(0);
-  };
-
-
-
-
-// 3. 修复实时计时器
-useEffect(() => {
-  let intervalId = null;
-
-  if (activeTimer) {
-    console.log('▶️ 启动计时器');
-    
-    intervalId = setInterval(() => {
-      setElapsedTime(prev => {
-        const newTime = prev + 1;
-        
-        // 每30秒保存一次状态
-        if (newTime % 30 === 0) {
-          const timerData = {
-            ...activeTimer,
-            elapsedTime: newTime,
-            savedAt: Date.now()
-          };
-          localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-          console.log('🔄 定时保存计时器状态');
-        }
-        
-        return newTime;
-      });
-    }, 1000);
-  }
-
-  return () => {
-    if (intervalId) {
-      console.log('⏹️ 清理计时器间隔');
-      clearInterval(intervalId);
-    }
-  };
-}, [activeTimer]);
-
-
-  
-  
-  const handleStartTimer = (task) => {
-    console.log('🎯 开始计时:', task.text);
-    
-    // 如果已有计时器在运行，先暂停它
-    if (activeTimer) {
-      handlePauseTimer({ id: activeTimer.taskId });
-    }
-  
-    const startTime = Date.now();
-    
-    // 立即设置状态
-    setActiveTimer({
-      taskId: task.id,
-      startTime: startTime,
-      taskText: task.text, // 添加任务文本用于识别本周任务
-      isWeekTask: task.isWeekTask // 标记是否为本周任务
-    });
-    setElapsedTime(0);
-  
-    // 立即保存到 localStorage
-    const timerData = {
-      taskId: task.id,
-      startTime: startTime,
-      elapsedTime: 0,
-      savedAt: startTime,
-      taskText: task.text,
-      isWeekTask: task.isWeekTask
-    };
-    localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-    
-    console.log('💾 立即保存新计时器:', timerData);
-  
-    // 创建计时记录
-    const newRecord = {
-      id: Date.now().toString(),
-      taskId: task.id,
-      taskText: task.text,
-      category: task.category,
-      startTime: new Date().toISOString(),
-      endTime: null,
-      duration: 0,
-      isWeekTask: task.isWeekTask
-    };
-    setTimerRecords(prev => [newRecord, ...prev]);
-  
-    // 如果是本周任务，在所有日期创建 timeSegments
-    if (task.isWeekTask) {
-      setTasksByDate(prev => {
-        const updatedTasksByDate = { ...prev };
-        
-        Object.keys(updatedTasksByDate).forEach(date => {
-          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-            t.isWeekTask && t.text === task.text ? {
-              ...t,
-              timeSegments: [...(t.timeSegments || []), {
-                startTime: new Date().toISOString(),
-                endTime: null,
-                duration: 0
-              }]
-            } : t
-          );
-        });
-        
-        return updatedTasksByDate;
-      });
-    } else {
-      // 普通任务，只在当前日期创建 timeSegment
-      setTasksByDate(prev => {
-        const currentTasks = prev[selectedDate] || [];
-        const updatedTasks = currentTasks.map(t =>
-          t.id === task.id ? {
-            ...t,
-            timeSegments: [...(t.timeSegments || []), {
-              startTime: new Date().toISOString(),
-              endTime: null,
-              duration: 0
-            }]
-          } : t
-        );
-        return {
-          ...prev,
-          [selectedDate]: updatedTasks
-        };
-      });
-    }
-  };
-
-
-
-  
- 
-
-  const handlePauseTimer = (task) => {
-    if (!activeTimer) {
-      console.log('⚠️ 没有活动的计时器可暂停');
-      return;
-    }
-  
-    console.log('⏸️ 暂停计时器:', task.text);
-    
-    const endTime = Date.now();
-    const accurateElapsedTime = Math.floor((endTime - activeTimer.startTime) / 1000);
-    const timeSpentThisSession = accurateElapsedTime;
-  
-    console.log('📊 准确计时:', {
-      任务: task.text,
-      计时秒数: timeSpentThisSession,
-      开始时间: new Date(activeTimer.startTime).toLocaleString(),
-      结束时间: new Date(endTime).toLocaleString(),
-      是否本周任务: task.isWeekTask
-    });
-  
-    // 更新计时记录
-    setTimerRecords(prev => prev.map(record => 
-      (record.taskId === task.id || 
-       (task.isWeekTask && record.taskText === task.text)) && !record.endTime 
-        ? {
-            ...record, 
-            endTime: new Date().toISOString(), 
-            duration: timeSpentThisSession
-          } 
-        : record
-    ));
-  
-    // 更新任务时间 - 区分本周任务和普通任务
-    setTasksByDate(prev => {
-      const updatedTasksByDate = { ...prev };
-      
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t => {
-          // 匹配条件：相同ID 或者 是本周任务且文本相同
-          const isTargetTask = t.id === task.id || 
-                             (task.isWeekTask && t.isWeekTask && t.text === task.text);
-          
-          if (isTargetTask) {
-            // 更新最后一个未结束的 segment
-            const updatedSegments = [...(t.timeSegments || [])];
-            if (updatedSegments.length > 0) {
-              const lastSegment = updatedSegments[updatedSegments.length - 1];
-              if (lastSegment && !lastSegment.endTime) {
-                updatedSegments[updatedSegments.length - 1] = {
-                  ...lastSegment,
-                  endTime: new Date().toISOString(),
-                  duration: timeSpentThisSession
-                };
-              }
-            }
-            
-            return {
-              ...t,
-              timeSpent: (t.timeSpent || 0) + timeSpentThisSession,
-              timeSegments: updatedSegments
-            };
-          }
-          return t;
-        });
-      });
-      
-      return updatedTasksByDate;
-    });
-  
-    // 关键修复：在状态更新完成后再清理计时器状态
-    setTimeout(() => {
-      // 清理状态和存储
-      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      setActiveTimer(null);
-      setElapsedTime(0);
-      
-      console.log('🗑️ 清理计时器存储和状态');
-    }, 100); // 添加短暂延迟确保状态更新完成
-  };
-
-
-
-  const handleStartCategoryTimer = (categoryName, subCategoryName = null) => {
-    console.log('🎯 开始分类计时:', categoryName, subCategoryName);
-    
-    // 如果已有计时器在运行，先暂停它
-    if (activeTimer) {
-      if (activeTimer.taskId) {
-        handlePauseTimer({ id: activeTimer.taskId });
-      } else if (activeTimer.category) {
-        handlePauseCategoryTimer(activeTimer.category, activeTimer.subCategory);
-      }
-    }
-  
-    const startTime = Date.now();
-    
-    // 设置分类计时器状态（包含子分类信息）
-    setActiveTimer({
-      category: categoryName,
-      subCategory: subCategoryName, // 新增：记录子分类
-      startTime: startTime
-    });
-    setElapsedTime(0);
-  
-    // 保存到 localStorage
-    const timerData = {
-      category: categoryName,
-      subCategory: subCategoryName, // 新增：保存子分类
-      startTime: startTime,
-      elapsedTime: 0,
-      savedAt: startTime
-    };
-    localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-    
-    console.log('💾 保存分类计时器:', timerData);
-  };
-
-
-
-
-
-
-  const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
-    if (!activeTimer || activeTimer.category !== categoryName || activeTimer.subCategory !== subCategoryName) {
-      console.log('⚠️ 没有该分类的计时器可暂停');
-      return;
-    }
-    
-    console.log('⏸️ 暂停分类计时器:', categoryName, subCategoryName);
-    
-    const endTime = Date.now();
-    const accurateElapsedTime = Math.floor((endTime - activeTimer.startTime) / 1000);
-    
-    console.log('📊 分类计时结果:', {
-      分类: categoryName,
-      子分类: subCategoryName,
-      计时秒数: accurateElapsedTime
-    });
-  
-    // 将时间分配到该分类的任务（如果指定了子分类，只分配到该子分类的任务）
-    let targetTasks = [];
-    
-    if (subCategoryName) {
-      // 只分配到指定子分类的任务
-      targetTasks = getCategoryTasks(categoryName).filter(task => task.subCategory === subCategoryName);
-    } else {
-      // 分配到整个分类的任务
-      targetTasks = getCategoryTasks(categoryName);
-    }
-    
-    
-
-
-
-// 在 handlePauseCategoryTimer 函数中找到时间分配的部分：
-
-if (targetTasks.length > 0) {
-  const timePerTask = Math.floor(accurateElapsedTime / targetTasks.length);
-  
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    const todayTasks = newTasksByDate[selectedDate] || [];
-    
-    newTasksByDate[selectedDate] = todayTasks.map(t => {
-      if (t.category === categoryName && (!subCategoryName || t.subCategory === subCategoryName)) {
-        return { 
-          ...t, 
-          timeSpent: (t.timeSpent || 0) + timePerTask,
-          timeSegments: [...(t.timeSegments || []), {
-            startTime: new Date(activeTimer.startTime).toISOString(),
-            endTime: new Date().toISOString(),
-            duration: accurateElapsedTime
-          }]
-        };
-      }
-      return t;
-    });
-    
-    return newTasksByDate;
-  });
-}
-
-    // 清理状态和存储
-    setTimeout(() => {
-      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      setActiveTimer(null);
-      setElapsedTime(0);
-      console.log('🗑️ 清理分类计时器存储和状态');
-    }, 100);
-  };
-
-  
-
-// 6. 添加手动清除计时器函数（用于调试）
-const clearTimerStorage = () => {
-  localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-  setActiveTimer(null);
-  setElapsedTime(0);
-  console.log('🧹 手动清除计时器存储');
-};
 
 // 暴露给控制台用于调试
 useEffect(() => {
@@ -8534,21 +8414,23 @@ useEffect(() => {
       elapsedTime,
       storage: localStorage.getItem(`${STORAGE_KEY}_activeTimer`)
     }),
-    clear: clearTimerStorage,
+    clear: clearTimerState, // ← 使用新的 clearTimerState 函数
     forceSave: () => {
       if (activeTimer) {
         const timerData = {
-          taskId: activeTimer.taskId,
-          startTime: activeTimer.startTime,
+          ...activeTimer,
           elapsedTime: elapsedTime,
-          savedAt: Date.now()
+          savedAt: Date.now(),
+          status: 'running'
         };
         localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
         console.log('💾 强制保存:', timerData);
       }
     }
   };
-}, [activeTimer, elapsedTime]);
+}, [activeTimer, elapsedTime, clearTimerState]); // ← 添加 clearTimerState 依赖
+
+
 
 // 修改 - 恢复计时器状态
 useEffect(() => {
@@ -8696,7 +8578,7 @@ useEffect(() => {
     await migrateLegacyData();
     
     try {
- restoreTimer(); // 添加这行
+ 
 
 
 
@@ -8761,24 +8643,15 @@ useEffect(() => {
         setUnlockedAchievements([]);
       }
 
-
-
-
-      // 在 initializeApp 函数中，找到加载分类数据的部分
+    // 在 initializeApp 函数中，找到加载分类数据的部分
 const savedCategories = await loadMainData('categories');
 if (savedCategories) {
   // 如果已有保存的分类，确保每个分类都有子类别
   const updatedCategories = savedCategories.map(cat => {
     let defaultSubCategories = [];
     switch(cat.name) {
-      case 'Shelddi':
-        defaultSubCategories = ["亚马逊", "乐天", "官网", "综合"];
-        break;
-      case '中文':
-        defaultSubCategories = ['阅读', '古诗词'];
-        break;
-      case '英语':
-        defaultSubCategories = ['听力', '阅读', '写作', '单词'];
+      case '校内':
+        defaultSubCategories = ["数学", "语文", "英语", "运动"];
         break;
       default:
         defaultSubCategories = [];
@@ -8800,15 +8673,10 @@ if (savedCategories) {
   const categoriesWithSubCategories = baseCategories.map(cat => {
     let subCategories = [];
     switch(cat.name) {
-      case 'Shelddi':
-        subCategories = ["亚马逊", "乐天", "官网", "综合"];
+      case '校内':
+        subCategories = ["数学", "语文", "英语", "综合"];
         break;
-      case '中文':
-        subCategories = ['阅读', '古诗词'];
-        break;
-      case '英语':
-        subCategories = ['听力', '阅读', '写作', '单词'];
-        break;
+    
       default:
         subCategories = [];
     }
@@ -8818,10 +8686,16 @@ if (savedCategories) {
   setCategories(categoriesWithSubCategories);
   await saveMainData('categories', categoriesWithSubCategories);
 }
+
+
+
       console.log('🎉 应用初始化完成');
 
       await autoBackup();
       
+
+
+
       // 设置定时备份
       localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
       console.log('✅ 初始化状态已保存到存储');
@@ -9385,7 +9259,7 @@ const handleAddWeekTask = (text) => {
   // 尝试从第一行提取子分类
   if (lines.length > 0) {
     const firstLine = lines[0];
-    const subCategoryKeywords = ["语文", "数学", "英语", "科学", "运动"];
+    const subCategoryKeywords = ["数学", "语文", "英语", "运动"];
     const matched = subCategoryKeywords.find(k => firstLine.includes(k));
     if (matched) {
       subCategory = matched;
@@ -11626,7 +11500,9 @@ if (isInitialized && todayTasks.length === 0) {
       padding: 15,
       fontFamily: "sans-serif",
       backgroundColor: "#f5faff",
-      overflowX: "hidden"
+      overflowX: "hidden", // 防止横向滚动
+  width: "100%", // 确保宽度100%
+  boxSizing: "border-box" // 包含padding在宽度内
     }}>
 
       {/* 所有模态框组件 */}
@@ -11776,6 +11652,7 @@ if (isInitialized && todayTasks.length === 0) {
         <TemplateModal
           templates={templates}
           onSave={handleAddTemplate}
+          categories={categories}
           onClose={() => setShowTemplateModal(false)}
           onDelete={handleDeleteTemplate}
         />
@@ -12042,6 +11919,9 @@ if (isInitialized && todayTasks.length === 0) {
   })}
 </div>
 
+
+
+
 {/* 置顶任务区域 */}
       {pinnedTasks.length > 0 && (
         <div style={{
@@ -12270,11 +12150,12 @@ if (isInitialized && todayTasks.length === 0) {
 <button
   onClick={(e) => {
     e.stopPropagation();
-    // 主分类计时 - 不传递子分类名称（影响整个分类）
     if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
       handlePauseCategoryTimer(c.name);
     } else {
-      handleStartCategoryTimer(c.name); // 不传递子分类名称
+      handleStartTimer({
+        category: c.name
+      });
     }
   }}
   style={{
@@ -12330,10 +12211,14 @@ if (isInitialized && todayTasks.length === 0) {
   style={{
     fontSize: 12,
     color: isComplete ? "#888" : "#fff",
+    maxWidth: "60px", 
     cursor: "pointer",
     padding: "2px 8px",
     borderRadius: "4px",
-    backgroundColor: "transparent"
+    backgroundColor: "transparent", // 新增：限制最大宽度
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
   }}
   title="点击修改总时间"
 >
@@ -12408,12 +12293,14 @@ if (isInitialized && todayTasks.length === 0) {
               <button
   onClick={(e) => {
     e.stopPropagation();
-    // 子分类计时 - 传递子分类名称（包括"未分类"）
-    const currentSubCat = subCat === '未分类' ? null : subCat; // 如果是"未分类"，传递 null
+    const currentSubCat = subCat === '未分类' ? null : subCat;
     if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
       handlePauseCategoryTimer(c.name, currentSubCat);
     } else {
-      handleStartCategoryTimer(c.name, currentSubCat);
+      handleStartTimer({
+        category: c.name,
+        subCategory: currentSubCat
+      });
     }
   }}
   style={{
@@ -13130,7 +13017,9 @@ marginTop: 10
         marginTop: 20,
         padding: "8px 0",
         backgroundColor: "#e8f0fe",
-        borderRadius: 10
+        borderRadius: 10,
+  maxWidth: "100%", // 确保不超出容器
+  overflow: "hidden"
       }}>
         {[
           { label: "学习时间", value: formatTimeInHours(learningTime) },
