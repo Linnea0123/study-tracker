@@ -5,7 +5,11 @@ import './App.css';
 
 // 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
-  { name: "校内", color: "#1a73e8" },
+  { 
+    name: "校内", 
+    color: "#1a73e8",
+    subCategories: ["数学", "语文", "英语", "运动", "综合"]
+  },
   { name: "语文", color: "#5b8def" },
   { name: "数学", color: "#397ef6" },
   { name: "英语", color: "#739df9" },
@@ -8674,7 +8678,7 @@ if (savedCategories) {
     let subCategories = [];
     switch(cat.name) {
       case '校内':
-        subCategories = ["数学", "语文", "英语", "综合"];
+        subCategories = ["数学", "语文", "英语", "运动"];
         break;
     
       default:
