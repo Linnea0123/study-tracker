@@ -11766,7 +11766,7 @@ if (isInitialized && todayTasks.length === 0) {
         marginBottom: "10px",  // 调整下边距
         paddingTop: "0px"      // 确保为0
       }}>
-        每日待办
+        汤圆学习记录
       </h1>
       <div style={{
         textAlign: "center",
