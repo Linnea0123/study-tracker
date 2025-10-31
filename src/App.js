@@ -6644,8 +6644,6 @@ function App() {
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
   const todayTasks = tasksByDate[selectedDate] || [];
-  const [showReflectionModal, setShowReflectionModal] = useState(false);
-const [tempReflection, setTempReflection] = useState('');
  
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
@@ -6672,8 +6670,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyMood, setDailyMood] = useState(0); // 0 表示未选择
   const [dailyRating, setDailyRating] = useState(0);
-  const [dailyReflections, setDailyReflections] = useState({}); // 按日期存储复盘
-const dailyReflection = dailyReflections[selectedDate] || ''; // 当前选中日期的复
+  const [dailyReflection, setDailyReflection] = useState('');
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
@@ -6705,27 +6702,16 @@ const moodOptions = [
   { emoji: '😴', label: '困倦', value: 6 }
 ];
 
-
-
 const saveDailyData = useCallback(async () => {
   const today = new Date().toISOString().split("T")[0];
   const dailyData = {
-    mood: dailyMood,
+    mood: dailyMood, // 现在存储的是数字
     rating: dailyRating,
     reflection: dailyReflection,
     date: today
   };
   await saveMainData(`daily_${today}`, dailyData);
-  
-  // 🆕 同时保存到按日期的复盘对象中
-  setDailyReflections(prev => ({
-    ...prev,
-    [selectedDate]: dailyReflection
-  }));
-}, [dailyMood, dailyRating, dailyReflection, selectedDate]);
-
-
-
+}, [dailyMood, dailyRating, dailyReflection]);
 
 // 即时保存效果
 useEffect(() => {
@@ -8629,17 +8615,14 @@ useEffect(() => {
 
 
 
-      // 在加载今日数据后，添加：
-const savedDailyData = await loadMainData(`daily_${today}`);
-if (savedDailyData) {
-  setDailyRating(savedDailyData.rating || 0);
-  setDailyMood(savedDailyData.mood || 0);
-  // 🆕 改为按日期设置复盘
-  setDailyReflections(prev => ({
-    ...prev,
-    [today]: savedDailyData.reflection || ''
-  }));
-}
+      // 加载今日数据
+      const today = new Date().toISOString().split("T")[0];
+      const savedDailyData = await loadMainData(`daily_${today}`);
+      if (savedDailyData) {
+        setDailyRating(savedDailyData.rating || 0);
+        setDailyMood(savedDailyData.mood || 0); // 改为数字
+        setDailyReflection(savedDailyData.reflection || '');
+      }
       
       // 加载任务数据
       const savedTasks = await loadMainData('tasks');
@@ -8763,28 +8746,6 @@ if (savedDailyData) {
 
 
 
-// 添加 useEffect 监听 selectedDate 变化
-useEffect(() => {
-  const loadReflectionForDate = async () => {
-    const savedDailyData = await loadMainData(`daily_${selectedDate}`);
-    if (savedDailyData && savedDailyData.reflection) {
-      setDailyReflections(prev => ({
-        ...prev,
-        [selectedDate]: savedDailyData.reflection
-      }));
-    } else {
-      // 如果没有保存的数据，设置为空
-      setDailyReflections(prev => ({
-        ...prev,
-        [selectedDate]: ''
-      }));
-    }
-  };
-  
-  if (isInitialized) {
-    loadReflectionForDate();
-  }
-}, [selectedDate, isInitialized]);
 
 
 
@@ -9269,19 +9230,6 @@ const handleAddTask = (template = null) => {
 
   console.log('=== 添加任务完成 ===');
 };
-
-
-
-// 保存复盘内容函数
-const handleSaveReflection = () => {
-  setDailyReflections(prev => ({
-    ...prev,
-    [selectedDate]: tempReflection
-  }));
-  setShowReflectionModal(false);
-  setTempReflection('');
-};
-
 
 
 
@@ -10502,8 +10450,26 @@ const generateMarkdownContent = () => {
   
 
 
- 
- 
+  {/* 复盘输入 */}
+  <div>
+    <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>复盘：</label>
+    <textarea
+      value={dailyReflection}
+      onChange={(e) => setDailyReflection(e.target.value)}
+      placeholder="记录一下今天的收获或思考..."
+      style={{
+        width: '100%',
+        minHeight: 80,
+        padding: '8px 10px',
+        border: '1px solid #ddd',
+        borderRadius: 6,
+        fontSize: 14,
+        resize: 'vertical',
+        backgroundColor: '#fafafa',
+        fontFamily: 'inherit',
+      }}
+    />
+  </div>
 </div>
 
 
@@ -11665,108 +11631,6 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
 
-
-
-{/* 多行复盘输入弹窗 */}
-{showReflectionModal && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000
-  }}>
-    <div style={{
-      backgroundColor: 'white',
-      padding: 20,
-      borderRadius: 10,
-      width: '90%',
-      maxWidth: 500
-    }}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-        今日复盘
-      </h3>
-      
-      <textarea
-        value={tempReflection}
-        onChange={(e) => setTempReflection(e.target.value)}
-        placeholder="输入今日的学习总结和思考（支持多行输入）..."
-        style={{
-          width: '100%',
-          minHeight: 150,
-          padding: 12,
-          border: '2px solid #e0e0e0',
-          borderRadius: 8,
-          fontSize: 14,
-          resize: 'vertical',
-          fontFamily: 'inherit',
-          lineHeight: 1.4,
-          outline: 'none'
-        }}
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.ctrlKey) {
-            handleSaveReflection();
-          }
-        }}
-      />
-      
-      <div style={{
-        fontSize: 12,
-        color: '#666',
-        marginTop: 8,
-        marginBottom: 15,
-        textAlign: 'center'
-      }}>
-        提示：按 Enter 换行，Ctrl+Enter 快速保存
-      </div>
-      
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button
-          onClick={() => {
-            setShowReflectionModal(false);
-            setTempReflection('');
-          }}
-          style={{
-            flex: 1,
-            padding: 12,
-            backgroundColor: '#ccc',
-            color: '#000',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 14
-          }}
-        >
-          取消
-        </button>
-        <button
-          onClick={handleSaveReflection}
-          style={{
-            flex: 1,
-            padding: 12,
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 14
-          }}
-        >
-          保存
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
 {/* 子类别管理模态框 */}
 {editingCategory && (
   <SubCategoryModal
@@ -12765,214 +12629,78 @@ marginTop: 10
 </div>
 
 
-
-
-{/* 复盘输入区域 - 左右布局 */}
-<div style={{
-  marginBottom: 8,
-  padding: 10,
-  backgroundColor: '#fff9c4',
-  borderRadius: 8,
-  border: '1px solid #ffd54f',
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: 10
-}}>
-  {/* 左侧：标签 */}
-  <div style={{
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center'
-  }}>
-    <label style={{
-      fontWeight: 'bold',
-      color: '#333',
-      fontSize: 14,
-      whiteSpace: 'nowrap'
-    }}>
-      💭 今日复盘：
-    </label>
-  </div>
-  
-  {/* 右侧：内容区域 */}
-  <div style={{
-    flex: 1,
-    minHeight: '20px'
-  }}>
-    {dailyReflection ? (
-      <div
-        onClick={() => {
-          setTempReflection(dailyReflection);
-          setShowReflectionModal(true);
-        }}
-        style={{
-          fontSize: 13,
-          lineHeight: 1.4,
-          color: '#333',
-          cursor: 'pointer',
-          padding: '6px 8px',
-          backgroundColor: 'rgba(255,255,255,0.7)',
-          borderRadius: 4,
-          border: '1px dashed #ffb300',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          minHeight: '20px',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}
-      >
-        {dailyReflection}
-      </div>
-    ) : (
-      <div
-        onClick={() => {
-          setTempReflection('');
-          setShowReflectionModal(true);
-        }}
-        style={{
-          fontSize: 12,
-          color: '#666',
-          cursor: 'pointer',
-          padding: '6px 8px',
-          backgroundColor: 'rgba(255,255,255,0.5)',
-          borderRadius: 4,
-          border: '1px dashed #ccc',
-          fontStyle: 'italic',
-          textAlign: 'center',
-          minHeight: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}
-      >
-        点击添加今日复盘内容...
-      </div>
-    )}
-  </div>
-</div>
-
-
-
-{/* 添加任务按钮区域 */}
-<div style={{
-  display: "flex",
-  gap: 10,
-  marginTop: 10
-}}>
-  <button
-    className="action-button"
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowAddInput(!showAddInput);
-      setShowBulkInput(false);
-    }}
-    style={{
-      flex: 1,
-      padding: 8,
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer"
-    }}
-  >
-    {showAddInput ? "取消添加" : "添加任务"}
-  </button>
-  <button
-    className="action-button"
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowBulkInput(!showBulkInput);
-      setShowAddInput(false);
-    }}
-    style={{
-      flex: 1,
-      padding: 8,
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer"
-    }}
-  >
-    {showBulkInput ? "取消批量" : "批量导入"}
-  </button>
-</div>
-
-{/* 添加任务输入框（展开时显示） */}
-{showAddInput && (
-  <div ref={addInputRef} style={{ marginTop: 8 }}>
-    <div style={{
-      display: "flex",
-      gap: 6,
-      marginBottom: 8
-    }}>
-      <input
-        type="text"
-        value={newTaskText}
-        onChange={(e) => setNewTaskText(e.target.value)}
-        placeholder="输入任务"
-        style={{
-          flex: 1,
-          padding: 6,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-          fontSize: "16px"
-        }}
-        onClick={(e) => e.stopPropagation()}
-      />
-      <select
-        value={newTaskCategory}
-        onChange={(e) => setNewTaskCategory(e.target.value)}
-        style={{ padding: 6 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {categories.map((c) => (
-          <option key={c.name} value={c.name}>{c.name}</option>
-        ))}
-      </select>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleAddTask();
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer"
-        }}
-      >
-        确认
-      </button>
-    </div>
-
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setShowRepeatModal(true);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer"
-        }}
-      >
-        重复
-      </button>
-
   
 
-     
+      {/* 添加任务输入框（展开时显示） */}
+      {showAddInput && (
+        <div ref={addInputRef} style={{ marginTop: 8 }}>
+          <div style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 8
+          }}>
+            <input
+              type="text"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="输入任务"
+              style={{
+                flex: 1,
+                padding: 6,
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                fontSize: "16px"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <select
+              value={newTaskCategory}
+              onChange={(e) => setNewTaskCategory(e.target.value)}
+              style={{ padding: 6 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {categories.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddTask();
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              确认
+            </button>
+          </div>
+
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRepeatModal(true);
+              }}
+              style={{
+                padding: "6px 10px",
+                backgroundColor: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer"
+              }}
+            >
+              重复
+            </button>
+
             {/* 在这里添加计划时间按钮 */}
             <button
               onClick={(e) => {
