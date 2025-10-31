@@ -10044,19 +10044,46 @@ const handleExportData = async () => {
 };
   
   
-
-const DailyLogModal = ({ logData, onClose, onCopy }) => {
-  // 删除所有与心情、评分、复盘相关的状态和函数后，组件变得很简单
-
-  if (!logData) return null;
-
+const DailyLogModal = ({ logData, onClose, onCopy, dailyMood, dailyRating, dailyReflection }) => {
   const totalHours = (logData.stats.totalMinutes / 60).toFixed(1);
 
   const generateFormattedContent = () => {
     return logData.content.replace(/✅/g, '');
   };
 
+  const generateMarkdownContent = () => {
+    let markdown = `# 学习任务\n\n`;
+    
+    // 添加心情、评分和复盘内容到最上方
+    if (dailyMood || dailyRating > 0 || dailyReflection) {
+      markdown += "## 💭 今日总结\n\n";
+      
+      if (dailyMood) {
+        markdown += `- **心情**: ${dailyMood}\n`;
+      }
+      
+      if (dailyRating > 0) {
+        markdown += `- **评分**: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
+      }
+      
+      if (dailyReflection) {
+        markdown += `- **复盘**: ${dailyReflection}\n`;
+      }
+      
+      markdown += "\n";
+    }
+    
+    markdown += logData.markdownContent.replace('# 学习任务\n\n', '');
+    return markdown;
+  };
+
   const formattedContent = generateFormattedContent();
+  const markdownContent = generateMarkdownContent();
+
+  // 在复制功能中使用 markdownContent
+  const handleCopy = () => {
+    onCopy(markdownContent); // 使用 markdownContent
+  };
 
   return (
     <div style={{
@@ -10192,6 +10219,54 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           flex: 1,
           minHeight: 'auto'
         }}>
+           {/* 添加心情总结到最上方 */}
+  {(dailyMood || dailyRating > 0 || dailyReflection) && (
+    <>
+      <div style={{ 
+        fontWeight: 'bold', 
+        marginBottom: 8,
+        color: '#1a73e8',
+        borderBottom: '1px solid #1a73e8',
+        paddingBottom: 4
+      }}>
+        === 今日总结 ===
+      </div>
+      
+      {dailyMood && (
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontWeight: 'bold' }}>心情: </span>
+          {dailyMood}
+        </div>
+      )}
+      
+      {dailyRating > 0 && (
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontWeight: 'bold' }}>评分: </span>
+          {'⭐'.repeat(dailyRating)} ({dailyRating}/5)
+        </div>
+      )}
+      
+      {dailyReflection && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>复盘:</div>
+          <div style={{ 
+            backgroundColor: '#fff9c4', 
+            padding: 8, 
+            borderRadius: 4,
+            border: '1px solid #ffd54f'
+          }}>
+            {dailyReflection}
+          </div>
+        </div>
+      )}
+      
+      <div style={{ 
+        borderBottom: '1px solid #ccc', 
+        margin: '12px 0',
+        opacity: 0.5
+      }}></div>
+    </>
+  )}
           {formattedContent}
         </div>
 
@@ -10327,25 +10402,22 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           >
             关闭
           </button>
-          <button
-            onClick={() => {
-              const markdownContent = formattedContent;
-              onCopy(markdownContent);
-            }}
-            style={{
-              flex: 1,
-              padding: 12,
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold'
-            }}
-          >
-            📋 复制日志
-          </button>
+           <button
+        onClick={handleCopy}
+        style={{
+          flex: 1,
+          padding: 12,
+          backgroundColor: '#28a745',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+          fontSize: 14,
+          fontWeight: 'bold'
+        }}
+      >
+        📋 复制日志
+      </button>
         </div>
       </div>
     </div>
@@ -11503,42 +11575,73 @@ if (isInitialized && todayTasks.length === 0) {
       )}
       
       {showDailyLogModal && (
-        <DailyLogModal
-          logData={showDailyLogModal}
-          onClose={() => setShowDailyLogModal(null)}
-          onCopy={() => {
-            const copyToClipboard = (text) => {
-              if (navigator.clipboard && window.isSecureContext) {
-                return navigator.clipboard.writeText(text);
-              } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                textArea.style.position = 'fixed';
-                textArea.style.left = '-999999px';
-                textArea.style.top = '-999999px';
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                  document.execCommand('copy');
-                  return Promise.resolve();
-                } catch (err) {
-                  return Promise.reject(err);
-                } finally {
-                  document.body.removeChild(textArea);
-                }
-              }
-            };
+  <DailyLogModal
+    logData={showDailyLogModal}
+    onClose={() => setShowDailyLogModal(null)}
+    onCopy={() => {
+      const copyToClipboard = (text) => {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text);
+        } else {
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          } finally {
+            document.body.removeChild(textArea);
+          }
+        }
+      };
 
-            copyToClipboard(showDailyLogModal.content).then(() => {
-              alert('日志已复制到剪贴板！');
-            }).catch(() => {
-              alert('复制失败，请手动复制日志内容');
-            });
-          }}
-        />
-      )}
+      // 生成包含心情内容的完整文本
+      const generateFullContent = () => {
+        let content = '';
+        
+        // 添加心情、评分和复盘内容到最上方
+        if (dailyMood || dailyRating > 0 || dailyReflection) {
+          content += "=== 今日总结 ===\n";
+          
+          if (dailyMood) {
+            content += `心情: ${dailyMood}\n`;
+          }
+          
+          if (dailyRating > 0) {
+            content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
+          }
+          
+          if (dailyReflection) {
+            content += `复盘:\n${dailyReflection}\n`;
+          }
+          
+          content += "\n"; // 添加空行分隔
+        }
+        
+        content += showDailyLogModal.content.replace(/✅/g, '');
+        return content;
+      };
 
+      const fullContent = generateFullContent();
+      
+      copyToClipboard(fullContent).then(() => {
+        alert('日志已复制到剪贴板！');
+      }).catch(() => {
+        alert('复制失败，请手动复制日志内容');
+      });
+    }}
+    dailyMood={dailyMood}
+    dailyRating={dailyRating}
+    dailyReflection={dailyReflection}
+  />
+)}
 
       {showTimeModal && (
         <TimeModal
