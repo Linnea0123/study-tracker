@@ -1192,6 +1192,8 @@ const getBackupList = () => {
     .sort((a, b) => b.time.localeCompare(a.time));
 };
 
+
+
 const restoreBackup = async (backupKey) => {
   try {
     const backupData = JSON.parse(localStorage.getItem(backupKey));
@@ -1201,22 +1203,24 @@ const restoreBackup = async (backupKey) => {
     }
 
     if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+      // 保存所有数据到存储
       await saveMainData('tasks', backupData.tasks || {});
       await saveMainData('templates', backupData.templates || []);
       await saveMainData('pointHistory', backupData.pointHistory || []);
       await saveMainData('exchange', backupData.exchange || []);
+      await saveMainData('customAchievements', backupData.customAchievements || []);
+      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
       
-      if (window.appInstance) {
-        window.appInstance.setState({
-          tasksByDate: backupData.tasks || {},
-          templates: backupData.templates || [],
-          pointHistory: backupData.pointHistory || [],
-          exchangeItems: backupData.exchange || []
-        });
-      }
+      // 直接更新所有状态
+      setTasksByDate(backupData.tasks || {});
+      setTemplates(backupData.templates || []);
+      setPointHistory(backupData.pointHistory || []);
+      setExchangeItems(backupData.exchange || []);
+      setCustomAchievements(backupData.customAchievements || []);
+      setUnlockedAchievements(backupData.unlockedAchievements || []);
       
-      alert('备份恢复成功！');
-      window.location.reload();
+      alert('备份恢复成功！页面将重新加载。');
+      window.location.reload(); // 确保完全刷新
     }
   } catch (error) {
     console.error('恢复备份失败:', error);
