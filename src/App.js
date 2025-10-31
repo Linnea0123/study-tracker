@@ -6645,6 +6645,8 @@ function App() {
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
+  // 临时保留旧变量避免错误
+
   const todayTasks = tasksByDate[selectedDate] || [];
  
   const [isInitialized, setIsInitialized] = useState(false);
@@ -6661,6 +6663,8 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   subCategories: []
 })));
 
+
+
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
@@ -6670,8 +6674,8 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
-  const [dailyMood, setDailyMood] = useState(0); // 0 表示未选择
-  const [dailyRating, setDailyRating] = useState(0);
+  const [dailyMoods, setDailyMoods] = useState({});
+  const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
@@ -6694,6 +6698,35 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 });
 
 
+
+// 获取当前日期的心情和评价
+const getCurrentDailyMood = useCallback(() => {
+  return dailyMoods[selectedDate] || 0;
+}, [dailyMoods, selectedDate]);
+
+const getCurrentDailyRating = useCallback(() => {
+  return dailyRatings[selectedDate] || 0;
+}, [dailyRatings, selectedDate]);
+
+
+
+// 设置当前日期的心情和评价
+const setCurrentDailyMood = (mood) => {
+  setDailyMoods(prev => ({
+    ...prev,
+    [selectedDate]: mood
+  }));
+};
+
+const setCurrentDailyRating = (rating) => {
+  setDailyRatings(prev => ({
+    ...prev,
+    [selectedDate]: rating
+  }));
+};
+
+const dailyMood = getCurrentDailyMood();
+const dailyRating = getCurrentDailyRating();
 // 获取当前选中日期的复盘内容
 const getCurrentDailyReflection = () => {
   return dailyReflections[selectedDate] || '';
@@ -6719,23 +6752,14 @@ const moodOptions = [
 ];
 
 const saveDailyData = useCallback(async () => {
-  const today = new Date().toISOString().split("T")[0];
   const dailyData = {
-    mood: dailyMood,
-    rating: dailyRating,
-    reflection: dailyReflections[today] || '', // 改为从对象中获取
-    date: today
+    mood: getCurrentDailyMood(),
+    rating: getCurrentDailyRating(),
+    reflection: dailyReflections[selectedDate] || '',
+    date: selectedDate
   };
-  await saveMainData(`daily_${today}`, dailyData);
-}, [dailyMood, dailyRating, dailyReflections]); // 更新依赖
-
-// 即时保存效果
-useEffect(() => {
-  if (isInitialized && (dailyMood !== '' || dailyRating !== 0 || dailyReflection !== '')) {
-    saveDailyData();
-  }
-}, [dailyMood, dailyRating, isInitialized, saveDailyData]);
-
+  await saveMainData(`daily_${selectedDate}`, dailyData);
+}, [selectedDate, dailyReflections, getCurrentDailyMood, getCurrentDailyRating]);
 
 
 
@@ -8793,7 +8817,8 @@ const loadDailyData = async () => {
       console.error('加载每日数据失败:', key, error);
     }
   }
-  
+  setDailyMoods(allMoods);
+  setDailyRatings(allRatings);
   setDailyReflections(allReflections);
 };
 // ==== 新增：调用 loadDailyData 的 useEffect ====
@@ -10438,17 +10463,17 @@ const generateMarkdownContent = () => {
     {moodOptions.map((mood) => (
       <button
         key={mood.value}
-        onClick={() => setDailyMood(mood.value)}
+        onClick={() => setCurrentDailyMood(mood.value)}
         style={{
           flex: 1,
           padding: '6px 0',
           border: 'none',
           borderRadius: 6,
-          backgroundColor: dailyMood === mood.value ? '#ffe066' : '#f1f3f4',
+          backgroundColor: getCurrentDailyMood() === mood.value ? '#ffe066' : '#f1f3f4',
           fontSize: mood.emoji ? '18px' : '12px',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: dailyMood === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          boxShadow: getCurrentDailyMood() === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           minHeight: '32px',
           display: 'flex',
           alignItems: 'center',
@@ -10469,17 +10494,17 @@ const generateMarkdownContent = () => {
     {[1, 2, 3, 4, 5].map((star) => (
       <button
         key={star}
-        onClick={() => setDailyRating(star)}
+        onClick={() => setCurrentDailyRating(star)}
         style={{
           flex: 1,
           padding: '6px 0',
           border: 'none',
           borderRadius: 6,
-          backgroundColor: dailyRating >= star ? '#ffe066' : '#f1f3f4',
+          backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
           fontSize: 18,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: dailyRating >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          boxShadow: getCurrentDailyRating() >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           minHeight: '32px',
           display: 'flex',
           alignItems: 'center',
