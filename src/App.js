@@ -467,10 +467,10 @@ const BackupManagerModal = ({ onClose, restoreBackup }) => {  // 添加 restoreB
           lineHeight: 1.4
         }}>
           <strong>💡 使用说明：</strong><br/>
-          • 系统每30分钟自动备份一次<br/>
-          • 最多保留7个备份，旧的会自动删除<br/>
-          • 恢复备份会覆盖当前所有数据<br/>
-          • 建议重要操作前手动备份
+          • 数据修改后2分钟自动备份<br/>
+  • 最多保留7个备份，旧的会自动删除<br/>
+  • 恢复备份会覆盖当前所有数据<br/>
+  • 建议重要操作前手动备份
         </div>
 
         {/* 恢复确认模态框 */}
@@ -1078,10 +1078,10 @@ const AchievementsModal = ({
 
 
 
-// ==== 新增：自动备份配置 ====
+// 修改 AUTO_BACKUP_CONFIG
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
-  backupInterval: 30 * 60 * 1000,   // 30分钟（30 * 60 * 1000 毫秒）
+  backupDelay: 2 * 60 * 1000,       // 2分钟延迟备份（原30分钟）
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
@@ -6645,6 +6645,7 @@ const TaskItem = ({
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
+  const [initialBackupDone, setInitialBackupDone] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
@@ -6696,6 +6697,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showHonorModal, setShowHonorModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
+  const [backupTimeout, setBackupTimeout] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyMood, setDailyMood] = useState(0); // 0 表示未选择
   const [dailyRating, setDailyRating] = useState(0);
@@ -6720,6 +6722,54 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   reminderMinute: "",
 });
 
+
+
+
+
+
+
+
+  
+    // 修复：使用 useCallback 避免无限重渲染
+    const triggerDelayedBackup = useCallback(() => {
+      console.log('📝 触发延迟备份（2分钟后执行）');
+      
+      // 清除之前的定时器
+      if (backupTimeout) {
+        clearTimeout(backupTimeout);
+        console.log('⏰ 清除之前的备份定时器');
+      }
+  
+      // 设置新的延迟备份（2分钟后）
+      const timeout = setTimeout(() => {
+        console.log('🔄 执行延迟备份（数据修改后2分钟）');
+        autoBackup();
+      }, AUTO_BACKUP_CONFIG.backupDelay);
+  
+      setBackupTimeout(timeout);
+      console.log('⏰ 设置新的备份定时器：2分钟后执行');
+    }, [backupTimeout]);
+  
+    // 修复：简化依赖，只监听重要的数据变化
+    useEffect(() => {
+      if (isInitialized) {
+        console.log('📝 检测到任务数据变化，触发延迟备份');
+        triggerDelayedBackup();
+      }
+    }, [tasksByDate, isInitialized, triggerDelayedBackup]); // 只保留 tasksByDate
+  
+    // 可以移除其他数据变化的监听，因为任务数据变化已经包含大部分情况
+    // 或者保留但添加防抖逻辑
+  
+    // 组件卸载时清理定时器
+    useEffect(() => {
+      return () => {
+        if (backupTimeout) {
+          clearTimeout(backupTimeout);
+          console.log('🧹 清理备份定时器');
+        }
+      };
+    }, [backupTimeout]);
 
 
 // 在 App 组件内部定义 restoreBackup 函数
@@ -8793,26 +8843,19 @@ useEffect(() => {
       }
 
 
+   // 只执行一次初始备份
+   if (!initialBackupDone) {
+    console.log('🚀 设置初始备份（5秒后）');
+    setTimeout(() => {
+      console.log('📦 执行初始备份');
+      setInitialBackupDone(true);
+      autoBackup();
+    }, 5000);
+  }
 
-// 设置定时备份 - 修复这里
-console.log('⏰ 设置自动备份定时器，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60, '分钟');
-    
-const backupTimer = setInterval(() => {
-  console.log('🔄 自动备份定时器触发');
-  autoBackup();
-}, AUTO_BACKUP_CONFIG.backupInterval);
+  console.log('✅ 初始化完成，设置 isInitialized = true');
+  setIsInitialized(true); // 确保这行代码执行
 
-// 立即执行一次初始备份
-setTimeout(() => {
-  console.log('🚀 执行初始备份');
-  autoBackup();
-}, 5000); // 5秒后执行初始备份
-
-// 清理函数
-return () => {
-  console.log('🧹 清理备份定时器');
-  clearInterval(backupTimer);
-};
 
 } catch (error) {
 console.error('初始化失败:', error);
@@ -8820,6 +8863,7 @@ console.error('初始化失败:', error);
 };
 
   initializeApp();
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 //初始化end
 
