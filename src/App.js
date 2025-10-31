@@ -12312,7 +12312,7 @@ const generateFullContent = () => {
         border: 'none',
         color: isComplete ? "#888" : "#fff",
         cursor: 'pointer',
-        fontSize: '10px',
+        fontSize: '12px',
         padding: '1px',
         display: 'flex',
         alignItems: 'center',
@@ -12324,35 +12324,38 @@ const generateFullContent = () => {
     </button>
 
     {/* 时间显示 */}
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        editCategoryTime(c.name);
-      }}
-      style={{
-        fontSize: 11,
-        color: isComplete ? "#888" : "#fff",
-        cursor: "pointer",
-        padding: "2px 6px",
-        borderRadius: "4px",
-        backgroundColor: "rgba(255,255,255,0.2)",
-        minWidth: "50px",
-        textAlign: "center",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        fontFamily: "monospace"
-      }}
-      title="点击修改总时间"
-    >
-      {(() => {
-        const baseTime = totalTime(c.name);
-        if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
-          return formatCategoryTime(baseTime + elapsedTime);
-        }
-        return formatCategoryTime(baseTime);
-      })()}
-    </span>
+   {/* 时间显示 - 优化版本 */}
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    editCategoryTime(c.name);
+  }}
+  style={{
+    fontSize: 11, // 稍微减小字体
+    color: isComplete ? "#888" : "#fff",
+    cursor: "pointer",
+    padding: "2px 6px",
+    borderRadius: "4px",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    minWidth: "50px", // 确保最小宽度
+    maxWidth: "70px", // 限制最大宽度
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis", // 文字过多显示...
+    flexShrink: 0, // 防止被压缩
+    fontFamily: "monospace" // 等宽字体，显示更整齐
+  }}
+  title="点击修改总时间"
+>
+  {(() => {
+    const baseTime = totalTime(c.name);
+    if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
+      return formatCategoryTime(baseTime + elapsedTime);
+    }
+    return formatCategoryTime(baseTime);
+  })()}
+</span>
   </div>
 </div>
 
