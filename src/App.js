@@ -12504,7 +12504,7 @@ const generateFullContent = () => {
         
                 {/* end - 子类别计时器结束 */}
                 
-                <span>{isSubCollapsed ? '▶' : '▼'}</span>
+                
               </div>
             </div>
             
