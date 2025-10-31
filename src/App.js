@@ -1,4 +1,3 @@
-
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
@@ -223,32 +222,33 @@ const ACHIEVEMENTS_CONFIG = {
 
 
 
-
-// 备份管理模态框组件
-const BackupManagerModal = ({ onClose }) => {
+const BackupManagerModal = ({ onClose, restoreBackup }) => {  // 添加 restoreBackup 参数
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
 
-
-
-
-
-  
-
   useEffect(() => {
-
-    // 获取备份列表
     setBackups(getBackupList());
   }, []);
 
   const handleRestore = async (backupKey) => {
-    await restoreBackup(backupKey);
-    onClose();
+    try {
+      // 现在 restoreBackup 是从 props 传入的
+      if (typeof restoreBackup === 'function') {
+        await restoreBackup(backupKey);
+        onClose();
+      } else {
+        console.error('❌ restoreBackup 函数未找到');
+        alert('恢复功能暂不可用：restoreBackup 未定义');
+      }
+    } catch (error) {
+      console.error('❌ 恢复失败:', error);
+      alert('恢复失败：' + error.message);
+    }
   };
 
   const handleManualBackup = async () => {
     await autoBackup();
-    setBackups(getBackupList()); // 刷新列表
+    setBackups(getBackupList());
     alert('手动备份已创建！');
   };
 
@@ -467,10 +467,10 @@ const BackupManagerModal = ({ onClose }) => {
           lineHeight: 1.4
         }}>
           <strong>💡 使用说明：</strong><br/>
-          • 系统每30分钟自动备份一次<br/>
-          • 最多保留7个备份，旧的会自动删除<br/>
-          • 恢复备份会覆盖当前所有数据<br/>
-          • 建议重要操作前手动备份
+          • 数据修改后2分钟自动备份<br/>
+  • 最多保留7个备份，旧的会自动删除<br/>
+  • 恢复备份会覆盖当前所有数据<br/>
+  • 建议重要操作前手动备份
         </div>
 
         {/* 恢复确认模态框 */}
@@ -540,6 +540,10 @@ const BackupManagerModal = ({ onClose }) => {
   );
 };
 
+
+
+
+ 
 
 // 在这里添加计时记录模态框组件 ↓
 const TimerRecordsModal = ({ records, onClose }) => {
@@ -1074,10 +1078,10 @@ const AchievementsModal = ({
 
 
 
-// ==== 新增：自动备份配置 ====
+// 修改 AUTO_BACKUP_CONFIG
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
-  backupInterval: 2 * 60 * 1000,   // 2分钟（2 * 60 * 1000 毫秒）- 修改这里
+  backupDelay: 2 * 60 * 1000,       // 2分钟延迟备份（原30分钟）
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
@@ -1139,28 +1143,49 @@ const checkAchievements = (userData, unlockedAchievements, customAchievements = 
 
 
 
-// ==== 自动备份功能 ====
+// 修复自动备份函数
 const autoBackup = async () => {
   try {
+    console.log('💾 开始自动备份...');
+    
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
+    // 获取当前所有数据
     const backupData = {
-      tasks: await loadMainData('tasks'),
-      templates: await loadMainData('templates'),
-      pointHistory: await loadMainData('pointHistory'),
-      exchange: await loadMainData('exchange'),
+      tasks: await loadMainData('tasks') || {},
+      templates: await loadMainData('templates') || [],
+      pointHistory: await loadMainData('pointHistory') || [],
+      exchange: await loadMainData('exchange') || [],
+      customAchievements: await loadMainData('customAchievements') || [],
+      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
       backupTime: new Date().toISOString(),
-      version: '1.0'
+      version: '2.0'
     };
     
+    console.log('📦 自动备份数据统计:', {
+      任务天数: Object.keys(backupData.tasks).length,
+      模板数量: backupData.templates.length,
+      积分记录: backupData.pointHistory.length,
+      备份时间: backupData.backupTime
+    });
+    
+    // 保存备份
     localStorage.setItem(backupKey, JSON.stringify(backupData));
+    
+    // 清理旧备份
     await cleanupOldBackups();
     
+    console.log('✅ 自动备份完成:', backupKey);
+    
   } catch (error) {
-    console.error('自动备份失败:', error);
+    console.error('❌ 自动备份失败:', error);
   }
 };
+
+
+
+
 
 const cleanupOldBackups = async () => {
   const allKeys = Object.keys(localStorage);
@@ -1177,56 +1202,55 @@ const cleanupOldBackups = async () => {
   }
 };
 
+
+// 修复备份列表获取函数
 const getBackupList = () => {
-  const allKeys = Object.keys(localStorage);
-  return allKeys
-    .filter(key => key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`))
-    .map(key => {
-      const data = JSON.parse(localStorage.getItem(key));
-      return {
-        key,
-        time: data?.backupTime || key,
-        tasksCount: Object.keys(data?.tasks || {}).length
-      };
-    })
-    .sort((a, b) => b.time.localeCompare(a.time));
-};
-
-
-
-
-// 替换现有的 restoreBackup 函数
-const restoreBackup = async (backupKey) => {
   try {
-    const backupData = JSON.parse(localStorage.getItem(backupKey));
-    if (!backupData) {
-      alert('备份文件不存在');
-      return;
-    }
-
-    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
-      console.log('🔄 开始恢复备份...');
-      
-      // 保存到 localStorage
-      await saveMainData('tasks', backupData.tasks || {});
-      await saveMainData('templates', backupData.templates || []);
-      await saveMainData('pointHistory', backupData.pointHistory || []);
-      await saveMainData('exchange', backupData.exchange || []);
-      await saveMainData('customAchievements', backupData.customAchievements || []);
-      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
-      await saveMainData('categories', backupData.categories || baseCategories);
-      
-      console.log('✅ 数据已保存到 localStorage');
-      
-      // 强制刷新页面
-      alert('备份恢复成功！页面将重新加载。');
-      window.location.reload();
-    }
+    const allKeys = Object.keys(localStorage);
+    console.log('🔍 搜索备份文件，所有键:', allKeys);
+    
+    const backupKeys = allKeys
+      .filter(key => {
+        const isBackup = key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`);
+        if (isBackup) {
+          console.log('✅ 找到备份文件:', key);
+        }
+        return isBackup;
+      })
+      .map(key => {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          return {
+            key,
+            time: data?.backupTime || key,
+            tasksCount: Object.keys(data?.tasks || {}).length,
+            templateCount: (data?.templates || []).length,
+            dataSize: JSON.stringify(data).length
+          };
+        } catch (e) {
+          console.error('❌ 解析备份数据失败:', key, e);
+          return {
+            key,
+            time: key,
+            tasksCount: 0,
+            templateCount: 0,
+            dataSize: 0,
+            error: true
+          };
+        }
+      })
+      .sort((a, b) => b.time.localeCompare(a.time));
+    
+    console.log('📊 最终备份列表:', backupKeys);
+    return backupKeys;
   } catch (error) {
-    console.error('恢复备份失败:', error);
-    alert('恢复备份失败：' + error.message);
+    console.error('❌ 获取备份列表失败:', error);
+    return [];
   }
 };
+
+
+
 
 // 手动触发备份
 window.manualBackup = autoBackup;
@@ -6621,11 +6645,11 @@ const TaskItem = ({
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
+  const [initialBackupDone, setInitialBackupDone] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
   const [pointHistory, setPointHistory] = useState([]);
-  const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
   const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
   const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
@@ -6649,10 +6673,8 @@ function App() {
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
-  // 临时保留旧变量避免错误
-
   const todayTasks = tasksByDate[selectedDate] || [];
- 
+ // eslint-disable-next-line no-unused-vars
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
   const [showTimerRecords, setShowTimerRecords] = useState(false);
@@ -6667,8 +6689,6 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   subCategories: []
 })));
 
-
-
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
@@ -6677,10 +6697,11 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showHonorModal, setShowHonorModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
+  const [backupTimeout, setBackupTimeout] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
-  const [dailyMoods, setDailyMoods] = useState({});
-  const [dailyRatings, setDailyRatings] = useState({});
-  const [dailyReflections, setDailyReflections] = useState({});
+  const [dailyMood, setDailyMood] = useState(0); // 0 表示未选择
+  const [dailyRating, setDailyRating] = useState(0);
+  const [dailyReflection, setDailyReflection] = useState('');
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
@@ -6703,46 +6724,94 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 
 
 
-// 获取当前日期的心情和评价
-const getCurrentDailyMood = useCallback(() => {
-  return dailyMoods[selectedDate] || 0;
-}, [dailyMoods, selectedDate]);
-
-const getCurrentDailyRating = useCallback(() => {
-  return dailyRatings[selectedDate] || 0;
-}, [dailyRatings, selectedDate]);
 
 
 
-// 设置当前日期的心情和评价
-const setCurrentDailyMood = (mood) => {
-  setDailyMoods(prev => ({
-    ...prev,
-    [selectedDate]: mood
-  }));
+
+
+  
+    // 修复：使用 useCallback 避免无限重渲染
+    const triggerDelayedBackup = useCallback(() => {
+      console.log('📝 触发延迟备份（2分钟后执行）');
+      
+      // 清除之前的定时器
+      if (backupTimeout) {
+        clearTimeout(backupTimeout);
+        console.log('⏰ 清除之前的备份定时器');
+      }
+  
+      // 设置新的延迟备份（2分钟后）
+      const timeout = setTimeout(() => {
+        console.log('🔄 执行延迟备份（数据修改后2分钟）');
+        autoBackup();
+      }, AUTO_BACKUP_CONFIG.backupDelay);
+  
+      setBackupTimeout(timeout);
+      console.log('⏰ 设置新的备份定时器：2分钟后执行');
+    }, [backupTimeout]);
+  
+    // 修复：简化依赖，只监听重要的数据变化
+    useEffect(() => {
+      if (isInitialized) {
+        console.log('📝 检测到任务数据变化，触发延迟备份');
+        triggerDelayedBackup();
+      }
+    }, [tasksByDate, isInitialized, triggerDelayedBackup]); // 只保留 tasksByDate
+  
+    // 可以移除其他数据变化的监听，因为任务数据变化已经包含大部分情况
+    // 或者保留但添加防抖逻辑
+  
+    // 组件卸载时清理定时器
+    useEffect(() => {
+      return () => {
+        if (backupTimeout) {
+          clearTimeout(backupTimeout);
+          console.log('🧹 清理备份定时器');
+        }
+      };
+    }, [backupTimeout]);
+
+
+// 在 App 组件内部定义 restoreBackup 函数
+const restoreBackup = async (backupKey) => {
+  try {
+    const backupData = JSON.parse(localStorage.getItem(backupKey));
+    if (!backupData) {
+      alert('备份文件不存在');
+      return;
+    }
+
+    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+      await saveMainData('tasks', backupData.tasks || {});
+      await saveMainData('templates', backupData.templates || []);
+      await saveMainData('pointHistory', backupData.pointHistory || []);
+      await saveMainData('exchange', backupData.exchange || []);
+      await saveMainData('customAchievements', backupData.customAchievements || []);
+      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
+      
+      if (window.appInstance) {
+        window.appInstance.setState({
+          tasksByDate: backupData.tasks || {},
+          templates: backupData.templates || [],
+          pointHistory: backupData.pointHistory || [],
+          exchangeItems: backupData.exchange || [],
+          customAchievements: backupData.customAchievements || [],
+          unlockedAchievements: backupData.unlockedAchievements || []
+        });
+      }
+      
+      alert('备份恢复成功！页面将重新加载...');
+      window.location.reload();
+    }
+  } catch (error) {
+    console.error('恢复备份失败:', error);
+    alert('恢复失败：' + error.message);
+  }
 };
 
-const setCurrentDailyRating = (rating) => {
-  setDailyRatings(prev => ({
-    ...prev,
-    [selectedDate]: rating
-  }));
-};
+window.restoreBackup = restoreBackup;
 
-const dailyMood = getCurrentDailyMood();
-const dailyRating = getCurrentDailyRating();
-// 获取当前选中日期的复盘内容
-const getCurrentDailyReflection = () => {
-  return dailyReflections[selectedDate] || '';
-};
 
-// 设置当前选中日期的复盘内容
-const setCurrentDailyReflection = (reflection) => {
-  setDailyReflections(prev => ({
-    ...prev,
-    [selectedDate]: reflection
-  }));
-};
 
 // 添加表情选项
 const moodOptions = [
@@ -6756,14 +6825,23 @@ const moodOptions = [
 ];
 
 const saveDailyData = useCallback(async () => {
+  const today = new Date().toISOString().split("T")[0];
   const dailyData = {
-    mood: getCurrentDailyMood(),
-    rating: getCurrentDailyRating(),
-    reflection: dailyReflections[selectedDate] || '',
-    date: selectedDate
+    mood: dailyMood, // 现在存储的是数字
+    rating: dailyRating,
+    reflection: dailyReflection,
+    date: today
   };
-  await saveMainData(`daily_${selectedDate}`, dailyData);
-}, [selectedDate, dailyReflections, getCurrentDailyMood, getCurrentDailyRating]);
+  await saveMainData(`daily_${today}`, dailyData);
+}, [dailyMood, dailyRating, dailyReflection]);
+
+// 即时保存效果
+useEffect(() => {
+  if (isInitialized && (dailyMood !== '' || dailyRating !== 0 || dailyReflection !== '')) {
+    saveDailyData();
+  }
+}, [dailyMood, dailyRating, dailyReflection, isInitialized, saveDailyData]);
+
 
 
 
@@ -7923,17 +8001,15 @@ useEffect(() => {
 }, [tasksByDate, isInitialized]);
 
 
-
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
+  // 添加未完成任务
   const incompleteTasks = todayTasks.filter(task => !task.done);
 
- 
-
-  // 获取当前日期的复盘内容
- 
-
-
+  if (completedTasks.length === 0 && incompleteTasks.length === 0) {
+    alert('今日还没有任务！');
+    return;
+  }
 
   // 按分类和子分类组织任务
   const tasksByCategory = {};
@@ -8652,47 +8728,142 @@ useEffect(() => {
 
 
 useEffect(() => {
-  // 在 initializeApp 函数中，确保这样加载
-const initializeApp = async () => {
-  try {
-    // 加载任务数据 - 确保使用 await 和正确的键名
-    const savedTasks = await loadMainData('tasks');
-    console.log('从存储加载的任务数据:', savedTasks);
+  const initializeApp = async () => {
+    // 先迁移旧数据
+    await migrateLegacyData();
     
-    if (savedTasks) {
-      setTasksByDate(savedTasks);
-    } else {
-      console.log('没有找到任务数据，初始化为空对象');
-      setTasksByDate({});
-    }
-    
-    // 同样修复其他数据的加载
-    const savedTemplates = await loadMainData('templates');
-    if (savedTemplates) setTemplates(savedTemplates);
-    
-    const savedPointHistory = await loadMainData('pointHistory');
-    if (savedPointHistory) setPointHistory(savedPointHistory);
-    
-    const savedExchangeItems = await loadMainData('exchange');
-    if (savedExchangeItems) setExchangeItems(savedExchangeItems);
-    
-    const savedCustomAchievements = await loadMainData('customAchievements');
-    if (savedCustomAchievements) setCustomAchievements(savedCustomAchievements);
-    
-    const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
-    if (savedUnlockedAchievements) setUnlockedAchievements(savedUnlockedAchievements);
-    
-    const savedCategories = await loadMainData('categories');
-    if (savedCategories) setCategories(savedCategories);
-    
-    setIsInitialized(true);
-    
-  } catch (error) {
-    console.error('初始化失败:', error);
+    try {
+ 
+
+
+
+      // 加载今日数据
+      const today = new Date().toISOString().split("T")[0];
+      const savedDailyData = await loadMainData(`daily_${today}`);
+      if (savedDailyData) {
+        setDailyRating(savedDailyData.rating || 0);
+        setDailyMood(savedDailyData.mood || 0); // 改为数字
+        setDailyReflection(savedDailyData.reflection || '');
+      }
+      
+      // 加载任务数据
+      const savedTasks = await loadMainData('tasks');
+      console.log('✅ 加载的任务数据:', savedTasks);
+      if (savedTasks) {
+        setTasksByDate(savedTasks);
+        console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
+      } else {
+        console.log('ℹ️ 没有任务数据，使用空对象');
+        setTasksByDate({});
+      }
+      
+      // 加载模板数据
+      const savedTemplates = await loadMainData('templates');
+      if (savedTemplates) {
+        setTemplates(savedTemplates);
+      }
+      
+      // 加载积分历史
+      const savedPointHistory = await loadMainData('pointHistory');
+      if (savedPointHistory) {
+        setPointHistory(savedPointHistory);
+      } else {
+        setPointHistory([{
+          date: new Date().toISOString(),
+          change: 0,
+          reason: '系统初始化',
+          totalAfterChange: 0
+        }]);
+      }
+      
+      // 加载兑换物品
+      const savedExchangeItems = await loadMainData('exchange');
+      if (savedExchangeItems) {
+        setExchangeItems(savedExchangeItems);
+      }
+
+      // 加载自定义成就
+      const savedCustomAchievements = await loadMainData('customAchievements');
+      if (savedCustomAchievements) {
+        setCustomAchievements(savedCustomAchievements);
+      } else {
+        setCustomAchievements([]);
+      }
+
+      // 加载已解锁成就
+      const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
+      console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
+      if (savedUnlockedAchievements) {
+        setUnlockedAchievements(savedUnlockedAchievements);
+      } else {
+        setUnlockedAchievements([]);
+      }
+
+      const savedCategories = await loadMainData('categories');
+      if (savedCategories) {
+        // 如果已有保存的分类，确保每个分类都有子类别
+        const updatedCategories = savedCategories.map(cat => {
+          let defaultSubCategories = [];
+          switch(cat.name) {
+            case '校内':
+              defaultSubCategories = ["数学", "语文", "英语", "运动"];
+              break;
+            default:
+              defaultSubCategories = [];
+          }
+          
+          // 如果保存的分类没有子类别或子类别为空，使用预设值
+          return {
+            ...cat,
+            subCategories: cat.subCategories && cat.subCategories.length > 0 
+              ? cat.subCategories 
+              : defaultSubCategories
+          };
+        });
+        
+        setCategories(updatedCategories);
+        await saveMainData('categories', updatedCategories); // 保存更新后的分类
+      } else {
+        // 没有保存的分类数据，使用预设值初始化
+        const categoriesWithSubCategories = baseCategories.map(cat => {
+          let subCategories = [];
+          switch(cat.name) {
+            case '校内':
+              subCategories = ["数学", "语文", "英语", "运动"];
+              break;
+          
+            default:
+              subCategories = [];
+          }
+          return { ...cat, subCategories };
+        });
+        
+        setCategories(categoriesWithSubCategories);
+        await saveMainData('categories', categoriesWithSubCategories);
+      }
+
+
+   // 只执行一次初始备份
+   if (!initialBackupDone) {
+    console.log('🚀 设置初始备份（5秒后）');
+    setTimeout(() => {
+      console.log('📦 执行初始备份');
+      setInitialBackupDone(true);
+      autoBackup();
+    }, 5000);
   }
+
+  console.log('✅ 初始化完成，设置 isInitialized = true');
+  setIsInitialized(true); // 确保这行代码执行
+
+
+} catch (error) {
+console.error('初始化失败:', error);
+}
 };
 
   initializeApp();
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 //初始化end
 
@@ -8701,44 +8872,27 @@ const initializeApp = async () => {
 
 
 
-
-
-const loadDailyData = async () => {
-  const today = new Date().toISOString().split("T")[0];
-  const savedDailyData = await loadMainData(`daily_${today}`);
-  if (savedDailyData) {
-    setDailyRating(savedDailyData.rating || 0);
-    setDailyMood(savedDailyData.mood || 0);
-    // 不再设置全局复盘状态
-  }
-  
-  // 加载所有日期的复盘数据
-  const allReflections = {};
-  const allKeys = Object.keys(localStorage);
-  const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
-  
-  for (const key of dailyKeys) {
-    try {
-      const data = await loadMainData(key.replace(`${STORAGE_KEY}_`, ''));
-      if (data && data.date) {
-        allReflections[data.date] = data.reflection || '';
-      }
-    } catch (error) {
-      console.error('加载每日数据失败:', key, error);
-    }
-  }
-  setDailyMoods(allMoods);
-  setDailyRatings(allRatings);
-  setDailyReflections(allReflections);
-};
-// ==== 新增：调用 loadDailyData 的 useEffect ====
+// 加载每日数据
 useEffect(() => {
+  const loadDailyData = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const savedDailyData = await loadMainData(`daily_${today}`);
+    if (savedDailyData) {
+      setDailyMood(savedDailyData.mood || '');
+      setDailyRating(savedDailyData.rating || 0);
+      setDailyReflection(savedDailyData.reflection || '');
+    }
+  };
+  
   if (isInitialized) {
     loadDailyData();
   }
 }, [isInitialized]);
 
-// ==== 保留：原来的成就检查 useEffect ====
+
+
+
+// 简化版本，不需要额外延迟
 useEffect(() => {
   if (isInitialized && Object.keys(tasksByDate).length > 0) {
     const userData = {
@@ -8763,16 +8917,6 @@ useEffect(() => {
     }
   }
 }, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
-
-
-
-
-
-
-
-
-
-
 
 // 自动保存任务数据
 useEffect(() => {
@@ -10096,7 +10240,7 @@ const generateMarkdownContent = () => {
   let markdown = `# 学习任务\n\n`;
   
   // 添加心情、评分和复盘内容到最上方
-  if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection) {
+  if (dailyMood > 0 || dailyRating > 0 || dailyReflection) {
     markdown += "## 💭 今日总结\n\n";
     
     // 心情显示
@@ -10373,17 +10517,17 @@ const generateMarkdownContent = () => {
     {moodOptions.map((mood) => (
       <button
         key={mood.value}
-        onClick={() => setCurrentDailyMood(mood.value)}
+        onClick={() => setDailyMood(mood.value)}
         style={{
           flex: 1,
           padding: '6px 0',
           border: 'none',
           borderRadius: 6,
-          backgroundColor: getCurrentDailyMood() === mood.value ? '#ffe066' : '#f1f3f4',
+          backgroundColor: dailyMood === mood.value ? '#ffe066' : '#f1f3f4',
           fontSize: mood.emoji ? '18px' : '12px',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: getCurrentDailyMood() === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          boxShadow: dailyMood === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           minHeight: '32px',
           display: 'flex',
           alignItems: 'center',
@@ -10404,17 +10548,17 @@ const generateMarkdownContent = () => {
     {[1, 2, 3, 4, 5].map((star) => (
       <button
         key={star}
-        onClick={() => setCurrentDailyRating(star)}
+        onClick={() => setDailyRating(star)}
         style={{
           flex: 1,
           padding: '6px 0',
           border: 'none',
           borderRadius: 6,
-          backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
+          backgroundColor: dailyRating >= star ? '#ffe066' : '#f1f3f4',
           fontSize: 18,
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: getCurrentDailyRating() >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          boxShadow: dailyRating >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           minHeight: '32px',
           display: 'flex',
           alignItems: 'center',
@@ -10429,7 +10573,26 @@ const generateMarkdownContent = () => {
   
 
 
-  
+  {/* 复盘输入 */}
+  <div>
+    <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>复盘：</label>
+    <textarea
+      value={dailyReflection}
+      onChange={(e) => setDailyReflection(e.target.value)}
+      placeholder="记录一下今天的收获或思考..."
+      style={{
+        width: '100%',
+        minHeight: 80,
+        padding: '8px 10px',
+        border: '1px solid #ddd',
+        borderRadius: 6,
+        fontSize: 14,
+        resize: 'vertical',
+        backgroundColor: '#fafafa',
+        fontFamily: 'inherit',
+      }}
+    />
+  </div>
 </div>
 
 
@@ -11639,7 +11802,6 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
       
-  
       {showDailyLogModal && (
   <DailyLogModal
     logData={showDailyLogModal}
@@ -11668,37 +11830,37 @@ if (isInitialized && todayTasks.length === 0) {
         }
       };
 
-      const generateFullContent = () => {
-        let content = '';
-        
-        // 添加心情、评分和复盘内容到最上方
-        if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection()) {
-          content += "=== 今日总结 ===\n";
-          
-          // 心情显示
-          if (dailyMood > 0) {
-            const selectedMood = moodOptions.find(m => m.value === dailyMood);
-            content += `心情: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
-          }
-          
-          // 评分显示
-          if (dailyRating > 0) {
-            content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
-          }
-          
-          // 修复：确保 currentReflection 被使用
-          const currentReflection = getCurrentDailyReflection();
-          if (currentReflection) {
-            content += `复盘:\n${currentReflection}\n`; // 这里使用它
-          }
-          
-          content += "\n";
-        }
-        
-        content += showDailyLogModal.content.replace(/✅/g, '');
-        return content;
-      };
-
+      
+// 在复制功能的 generateFullContent 函数中
+const generateFullContent = () => {
+  let content = '';
+  
+  // 添加心情、评分和复盘内容到最上方
+  if (dailyMood > 0 || dailyRating > 0 || dailyReflection) {
+    content += "=== 今日总结 ===\n";
+    
+    // 心情显示
+    if (dailyMood > 0) {
+      const selectedMood = moodOptions.find(m => m.value === dailyMood);
+      content += `心情: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
+    }
+    
+    // 评分显示
+    if (dailyRating > 0) {
+      content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
+    }
+    
+    // 复盘显示
+    if (dailyReflection) {
+      content += `复盘:\n${dailyReflection}\n`;
+    }
+    
+    content += "\n";
+  }
+  
+  content += showDailyLogModal.content.replace(/✅/g, '');
+  return content;
+};
 
 
 
@@ -11713,14 +11875,9 @@ if (isInitialized && todayTasks.length === 0) {
     }}
     dailyMood={dailyMood}
     dailyRating={dailyRating}
-    dailyReflection={getCurrentDailyReflection()} // 这里也要改为使用新函数
+    dailyReflection={dailyReflection}
   />
 )}
-
-
-
-
-
 
       {showTimeModal && (
         <TimeModal
@@ -11835,9 +11992,12 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
       {/* 备份管理模态框 */}
-      {showBackupModal && (
-        <BackupManagerModal onClose={() => setShowBackupModal(false)} />
-      )}
+{showBackupModal && (
+  <BackupManagerModal 
+    onClose={() => setShowBackupModal(false)}
+    restoreBackup={restoreBackup}  // 传入函数
+  />
+)}
 
 {/* 在这里添加计时记录模态框 ↓ */}
 {showTimerRecords && (
@@ -12525,149 +12685,6 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 );
 })}
-
-
-
-
-
-
-
-
-<div style={{ marginBottom: 10 }}>
-  {/* 复盘输入框 - 点击弹窗 */}
-  <div style={{
-    backgroundColor: '#fff',
-    border: '1px solid #e0e0e0',
-    borderRadius: 8,
-    padding: '12px',
-    marginBottom: 8
-  }}>
-    <div style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 12
-    }}>
-      {/* 左边：复盘标签 */}
-      <div style={{
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-        minWidth: '40px',
-        paddingTop: '4px'
-      }}>
-        复盘
-      </div>
-      
-      {/* 右边：输入框（点击弹窗） */}
-      <div style={{ flex: 1 }}>
-        <div
-          onClick={() => setShowReflectionModal(true)}
-          style={{
-            width: '100%',
-            minHeight: '20px', // 只有1排高度
-            maxHeight: '60px', // 最大3排
-            padding: '8px 12px',
-            border: '1px solid #ddd',
-            borderRadius: 6,
-            fontSize: 14,
-            lineHeight: 1.5,
-            backgroundColor: '#fafafa',
-            cursor: 'pointer',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
-          }}
-        >
-          {getCurrentDailyReflection()  || '点击输入今日复盘内容...'}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-{showReflectionModal && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000
-  }}>
-    <div style={{
-      backgroundColor: 'white',
-      padding: 20,
-      borderRadius: 10,
-      width: '90%',
-      maxWidth: 500,
-      maxHeight: '80vh'
-    }}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-        今日复盘
-      </h3>
-      
-      <textarea
-        value={getCurrentDailyReflection()}
-        onChange={(e) => setCurrentDailyReflection(e.target.value)}
-        placeholder="记录今日的学习收获、反思和改进点..."
-        style={{
-          width: '100%',
-          minHeight: 200,
-          padding: '12px',
-          border: '1px solid #ddd',
-          borderRadius: 6,
-          fontSize: 14,
-          lineHeight: 1.5,
-          resize: 'vertical',
-          backgroundColor: '#fafafa',
-          fontFamily: 'inherit',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word'
-        }}
-        autoFocus
-      />
-      
-      <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-        <button
-          onClick={() => setShowReflectionModal(false)}
-          style={{
-            flex: 1,
-            padding: 10,
-            backgroundColor: '#ccc',
-            color: '#000',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer'
-          }}
-        >
-          取消
-        </button>
-        <button
-          onClick={() => {
-            saveDailyData();
-            setShowReflectionModal(false);
-          }}
-          style={{
-            flex: 1,
-            padding: 10,
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer'
-          }}
-        >
-          保存
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
 
 
 
