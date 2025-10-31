@@ -12698,71 +12698,8 @@ const generateFullContent = () => {
 
 
 
-<div style={{
-display: "flex",
-gap: 10,
-marginTop: 10
-}}>
-<button
-  className="action-button"
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowAddInput(!showAddInput);
-    setShowBulkInput(false);
-  }}
-  style={{
-    flex: 1,
-    padding: 8,
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    outline: "none",
-    boxShadow: "none",
-    transform: "none",
-    transition: "none"
-  }}
-  onMouseDown={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onMouseUp={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onFocus={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onBlur={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
->
-  {showAddInput ? "取消添加" : "添加任务"}
-</button>
-<button
-  className="action-button"
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowBulkInput(!showBulkInput);
-    setShowAddInput(false);
-  }}
-  style={{
-    flex: 1,
-    padding: 8,
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer"
-  }}
->
-  {showBulkInput ? "取消批量" : "批量导入"}
-</button>
-</div>
+
+    
 
 
 
