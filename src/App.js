@@ -1203,7 +1203,7 @@ const restoreBackup = async (backupKey) => {
     }
 
     if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
-      // 保存所有数据到存储
+      // 只保存到 localStorage，不直接更新状态
       await saveMainData('tasks', backupData.tasks || {});
       await saveMainData('templates', backupData.templates || []);
       await saveMainData('pointHistory', backupData.pointHistory || []);
@@ -1211,16 +1211,8 @@ const restoreBackup = async (backupKey) => {
       await saveMainData('customAchievements', backupData.customAchievements || []);
       await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
       
-      // 直接更新所有状态
-      setTasksByDate(backupData.tasks || {});
-      setTemplates(backupData.templates || []);
-      setPointHistory(backupData.pointHistory || []);
-      setExchangeItems(backupData.exchange || []);
-      setCustomAchievements(backupData.customAchievements || []);
-      setUnlockedAchievements(backupData.unlockedAchievements || []);
-      
       alert('备份恢复成功！页面将重新加载。');
-      window.location.reload(); // 确保完全刷新
+      window.location.reload(); // 通过刷新页面来重新加载数据
     }
   } catch (error) {
     console.error('恢复备份失败:', error);
