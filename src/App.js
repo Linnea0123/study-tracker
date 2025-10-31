@@ -7877,44 +7877,66 @@ useEffect(() => {
 }, [tasksByDate, isInitialized]);
 
 
-// 完整的 generateDailyLog 函数
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
+  // 添加未完成任务
+  const incompleteTasks = todayTasks.filter(task => !task.done);
 
-  if (completedTasks.length === 0) {
-    alert('今日还没有完成的任务！');
+  if (completedTasks.length === 0 && incompleteTasks.length === 0) {
+    alert('今日还没有任务！');
     return;
   }
 
   // 按分类和子分类组织任务
   const tasksByCategory = {};
+  
+  // 处理已完成任务
   completedTasks.forEach(task => {
     if (!tasksByCategory[task.category]) {
       tasksByCategory[task.category] = {
-        withSubCategories: {},  // 有子分类的任务
-        withoutSubCategories: [] // 没有子分类的任务
+        withSubCategories: {},
+        withoutSubCategories: []
       };
     }
     
     if (task.subCategory) {
-      // 有子分类的任务
       if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
         tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
       }
-      tasksByCategory[task.category].withSubCategories[task.subCategory].push(task);
+      tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
     } else {
-      // 没有子分类的任务
-      tasksByCategory[task.category].withoutSubCategories.push(task);
+      tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
+    }
+  });
+
+  // 处理未完成任务 - 只处理"校内"分类
+  incompleteTasks.forEach(task => {
+    if (task.category === "校内") {
+      if (!tasksByCategory[task.category]) {
+        tasksByCategory[task.category] = {
+          withSubCategories: {},
+          withoutSubCategories: []
+        };
+      }
+      
+      if (task.subCategory) {
+        if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
+          tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
+        }
+        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
+      } else {
+        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
+      }
     }
   });
 
   const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
   const totalMinutes = Math.floor(totalTime / 60);
 
-  // 原始格式内容（用于界面显示）
-  let logContent =``;
+  // 原始格式内容
+  let logContent = ``;
 
-  // Markdown 格式内容（用于复制）
+  // Markdown 格式内容
   let markdownContent = `# 学习任务\n\n`;
 
   // 遍历每个分类
@@ -7922,19 +7944,25 @@ const generateDailyLog = () => {
     logContent += `${category}\n`;
     markdownContent += `## ${category}\n`;
     
-    // 1️⃣ 先显示没有子分类的任务（缩进一格）
+    // 1️⃣ 先显示没有子分类的任务
     if (categoryData.withoutSubCategories.length > 0) {
       categoryData.withoutSubCategories.forEach((task) => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
         
-        // 使用 ☑️ 符号
-        logContent += `  ✔️ ${task.text}${timeText}\n`;
-        markdownContent += `- ✔️ ${task.text}${timeText}\n`;
+        if (task.isCompleted) {
+          // 已完成任务
+          logContent += `  ✔️ ${task.text}${timeText}\n`;
+          markdownContent += `- ✔️ ${task.text}${timeText}\n`;
+        } else {
+          // 未完成任务 - 只针对校内分类
+          logContent += `  ❌ ${task.text}${timeText}\n`;
+          markdownContent += `- ❌ ${task.text}${timeText}\n`;
+        }
       });
     }
 
-    // 2️⃣ 再显示有子分类的任务（与上面任务对齐）
+    // 2️⃣ 再显示有子分类的任务
     if (categoryData.withoutSubCategories.length > 0 && Object.keys(categoryData.withSubCategories).length > 0) {
       logContent += '\n';
       markdownContent += '\n';
@@ -7948,9 +7976,15 @@ const generateDailyLog = () => {
         const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
         const timeText = minutes > 0 ? `【${minutes}m】` : "";
 
-        // 使用 ☑️ 符号
-        logContent += `    ✔️ ${task.text}${timeText}\n`;
-        markdownContent += `  - ✔️ ${task.text}${timeText}\n`;
+        if (task.isCompleted) {
+          // 已完成任务
+          logContent += `    ✔️ ${task.text}${timeText}\n`;
+          markdownContent += `  - ✔️ ${task.text}${timeText}\n`;
+        } else {
+          // 未完成任务 - 只针对校内分类
+          logContent += `    ❌ ${task.text}${timeText}\n`;
+          markdownContent += `  - ❌ ${task.text}${timeText}\n`;
+        }
       });
       
       if (Object.keys(categoryData.withSubCategories).length > 1) {
@@ -7964,12 +7998,13 @@ const generateDailyLog = () => {
   });
 
   // 统计信息
-  
+  const totalTasksCount = completedTasks.length + incompleteTasks.filter(t => t.category === "校内").length;
 
   markdownContent += `# 学习统计\n`;
   markdownContent += `- 完成任务: ${completedTasks.length} 个\n`;
-  markdownContent += `- 总任务数: ${todayTasks.length} 个\n`;
-  markdownContent += `- 完成率: ${Math.round((completedTasks.length / todayTasks.length) * 100)}%\n`;
+  markdownContent += `- 未完成任务: ${incompleteTasks.filter(t => t.category === "校内").length} 个\n`;
+  markdownContent += `- 总任务数: ${totalTasksCount} 个\n`;
+  markdownContent += `- 完成率: ${Math.round((completedTasks.length / totalTasksCount) * 100)}%\n`;
   markdownContent += `- 学习时长: ${totalMinutes} 分钟\n`;
   markdownContent += `- 平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
 
@@ -7980,15 +8015,17 @@ const generateDailyLog = () => {
     date: selectedDate,
     stats: {
       completedTasks: completedTasks.length,
-      totalTasks: todayTasks.length,
-      completionRate: Math.round((completedTasks.length / todayTasks.length) * 100),
+      incompleteTasks: incompleteTasks.filter(t => t.category === "校内").length,
+      totalTasks: totalTasksCount,
+      completionRate: Math.round((completedTasks.length / totalTasksCount) * 100),
       totalMinutes: totalMinutes,
       averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
       categories: Object.keys(tasksByCategory).length
-    
     }
   });
 };
+
+
 
 
 
@@ -10282,31 +10319,53 @@ const generateMarkdownContent = () => {
           </div>
         )}
         
-        {/* 复盘显示 */}
-        {dailyReflection && (
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>复盘:</div>
-            <div style={{ 
-              backgroundColor: '#fff9c4', 
-              padding: 8, 
-              borderRadius: 4,
-              border: '1px solid #ffd54f'
-            }}>
-              {dailyReflection}
-            </div>
-          </div>
-        )}
         
-        <div style={{ 
-          borderBottom: '1px solid #ccc', 
-          margin: '12px 0',
-          opacity: 0.5
-        }}></div>
-      </>
-    )}
 
-          {formattedContent}
-        </div>
+        {/* 复盘显示 */}
+{dailyReflection && (
+  <div style={{ marginBottom: 12 }}>
+    <div style={{ fontWeight: 'bold', marginBottom: 4 }}>复盘:</div>
+    <div style={{ 
+      backgroundColor: '#fff9c4', 
+      padding: 8, 
+      borderRadius: 4,
+      border: '1px solid #ffd54f'
+    }}>
+      {dailyReflection}
+    </div>
+  </div>
+)}
+
+<div style={{ 
+  borderBottom: '1px solid #ccc', 
+  margin: '12px 0',
+  opacity: 0.5
+}}></div>
+</>
+)}
+
+{/* 任务内容 - 让未完成任务变灰 */}
+{formattedContent.split('\n').map((line, index) => {
+  const isIncompleteTask = line.includes('❌');
+  
+  return (
+    <div
+      key={index}
+      style={{
+        color: isIncompleteTask ? '#999' : '#000',
+        filter: isIncompleteTask ? 'grayscale(100%) opacity(0.6)' : 'none',
+        backgroundColor: 'transparent',
+        // 移除 padding 和 margin，只保留颜色变化
+        padding: '0',
+        marginBottom: '0',
+        borderRadius: '0'
+      }}
+    >
+      {line || '\u00A0'}
+    </div>
+  );
+})}
+</div>
 
 
         
