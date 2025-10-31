@@ -10138,7 +10138,8 @@ const generateMarkdownContent = () => {
         overflow: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        textAlign: 'center'
+        textAlign: 'center',
+  position: 'relative'
       }}>
         <h3 style={{ 
           textAlign: 'center', 
@@ -10322,26 +10323,14 @@ const generateMarkdownContent = () => {
     color: '#333',
   }}
 >
-  <div style={{ fontWeight: 'bold', marginBottom: 10, color: '#1a73e8' }}>
-    💭 今日总结
-  </div>
+ 
 
-  {/* 心情 + 评分 同行 */}
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-      marginBottom: 15,
-    }}
-  >
-  
-{/* 心情选择 - 改为表情按钮 */}
-<div style={{ flex: 1 }}>
-  <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>心情：</label>
+
+ {/* 心情选择 - 第一行 */}
+<div style={{ marginBottom: 12 }}>
+  <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>心情：</label>
   <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
-    {moodOptions.map((mood, index) => (
+    {moodOptions.map((mood) => (
       <button
         key={mood.value}
         onClick={() => setDailyMood(mood.value)}
@@ -10368,39 +10357,41 @@ const generateMarkdownContent = () => {
   </div>
 </div>
 
-
-
-
-    {/* 评分选择 */}
-    <div style={{ flex: 1 }}>
-      <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>今日评价：</label>
-      <div style={{ display: 'flex', gap: 4 }}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => setDailyRating(star)}
-            style={{
-              flex: 1,
-              padding: '6px 0',
-              border: 'none',
-              borderRadius: 6,
-              backgroundColor: dailyRating >= star ? '#ffe066' : '#f1f3f4',
-              fontSize: 18,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: dailyRating >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            }}
-          >
-            ⭐
-          </button>
-        ))}
-      </div>
-    </div>
+{/* 评分选择 - 第二行 */}
+<div style={{ marginBottom: 12 }}>
+  <label style={{ display: 'block', marginBottom: 4, color: '#555' , textAlign: 'left'}}>评价：</label>
+  <div style={{ display: 'flex', gap: 4 }}>
+    {[1, 2, 3, 4, 5].map((star) => (
+      <button
+        key={star}
+        onClick={() => setDailyRating(star)}
+        style={{
+          flex: 1,
+          padding: '6px 0',
+          border: 'none',
+          borderRadius: 6,
+          backgroundColor: dailyRating >= star ? '#ffe066' : '#f1f3f4',
+          fontSize: 18,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          boxShadow: dailyRating >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          minHeight: '32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        ⭐
+      </button>
+    ))}
   </div>
+</div>
+  
+
 
   {/* 复盘输入 */}
   <div>
-    <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>复盘总结：</label>
+    <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>复盘：</label>
     <textarea
       value={dailyReflection}
       onChange={(e) => setDailyReflection(e.target.value)}
@@ -10432,22 +10423,29 @@ const generateMarkdownContent = () => {
           gap: 10,
           flexShrink: 0
         }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: 12,
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold'
-            }}
-          >
-            关闭
-          </button>
+         <button
+  onClick={onClose}
+  style={{
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    background: 'transparent',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#666',
+    width: '30px',
+    height: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    zIndex: 1001
+  }}
+  title="关闭"
+>
+  ×
+</button>
            <button
         onClick={handleCopy}
         style={{
