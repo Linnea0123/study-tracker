@@ -1144,11 +1144,14 @@ const autoBackup = async () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
+    // 使用当前状态数据，而不是从 localStorage 读取
     const backupData = {
-      tasks: await loadMainData('tasks'),
-      templates: await loadMainData('templates'),
-      pointHistory: await loadMainData('pointHistory'),
-      exchange: await loadMainData('exchange'),
+      tasks: tasksByDate,
+      templates: templates,
+      pointHistory: pointHistory,
+      exchange: exchangeItems,
+      customAchievements: customAchievements,
+      unlockedAchievements: unlockedAchievements,
       backupTime: new Date().toISOString(),
       version: '1.0'
     };
@@ -1156,10 +1159,20 @@ const autoBackup = async () => {
     localStorage.setItem(backupKey, JSON.stringify(backupData));
     await cleanupOldBackups();
     
+    console.log('✅ 自动备份完成，备份键:', backupKey);
   } catch (error) {
     console.error('自动备份失败:', error);
   }
 };
+    
+
+
+
+
+
+
+
+
 
 const cleanupOldBackups = async () => {
   const allKeys = Object.keys(localStorage);
@@ -6701,6 +6714,26 @@ const moodOptions = [
   { emoji: '🤩', label: '充满活力', value: 5 },
   { emoji: '😴', label: '困倦', value: 6 }
 ];
+
+
+
+
+// 在 App 组件中添加
+useEffect(() => {
+  if (!isInitialized) return;
+  
+  // 创建自动备份定时器
+  const backupTimer = setInterval(() => {
+    console.log('🕒 执行自动备份...');
+    autoBackup();
+  }, AUTO_BACKUP_CONFIG.backupInterval);
+  
+  // 清理函数
+  return () => {
+    console.log('🧹 清理备份定时器');
+    clearInterval(backupTimer);
+  };
+}, [isInitialized]); // 依赖 isInitialized，确保初始化完成后才启动
 
 const saveDailyData = useCallback(async () => {
   const today = new Date().toISOString().split("T")[0];
