@@ -6076,7 +6076,9 @@ const TaskItem = ({
             lineHeight: 1.4,
             flex: 1,
     maxWidth: "calc(100% - 40px)", // 新增：限制最大宽度
-    overflow: "hidden"
+    overflow: "hidden",
+    whiteSpace: "pre-wrap",  // 改为 pre-wrap
+    wordWrap: "break-word"   // 添加这行
           }}
         >
           {task.text}
