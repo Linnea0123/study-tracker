@@ -1076,7 +1076,7 @@ const AchievementsModal = ({
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
-  backupInterval: 30 * 60 * 1000,   // 30分钟（30 * 60 * 1000 毫秒）
+  backupInterval: 2 * 60 * 1000,   // 2分钟（2 * 60 * 1000 毫秒）- 修改这里
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
@@ -6620,6 +6620,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
   const [pointHistory, setPointHistory] = useState([]);
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
   const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
   const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
@@ -10450,26 +10451,7 @@ const generateMarkdownContent = () => {
   
 
 
-  {/* 复盘输入 */}
-  <div>
-    <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>复盘：</label>
-    <textarea
-      value={dailyReflection}
-      onChange={(e) => setDailyReflection(e.target.value)}
-      placeholder="记录一下今天的收获或思考..."
-      style={{
-        width: '100%',
-        minHeight: 80,
-        padding: '8px 10px',
-        border: '1px solid #ddd',
-        borderRadius: 6,
-        fontSize: 14,
-        resize: 'vertical',
-        backgroundColor: '#fafafa',
-        fontFamily: 'inherit',
-      }}
-    />
-  </div>
+  
 </div>
 
 
@@ -12559,6 +12541,149 @@ const generateFullContent = () => {
 </div>
 );
 })}
+
+
+
+
+
+
+
+
+<div style={{ marginBottom: 10 }}>
+  {/* 复盘输入框 - 点击弹窗 */}
+  <div style={{
+    backgroundColor: '#fff',
+    border: '1px solid #e0e0e0',
+    borderRadius: 8,
+    padding: '12px',
+    marginBottom: 8
+  }}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12
+    }}>
+      {/* 左边：复盘标签 */}
+      <div style={{
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        minWidth: '40px',
+        paddingTop: '4px'
+      }}>
+        复盘
+      </div>
+      
+      {/* 右边：输入框（点击弹窗） */}
+      <div style={{ flex: 1 }}>
+        <div
+          onClick={() => setShowReflectionModal(true)}
+          style={{
+            width: '100%',
+            minHeight: '20px', // 只有1排高度
+            maxHeight: '60px', // 最大3排
+            padding: '8px 12px',
+            border: '1px solid #ddd',
+            borderRadius: 6,
+            fontSize: 14,
+            lineHeight: 1.5,
+            backgroundColor: '#fafafa',
+            cursor: 'pointer',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word'
+          }}
+        >
+          {dailyReflection || '点击输入今日复盘内容...'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{showReflectionModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  }}>
+    <div style={{
+      backgroundColor: 'white',
+      padding: 20,
+      borderRadius: 10,
+      width: '90%',
+      maxWidth: 500,
+      maxHeight: '80vh'
+    }}>
+      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+        今日复盘
+      </h3>
+      
+      <textarea
+        value={dailyReflection}
+        onChange={(e) => setDailyReflection(e.target.value)}
+        placeholder="记录今日的学习收获、反思和改进点..."
+        style={{
+          width: '100%',
+          minHeight: 200,
+          padding: '12px',
+          border: '1px solid #ddd',
+          borderRadius: 6,
+          fontSize: 14,
+          lineHeight: 1.5,
+          resize: 'vertical',
+          backgroundColor: '#fafafa',
+          fontFamily: 'inherit',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word'
+        }}
+        autoFocus
+      />
+      
+      <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+        <button
+          onClick={() => setShowReflectionModal(false)}
+          style={{
+            flex: 1,
+            padding: 10,
+            backgroundColor: '#ccc',
+            color: '#000',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer'
+          }}
+        >
+          取消
+        </button>
+        <button
+          onClick={() => {
+            saveDailyData();
+            setShowReflectionModal(false);
+          }}
+          style={{
+            flex: 1,
+            padding: 10,
+            backgroundColor: '#1a73e8',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer'
+          }}
+        >
+          保存
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
 
