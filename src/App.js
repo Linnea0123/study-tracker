@@ -222,32 +222,33 @@ const ACHIEVEMENTS_CONFIG = {
 
 
 
-
-// 备份管理模态框组件
-const BackupManagerModal = ({ onClose }) => {
+const BackupManagerModal = ({ onClose, restoreBackup }) => {  // 添加 restoreBackup 参数
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
 
-
-
-
-
-  
-
   useEffect(() => {
-
-    // 获取备份列表
     setBackups(getBackupList());
   }, []);
 
   const handleRestore = async (backupKey) => {
-    await restoreBackup(backupKey);
-    onClose();
+    try {
+      // 现在 restoreBackup 是从 props 传入的
+      if (typeof restoreBackup === 'function') {
+        await restoreBackup(backupKey);
+        onClose();
+      } else {
+        console.error('❌ restoreBackup 函数未找到');
+        alert('恢复功能暂不可用：restoreBackup 未定义');
+      }
+    } catch (error) {
+      console.error('❌ 恢复失败:', error);
+      alert('恢复失败：' + error.message);
+    }
   };
 
   const handleManualBackup = async () => {
     await autoBackup();
-    setBackups(getBackupList()); // 刷新列表
+    setBackups(getBackupList());
     alert('手动备份已创建！');
   };
 
@@ -539,6 +540,10 @@ const BackupManagerModal = ({ onClose }) => {
   );
 };
 
+
+
+
+ 
 
 // 在这里添加计时记录模态框组件 ↓
 const TimerRecordsModal = ({ records, onClose }) => {
@@ -1138,28 +1143,49 @@ const checkAchievements = (userData, unlockedAchievements, customAchievements = 
 
 
 
-// ==== 自动备份功能 ====
+// 修复自动备份函数
 const autoBackup = async () => {
   try {
+    console.log('💾 开始自动备份...');
+    
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
+    // 获取当前所有数据
     const backupData = {
-      tasks: await loadMainData('tasks'),
-      templates: await loadMainData('templates'),
-      pointHistory: await loadMainData('pointHistory'),
-      exchange: await loadMainData('exchange'),
+      tasks: await loadMainData('tasks') || {},
+      templates: await loadMainData('templates') || [],
+      pointHistory: await loadMainData('pointHistory') || [],
+      exchange: await loadMainData('exchange') || [],
+      customAchievements: await loadMainData('customAchievements') || [],
+      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
       backupTime: new Date().toISOString(),
-      version: '1.0'
+      version: '2.0'
     };
     
+    console.log('📦 自动备份数据统计:', {
+      任务天数: Object.keys(backupData.tasks).length,
+      模板数量: backupData.templates.length,
+      积分记录: backupData.pointHistory.length,
+      备份时间: backupData.backupTime
+    });
+    
+    // 保存备份
     localStorage.setItem(backupKey, JSON.stringify(backupData));
+    
+    // 清理旧备份
     await cleanupOldBackups();
     
+    console.log('✅ 自动备份完成:', backupKey);
+    
   } catch (error) {
-    console.error('自动备份失败:', error);
+    console.error('❌ 自动备份失败:', error);
   }
 };
+
+
+
+
 
 const cleanupOldBackups = async () => {
   const allKeys = Object.keys(localStorage);
@@ -1176,52 +1202,55 @@ const cleanupOldBackups = async () => {
   }
 };
 
+
+// 修复备份列表获取函数
 const getBackupList = () => {
-  const allKeys = Object.keys(localStorage);
-  return allKeys
-    .filter(key => key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`))
-    .map(key => {
-      const data = JSON.parse(localStorage.getItem(key));
-      return {
-        key,
-        time: data?.backupTime || key,
-        tasksCount: Object.keys(data?.tasks || {}).length
-      };
-    })
-    .sort((a, b) => b.time.localeCompare(a.time));
-};
-
-const restoreBackup = async (backupKey) => {
   try {
-    const backupData = JSON.parse(localStorage.getItem(backupKey));
-    if (!backupData) {
-      alert('备份文件不存在');
-      return;
-    }
-
-    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
-      await saveMainData('tasks', backupData.tasks || {});
-      await saveMainData('templates', backupData.templates || []);
-      await saveMainData('pointHistory', backupData.pointHistory || []);
-      await saveMainData('exchange', backupData.exchange || []);
-      
-      if (window.appInstance) {
-        window.appInstance.setState({
-          tasksByDate: backupData.tasks || {},
-          templates: backupData.templates || [],
-          pointHistory: backupData.pointHistory || [],
-          exchangeItems: backupData.exchange || []
-        });
-      }
-      
-      alert('备份恢复成功！');
-      window.location.reload();
-    }
+    const allKeys = Object.keys(localStorage);
+    console.log('🔍 搜索备份文件，所有键:', allKeys);
+    
+    const backupKeys = allKeys
+      .filter(key => {
+        const isBackup = key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`);
+        if (isBackup) {
+          console.log('✅ 找到备份文件:', key);
+        }
+        return isBackup;
+      })
+      .map(key => {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          return {
+            key,
+            time: data?.backupTime || key,
+            tasksCount: Object.keys(data?.tasks || {}).length,
+            templateCount: (data?.templates || []).length,
+            dataSize: JSON.stringify(data).length
+          };
+        } catch (e) {
+          console.error('❌ 解析备份数据失败:', key, e);
+          return {
+            key,
+            time: key,
+            tasksCount: 0,
+            templateCount: 0,
+            dataSize: 0,
+            error: true
+          };
+        }
+      })
+      .sort((a, b) => b.time.localeCompare(a.time));
+    
+    console.log('📊 最终备份列表:', backupKeys);
+    return backupKeys;
   } catch (error) {
-    console.error('恢复备份失败:', error);
-    alert('恢复备份失败：' + error.message);
+    console.error('❌ 获取备份列表失败:', error);
+    return [];
   }
 };
+
+
+
 
 // 手动触发备份
 window.manualBackup = autoBackup;
@@ -6644,7 +6673,7 @@ function App() {
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
   const todayTasks = tasksByDate[selectedDate] || [];
- 
+ // eslint-disable-next-line no-unused-vars
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
   const [showTimerRecords, setShowTimerRecords] = useState(false);
@@ -6690,6 +6719,49 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   reminderHour: "",
   reminderMinute: "",
 });
+
+
+
+// 在 App 组件内部定义 restoreBackup 函数
+const restoreBackup = async (backupKey) => {
+  try {
+    const backupData = JSON.parse(localStorage.getItem(backupKey));
+    if (!backupData) {
+      alert('备份文件不存在');
+      return;
+    }
+
+    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+      await saveMainData('tasks', backupData.tasks || {});
+      await saveMainData('templates', backupData.templates || []);
+      await saveMainData('pointHistory', backupData.pointHistory || []);
+      await saveMainData('exchange', backupData.exchange || []);
+      await saveMainData('customAchievements', backupData.customAchievements || []);
+      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
+      
+      if (window.appInstance) {
+        window.appInstance.setState({
+          tasksByDate: backupData.tasks || {},
+          templates: backupData.templates || [],
+          pointHistory: backupData.pointHistory || [],
+          exchangeItems: backupData.exchange || [],
+          customAchievements: backupData.customAchievements || [],
+          unlockedAchievements: backupData.unlockedAchievements || []
+        });
+      }
+      
+      alert('备份恢复成功！页面将重新加载...');
+      window.location.reload();
+    }
+  } catch (error) {
+    console.error('恢复备份失败:', error);
+    alert('恢复失败：' + error.message);
+  }
+};
+
+window.restoreBackup = restoreBackup;
+
+
 
 // 添加表情选项
 const moodOptions = [
@@ -8677,7 +8749,6 @@ useEffect(() => {
         setUnlockedAchievements([]);
       }
 
-
       const savedCategories = await loadMainData('categories');
       if (savedCategories) {
         // 如果已有保存的分类，确保每个分类都有子类别
@@ -8722,23 +8793,31 @@ useEffect(() => {
       }
 
 
-      // 设置定时备份
-      localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
-      console.log('✅ 初始化状态已保存到存储');
-      setIsInitialized(true);
-      console.log('✅ isInitialized 设置为 true');
 
-      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
-      
-      // 清理函数
-      return () => {
-        clearInterval(backupTimer);
-      };
+// 设置定时备份 - 修复这里
+console.log('⏰ 设置自动备份定时器，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60, '分钟');
+    
+const backupTimer = setInterval(() => {
+  console.log('🔄 自动备份定时器触发');
+  autoBackup();
+}, AUTO_BACKUP_CONFIG.backupInterval);
 
-    } catch (error) {
-      console.error('初始化失败:', error);
-    }
-  };
+// 立即执行一次初始备份
+setTimeout(() => {
+  console.log('🚀 执行初始备份');
+  autoBackup();
+}, 5000); // 5秒后执行初始备份
+
+// 清理函数
+return () => {
+  console.log('🧹 清理备份定时器');
+  clearInterval(backupTimer);
+};
+
+} catch (error) {
+console.error('初始化失败:', error);
+}
+};
 
   initializeApp();
 }, []);
@@ -11869,9 +11948,12 @@ const generateFullContent = () => {
         />
       )}
       {/* 备份管理模态框 */}
-      {showBackupModal && (
-        <BackupManagerModal onClose={() => setShowBackupModal(false)} />
-      )}
+{showBackupModal && (
+  <BackupManagerModal 
+    onClose={() => setShowBackupModal(false)}
+    restoreBackup={restoreBackup}  // 传入函数
+  />
+)}
 
 {/* 在这里添加计时记录模态框 ↓ */}
 {showTimerRecords && (
