@@ -12634,11 +12634,91 @@ marginTop: 10
       {/* 添加任务输入框（展开时显示） */}
       {showAddInput && (
         <div ref={addInputRef} style={{ marginTop: 8 }}>
+        // 在 showAddInput 区域上方添加以下代码：
+
+{/* 复盘输入区域 */}
+<div style={{
+  marginBottom: 8,
+  padding: 10,
+  backgroundColor: '#fff9c4',
+  borderRadius: 8,
+  border: '1px solid #ffd54f'
+}}>
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  }}>
+    <label style={{
+      fontWeight: 'bold',
+      color: '#333',
+      fontSize: 14
+    }}>
+      💭 今日复盘
+    </label>
+    <button
+      onClick={() => {
+        const reflection = window.prompt('输入今日复盘内容（支持多行文本）', dailyReflection || '');
+        if (reflection !== null) {
+          setDailyReflection(reflection);
+        }
+      }}
+      style={{
+        padding: '4px 8px',
+        backgroundColor: '#1a73e8',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontSize: 12
+      }}
+    >
+      {dailyReflection ? '编辑复盘' : '添加复盘'}
+    </button>
+  </div>
+  
+  {dailyReflection ? (
+    <div
+      onClick={() => {
+        const reflection = window.prompt('编辑复盘内容', dailyReflection);
+        if (reflection !== null) {
+          setDailyReflection(reflection);
+        }
+      }}
+      style={{
+        fontSize: 13,
+        lineHeight: 1.4,
+        color: '#333',
+        cursor: 'pointer',
+        padding: '8px',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderRadius: 4,
+        border: '1px dashed #ffb300',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word'
+      }}
+    >
+      {dailyReflection}
+    </div>
+  ) : (
+    <div style={{
+      fontSize: 12,
+      color: '#666',
+      textAlign: 'center',
+      padding: '8px',
+      fontStyle: 'italic'
+    }}>
+      点击"添加复盘"记录今日的学习总结和思考...
+    </div>
+  )}
+</div>
           <div style={{
             display: "flex",
             gap: 6,
             marginBottom: 8
           }}>
+        
             <input
               type="text"
               value={newTaskText}
