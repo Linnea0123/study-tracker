@@ -12245,6 +12245,7 @@ const generateFullContent = () => {
             }}
           >
             
+
 {/* 分类标题 */}
 <div
   onClick={() => setCollapsedCategories(prev => ({
@@ -12266,37 +12267,6 @@ const generateFullContent = () => {
   }}
 >
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-   
-
-{/* 在子类别标题部分 */}
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
-      handlePauseCategoryTimer(c.name);
-    } else {
-      handleStartTimer({
-        category: c.name
-      });
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    color: '#333',
-    cursor: 'pointer',
-    fontSize: '10px',
-    padding: '1px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }}
-  title={activeTimer?.category === c.name && !activeTimer?.subCategory ? "暂停分类计时" : "开始分类计时"}
->
-  {activeTimer?.category === c.name && !activeTimer?.subCategory ? "⏸️" : "⏱️"}
-</button>
-
-    
     <span>
       {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
       {isComplete && " ✓"}
@@ -12323,38 +12293,69 @@ const generateFullContent = () => {
     </button>
   </div>
 
+  {/* 将计时器和时间显示移到右边 */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    {/* 分类计时器按钮 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
+          handlePauseCategoryTimer(c.name);
+        } else {
+          handleStartTimer({
+            category: c.name
+          });
+        }
+      }}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        color: isComplete ? "#888" : "#fff",
+        cursor: 'pointer',
+        fontSize: '10px',
+        padding: '1px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      title={activeTimer?.category === c.name && !activeTimer?.subCategory ? "暂停分类计时" : "开始分类计时"}
+    >
+      {activeTimer?.category === c.name && !activeTimer?.subCategory ? "⏸️" : "⏱️"}
+    </button>
 
-
-  <span
-  onClick={(e) => {
-    e.stopPropagation();
-    editCategoryTime(c.name);
-  }}
-  style={{
-    fontSize: 12,
-    color: isComplete ? "#888" : "#fff",
-    maxWidth: "60px", 
-    cursor: "pointer",
-    padding: "2px 8px",
-    borderRadius: "4px",
-    backgroundColor: "transparent", // 新增：限制最大宽度
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap"
-  }}
-  title="点击修改总时间"
->
-{(() => {
-  const baseTime = totalTime(c.name);
-  // 如果整个分类正在计时（没有指定子分类），加上实时计时
-  if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
-    return formatCategoryTime(baseTime + elapsedTime);
-  }
-  return formatCategoryTime(baseTime);
-})()}
-</span>
-
+    {/* 时间显示 */}
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        editCategoryTime(c.name);
+      }}
+      style={{
+        fontSize: 11,
+        color: isComplete ? "#888" : "#fff",
+        cursor: "pointer",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        backgroundColor: "rgba(255,255,255,0.2)",
+        minWidth: "50px",
+        textAlign: "center",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        fontFamily: "monospace"
+      }}
+      title="点击修改总时间"
+    >
+      {(() => {
+        const baseTime = totalTime(c.name);
+        if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
+          return formatCategoryTime(baseTime + elapsedTime);
+        }
+        return formatCategoryTime(baseTime);
+      })()}
+    </span>
+  </div>
 </div>
+
 
 {!isCollapsed && (
   <div style={{ padding: 8 }}>
