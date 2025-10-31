@@ -8652,139 +8652,45 @@ useEffect(() => {
 
 
 useEffect(() => {
-  const initializeApp = async () => {
-    // 先迁移旧数据
-    await migrateLegacyData();
+  // 在 initializeApp 函数中，确保这样加载
+const initializeApp = async () => {
+  try {
+    // 加载任务数据 - 确保使用 await 和正确的键名
+    const savedTasks = await loadMainData('tasks');
+    console.log('从存储加载的任务数据:', savedTasks);
     
-    try {
- 
-
-
-
-      // 加载今日数据
-      const today = new Date().toISOString().split("T")[0];
-      const savedDailyData = await loadMainData(`daily_${today}`);
-      if (savedDailyData) {
-        setDailyRating(savedDailyData.rating || 0);
-        setDailyMood(savedDailyData.mood || 0); // 改为数字
-        setDailyReflection(savedDailyData.reflection || '');
-      }
-      
-      // 加载任务数据
-      const savedTasks = await loadMainData('tasks');
-      console.log('✅ 加载的任务数据:', savedTasks);
-      if (savedTasks) {
-        setTasksByDate(savedTasks);
-        console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
-      } else {
-        console.log('ℹ️ 没有任务数据，使用空对象');
-        setTasksByDate({});
-      }
-      
-      // 加载模板数据
-      const savedTemplates = await loadMainData('templates');
-      if (savedTemplates) {
-        setTemplates(savedTemplates);
-      }
-      
-      // 加载积分历史
-      const savedPointHistory = await loadMainData('pointHistory');
-      if (savedPointHistory) {
-        setPointHistory(savedPointHistory);
-      } else {
-        setPointHistory([{
-          date: new Date().toISOString(),
-          change: 0,
-          reason: '系统初始化',
-          totalAfterChange: 0
-        }]);
-      }
-      
-      // 加载兑换物品
-      const savedExchangeItems = await loadMainData('exchange');
-      if (savedExchangeItems) {
-        setExchangeItems(savedExchangeItems);
-      }
-
-      // 加载自定义成就
-      const savedCustomAchievements = await loadMainData('customAchievements');
-      if (savedCustomAchievements) {
-        setCustomAchievements(savedCustomAchievements);
-      } else {
-        setCustomAchievements([]);
-      }
-
-      // 加载已解锁成就
-      const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
-      console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
-      if (savedUnlockedAchievements) {
-        setUnlockedAchievements(savedUnlockedAchievements);
-      } else {
-        setUnlockedAchievements([]);
-      }
-
-
-      const savedCategories = await loadMainData('categories');
-      if (savedCategories) {
-        // 如果已有保存的分类，确保每个分类都有子类别
-        const updatedCategories = savedCategories.map(cat => {
-          let defaultSubCategories = [];
-          switch(cat.name) {
-            case '校内':
-              defaultSubCategories = ["数学", "语文", "英语", "运动"];
-              break;
-            default:
-              defaultSubCategories = [];
-          }
-          
-          // 如果保存的分类没有子类别或子类别为空，使用预设值
-          return {
-            ...cat,
-            subCategories: cat.subCategories && cat.subCategories.length > 0 
-              ? cat.subCategories 
-              : defaultSubCategories
-          };
-        });
-        
-        setCategories(updatedCategories);
-        await saveMainData('categories', updatedCategories); // 保存更新后的分类
-      } else {
-        // 没有保存的分类数据，使用预设值初始化
-        const categoriesWithSubCategories = baseCategories.map(cat => {
-          let subCategories = [];
-          switch(cat.name) {
-            case '校内':
-              subCategories = ["数学", "语文", "英语", "运动"];
-              break;
-          
-            default:
-              subCategories = [];
-          }
-          return { ...cat, subCategories };
-        });
-        
-        setCategories(categoriesWithSubCategories);
-        await saveMainData('categories', categoriesWithSubCategories);
-      }
-
-
-      // 设置定时备份
-      localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
-      console.log('✅ 初始化状态已保存到存储');
-      setIsInitialized(true);
-      console.log('✅ isInitialized 设置为 true');
-
-      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
-      
-      // 清理函数
-      return () => {
-        clearInterval(backupTimer);
-      };
-
-    } catch (error) {
-      console.error('初始化失败:', error);
+    if (savedTasks) {
+      setTasksByDate(savedTasks);
+    } else {
+      console.log('没有找到任务数据，初始化为空对象');
+      setTasksByDate({});
     }
-  };
+    
+    // 同样修复其他数据的加载
+    const savedTemplates = await loadMainData('templates');
+    if (savedTemplates) setTemplates(savedTemplates);
+    
+    const savedPointHistory = await loadMainData('pointHistory');
+    if (savedPointHistory) setPointHistory(savedPointHistory);
+    
+    const savedExchangeItems = await loadMainData('exchange');
+    if (savedExchangeItems) setExchangeItems(savedExchangeItems);
+    
+    const savedCustomAchievements = await loadMainData('customAchievements');
+    if (savedCustomAchievements) setCustomAchievements(savedCustomAchievements);
+    
+    const savedUnlockedAchievements = await loadMainData('unlockedAchievements');
+    if (savedUnlockedAchievements) setUnlockedAchievements(savedUnlockedAchievements);
+    
+    const savedCategories = await loadMainData('categories');
+    if (savedCategories) setCategories(savedCategories);
+    
+    setIsInitialized(true);
+    
+  } catch (error) {
+    console.error('初始化失败:', error);
+  }
+};
 
   initializeApp();
 }, []);
