@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
@@ -6641,8 +6641,6 @@ function App() {
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
-  const [dailyRating, setDailyRating] = useState(0);
-  const [dailyReflection, setDailyReflection] = useState('');
   const todayTasks = tasksByDate[selectedDate] || [];
  
   const [isInitialized, setIsInitialized] = useState(false);
@@ -6651,8 +6649,6 @@ function App() {
   const [customAchievements, setCustomAchievements] = useState([]);
   const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
-  // 在现有的状态定义附近添加
-const [dailyMood, setDailyMood] = useState('');
   const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
  const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 
@@ -6670,13 +6666,16 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [dailyMood, setDailyMood] = useState('');
+  const [dailyRating, setDailyRating] = useState(0);
+  const [dailyReflection, setDailyReflection] = useState('');
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [activeTimer, setActiveTimer] = useState(null);
-const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
-const [repeatConfig, setRepeatConfig] = useState({
+  const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
   days: [false, false, false, false, false, false, false],
   startHour: "",
@@ -6690,7 +6689,31 @@ const [repeatConfig, setRepeatConfig] = useState({
   reminderMinute: "",
 });
 
-// 在 App 组件内部，但不在任何函数内部添加：
+
+
+// 保存每日数据函数
+const saveDailyData = useCallback(async () => {
+  const today = new Date().toISOString().split("T")[0];
+  const dailyData = {
+    mood: dailyMood,
+    rating: dailyRating,
+    reflection: dailyReflection,
+    date: today
+  };
+  await saveMainData(`daily_${today}`, dailyData);
+}, [dailyMood, dailyRating, dailyReflection]);
+
+// 即时保存效果
+useEffect(() => {
+  if (isInitialized && (dailyMood !== '' || dailyRating !== 0 || dailyReflection !== '')) {
+    saveDailyData();
+  }
+}, [dailyMood, dailyRating, dailyReflection, isInitialized, saveDailyData]);
+
+
+
+
+
 
 
 
@@ -7953,9 +7976,8 @@ const generateDailyLog = () => {
       completionRate: Math.round((completedTasks.length / todayTasks.length) * 100),
       totalMinutes: totalMinutes,
       averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
-      categories: Object.keys(tasksByCategory).length,
-      dailyRating: dailyRating,
-      dailyReflection: dailyReflection
+      categories: Object.keys(tasksByCategory).length
+    
     }
   });
 };
@@ -8313,32 +8335,6 @@ useEffect(() => {
 }, [tasksByDate]);
 
   
-// 保存到本地存储
-useEffect(() => {
-  const dailyData = {
-    rating: dailyRating,
-    mood: dailyMood,
-    reflection: dailyReflection,
-    date: selectedDate
-  };
-  localStorage.setItem(`${STORAGE_KEY}_daily_${selectedDate}`, JSON.stringify(dailyData));
-}, [dailyRating, dailyMood, dailyReflection, selectedDate]);
-
-// 读取数据
-useEffect(() => {
-  const savedData = localStorage.getItem(`${STORAGE_KEY}_daily_${selectedDate}`);
-  if (savedData) {
-    const data = JSON.parse(savedData);
-    setDailyRating(data.rating || 0);
-    setDailyMood(data.mood || '');
-    setDailyReflection(data.reflection || '');
-  } else {
-    // 如果没有保存的数据，重置为默认值
-    setDailyRating(0);
-    setDailyMood('');
-    setDailyReflection('');
-  }
-}, [selectedDate]);
 
 
 
@@ -8561,20 +8557,6 @@ useEffect(() => {
   savePointHistory();
 }, [pointHistory]);
 
-// 读取每日数据
-useEffect(() => {
-  const loadDailyData = async () => {
-    if (selectedDate) {
-      const savedData = await loadMainData(`daily_${selectedDate}`);
-      if (savedData) {
-        setDailyRating(savedData.rating || 0);
-        setDailyReflection(savedData.reflection || '');
-      }
-    }
-  };
-
-  loadDailyData();
-}, [selectedDate]);
 
 useEffect(() => {
   const initializeApp = async () => {
@@ -8714,6 +8696,27 @@ useEffect(() => {
 }, []);
 //初始化end
 
+
+
+
+
+
+// 加载每日数据
+useEffect(() => {
+  const loadDailyData = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const savedDailyData = await loadMainData(`daily_${today}`);
+    if (savedDailyData) {
+      setDailyMood(savedDailyData.mood || '');
+      setDailyRating(savedDailyData.rating || 0);
+      setDailyReflection(savedDailyData.reflection || '');
+    }
+  };
+  
+  if (isInitialized) {
+    loadDailyData();
+  }
+}, [isInitialized]);
 
 
 
@@ -10042,90 +10045,8 @@ const handleExportData = async () => {
   
   
 
-// 修改 DailyLogModal 组件
 const DailyLogModal = ({ logData, onClose, onCopy }) => {
-  const [dailyMood, setDailyMood] = useState('');
-  const [dailyRating, setDailyRating] = useState(0);
-  const [dailyReview, setDailyReview] = useState('');
-  const [editingReview, setEditingReview] = useState(false);
-
-  const formatDateKey = (dateString) => {
-    try {
-      return new Date(dateString).toISOString().split('T')[0];
-    } catch {
-      return dateString?.trim?.() || '';
-    }
-  };
-
-  const dateKey = useMemo(() => logData?.date || '', [logData]);
-
-
-
-
-
-  // 加载保存的数据
-  useEffect(() => {
-    if (!dateKey) return;
-    const key = `${STORAGE_KEY}_daily_${formatDateKey(dateKey)}`;
-    const savedData = localStorage.getItem(key);
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        setDailyMood(data.mood || '');
-        setDailyRating(data.rating || 0);
-        setDailyReview(data.review || '');
-      } catch (error) {
-        console.error('解析每日数据失败:', error);
-      }
-    } else {
-      setDailyMood('');
-      setDailyRating(0);
-      setDailyReview('');
-    }
-  }, [dateKey]);
-
-  // 保存数据函数
-  const saveData = useCallback(
-    (newData = {}) => {
-      if (!dateKey) return;
-      const key = `${STORAGE_KEY}_daily_${formatDateKey(dateKey)}`;
-      const data = {
-        mood: newData.mood ?? dailyMood,
-        rating: newData.rating ?? dailyRating,
-        review: newData.review ?? dailyReview,
-        date: dateKey
-      };
-      localStorage.setItem(key, JSON.stringify(data));
-    },
-    [dateKey, dailyMood, dailyRating, dailyReview]
-  );
-
-  // 处理心情变化
-  const handleMoodChange = (e) => {
-    const newMood = e.target.value;
-    setDailyMood(newMood);
-    saveData({ mood: newMood });
-  };
-
-  // 处理评分变化
-  const handleRatingChange = (e) => {
-    const newRating = parseInt(e.target.value);
-    setDailyRating(newRating);
-    saveData({ rating: newRating });
-  };
-
-  // 处理复盘变化
-  const handleReviewChange = (e) => {
-    const newReview = e.target.value;
-    setDailyReview(newReview);
-    saveData({ review: newReview });
-  };
-
-  // 复盘编辑完成
-  const handleReviewBlur = () => {
-    setEditingReview(false);
-    saveData();
-  };
+  // 删除所有与心情、评分、复盘相关的状态和函数后，组件变得很简单
 
   if (!logData) return null;
 
@@ -10136,18 +10057,6 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
   };
 
   const formattedContent = generateFormattedContent();
-
-  const moodOptions = [
-    { value: '', label: '选择心情', emoji: '' },
-    { value: 'excited', label: '兴奋', emoji: '😆' },
-    { value: 'happy', label: '开心', emoji: '😊' },
-    { value: 'neutral', label: '平静', emoji: '😐' },
-    { value: 'tired', label: '疲惫', emoji: '😴' },
-    { value: 'stressed', label: '压力', emoji: '😥' },
-    { value: 'proud', label: '自豪', emoji: '🥰' },
-    { value: 'satisfied', label: '满意', emoji: '😌' },
-    { value: 'motivated', label: '动力', emoji: '💪' }
-  ];
 
   return (
     <div style={{
@@ -10169,11 +10078,9 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
         borderRadius: 15,
         width: '95%',
         maxWidth: 500,
-     
-        
+        maxHeight: '90vh',
+        overflow: 'auto',
         display: 'flex',
-        maxHeight: '90vh', // ← 新增：限制最大高度
-  overflow: 'auto',  // ← 新增：添加滚动条
         flexDirection: 'column',
         textAlign: 'center'
       }}>
@@ -10257,139 +10164,146 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           </div>
         </div>
 
-       
-<div style={{
-  backgroundColor: '#f8f9fa',
-  padding: 15,
-  borderRadius: 8,
-  marginBottom: 15,
-  // 移除 maxHeight 和 overflow
-  // maxHeight: 200,
-  // overflow: 'auto',
-  fontSize: 12,
-  lineHeight: 1.4,
-  whiteSpace: 'pre-wrap',
-  textAlign: 'left',
-  flex: 1,
-  // 添加自动高度
-  minHeight: 'auto'
-}}>
-  {formattedContent}
-</div>
 
-        {/* 今日心情、评分、复盘区域 */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        {/* 任务内容 */}
         <div style={{
           backgroundColor: '#f8f9fa',
-          padding: 12,
+          padding: 15,
           borderRadius: 8,
           marginBottom: 15,
-          flexShrink: 0  // ← 新增：防止被压缩
+          fontSize: 12,
+          lineHeight: 1.4,
+          whiteSpace: 'pre-wrap',
+          textAlign: 'left',
+          flex: 1,
+          minHeight: 'auto'
         }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 10,
-            marginBottom: 12
-          }}>
-            {/* 今日心情 */}
-            <div>
-              <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
-                今日心情
-              </div>
-              <select
-                value={dailyMood}
-                onChange={handleMoodChange}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  backgroundColor: 'white'
-                }}
-              >
-                {moodOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.emoji} {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 今日评分 */}
-            <div>
-              <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
-                今日评分
-              </div>
-              <select
-                value={dailyRating}
-                onChange={handleRatingChange}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  backgroundColor: 'white'
-                }}
-              >
-                <option value="0">请选择评分</option>
-                <option value="1">⭐ (1星)</option>
-                <option value="2">⭐⭐ (2星)</option>
-                <option value="3">⭐⭐⭐ (3星)</option>
-                <option value="4">⭐⭐⭐⭐ (4星)</option>
-                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* 今日复盘 */}
-          <div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 4, textAlign: 'left' }}>
-              今日复盘
-            </div>
-            {editingReview ? (
-              <textarea
-                value={dailyReview}
-                onChange={handleReviewChange}
-                onBlur={handleReviewBlur}
-                autoFocus
-                placeholder="记录今天的收获和反思..."
-                style={{
-                  width: '100%',
-                  minHeight: '60px',
-                  padding: '8px',
-                  border: '1px solid #1a73e8',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  resize: 'vertical',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-              />
-            ) : (
-              <div
-                onClick={() => setEditingReview(true)}
-                style={{
-                  width: '100%',
-                  minHeight: '60px',
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  backgroundColor: dailyReview ? '#fff9c4' : 'white',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  borderLeft: dailyReview ? '4px solid #ffd54f' : '1px solid #ddd'
-                }}
-              >
-                {dailyReview || '点击记录今日复盘...'}
-              </div>
-            )}
-          </div>
+          {formattedContent}
         </div>
+
+
+        
+{/* 心情、评价、复盘区域（横排简洁版） */}
+<div
+  style={{
+    backgroundColor: '#fff',
+    border: '1px solid #eee',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    fontSize: 14,
+    lineHeight: 1.8,
+    color: '#333',
+  }}
+>
+  <div style={{ fontWeight: 'bold', marginBottom: 10, color: '#1a73e8' }}>
+    💭 今日总结
+  </div>
+
+  {/* 心情 + 评分 同行 */}
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      marginBottom: 15,
+    }}
+  >
+    {/* 心情选择 */}
+    <div style={{ flex: 1 }}>
+      <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>心情：</label>
+      <select
+        value={dailyMood}
+        onChange={(e) => setDailyMood(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '8px 10px',
+          border: '1px solid #ddd',
+          borderRadius: 6,
+          fontSize: 14,
+          backgroundColor: '#fafafa',
+          cursor: 'pointer',
+        }}
+      >
+        <option value="">选择心情</option>
+        <option value="😊 开心">😊 开心</option>
+        <option value="😐 平静">😐 平静</option>
+        <option value="😔 疲惫">😔 疲惫</option>
+        <option value="😤 烦躁">😤 烦躁</option>
+        <option value="🤩 充满活力">🤩 充满活力</option>
+        <option value="😴 困倦">😴 困倦</option>
+      </select>
+    </div>
+
+    {/* 评分选择 */}
+    <div style={{ flex: 1 }}>
+      <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>今日评价：</label>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => setDailyRating(star)}
+            style={{
+              flex: 1,
+              padding: '6px 0',
+              border: 'none',
+              borderRadius: 6,
+              backgroundColor: dailyRating >= star ? '#ffe066' : '#f1f3f4',
+              fontSize: 18,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: dailyRating >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            ⭐
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {/* 复盘输入 */}
+  <div>
+    <label style={{ display: 'block', marginBottom: 4, color: '#555' }}>复盘总结：</label>
+    <textarea
+      value={dailyReflection}
+      onChange={(e) => setDailyReflection(e.target.value)}
+      placeholder="记录一下今天的收获或思考..."
+      style={{
+        width: '100%',
+        minHeight: 80,
+        padding: '8px 10px',
+        border: '1px solid #ddd',
+        borderRadius: 6,
+        fontSize: 14,
+        resize: 'vertical',
+        backgroundColor: '#fafafa',
+        fontFamily: 'inherit',
+      }}
+    />
+  </div>
+</div>
+
+
+
+
+
+
 
         {/* 按钮区域 */}
         <div style={{ 
@@ -10415,7 +10329,6 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
           </button>
           <button
             onClick={() => {
-              saveData();
               const markdownContent = formattedContent;
               onCopy(markdownContent);
             }}
@@ -10438,7 +10351,6 @@ const DailyLogModal = ({ logData, onClose, onCopy }) => {
     </div>
   );
 };
-
 
 
 
@@ -12945,62 +12857,7 @@ marginTop: 10
 
 
 
-          {/* 展开状态下显示的评分和感想 */}
-          <div style={{
-            display: "flex",
-            gap: "10px",
-            marginTop: "10px",
-            alignItems: "center",
-            padding: "10px",
-            backgroundColor: "#f8f9fa",
-            borderRadius: "8px"
-          }}>
-            {/* 今日评分 */}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-                今日评分:
-              </div>
-              <select
-                value={dailyRating}
-                onChange={(e) => setDailyRating(parseInt(e.target.value))}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                  backgroundColor: "white"
-                }}
-              >
-                <option value="0">请选择评分</option>
-                <option value="1">⭐ (1星)</option>
-                <option value="2">⭐⭐ (2星)</option>
-                <option value="3">⭐⭐⭐ (3星)</option>
-                <option value="4">⭐⭐⭐⭐ (4星)</option>
-                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
-              </select>
-            </div>
-
-            {/* 今日感想 */}
-            <div style={{ flex: 2 }}>
-              <div style={{ fontSize: "12px", marginBottom: "4px", color: "#666" }}>
-                今日感想:
-              </div>
-              <input
-                type="text"
-                value={dailyReflection}
-                onChange={(e) => setDailyReflection(e.target.value)}
-                placeholder="记录今天的收获和感悟..."
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "12px"
-                }}
-              />
-            </div>
-          </div>
+          
         </div>
       )}
 
