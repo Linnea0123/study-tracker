@@ -1,3 +1,4 @@
+
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
@@ -6671,7 +6672,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyMood, setDailyMood] = useState(0); // 0 表示未选择
   const [dailyRating, setDailyRating] = useState(0);
-  const [dailyReflection, setDailyReflection] = useState('');
+  const [dailyReflections, setDailyReflections] = useState({});
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
@@ -6692,6 +6693,20 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   reminderMinute: "",
 });
 
+
+// 获取当前选中日期的复盘内容
+const getCurrentDailyReflection = () => {
+  return dailyReflections[selectedDate] || '';
+};
+
+// 设置当前选中日期的复盘内容
+const setCurrentDailyReflection = (reflection) => {
+  setDailyReflections(prev => ({
+    ...prev,
+    [selectedDate]: reflection
+  }));
+};
+
 // 添加表情选项
 const moodOptions = [
   { emoji: '', label: '无', value: 0 },
@@ -6706,20 +6721,20 @@ const moodOptions = [
 const saveDailyData = useCallback(async () => {
   const today = new Date().toISOString().split("T")[0];
   const dailyData = {
-    mood: dailyMood, // 现在存储的是数字
+    mood: dailyMood,
     rating: dailyRating,
-    reflection: dailyReflection,
+    reflection: dailyReflections[today] || '', // 改为从对象中获取
     date: today
   };
   await saveMainData(`daily_${today}`, dailyData);
-}, [dailyMood, dailyRating, dailyReflection]);
+}, [dailyMood, dailyRating, dailyReflections]); // 更新依赖
 
 // 即时保存效果
 useEffect(() => {
   if (isInitialized && (dailyMood !== '' || dailyRating !== 0 || dailyReflection !== '')) {
     saveDailyData();
   }
-}, [dailyMood, dailyRating, dailyReflection, isInitialized, saveDailyData]);
+}, [dailyMood, dailyRating, isInitialized, saveDailyData]);
 
 
 
@@ -7880,15 +7895,17 @@ useEffect(() => {
 }, [tasksByDate, isInitialized]);
 
 
+
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
-  // 添加未完成任务
   const incompleteTasks = todayTasks.filter(task => !task.done);
 
-  if (completedTasks.length === 0 && incompleteTasks.length === 0) {
-    alert('今日还没有任务！');
-    return;
-  }
+ 
+
+  // 获取当前日期的复盘内容
+ 
+
+
 
   // 按分类和子分类组织任务
   const tasksByCategory = {};
@@ -8750,27 +8767,43 @@ useEffect(() => {
 
 
 
-// 加载每日数据
-useEffect(() => {
-  const loadDailyData = async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const savedDailyData = await loadMainData(`daily_${today}`);
-    if (savedDailyData) {
-      setDailyMood(savedDailyData.mood || '');
-      setDailyRating(savedDailyData.rating || 0);
-      setDailyReflection(savedDailyData.reflection || '');
-    }
-  };
+
+
+const loadDailyData = async () => {
+  const today = new Date().toISOString().split("T")[0];
+  const savedDailyData = await loadMainData(`daily_${today}`);
+  if (savedDailyData) {
+    setDailyRating(savedDailyData.rating || 0);
+    setDailyMood(savedDailyData.mood || 0);
+    // 不再设置全局复盘状态
+  }
   
+  // 加载所有日期的复盘数据
+  const allReflections = {};
+  const allKeys = Object.keys(localStorage);
+  const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
+  
+  for (const key of dailyKeys) {
+    try {
+      const data = await loadMainData(key.replace(`${STORAGE_KEY}_`, ''));
+      if (data && data.date) {
+        allReflections[data.date] = data.reflection || '';
+      }
+    } catch (error) {
+      console.error('加载每日数据失败:', key, error);
+    }
+  }
+  
+  setDailyReflections(allReflections);
+};
+// ==== 新增：调用 loadDailyData 的 useEffect ====
+useEffect(() => {
   if (isInitialized) {
     loadDailyData();
   }
 }, [isInitialized]);
 
-
-
-
-// 简化版本，不需要额外延迟
+// ==== 保留：原来的成就检查 useEffect ====
 useEffect(() => {
   if (isInitialized && Object.keys(tasksByDate).length > 0) {
     const userData = {
@@ -8795,6 +8828,16 @@ useEffect(() => {
     }
   }
 }, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
+
+
+
+
+
+
+
+
+
+
 
 // 自动保存任务数据
 useEffect(() => {
@@ -10118,7 +10161,7 @@ const generateMarkdownContent = () => {
   let markdown = `# 学习任务\n\n`;
   
   // 添加心情、评分和复盘内容到最上方
-  if (dailyMood > 0 || dailyRating > 0 || dailyReflection) {
+  if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection) {
     markdown += "## 💭 今日总结\n\n";
     
     // 心情显示
@@ -11661,6 +11704,7 @@ if (isInitialized && todayTasks.length === 0) {
         />
       )}
       
+  
       {showDailyLogModal && (
   <DailyLogModal
     logData={showDailyLogModal}
@@ -11689,37 +11733,37 @@ if (isInitialized && todayTasks.length === 0) {
         }
       };
 
-      
-// 在复制功能的 generateFullContent 函数中
-const generateFullContent = () => {
-  let content = '';
-  
-  // 添加心情、评分和复盘内容到最上方
-  if (dailyMood > 0 || dailyRating > 0 || dailyReflection) {
-    content += "=== 今日总结 ===\n";
-    
-    // 心情显示
-    if (dailyMood > 0) {
-      const selectedMood = moodOptions.find(m => m.value === dailyMood);
-      content += `心情: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
-    }
-    
-    // 评分显示
-    if (dailyRating > 0) {
-      content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
-    }
-    
-    // 复盘显示
-    if (dailyReflection) {
-      content += `复盘:\n${dailyReflection}\n`;
-    }
-    
-    content += "\n";
-  }
-  
-  content += showDailyLogModal.content.replace(/✅/g, '');
-  return content;
-};
+      const generateFullContent = () => {
+        let content = '';
+        
+        // 添加心情、评分和复盘内容到最上方
+        if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection()) {
+          content += "=== 今日总结 ===\n";
+          
+          // 心情显示
+          if (dailyMood > 0) {
+            const selectedMood = moodOptions.find(m => m.value === dailyMood);
+            content += `心情: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
+          }
+          
+          // 评分显示
+          if (dailyRating > 0) {
+            content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
+          }
+          
+          // 修复：确保 currentReflection 被使用
+          const currentReflection = getCurrentDailyReflection();
+          if (currentReflection) {
+            content += `复盘:\n${currentReflection}\n`; // 这里使用它
+          }
+          
+          content += "\n";
+        }
+        
+        content += showDailyLogModal.content.replace(/✅/g, '');
+        return content;
+      };
+
 
 
 
@@ -11734,9 +11778,14 @@ const generateFullContent = () => {
     }}
     dailyMood={dailyMood}
     dailyRating={dailyRating}
-    dailyReflection={dailyReflection}
+    dailyReflection={getCurrentDailyReflection()} // 这里也要改为使用新函数
   />
 )}
+
+
+
+
+
 
       {showTimeModal && (
         <TimeModal
@@ -12593,7 +12642,7 @@ const generateFullContent = () => {
             wordWrap: 'break-word'
           }}
         >
-          {dailyReflection || '点击输入今日复盘内容...'}
+          {getCurrentDailyReflection()  || '点击输入今日复盘内容...'}
         </div>
       </div>
     </div>
@@ -12627,8 +12676,8 @@ const generateFullContent = () => {
       </h3>
       
       <textarea
-        value={dailyReflection}
-        onChange={(e) => setDailyReflection(e.target.value)}
+        value={getCurrentDailyReflection()}
+        onChange={(e) => setCurrentDailyReflection(e.target.value)}
         placeholder="记录今日的学习收获、反思和改进点..."
         style={{
           width: '100%',
