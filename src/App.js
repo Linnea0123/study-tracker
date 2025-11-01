@@ -380,91 +380,102 @@ const BackupManagerModal = ({ onClose }) => {
           </button>
         </div>
 
-        {/* 备份列表 */}
-        <div style={{ marginBottom: 15 }}>
-          <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>
-            备份记录 ({backups.length})
-          </div>
-          
-          {backups.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: 20,
-              color: '#666',
-              backgroundColor: '#f8f9fa',
-              borderRadius: 6
-            }}>
-              暂无备份记录
-            </div>
-          ) : (
-            
+        
 
-// 在 BackupManagerModal 组件中更新备份信息显示
-// 替换现有的备份列表部分
-<div style={{ maxHeight: 300, overflow: 'auto' }}>
-  {backups.map((backup, index) => (
-    <div
-      key={backup.key}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px',
-        border: '1px solid #e0e0e0',
-        borderRadius: 6,
-        marginBottom: 8,
-        backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
-          {new Date(backup.time).toLocaleString()}
-          {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
-        </div>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
-          任务天数: {backup.tasksCount} | 版本: {backup.version || '1.0'}
-        </div>
-        {/* ✅ 修复：显示成就数据状态 */}
-        <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
-          {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => setShowRestoreConfirm(backup.key)}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: '#ffc107',
-            color: '#000',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: 12
-          }}
-        >
-          恢复
-        </button>
-        <button
-          onClick={() => handleDeleteBackup(backup.key)}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: '#dc3545',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: 12
-          }}
-        >
-          删除
-        </button>
-      </div>
+{/* 备份列表 */}
+<div style={{ marginBottom: 15 }}>
+  <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>
+    备份记录 ({backups.length})
+  </div>
+  
+  {backups.length === 0 ? (
+    <div style={{
+      textAlign: 'center',
+      padding: 20,
+      color: '#666',
+      backgroundColor: '#f8f9fa',
+      borderRadius: 6
+    }}>
+      暂无备份记录
     </div>
-  ))}
+  ) : (
+    <div style={{ maxHeight: 300, overflow: 'auto' }}>
+      {backups.map((backup, index) => {
+        // 确保备份时间正确显示
+        let displayTime;
+        try {
+          displayTime = new Date(backup.time).toLocaleString();
+        } catch (e) {
+          // 如果时间格式有问题，使用备份key中的时间
+          const timeMatch = backup.key.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
+          displayTime = timeMatch ? timeMatch[1].replace(/T/, ' ').replace(/-/g, ':') : '未知时间';
+        }
+
+        return (
+          <div
+            key={backup.key}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px',
+              border: '1px solid #e0e0e0',
+              borderRadius: 6,
+              marginBottom: 8,
+              backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+                {displayTime}
+                {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
+              </div>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
+                任务天数: {backup.tasksCount || 0} | 版本: {backup.version || '1.0'}
+              </div>
+              <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
+                {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setShowRestoreConfirm(backup.key)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#ffc107',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  fontSize: 12
+                }}
+              >
+                恢复
+              </button>
+              <button
+                onClick={() => handleDeleteBackup(backup.key)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#dc3545',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  fontSize: 12
+                }}
+              >
+                删除
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
 </div>
 
-          )}
-        </div>
+
+
 
         {/* 使用说明 */}
         <div style={{
@@ -1086,7 +1097,7 @@ const AchievementsModal = ({
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
-  backupInterval: 2 * 60 * 1000,   // 2分钟（2 * 60 * 1000 毫秒）- 修改这里
+  backupInterval: 30 * 60 * 1000,   // 2分钟（2 * 60 * 1000 毫秒）- 修改这里
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
