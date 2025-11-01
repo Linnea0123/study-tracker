@@ -10183,17 +10183,26 @@ const toggleSubTask = (task, subTaskIndex) => {
     todayTasks.filter(t => t.category === catName);
 
 
-// 修改 getTasksBySubCategory 函数
 const getTasksBySubCategory = (catName) => {
   const catTasks = todayTasks.filter(t => t.category === catName);
   const grouped = {};
   
   catTasks.forEach(task => {
-    const subCat = task.subCategory || '未分类';
-    if (!grouped[subCat]) {
-      grouped[subCat] = [];
+    const subCat = task.subCategory;
+    
+    // 如果没有子分类，归类到 null
+    if (!subCat) {
+      if (!grouped.null) {
+        grouped.null = [];
+      }
+      grouped.null.push(task);
+    } else {
+      // 有子分类的正常分组
+      if (!grouped[subCat]) {
+        grouped[subCat] = [];
+      }
+      grouped[subCat].push(task);
     }
-    grouped[subCat].push(task);
   });
   
   return grouped;
@@ -12760,6 +12769,22 @@ if (isInitialized && todayTasks.length === 0) {
       
       return subCategoryKeys.map((subCat) => {
         const subCatTasks = subCategoryTasks[subCat];
+
+
+// 新增：处理没有子分类的情况
+    if (subCat === 'null') {
+      return (
+        <ul key="no-subcategory" style={{
+          listStyle: "none",
+          padding: 0,
+          margin: 0
+        }}>
+          {subCatTasks.map((task) => (
+            <TaskItem key={task.id} task={task} ... />
+          ))}
+        </ul>
+      );
+    }
         const subCatKey = `${c.name}_${subCat}`;
         const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
         
