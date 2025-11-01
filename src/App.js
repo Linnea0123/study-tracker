@@ -6050,6 +6050,7 @@ const TaskItem = ({
   elapsedTime,
   onUpdateProgress,
   activeTimer,
+  onDeleteImage, // 添加这行
   onEditSubTask = () => {}
 }) => {
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
@@ -6662,28 +6663,62 @@ const TaskItem = ({
         </div>
       )}
 
-      {task.image && (
-        <div style={{ marginTop: 4, marginBottom: 4 }}>
-          <img
-            src={task.image}
-            alt="任务图片"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowImageModal(task.image);
-            }}
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100px",
-              borderRadius: 4,
-              cursor: "zoom-in"
-            }}
-          />
-        </div>
-      )}
-    </li>
-  );
-};
+{task.image && (
+  <div style={{ marginTop: 4, marginBottom: 4, position: 'relative', display: 'inline-block' }}>
+    <img
+      src={task.image}
+      alt="任务图片"
+      onClick={(e) => {
+        e.stopPropagation();
+        onShowImageModal(task.image);
+      }}
+      style={{
+        maxWidth: "100%",
+        maxHeight: "100px",
+        borderRadius: 4,
+        cursor: "zoom-in"
+      }}
+    />
+    {/* 添加删除图片按钮 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (window.confirm('确定要删除这张图片吗？')) {
+          // 调用父组件传递的删除函数
+          if (onDeleteImage) {
+            onDeleteImage(task);
+          }
+        }
+      }}
+      style={{
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        background: 'rgba(255,255,255,0.9)',
+        border: 'none',
+        borderRadius: '50%',
+        width: '20px',
+        height: '20px',
+        cursor: 'pointer',
+        fontSize: '12px',
+        color: '#ff4444',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+      }}
+      title="删除图片"
+    >
+      ×
+    </button>
+  </div>
+)}
 
+
+
+</li>
+);
+};
 
 
 
@@ -6783,6 +6818,28 @@ const getCurrentDailyRating = useCallback(() => {
   return dailyRatings[selectedDate] || 0;
 }, [dailyRatings, selectedDate]);
 
+
+// 在 App 组件的函数区域添加
+const handleDeleteImage = (task) => {
+  if (task.isWeekTask) {
+    // 本周任务需要更新所有日期
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? { ...t, image: null } : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    // 普通任务只更新当前日期
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { ...t, image: null } : t
+      )
+    }));
+  }
+};
 
 
 // 设置当前日期的心情和评价
@@ -9261,6 +9318,10 @@ useEffect(() => {
 
     const stats = calculateStats(dateRange);
 
+
+
+    
+
     return {
       dailyStudyData: Object.entries(stats.byDay).map(([date, time]) => ({
         name: `${new Date(date).getDate()}日`,
@@ -10240,10 +10301,25 @@ const clearAllData = async () => {
 
 
 
+
+
+
+
+// 在 handleExportData 函数之前添加这个辅助函数
+const loadDataWithFallback = async (key, fallback) => {
+  try {
+    const data = await loadMainData(key);
+    return data !== null ? data : fallback;
+  } catch (error) {
+    console.error(`加载 ${key} 失败:`, error);
+    return fallback;
+  }
+};
+
 // 替换现有的 handleExportData 函数
 const handleExportData = async () => {
   try {
-    // ✅ 修复：导出所有关键数据
+    // ✅ 修复：使用新定义的 loadDataWithFallback 函数
     const allData = {
       tasks: await loadDataWithFallback('tasks', {}),
       templates: await loadDataWithFallback('templates', []),
@@ -10280,6 +10356,8 @@ const handleExportData = async () => {
     alert('导出失败，请重试: ' + error.message);
   }
 };
+
+
 
 
 
@@ -12302,6 +12380,7 @@ if (isInitialized && todayTasks.length === 0) {
       onEditReflection={editTaskReflection}
       onOpenEditModal={openTaskEditModal}
       onShowImageModal={setShowImageModal}
+      onDeleteImage={handleDeleteImage} 
       toggleDone={toggleDone}
       formatTimeNoSeconds={formatTimeNoSeconds}
       formatTimeWithSeconds={formatTimeWithSeconds}
@@ -12522,6 +12601,7 @@ if (isInitialized && todayTasks.length === 0) {
     formatTimeNoSeconds={formatTimeNoSeconds}
     formatTimeWithSeconds={formatTimeWithSeconds}
     onMoveTask={moveTask}
+    onDeleteImage={handleDeleteImage} 
     categories={categories}
     setShowMoveModal={setShowMoveModal}
     onUpdateProgress={handleUpdateProgress}
@@ -12838,6 +12918,7 @@ if (isInitialized && todayTasks.length === 0) {
                       key={task.id}
                       task={task}
                       onEditTime={editTaskTime}
+                      onDeleteImage={handleDeleteImage} 
                       onEditNote={editTaskNote}
                       onEditReflection={editTaskReflection}
                       onOpenEditModal={openTaskEditModal}
@@ -13677,66 +13758,67 @@ marginTop: 10
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const importedData = JSON.parse(event.target.result);
+    // 在导入数据的部分，找到这个函数并修复
+reader.onload = async (event) => {
+  try {
+    const importedData = JSON.parse(event.target.result);
 
-        // ✅ 修复：增强数据验证
-        if (!importedData.tasks || !importedData.version) {
-          throw new Error('无效的数据文件格式');
-        }
+    // ✅ 修复：增强数据验证
+    if (!importedData.tasks || !importedData.version) {
+      throw new Error('无效的数据文件格式');
+    }
 
-        // 显示导入预览
-        const importStats = {
-          任务天数: Object.keys(importedData.tasks || {}).length,
-          模板数量: (importedData.templates || []).length,
-          成就数量: (importedData.customAchievements || []).length,
-          版本: importedData.version || '未知'
-        };
-        
-        const confirmMessage = `确定要导入以下数据吗？\n` +
-          `• 任务天数: ${importStats.任务天数}\n` +
-          `• 模板数量: ${importStats.模板数量}\n` +
-          `• 成就数量: ${importStats.成就数量}\n` +
-          `• 数据版本: ${importStats.版本}\n\n` +
-          `这将覆盖当前所有数据！`;
-
-        if (window.confirm(confirmMessage)) {
-          console.log('🔄 开始导入数据...', importStats);
-          
-          // 使用 loadDataWithFallback 确保数据完整性
-          await saveMainData('tasks', importedData.tasks || {});
-          await saveMainData('templates', importedData.templates || []);
-          await saveMainData('exchange', importedData.exchange || []);
-          await saveMainData('pointHistory', importedData.pointHistory || []);
-          
-          // ✅ 修复：导入所有关键数据
-          await saveMainData('customAchievements', importedData.customAchievements || []);
-          await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
-          await saveMainData('categories', importedData.categories || baseCategories);
-          
-          // 更新状态
-          setTasksByDate(importedData.tasks || {});
-          setTemplates(importedData.templates || []);
-          setExchangeItems(importedData.exchange || []);
-          setPointHistory(importedData.pointHistory || []);
-          setCustomAchievements(importedData.customAchievements || []);
-          setUnlockedAchievements(importedData.unlockedAchievements || []);
-          setCategories(importedData.categories || baseCategories);
-          
-          console.log('✅ 所有数据导入完成');
-          
-          // 添加延迟确保状态更新完成
-          setTimeout(() => {
-            alert('数据导入成功！页面将重新加载以应用更改。');
-            window.location.reload();
-          }, 1000);
-        }
-      } catch (error) {
-        console.error('导入失败:', error);
-        alert(`导入失败：${error.message || '文件格式不正确'}`);
-      }
+    // 显示导入预览
+    const importStats = {
+      任务天数: Object.keys(importedData.tasks || {}).length,
+      模板数量: (importedData.templates || []).length,
+      成就数量: (importedData.customAchievements || []).length,
+      版本: importedData.version || '未知'
     };
+    
+    const confirmMessage = `确定要导入以下数据吗？\n` +
+      `• 任务天数: ${importStats.任务天数}\n` +
+      `• 模板数量: ${importStats.模板数量}\n` +
+      `• 成就数量: ${importStats.成就数量}\n` +
+      `• 数据版本: ${importStats.版本}\n\n` +
+      `这将覆盖当前所有数据！`;
+
+    if (window.confirm(confirmMessage)) {
+      console.log('🔄 开始导入数据...', importStats);
+      
+      // 直接保存导入的数据，不需要调用 loadDataWithFallback
+      await saveMainData('tasks', importedData.tasks || {});
+      await saveMainData('templates', importedData.templates || []);
+      await saveMainData('exchange', importedData.exchange || []);
+      await saveMainData('pointHistory', importedData.pointHistory || []);
+      
+      // ✅ 修复：导入所有关键数据
+      await saveMainData('customAchievements', importedData.customAchievements || []);
+      await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
+      await saveMainData('categories', importedData.categories || baseCategories);
+      
+      // 更新状态
+      setTasksByDate(importedData.tasks || {});
+      setTemplates(importedData.templates || []);
+      setExchangeItems(importedData.exchange || []);
+      setPointHistory(importedData.pointHistory || []);
+      setCustomAchievements(importedData.customAchievements || []);
+      setUnlockedAchievements(importedData.unlockedAchievements || []);
+      setCategories(importedData.categories || baseCategories);
+      
+      console.log('✅ 所有数据导入完成');
+      
+      // 添加延迟确保状态更新完成
+      setTimeout(() => {
+        alert('数据导入成功！页面将重新加载以应用更改。');
+        window.location.reload();
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('导入失败:', error);
+    alert(`导入失败：${error.message || '文件格式不正确'}`);
+  }
+};
 
     reader.onerror = () => {
       alert('文件读取失败，请重试');
