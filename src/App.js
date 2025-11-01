@@ -12323,6 +12323,127 @@ if (isInitialized && todayTasks.length === 0) {
       )}
 
 
+
+
+{/* 本周复盘汇总 - 仅在周日显示 */}
+{(() => {
+  const today = new Date(selectedDate);
+  const isSunday = today.getDay() === 0; // 0代表周日
+  
+  if (!isSunday) return null;
+  
+  // 获取本周所有日期的复盘内容
+  const weekDates = getWeekDates(currentMonday);
+  const weekReflections = weekDates
+    .map(dateObj => {
+      const reflection = dailyReflections[dateObj.date] || '';
+      return {
+        date: dateObj.date,
+        label: dateObj.label,
+        reflection: reflection
+      };
+    })
+    .filter(item => item.reflection.trim() !== ''); // 只显示有复盘的日期
+  
+  const hasReflections = weekReflections.length > 0;
+  
+  return (
+    <div style={{
+      marginBottom: 8,
+      borderRadius: 10,
+      overflow: "hidden",
+      border: "2px solid #9C27B0",
+      backgroundColor: "#fff"
+    }}>
+      <div
+        onClick={() => setCollapsedCategories(prev => ({
+          ...prev,
+          "weekReflections": !prev["weekReflections"]
+        }))}
+        style={{
+          backgroundColor: "#9C27B0",
+          color: "#fff",
+          padding: "3px 8px",
+          fontWeight: "bold",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: "pointer",
+          transition: "all 0.3s ease",
+          fontSize: "13px",
+          minHeight: "24px"
+        }}
+      >
+        <span>
+          📝 本周复盘汇总 ({weekReflections.length})
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12 }}>
+            {collapsedCategories["weekReflections"] ? "▶" : "▼"}
+          </span>
+        </div>
+      </div>
+
+      {!collapsedCategories["weekReflections"] && hasReflections && (
+        <div style={{ padding: 12 }}>
+          {weekReflections.map((item, index) => (
+            <div
+              key={item.date}
+              style={{
+                marginBottom: index < weekReflections.length - 1 ? 12 : 0,
+                paddingBottom: index < weekReflections.length - 1 ? 12 : 0,
+                borderBottom: index < weekReflections.length - 1 ? "1px solid #f0f0f0" : "none"
+              }}
+            >
+              <div style={{
+                fontWeight: "bold",
+                color: "#9C27B0",
+                marginBottom: 6,
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              }}>
+                <span>{item.label}</span>
+                <span style={{ fontSize: 12, color: "#666" }}>
+                  ({item.date.slice(5)})
+                </span>
+              </div>
+              <div style={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "#333",
+                backgroundColor: "#f9f9f9",
+                padding: "10px",
+                borderRadius: 6,
+                border: "1px solid #e0e0e0",
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word"
+              }}>
+                {item.reflection}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!collapsedCategories["weekReflections"] && !hasReflections && (
+        <div style={{
+          padding: 20,
+          textAlign: "center",
+          color: "#666",
+          fontSize: 13,
+          backgroundColor: "#f8f9fa"
+        }}>
+          本周暂无复盘内容
+        </div>
+      )}
+    </div>
+  );
+})()}
+
+
+
       {/* 本周任务区域 */}
       <div style={{
         marginBottom: 8,
