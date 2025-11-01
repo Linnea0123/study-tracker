@@ -12877,27 +12877,26 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-<div style={{ marginBottom: 10 }}>
+
+<div style={{ marginBottom: 8 }}>
   {/* 复盘输入框 - 点击弹窗 */}
   <div style={{
     backgroundColor: '#fff',
     border: '1px solid #e0e0e0',
-    borderRadius: 8,
-    padding: '12px',
-    marginBottom: 8
+    borderRadius: 6,
+    padding: '8px 12px'
   }}>
     <div style={{
       display: 'flex',
-      alignItems: 'flex-start',
-      gap: 12
+      alignItems: 'center',
+      gap: 8
     }}>
       {/* 左边：复盘标签 */}
       <div style={{
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         color: '#333',
-        minWidth: '40px',
-        paddingTop: '4px'
+        minWidth: '32px'
       }}>
         复盘
       </div>
@@ -12908,26 +12907,26 @@ if (isInitialized && todayTasks.length === 0) {
           onClick={() => setShowReflectionModal(true)}
           style={{
             width: '100%',
-            minHeight: '20px', // 只有1排高度
-            maxHeight: '60px', // 最大3排
-            padding: '8px 12px',
+            minHeight: '20px',
+            maxHeight: '20px',
+            padding: '2px 8px',
             border: '1px solid #ddd',
-            borderRadius: 6,
-            fontSize: 14,
-            lineHeight: 1.5,
+            borderRadius: 4,
+            fontSize: 13,
+            lineHeight: 1.2,
             backgroundColor: '#fafafa',
             cursor: 'pointer',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}
         >
-          {getCurrentDailyReflection()  || '点击输入今日复盘内容...'}
+          {getCurrentDailyReflection() || '点击输入今日复盘内容...'}
         </div>
       </div>
     </div>
   </div>
 </div>
-
 
 {showReflectionModal && (
   <div style={{
@@ -12944,13 +12943,13 @@ if (isInitialized && todayTasks.length === 0) {
   }}>
     <div style={{
       backgroundColor: 'white',
-      padding: 20,
-      borderRadius: 10,
+      padding: 16,
+      borderRadius: 8,
       width: '90%',
-      maxWidth: 500,
+      maxWidth: 400,
       maxHeight: '80vh'
     }}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+      <h3 style={{ textAlign: 'center', marginBottom: 12, fontSize: 15, color: '#1a73e8' }}>
         今日复盘
       </h3>
       
@@ -12960,31 +12959,30 @@ if (isInitialized && todayTasks.length === 0) {
         placeholder="记录今日的学习收获、反思和改进点..."
         style={{
           width: '100%',
-          minHeight: 200,
-          padding: '12px',
+          minHeight: 120,
+          padding: '8px',
           border: '1px solid #ddd',
-          borderRadius: 6,
-          fontSize: 14,
-          lineHeight: 1.5,
+          borderRadius: 4,
+          fontSize: 13,
+          lineHeight: 1.4,
           resize: 'vertical',
           backgroundColor: '#fafafa',
-          fontFamily: 'inherit',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word'
+          fontFamily: 'inherit'
         }}
         autoFocus
       />
       
-      <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <button
           onClick={() => setShowReflectionModal(false)}
           style={{
             flex: 1,
-            padding: 10,
-            backgroundColor: '#ccc',
+            padding: 6,
+            backgroundColor: '#f0f0f0',
             color: '#000',
             border: 'none',
-            borderRadius: 6,
+            borderRadius: 4,
+            fontSize: 13,
             cursor: 'pointer'
           }}
         >
@@ -12997,11 +12995,12 @@ if (isInitialized && todayTasks.length === 0) {
           }}
           style={{
             flex: 1,
-            padding: 10,
+            padding: 6,
             backgroundColor: '#1a73e8',
             color: '#fff',
             border: 'none',
-            borderRadius: 6,
+            borderRadius: 4,
+            fontSize: 13,
             cursor: 'pointer'
           }}
         >
@@ -13011,6 +13010,8 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
   </div>
 )}
+
+
 
 
 
