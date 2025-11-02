@@ -4212,6 +4212,7 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
     const today = new Date();
     
     for (let i = 0; i < 7; i++) {
+      
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
@@ -6198,6 +6199,7 @@ const TaskItem = ({
           {task.text}
           {task.pinned && " 📌"}
           {task.isWeekTask && " 🌟"}
+       
         </div>
       </div>
 
@@ -6268,6 +6270,10 @@ const TaskItem = ({
             alignItems: "center",
             gap: 4
           }}>
+
+
+
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -6331,6 +6337,13 @@ const TaskItem = ({
             alignItems: "center",
             gap: 4
           }}>
+
+{/* 循环图标 */}
+{task.isRepeating && (
+    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+  )}
+
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -9682,7 +9695,7 @@ const handleAddWeekTask = (text) => {
     window.debugImport && window.debugImport();
   }, 500);
   
-  alert(`成功导入 ${newTasks.length} 个任务到 ${selectedDate}！`);
+  
 };
 
 
@@ -9919,176 +9932,225 @@ const toggleSubTask = (task, subTaskIndex) => {
     }
   };
 
- const saveTaskEdit = (task, editData) => {
-  // 如果有重复设置，先删除原有的重复任务（如果是重复任务的话）
-  if (task.repeatId) {
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].filter(t => 
-          !(t.repeatId === task.repeatId)
-        );
-      });
-      return newTasksByDate;
-    });
-  }
 
-  // 如果有新的重复设置，创建重复任务
-  if (editData.repeatFrequency) {
-    const baseTask = {
-      id: task.id || Date.now().toString(),
-      text: editData.text,
-      category: editData.category,
-      subCategory: editData.subCategory || '',
-      done: false,
-      timeSpent: 0,
-      subTasks: editData.subTasks || [],
-      note: editData.note || "",
-      reflection: editData.reflection || "",
-      image: task.image || null,
-      scheduledTime: editData.scheduledTime || "",
-      pinned: editData.pinned || false,
-      progress: editData.progress || {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      },
-      tags: editData.tags || [],
-      reminderTime: editData.reminderTime || null,
-      repeatFrequency: editData.repeatFrequency,
-      repeatDays: editData.repeatDays || [false, false, false, false, false, false, false],
-      isRepeating: true,
-      repeatId: task.repeatId || `repeat_${Date.now()}`
-    };
-
-    const startDate = new Date(selectedDate);
-    
-    if (editData.repeatFrequency === 'daily') {
-      // 每日重复 - 未来7天
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
-        const dateStr = date.toISOString().split("T")[0];
-
-        setTasksByDate(prev => {
-          const newTasksByDate = { ...prev };
-          if (!newTasksByDate[dateStr]) {
-            newTasksByDate[dateStr] = [];
-          }
-
-          // 检查是否已存在相同任务
-          const existingTask = newTasksByDate[dateStr].find(
-            t => t.repeatId === baseTask.repeatId
+  
+  const saveTaskEdit = (task, editData) => {
+    console.log('saveTaskEdit 被调用:', editData.repeatFrequency);
+    // 如果有重复设置，先删除原有的重复任务（如果是重复任务的话）
+    if (task.repeatId) {
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].filter(t => 
+            !(t.repeatId === task.repeatId)
           );
-
-          if (!existingTask) {
-            newTasksByDate[dateStr].push({
-              ...baseTask,
-              id: `${baseTask.repeatId}_${dateStr}`
-            });
-          }
-
-          return newTasksByDate;
         });
-      }
-    } else if (editData.repeatFrequency === 'weekly') {
-      // 每周重复
-      for (let week = 0; week < 4; week++) {
-        const weekStart = new Date(startDate);
-        weekStart.setDate(startDate.getDate() + (week * 7));
-        const weekMonday = getMonday(weekStart);
+        return newTasksByDate;
+      });
+    }
+  
+    // 如果有新的重复设置，创建重复任务
+    if (editData.repeatFrequency) {
 
-        editData.repeatDays.forEach((isSelected, dayIndex) => {
-          if (isSelected) {
-            const taskDate = new Date(weekMonday);
-            taskDate.setDate(weekMonday.getDate() + dayIndex);
-            
-            const year = taskDate.getFullYear();
-            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
-            const day = String(taskDate.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+ // 先更新当前任务
+ if (task.isWeekTask) {
+  const updatedTasksByDate = { ...tasksByDate };
+  Object.keys(updatedTasksByDate).forEach(date => {
+    updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+      t.isWeekTask && t.text === task.text ? {
+        ...t,
+        isRepeating: true,
+        repeatFrequency: editData.repeatFrequency,
+        repeatDays: editData.repeatDays,
+        repeatId: task.repeatId || `repeat_${Date.now()}`
+      } : t
+    );
+  });
+  setTasksByDate(updatedTasksByDate);
+} else {
+  setTasksByDate(prev => ({
+    ...prev,
+    [selectedDate]: prev[selectedDate].map(t =>
+      t.id === task.id ? {
+        ...t,
+        isRepeating: true,
+        repeatFrequency: editData.repeatFrequency,
+        repeatDays: editData.repeatDays,
+        repeatId: task.repeatId || `repeat_${Date.now()}`
+      } : t
+    )
+  }));
+}
 
-            const today = new Date(selectedDate);
-            today.setHours(0, 0, 0, 0);
-            const taskDateClean = new Date(taskDate);
-            taskDateClean.setHours(0, 0, 0, 0);
 
-            if (taskDateClean >= today) {
-              setTasksByDate(prev => {
-                const newTasksByDate = { ...prev };
-                if (!newTasksByDate[dateStr]) {
-                  newTasksByDate[dateStr] = [];
-                }
-
-                const existingTask = newTasksByDate[dateStr].find(
-                  t => t.repeatId === baseTask.repeatId
-                );
-
-                if (!existingTask) {
-                  newTasksByDate[dateStr].push({
-                    ...baseTask,
-                    id: `${baseTask.repeatId}_${dateStr}`
-                  });
-                }
-
-                return newTasksByDate;
+      const baseTask = {
+        id: task.id || Date.now().toString(),
+        text: editData.text,
+        category: editData.category,
+        subCategory: editData.subCategory || '',
+        done: false,
+        timeSpent: 0,
+        subTasks: editData.subTasks || [],
+        note: editData.note || "",
+        reflection: editData.reflection || "",
+        image: task.image || null,
+        scheduledTime: editData.scheduledTime || "",
+        pinned: editData.pinned || false,
+        progress: editData.progress || {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        tags: editData.tags || [],
+        reminderTime: editData.reminderTime || null,
+        repeatFrequency: editData.repeatFrequency,
+        repeatDays: editData.repeatDays || [false, false, false, false, false, false, false],
+        isRepeating: true,
+        repeatId: task.repeatId || `repeat_${Date.now()}`
+      };
+  
+      const startDate = new Date(selectedDate);
+      
+      if (editData.repeatFrequency === 'daily') {
+        // 每日重复 - 未来7天
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          const dateStr = date.toISOString().split("T")[0];
+  
+          // 跳过今天，避免重复创建
+          if (i === 0) continue;
+  
+          setTasksByDate(prev => {
+            const newTasksByDate = { ...prev };
+            if (!newTasksByDate[dateStr]) {
+              newTasksByDate[dateStr] = [];
+            }
+  
+            // 检查是否已存在相同任务
+            const existingTask = newTasksByDate[dateStr].find(
+              t => t.repeatId === baseTask.repeatId
+            );
+  
+            if (!existingTask) {
+              newTasksByDate[dateStr].push({
+                ...baseTask,
+                id: `${baseTask.repeatId}_${dateStr}`
               });
             }
+  
+            return newTasksByDate;
+          });
+        }
+      } else if (editData.repeatFrequency === 'weekly') {
+        // 每周重复
+        for (let week = 0; week < 4; week++) {
+          const weekStart = new Date(startDate);
+          weekStart.setDate(startDate.getDate() + (week * 7));
+          const weekMonday = getMonday(weekStart);
+  
+          // 将 forEach 改为 for 循环
+          for (let dayIndex = 0; dayIndex < editData.repeatDays.length; dayIndex++) {
+            const isSelected = editData.repeatDays[dayIndex];
+            if (isSelected) {
+              const taskDate = new Date(weekMonday);
+              taskDate.setDate(weekMonday.getDate() + dayIndex);
+              
+              const year = taskDate.getFullYear();
+              const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+              const day = String(taskDate.getDate()).padStart(2, '0');
+              const dateStr = `${year}-${month}-${day}`;
+  
+              const today = new Date(selectedDate);
+              today.setHours(0, 0, 0, 0);
+              const taskDateClean = new Date(taskDate);
+              taskDateClean.setHours(0, 0, 0, 0);
+  
+              // 跳过今天，避免重复创建
+              if (taskDateClean.getTime() === today.getTime()) continue;
+  
+              if (taskDateClean >= today) {
+                setTasksByDate(prev => {
+                  const newTasksByDate = { ...prev };
+                  if (!newTasksByDate[dateStr]) {
+                    newTasksByDate[dateStr] = [];
+                  }
+  
+                  const existingTask = newTasksByDate[dateStr].find(
+                    t => t.repeatId === baseTask.repeatId
+                  );
+  
+                  if (!existingTask) {
+                    newTasksByDate[dateStr].push({
+                      ...baseTask,
+                      id: `${baseTask.repeatId}_${dateStr}`
+                    });
+                  }
+  
+                  return newTasksByDate;
+                });
+              }
+            }
           }
+        }
+      }
+    } else {
+      // 没有重复设置，只更新当前任务
+      if (task.isWeekTask) {
+        const updatedTasksByDate = { ...tasksByDate };
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? {
+              ...t,
+              text: editData.text,
+              note: editData.note,
+              reflection: editData.reflection,
+              scheduledTime: editData.scheduledTime,
+              category: editData.category,
+              subCategory: editData.subCategory || '',
+              progress: editData.progress,
+              tags: editData.tags || [],
+              subTasks: editData.subTasks || [],
+              reminderTime: editData.reminderTime,
+              repeatFrequency: '',
+              repeatDays: [false, false, false, false, false, false, false],
+              isRepeating: false
+            } : t
+          );
         });
+        setTasksByDate(updatedTasksByDate);
+      } else {
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t =>
+            t.id === task.id ? {
+              ...t,
+              text: editData.text,
+              note: editData.note,
+              reflection: editData.reflection,
+              scheduledTime: editData.scheduledTime,
+              category: editData.category,
+              subCategory: editData.subCategory || '',
+              progress: editData.progress,
+              tags: editData.tags || [],
+              subTasks: editData.subTasks || [],
+              reminderTime: editData.reminderTime,
+              repeatFrequency: '',
+              repeatDays: [false, false, false, false, false, false, false],
+              isRepeating: false
+            } : t
+          )
+        }));
       }
     }
-  } else {
-    // 没有重复设置，只更新当前任务
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? {
-            ...t,
-            text: editData.text,
-            note: editData.note,
-            reflection: editData.reflection,
-            scheduledTime: editData.scheduledTime,
-            category: editData.category,
-            subCategory: editData.subCategory || '',
-            progress: editData.progress,
-            tags: editData.tags || [],
-            subTasks: editData.subTasks || [],
-            reminderTime: editData.reminderTime,
-            repeatFrequency: '',
-            repeatDays: [false, false, false, false, false, false, false],
-            isRepeating: false
-          } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? {
-            ...t,
-            text: editData.text,
-            note: editData.note,
-            reflection: editData.reflection,
-            scheduledTime: editData.scheduledTime,
-            category: editData.category,
-            subCategory: editData.subCategory || '',
-            progress: editData.progress,
-            tags: editData.tags || [],
-            subTasks: editData.subTasks || [],
-            reminderTime: editData.reminderTime,
-            repeatFrequency: '',
-            repeatDays: [false, false, false, false, false, false, false],
-            isRepeating: false
-          } : t
-        )
-      }));
-    }
-  }
-};
+  };
+
+
+
+
+
+  
 
   // 编辑计划时间
   const editScheduledTime = (task) => {
@@ -12481,12 +12543,10 @@ if (isInitialized && todayTasks.length === 0) {
         }}
       >
         <span>
-          📝 本周复盘汇总 ({weekReflections.length})
+          本周复盘汇总 ({weekReflections.length})
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 12 }}>
-            {collapsedCategories["weekReflections"] ? "▶" : "▼"}
-          </span>
+          
         </div>
       </div>
 
@@ -12790,10 +12850,10 @@ if (isInitialized && todayTasks.length === 0) {
         const subCatKey = `${c.name}_${subCat}`;
         const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
         
-        // 自动折叠逻辑：如果全部完成且用户没有手动展开，则自动折叠
-        const isSubCollapsed = collapsedSubCategories[subCatKey] !== undefined 
-          ? collapsedSubCategories[subCatKey] 
-          : allDone; // 如果用户没有手动设置，全部完成时自动折叠
+        
+
+      // 只根据用户手动设置决定是否折叠
+const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
         
         // add - 计算子类别总时间
         const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
@@ -13029,7 +13089,7 @@ if (isInitialized && todayTasks.length === 0) {
             textOverflow: 'ellipsis'
           }}
         >
-          {getCurrentDailyReflection() || '点击输入今日复盘内容...'}
+          {getCurrentDailyReflection() || '...'}
         </div>
       </div>
     </div>
