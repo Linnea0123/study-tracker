@@ -6927,7 +6927,8 @@ const saveDailyData = useCallback(async () => {
 
 
 
-// 2. 简化的恢复函数 - 只在初始化时调用一次
+    
+// 修复恢复计时器函数
 const restoreTimer = useCallback(() => {
   try {
     const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
@@ -6940,25 +6941,27 @@ const restoreTimer = useCallback(() => {
     }
 
     const timerData = JSON.parse(saved);
+    const now = Date.now();
     
+    // 关键修复：计算从原始开始时间到现在总共经过的时间
+    const actualStartTime = timerData.startTime; // 使用原始开始时间
+    const totalElapsed = Math.floor((now - actualStartTime) / 1000);
     
-
-  
-
-    // 恢复计时器
-    const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
-    
-    console.log('✅ 恢复计时器成功:', {
-      类型: timerData.taskId ? '任务' : '分类',
-      标识: timerData.taskId || timerData.category,
-      已过时间: totalElapsed + '秒'
+    console.log('🕒 恢复计时器 - 精确时间计算:', {
+      原始开始时间: new Date(actualStartTime).toLocaleTimeString(),
+      当前时间: new Date(now).toLocaleTimeString(),
+      总共经过时间: totalElapsed + '秒',
+      保存时的时间: timerData.elapsedTime + '秒',
+      关闭期间额外时间: (totalElapsed - timerData.elapsedTime) + '秒'
     });
 
+    // 恢复计时器状态
     setActiveTimer({
-      ...timerData,
-      startTime: now - (totalElapsed * 1000) // 重新计算开始时间
+      ...timerData // 保持所有原始数据，包括原始startTime
     });
-    setElapsedTime(totalElapsed);
+    setElapsedTime(totalElapsed); // 使用精确计算的总时间
+
+    console.log('✅ 计时器恢复成功，继续从', totalElapsed + '秒开始计时');
 
   } catch (error) {
     console.error('❌ 恢复计时器失败:', error);
@@ -6967,6 +6970,8 @@ const restoreTimer = useCallback(() => {
     setElapsedTime(0);
   }
 }, []);
+  
+
 
 // 3. 保存计时器状态
 const saveTimerState = useCallback((timer, currentElapsed, status = 'running') => {
@@ -10189,48 +10194,21 @@ const toggleSubTask = (task, subTaskIndex) => {
     todayTasks.filter(t => t.category === catName);
 
 
-
-// 修改 getTasksBySubCategory 函数 - 确保使用这个版本
+// 修改 getTasksBySubCategory 函数
 const getTasksBySubCategory = (catName) => {
   const catTasks = todayTasks.filter(t => t.category === catName);
-  
-  console.log(`调试 ${catName} 分类任务:`, catTasks.map(t => ({
-    text: t.text,
-    subCategory: t.subCategory,
-    hasSubCategory: !!t.subCategory && t.subCategory !== '未分类' && t.subCategory !== ''
-  })));
-  
-  // 分离有子分类和没有子分类的任务
-  const withoutSubCategory = [];
-  const withSubCategory = {};
+  const grouped = {};
   
   catTasks.forEach(task => {
-    // 如果没有子分类，或者子分类是空值/未分类，就放到 withoutSubCategory
-    if (!task.subCategory || task.subCategory === '未分类' || task.subCategory === '') {
-      withoutSubCategory.push(task);
-    } else {
-      // 有具体子分类的任务
-      const subCat = task.subCategory;
-      if (!withSubCategory[subCat]) {
-        withSubCategory[subCat] = [];
-      }
-      withSubCategory[subCat].push(task);
+    const subCat = task.subCategory || '未分类';
+    if (!grouped[subCat]) {
+      grouped[subCat] = [];
     }
+    grouped[subCat].push(task);
   });
   
-  console.log(`分类 ${catName} 结果:`, {
-    无子分类任务数: withoutSubCategory.length,
-    有子分类任务数: Object.keys(withSubCategory).length,
-    无子分类任务: withoutSubCategory.map(t => t.text),
-    有子分类: Object.keys(withSubCategory)
-  });
-  
-  return {
-    withoutSubCategory,
-    withSubCategory
-  };
+  return grouped;
 };
-
 
 
   // 计算分类总时间
@@ -12748,31 +12726,28 @@ if (isInitialized && todayTasks.length === 0) {
       {activeTimer?.category === c.name && !activeTimer?.subCategory ? "⏸️" : "⏱️"}
     </button>
 
- 
-
-
-
-{/* 时间显示 */}
+    {/* 时间显示 */}
+   {/* 时间显示 - 优化版本 */}
 <span
   onClick={(e) => {
     e.stopPropagation();
     editCategoryTime(c.name);
   }}
   style={{
-    fontSize: 11,
+    fontSize: 11, // 稍微减小字体
     color: isComplete ? "#888" : "#fff",
     cursor: "pointer",
     padding: "2px 6px",
     borderRadius: "4px",
     backgroundColor: "rgba(255,255,255,0.2)",
-    minWidth: "50px",
-    maxWidth: "70px",
+    minWidth: "50px", // 确保最小宽度
+    maxWidth: "70px", // 限制最大宽度
     textAlign: "center",
     whiteSpace: "nowrap",
     overflow: "hidden",
-    textOverflow: "ellipsis",
-    flexShrink: 0,
-    fontFamily: "monospace"
+    textOverflow: "ellipsis", // 文字过多显示...
+    flexShrink: 0, // 防止被压缩
+    fontFamily: "monospace" // 等宽字体，显示更整齐
   }}
   title="点击修改总时间"
 >
@@ -12787,42 +12762,163 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
+
 {!isCollapsed && (
   <div style={{ padding: 8 }}>
     {(() => {
-      // 使用新的 getTasksBySubCategory 函数
-      const { withoutSubCategory, withSubCategory } = getTasksBySubCategory(c.name);
-      const subCategoryKeys = Object.keys(withSubCategory);
+      const subCategoryTasks = getTasksBySubCategory(c.name);
+      const subCategoryKeys = Object.keys(subCategoryTasks);
       
-      console.log(`渲染分类 ${c.name}:`, {
-        无子分类任务: withoutSubCategory.length,
-        有子分类数量: subCategoryKeys.length
+      return subCategoryKeys.map((subCat) => {
+        const subCatTasks = subCategoryTasks[subCat];
+        const subCatKey = `${c.name}_${subCat}`;
+        const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
+        
+        // 自动折叠逻辑：如果全部完成且用户没有手动展开，则自动折叠
+        const isSubCollapsed = collapsedSubCategories[subCatKey] !== undefined 
+          ? collapsedSubCategories[subCatKey] 
+          : allDone; // 如果用户没有手动设置，全部完成时自动折叠
+        
+        // add - 计算子类别总时间
+        const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
+          const taskTime = task.timeSpent || 0;
+          // 如果任务正在计时，加上实时计时
+          if (activeTimer && activeTimer.taskId === task.id) {
+            return sum + taskTime + elapsedTime;
+          }
+          return sum + taskTime;
+        }, 0);
+        // end
+        
+        return (
+          <div key={subCat} style={{ marginBottom: 8 }}>
+            <div
+              onClick={() => setCollapsedSubCategories(prev => ({
+                ...prev,
+                [subCatKey]: !isSubCollapsed
+              }))}
+              style={{
+                backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
+                color: '#333',
+                padding: '4px 8px',
+                fontWeight: 'bold',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderRadius: '6px',
+                fontSize: '12px',
+                marginBottom: '4px',
+                border: allDone ? '1px solid #4CAF50' : 'none'
+              }}
+            >
+              <span>
+                {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+                {allDone && " ✓"}
+              </span>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              
+              <button
+  onClick={(e) => {
+    e.stopPropagation();
+    const currentSubCat = subCat === '未分类' ? null : subCat;
+    if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
+      handlePauseCategoryTimer(c.name, currentSubCat);
+    } else {
+      handleStartTimer({
+        category: c.name,
+        subCategory: currentSubCat
       });
-      
-      return (
-        <>
-          {/* 先渲染没有子分类的任务 */}
-          {withoutSubCategory.length > 0 && (
-            <div style={{ marginBottom: subCategoryKeys.length > 0 ? 12 : 0 }}>
-              {/* 可选：为无子分类任务添加一个简单的标题 */}
-              {subCategoryKeys.length > 0 && (
-                <div style={{
-                  fontSize: '11px',
-                  color: '#666',
-                  fontWeight: 'bold',
-                  marginBottom: '4px',
-                  paddingLeft: '8px'
-                }}>
-                  其他任务 ({withoutSubCategory.length})
-                </div>
-              )}
+    }
+  }}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    color: '#333',
+    cursor: 'pointer',
+    fontSize: '10px',
+    padding: '1px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}
+  title={activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "暂停子分类计时" : "开始子分类计时"}
+>
+  {activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "⏸️" : "⏱️"}
+</button>
+
+               
+               
+                {/* add - 子类别计时器开始 */}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newTime = window.prompt(`修改 ${subCat} 子类别总时间（分钟）`, Math.floor(subCategoryTotalTime / 60));
+                    if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
+                      const seconds = parseInt(newTime) * 60;
+                      const timeDifference = seconds - subCategoryTotalTime;
+                      
+                      if (timeDifference !== 0 && subCatTasks.length > 0) {
+                        // 平均分配到每个任务
+                        const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+                        
+                        setTasksByDate(prev => {
+                          const newTasksByDate = { ...prev };
+                          const todayTasks = newTasksByDate[selectedDate] || [];
+                          
+                          newTasksByDate[selectedDate] = todayTasks.map(t => 
+                            t.category === c.name && t.subCategory === subCat 
+                              ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+                              : t
+                          );
+                          
+                          return newTasksByDate;
+                        });
+                      }
+                    }
+                  }}
+                  style={{
+                    fontSize: '11px',
+                    color: '#666',
+                    cursor: 'pointer',
+                    padding: '2px 6px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '4px',
+                    backgroundColor: '#f5f5f5',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="点击修改子类别总时间"
+                  >
+                  {(() => {
+                    const baseTime = subCategoryTotalTime;
+                    // 如果这个子分类正在计时，加上实时计时
+                    const currentSubCat = subCat === '未分类' ? null : subCat;
+                    if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
+                      return formatCategoryTime(baseTime + elapsedTime);
+                    }
+                    return formatCategoryTime(baseTime);
+                  })()}
+                  </span>
+
+
+
+                 
+        
+                {/* end - 子类别计时器结束 */}
+                
+                
+              </div>
+            </div>
+            
+            {!isSubCollapsed && (
               <ul style={{
                 listStyle: "none",
                 padding: "0 0 0 8px",
                 margin: 0,
-                borderLeft: subCategoryKeys.length > 0 ? "2px solid #e0e0e0" : "none"
+                borderLeft: "2px solid #e0e0e0"
               }}>
-                {withoutSubCategory
+                {subCatTasks
                   .sort((a, b) => {
                     if (a.pinned && !b.pinned) return -1;
                     if (!a.pinned && b.pinned) return 1;
@@ -12855,184 +12951,18 @@ if (isInitialized && todayTasks.length === 0) {
                     />
                   ))}
               </ul>
-            </div>
-          )}
-          
-          {/* 再渲染有子分类的任务 */}
-          {subCategoryKeys.map((subCat) => {
-            const subCatTasks = withSubCategory[subCat];
-            const subCatKey = `${c.name}_${subCat}`;
-            const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
-            
-            const isSubCollapsed = collapsedSubCategories[subCatKey] !== undefined 
-              ? collapsedSubCategories[subCatKey] 
-              : allDone;
-            
-            const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
-              const taskTime = task.timeSpent || 0;
-              if (activeTimer && activeTimer.taskId === task.id) {
-                return sum + taskTime + elapsedTime;
-              }
-              return sum + taskTime;
-            }, 0);
-            
-            return (
-              <div key={subCat} style={{ marginBottom: 8 }}>
-                <div
-                  onClick={() => setCollapsedSubCategories(prev => ({
-                    ...prev,
-                    [subCatKey]: !isSubCollapsed
-                  }))}
-                  style={{
-                    backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
-                    color: '#333',
-                    padding: '4px 8px',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    marginBottom: '4px',
-                    border: allDone ? '1px solid #4CAF50' : 'none'
-                  }}
-                >
-                  <span>
-                    {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
-                    {allDone && " ✓"}
-                  </span>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (activeTimer?.category === c.name && activeTimer?.subCategory === subCat) {
-                          handlePauseCategoryTimer(c.name, subCat);
-                        } else {
-                          handleStartTimer({
-                            category: c.name,
-                            subCategory: subCat
-                          });
-                        }
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#333',
-                        cursor: 'pointer',
-                        fontSize: '10px',
-                        padding: '1px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title={activeTimer?.category === c.name && activeTimer?.subCategory === subCat ? "暂停子分类计时" : "开始子分类计时"}
-                    >
-                      {activeTimer?.category === c.name && activeTimer?.subCategory === subCat ? "⏸️" : "⏱️"}
-                    </button>
-
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newTime = window.prompt(`修改 ${subCat} 子类别总时间（分钟）`, Math.floor(subCategoryTotalTime / 60));
-                        if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
-                          const seconds = parseInt(newTime) * 60;
-                          const timeDifference = seconds - subCategoryTotalTime;
-                          
-                          if (timeDifference !== 0 && subCatTasks.length > 0) {
-                            const timePerTask = Math.floor(timeDifference / subCatTasks.length);
-                            
-                            setTasksByDate(prev => {
-                              const newTasksByDate = { ...prev };
-                              const todayTasks = newTasksByDate[selectedDate] || [];
-                              
-                              newTasksByDate[selectedDate] = todayTasks.map(t => 
-                                t.category === c.name && t.subCategory === subCat 
-                                  ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
-                                  : t
-                              );
-                              
-                              return newTasksByDate;
-                            });
-                          }
-                        }
-                      }}
-                      style={{
-                        fontSize: '11px',
-                        color: '#666',
-                        cursor: 'pointer',
-                        padding: '2px 6px',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '4px',
-                        backgroundColor: '#f5f5f5',
-                        whiteSpace: 'nowrap'
-                      }}
-                      title="点击修改子类别总时间"
-                    >
-                      {(() => {
-                        const baseTime = subCategoryTotalTime;
-                        if (activeTimer?.category === c.name && activeTimer?.subCategory === subCat) {
-                          return formatCategoryTime(baseTime + elapsedTime);
-                        }
-                        return formatCategoryTime(baseTime);
-                      })()}
-                    </span>
-                  </div>
-                </div>
-                
-                {!isSubCollapsed && (
-                  <ul style={{
-                    listStyle: "none",
-                    padding: "0 0 0 8px",
-                    margin: 0,
-                    borderLeft: "2px solid #e0e0e0"
-                  }}>
-                    {subCatTasks
-                      .sort((a, b) => {
-                        if (a.pinned && !b.pinned) return -1;
-                        if (!a.pinned && b.pinned) return 1;
-                        return 0;
-                      })
-                      .map((task) => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          onEditTime={editTaskTime}
-                          onDeleteImage={handleDeleteImage} 
-                          onEditNote={editTaskNote}
-                          onEditReflection={editTaskReflection}
-                          onOpenEditModal={openTaskEditModal}
-                          onShowImageModal={setShowImageModal}
-                          toggleDone={toggleDone}
-                          formatTimeNoSeconds={formatTimeNoSeconds}
-                          formatTimeWithSeconds={formatTimeWithSeconds}
-                          onMoveTask={moveTask}
-                          categories={baseCategories}
-                          activeTimer={activeTimer}
-                          setShowMoveModal={setShowMoveModal}
-                          onUpdateProgress={handleUpdateProgress}
-                          onStartTimer={handleStartTimer}
-                          onPauseTimer={handlePauseTimer}
-                          onEditSubTask={editSubTask}
-                          onToggleSubTask={toggleSubTask}
-                          isTimerRunning={activeTimer?.taskId === task.id}
-                          elapsedTime={elapsedTime}
-                        />
-                      ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </>
-      );
+            )}
+          </div>
+        );
+      });
     })()}
   </div>
 )}
 </div>
 );
 })}
+
+
 
 
 
