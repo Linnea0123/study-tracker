@@ -6920,25 +6920,9 @@ const restoreTimer = useCallback(() => {
 
     const timerData = JSON.parse(saved);
     
-    // 检查是否已暂停
-    if (timerData.status === 'paused') {
-      console.log('⏸️ 计时器已暂停，不恢复');
-      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      setActiveTimer(null);
-      setElapsedTime(0);
-      return;
-    }
+    
 
-    // 检查是否超时（超过2分钟不恢复）
-    const now = Date.now();
-    const timeSinceSave = Math.floor((now - timerData.savedAt) / 1000);
-    if (timeSinceSave > 120) {
-      console.log('⏰ 计时器中断时间过长，不恢复');
-      localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-      setActiveTimer(null);
-      setElapsedTime(0);
-      return;
-    }
+  
 
     // 恢复计时器
     const totalElapsed = (timerData.elapsedTime || 0) + timeSinceSave;
@@ -6969,7 +6953,7 @@ const saveTimerState = useCallback((timer, currentElapsed, status = 'running') =
     ...timer,
     elapsedTime: currentElapsed,
     savedAt: Date.now(),
-    status: status
+   
   };
   
   localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
@@ -8157,11 +8141,11 @@ const generateDailyLog = () => {
         if (task.isCompleted) {
           // 已完成任务
           logContent += `    ✔️ ${task.text}${timeText}\n`;
-          markdownContent += `  - ✔️ ${task.text}${timeText}\n`;
+          markdownContent += `- [x] ${task.text}${timeText}\n`;
         } else {
           // 未完成任务 - 只针对校内分类
           logContent += `    ❌ ${task.text}${timeText}\n`;
-          markdownContent += `  - ❌ ${task.text}${timeText}\n`;
+          markdownContent += `- [ ] ${task.text}${timeText}\n`;
         }
       });
       
@@ -8536,84 +8520,36 @@ useEffect(() => {
 
 
 
-// 检查提醒时间并置顶到期任务 - 修复版
+  // 检查提醒时间并置顶到期任务
 useEffect(() => {
-  const checkReminders = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    const currentDay = now.getDate();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
 
-    console.log('🔔 检查提醒时间:', {
-      当前时间: `${currentYear}/${currentMonth}/${currentDay} ${currentHour}:${currentMinute}`
-    });
+  const updatedTasksByDate = { ...tasksByDate };
+  let hasChanges = false;
 
-    const updatedTasksByDate = { ...tasksByDate };
-    let hasChanges = false;
-    let foundTasks = [];
-
-    // 遍历所有日期的所有任务
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
-        if (task.reminderTime) {
-          const { year, month, day, hour, minute } = task.reminderTime;
-          
-          // 调试信息
-          foundTasks.push({
-            任务: task.text,
-            提醒时间: `${year}-${month}-${day} ${hour}:${minute}`,
-            当前置顶: task.pinned
-          });
-
-          // 检查是否到达提醒时间（精确到分钟）
-          const isTimeMatch = 
-            parseInt(year) === currentYear && 
-            parseInt(month) === currentMonth && 
-            parseInt(day) === currentDay &&
-            parseInt(hour) === currentHour &&
-            parseInt(minute) === currentMinute;
-
-          if (isTimeMatch && !task.pinned) {
-            console.log('🎯 发现需要置顶的任务:', task.text);
-            hasChanges = true;
-            return { 
-              ...task, 
-              pinned: true 
-            };
-          }
+  Object.keys(updatedTasksByDate).forEach(date => {
+    updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
+      if (task.reminderTime && !task.pinned) {
+        const { year, month, day } = task.reminderTime;
+        
+        // 检查是否到达提醒日期
+        if (year === currentYear && 
+            month === currentMonth && 
+            day === currentDay) {
+          hasChanges = true;
+          return { ...task, pinned: true };
         }
-        return task;
-      });
-    });
-
-    // 输出调试信息
-    if (foundTasks.length > 0) {
-      console.log('📋 找到的带提醒任务:', foundTasks);
-    }
-
-    if (hasChanges) {
-      console.log('✅ 更新任务置顶状态');
-      setTasksByDate(updatedTasksByDate);
-      
-      // 显示提醒通知
-      const pinnedTasks = foundTasks.filter(t => 
-        t.提醒时间 === `${currentYear}-${currentMonth}-${currentDay} ${currentHour}:${currentMinute}`
-      );
-      if (pinnedTasks.length > 0) {
-        alert(`⏰ 提醒：${pinnedTasks.map(t => t.任务).join('、')} 的时间到了！`);
       }
-    }
-  };
+      return task;
+    });
+  });
 
-  // 每分钟检查一次提醒
-  const intervalId = setInterval(checkReminders, 60000);
-  
-  // 立即检查一次
-  checkReminders();
-
-  return () => clearInterval(intervalId);
+  if (hasChanges) {
+    setTasksByDate(updatedTasksByDate);
+  }
 }, [tasksByDate]);
 
   
@@ -10231,26 +10167,17 @@ const toggleSubTask = (task, subTaskIndex) => {
     todayTasks.filter(t => t.category === catName);
 
 
+// 修改 getTasksBySubCategory 函数
 const getTasksBySubCategory = (catName) => {
   const catTasks = todayTasks.filter(t => t.category === catName);
   const grouped = {};
   
   catTasks.forEach(task => {
-    const subCat = task.subCategory;
-    
-    // 如果没有子分类，归类到 null
-    if (!subCat) {
-      if (!grouped.null) {
-        grouped.null = [];
-      }
-      grouped.null.push(task);
-    } else {
-      // 有子分类的正常分组
-      if (!grouped[subCat]) {
-        grouped[subCat] = [];
-      }
-      grouped[subCat].push(task);
+    const subCat = task.subCategory || '未分类';
+    if (!grouped[subCat]) {
+      grouped[subCat] = [];
     }
+    grouped[subCat].push(task);
   });
   
   return grouped;
@@ -12817,22 +12744,6 @@ if (isInitialized && todayTasks.length === 0) {
       
       return subCategoryKeys.map((subCat) => {
         const subCatTasks = subCategoryTasks[subCat];
-
-
-// 新增：处理没有子分类的情况
-    if (subCat === 'null') {
-      return (
-        <ul key="no-subcategory" style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0
-        }}>
-          {subCatTasks.map((task) => (
-            <TaskItem key={task.id} task={task} ... />
-          ))}
-        </ul>
-      );
-    }
         const subCatKey = `${c.name}_${subCat}`;
         const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
         
