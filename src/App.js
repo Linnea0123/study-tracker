@@ -6096,6 +6096,8 @@ const TaskItem = ({
   const [showProgressControls, setShowProgressControls] = useState(false);
   const [editingSubTaskNoteIndex, setEditingSubTaskNoteIndex] = useState(null);
 
+
+  
   // 在 TaskItem 组件中，修复计时器状态判断
   const isThisTaskRunning = activeTimer && (
     activeTimer.taskId === task.id || 
@@ -6957,11 +6959,9 @@ const saveDailyData = useCallback(async () => {
 
 
     
-// 修复恢复计时器函数
 const restoreTimer = useCallback(() => {
   try {
     const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
-    console.log('🔍 恢复计时器检查:', saved ? '有数据' : '无数据');
     
     if (!saved) {
       setActiveTimer(null);
@@ -6972,28 +6972,21 @@ const restoreTimer = useCallback(() => {
     const timerData = JSON.parse(saved);
     const now = Date.now();
     
-    // 关键修复：计算从原始开始时间到现在总共经过的时间
-    const actualStartTime = timerData.startTime; // 使用原始开始时间
-    const totalElapsed = Math.floor((now - actualStartTime) / 1000);
+    // 修复：计算从保存时间到现在经过的时间
+    const timeSinceSave = Math.floor((now - timerData.savedAt) / 1000);
+    const totalElapsed = timerData.elapsedTime + timeSinceSave;
     
-    console.log('🕒 恢复计时器 - 精确时间计算:', {
-      原始开始时间: new Date(actualStartTime).toLocaleTimeString(),
-      当前时间: new Date(now).toLocaleTimeString(),
-      总共经过时间: totalElapsed + '秒',
-      保存时的时间: timerData.elapsedTime + '秒',
-      关闭期间额外时间: (totalElapsed - timerData.elapsedTime) + '秒'
+    console.log('恢复计时器:', {
+      保存时时间: timerData.elapsedTime + '秒',
+      离开时间: timeSinceSave + '秒',
+      总时间: totalElapsed + '秒'
     });
 
-    // 恢复计时器状态
-    setActiveTimer({
-      ...timerData // 保持所有原始数据，包括原始startTime
-    });
-    setElapsedTime(totalElapsed); // 使用精确计算的总时间
-
-    console.log('✅ 计时器恢复成功，继续从', totalElapsed + '秒开始计时');
+    setActiveTimer(timerData);
+    setElapsedTime(totalElapsed);
 
   } catch (error) {
-    console.error('❌ 恢复计时器失败:', error);
+    console.error('恢复计时器失败:', error);
     localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
     setActiveTimer(null);
     setElapsedTime(0);
@@ -10923,10 +10916,10 @@ const generateMarkdownContent = () => {
 
   // 计算今日统计数据
   const learningTime = todayTasks
-    .filter(t => t.category !== "体育")
+    .filter(t => t.category !== "运动")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const sportTime = todayTasks
-    .filter(t => t.category === "体育")
+    .filter(t => t.category === "运动")
     .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
   const totalTasks = todayTasks.length;
   const completionRate = totalTasks === 0 ? 0 :
@@ -13833,7 +13826,25 @@ marginTop: 10
           导入数据
         </button>
         
-
+        <button
+  onClick={() => {
+    // 这里可以跳转到个人成长页面或打开模态框
+    alert('个人成长功能开发中...');
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#1a73e8",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+>
+  个人成长
+</button>
 
         
 <input
