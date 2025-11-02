@@ -8131,11 +8131,11 @@ const generateDailyLog = () => {
         if (task.isCompleted) {
           // 已完成任务
           logContent += `  ✔️ ${task.text}${timeText}\n`;
-          markdownContent += `- ✔️ ${task.text}${timeText}\n`;
+          markdownContent += `- [x] ${task.text}${timeText}\n`;
         } else {
           // 未完成任务 - 只针对校内分类
           logContent += `  ❌ ${task.text}${timeText}\n`;
-          markdownContent += `- ❌ ${task.text}${timeText}\n`;
+          markdownContent += `- [ ] ${task.text}${timeText}\n`;
         }
       });
     }
@@ -8536,36 +8536,84 @@ useEffect(() => {
 
 
 
-  // 检查提醒时间并置顶到期任务
+// 检查提醒时间并置顶到期任务 - 修复版
 useEffect(() => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  const currentDay = now.getDate();
+  const checkReminders = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
-  const updatedTasksByDate = { ...tasksByDate };
-  let hasChanges = false;
-
-  Object.keys(updatedTasksByDate).forEach(date => {
-    updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
-      if (task.reminderTime && !task.pinned) {
-        const { year, month, day } = task.reminderTime;
-        
-        // 检查是否到达提醒日期
-        if (year === currentYear && 
-            month === currentMonth && 
-            day === currentDay) {
-          hasChanges = true;
-          return { ...task, pinned: true };
-        }
-      }
-      return task;
+    console.log('🔔 检查提醒时间:', {
+      当前时间: `${currentYear}/${currentMonth}/${currentDay} ${currentHour}:${currentMinute}`
     });
-  });
 
-  if (hasChanges) {
-    setTasksByDate(updatedTasksByDate);
-  }
+    const updatedTasksByDate = { ...tasksByDate };
+    let hasChanges = false;
+    let foundTasks = [];
+
+    // 遍历所有日期的所有任务
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
+        if (task.reminderTime) {
+          const { year, month, day, hour, minute } = task.reminderTime;
+          
+          // 调试信息
+          foundTasks.push({
+            任务: task.text,
+            提醒时间: `${year}-${month}-${day} ${hour}:${minute}`,
+            当前置顶: task.pinned
+          });
+
+          // 检查是否到达提醒时间（精确到分钟）
+          const isTimeMatch = 
+            parseInt(year) === currentYear && 
+            parseInt(month) === currentMonth && 
+            parseInt(day) === currentDay &&
+            parseInt(hour) === currentHour &&
+            parseInt(minute) === currentMinute;
+
+          if (isTimeMatch && !task.pinned) {
+            console.log('🎯 发现需要置顶的任务:', task.text);
+            hasChanges = true;
+            return { 
+              ...task, 
+              pinned: true 
+            };
+          }
+        }
+        return task;
+      });
+    });
+
+    // 输出调试信息
+    if (foundTasks.length > 0) {
+      console.log('📋 找到的带提醒任务:', foundTasks);
+    }
+
+    if (hasChanges) {
+      console.log('✅ 更新任务置顶状态');
+      setTasksByDate(updatedTasksByDate);
+      
+      // 显示提醒通知
+      const pinnedTasks = foundTasks.filter(t => 
+        t.提醒时间 === `${currentYear}-${currentMonth}-${currentDay} ${currentHour}:${currentMinute}`
+      );
+      if (pinnedTasks.length > 0) {
+        alert(`⏰ 提醒：${pinnedTasks.map(t => t.任务).join('、')} 的时间到了！`);
+      }
+    }
+  };
+
+  // 每分钟检查一次提醒
+  const intervalId = setInterval(checkReminders, 60000);
+  
+  // 立即检查一次
+  checkReminders();
+
+  return () => clearInterval(intervalId);
 }, [tasksByDate]);
 
   
