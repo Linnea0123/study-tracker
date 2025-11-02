@@ -1538,41 +1538,49 @@ const getWeekDates = (monday) => {
   
     const timeSlots = calculateTimeSlots();
   
+    
     const getTaskTimeInfo = (task, date) => {
       if (!task) return null;
-  
-      if (task.scheduledTime) {
-        const [startTime, endTime] = task.scheduledTime.split('-');
-        return { startTime, endTime, type: 'scheduled' };
-      }
-  
+    
+      // 优先显示计时器记录的实际时间段
       if (task.timeSegments && task.timeSegments.length > 0) {
         const dateSegments = task.timeSegments.filter(segment => {
           if (segment.startTime) {
-            const localDate = new Date(segment.startTime);
-            const segmentDate = localDate.toISOString().split('T')[0];
+            const segmentDate = new Date(segment.startTime).toISOString().split('T')[0];
             return segmentDate === date;
           }
           return false;
         });
-  
+    
         if (dateSegments.length > 0) {
           const segment = dateSegments[0];
           if (segment.startTime && segment.endTime) {
-            const startTimeLocal = new Date(segment.startTime);
-            const endTimeLocal = new Date(segment.endTime);
+            const startTime = new Date(segment.startTime);
+            const endTime = new Date(segment.endTime);
             
-            const startTime = `${startTimeLocal.getHours().toString().padStart(2, '0')}:${startTimeLocal.getMinutes().toString().padStart(2, '0')}`;
-            const endTime = `${endTimeLocal.getHours().toString().padStart(2, '0')}:${endTimeLocal.getMinutes().toString().padStart(2, '0')}`;
+            const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+            const endStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
             
-            return { startTime, endTime, type: 'actual' };
+            return { 
+              startTime: startStr, 
+              endTime: endStr, 
+              type: 'actual',
+              segment: segment  // 包含完整的时间段信息
+            };
           }
         }
       }
-  
+    
+      // 其次显示计划时间
+      if (task.scheduledTime) {
+        const [startTime, endTime] = task.scheduledTime.split('-');
+        return { startTime, endTime, type: 'scheduled' };
+      }
+    
       return null;
     };
-  
+
+
     // 检查时间是否在区间内
     const isTimeInRange = (time, startTime, endTime) => {
       const [timeHour, timeMinute] = time.split(':').map(Number);
@@ -1613,6 +1621,8 @@ const getWeekDates = (monday) => {
       });
     };
   
+    
+
     const getTaskStyle = (task, timeInfo) => {
       const baseStyle = {
         padding: '2px 3px',
@@ -1626,10 +1636,10 @@ const getWeekDates = (monday) => {
         cursor: 'pointer',
         lineHeight: '1.1'
       };
-  
+    
       const category = baseCategories.find(cat => cat.name === task.category);
       const categoryColor = category ? category.color : '#666';
-  
+    
       if (timeInfo.type === 'scheduled') {
         return {
           ...baseStyle,
@@ -1637,6 +1647,7 @@ const getWeekDates = (monday) => {
           border: task.done ? '1px solid #45a049' : `1px solid ${categoryColor}`
         };
       } else {
+        // 实际计时时间 - 用不同颜色区分
         const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
         const [endHour, endMinute] = timeInfo.endTime.split(':').map(Number);
         const duration = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
@@ -1644,27 +1655,37 @@ const getWeekDates = (monday) => {
         if (duration < 30) {
           return {
             ...baseStyle,
-            backgroundColor: categoryColor,
-            border: `1px solid ${categoryColor}`,
-            height: '8px',
-            minHeight: '8px',
-            fontSize: '8px',
-            padding: '1px 2px',
-            lineHeight: '1'
+            backgroundColor: '#4CAF50', // 绿色表示实际计时
+    border: '1px solid #45a049',
+    height: 'auto', // 改为auto，让文字决定高度
+    minHeight: '16px', // 最小高度确保文字可见
+    fontSize: '9px',
+    padding: '1px 1px', // 适当padding让文字舒服
+    lineHeight: '1.2',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
           };
         } else {
+          // 30分钟及以上按时间比例扩展
+          const slotHeight = 25; // 每个时间槽的基础高度
+          const extendedHeight = Math.ceil(duration / 30) * slotHeight;
+          
           return {
             ...baseStyle,
-            backgroundColor: categoryColor,
-            border: `1px solid ${categoryColor}`
+            backgroundColor: '#4CAF50', // 绿色表示实际计时
+            border: '1px solid #45a049',
+            height: `${extendedHeight}px`,
+            minHeight: `${slotHeight}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           };
         }
       }
     };
-  
-    // 固定时间槽高度
-    const slotHeight = 25;
-  
+    
+    
     return (
       <div style={{
         width: '100%',
@@ -1709,7 +1730,7 @@ const getWeekDates = (monday) => {
             </h1>
             <div style={{ width: '30px' }}></div>
           </div>
-  
+    
           {/* 简化的图例 */}
           <div style={{
             display: 'flex',
@@ -1731,7 +1752,7 @@ const getWeekDates = (monday) => {
             </div>
           </div>
         </div>
-  
+    
         {/* 时间表主体 - 占据剩余空间 */}
         <div style={{
           flex: 1,
@@ -1783,7 +1804,7 @@ const getWeekDates = (monday) => {
               </div>
             ))}
           </div>
-  
+    
           {/* 时间表内容 - 可滚动区域 */}
           <div style={{ 
             flex: 1,
@@ -1798,8 +1819,7 @@ const getWeekDates = (monday) => {
                   gridTemplateColumns: '50px repeat(7, 1fr)',
                   borderBottom: timeIndex < timeSlots.length - 1 ? '1px solid #f0f0f0' : 'none',
                   backgroundColor: timeIndex % 2 === 0 ? '#fafafa' : 'white',
-                  height: `${slotHeight}px`,
-                  minHeight: `${slotHeight}px`
+                  
                 }}
               >
                 {/* 时间列 - 固定位置 */}
@@ -1820,7 +1840,7 @@ const getWeekDates = (monday) => {
                 }}>
                   {time}
                 </div>
-  
+    
                 {/* 日期列 */}
                 {weekDates.map((day, dayIndex) => {
                   const tasks = getTasksForTimeSlot(time, dayIndex);
@@ -1851,7 +1871,7 @@ const getWeekDates = (monday) => {
                       {tasks.map((task, taskIndex) => {
                         const timeInfo = getTaskTimeInfo(task, day.date);
                         if (!timeInfo) return null;
-  
+    
                         return (
                           <div
                             key={taskIndex}
@@ -1869,6 +1889,7 @@ const getWeekDates = (monday) => {
             ))}
           </div>
         </div>
+
   
         {/* 底部统计 - 固定高度 */}
         <div style={{
@@ -7040,35 +7061,33 @@ const handlePauseTimer = (task) => {
       : record
   ));
 
-  // 更新任务时间
-  setTasksByDate(prev => {
-    const updated = { ...prev };
-    Object.keys(updated).forEach(date => {
-      updated[date] = updated[date].map(t => {
-        if (t.id === task.id || (task.isWeekTask && t.isWeekTask && t.text === task.text)) {
-          const updatedSegments = [...(t.timeSegments || [])];
-          if (updatedSegments.length > 0) {
-            const lastSegment = updatedSegments[updatedSegments.length - 1];
-            if (lastSegment && !lastSegment.endTime) {
-              updatedSegments[updatedSegments.length - 1] = {
-                ...lastSegment,
-                endTime: new Date().toISOString(),
-                duration: sessionTime
-              };
-            }
-          }
-          
-          return {
-            ...t,
-            timeSpent: (t.timeSpent || 0) + sessionTime,
-            timeSegments: updatedSegments
-          };
-        }
-        return t;
-      });
+  
+// 更新任务时间
+setTasksByDate(prev => {
+  const updated = { ...prev };
+  Object.keys(updated).forEach(date => {
+    updated[date] = updated[date].map(t => {
+      if (t.id === task.id || (task.isWeekTask && t.isWeekTask && t.text === task.text)) {
+        const updatedSegments = [...(t.timeSegments || [])];
+        // 添加新的时间段记录
+        updatedSegments.push({
+          startTime: new Date(activeTimer.startTime).toISOString(),
+          endTime: new Date(endTime).toISOString(),
+          duration: sessionTime
+        });
+        
+        return {
+          ...t,
+          timeSpent: (t.timeSpent || 0) + sessionTime,
+          timeSegments: updatedSegments
+        };
+      }
+      return t;
     });
-    return updated;
   });
+  return updated;
+});
+
 
   // 保存暂停状态
   saveTimerState(activeTimer, totalElapsed, 'paused');
