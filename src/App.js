@@ -1097,7 +1097,7 @@ const AchievementsModal = ({
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
-  backupInterval: 30 * 60 * 1000,   // 2分钟（2 * 60 * 1000 毫秒）- 修改这里
+  backupInterval: 10 * 60 * 1000,   // 10分钟（30 * 60 * 1000 毫秒）- 修改这里
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
@@ -8903,7 +8903,10 @@ if (savedCategories) {
       setIsInitialized(true);
       console.log('✅ isInitialized 设置为 true');
 
-      const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+    // 设置定时备份 - 添加这3行代码
+    const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+    console.log('✅ 自动备份已启动，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60 + '分钟');
+    setTimeout(autoBackup, 3000); // 3秒后执行第一次备份
       
       // 清理函数
       return () => {
