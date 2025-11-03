@@ -2793,7 +2793,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
          
 
 {/* 子类别选择 - 仅校内类别显示 */}
-{editData.category === '校内' && (
+{templateCategory === '校内' && (
   <div>
     <label style={{
       display: 'block',
@@ -2806,8 +2806,8 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
     </label>
 
     <select
-      value={editData.subCategory || ''}
-      onChange={(e) => setEditData({ ...editData, subCategory: e.target.value })}
+      value={templateSubCategory || ''}
+      onChange={(e) => setTemplateSubCategory(e.target.value)}
       style={{
         width: '100%',
         height: 36,
@@ -4975,7 +4975,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 
 
 {/* 子类别选择 - 仅校内类别显示 */}
-{templateCategory === '校内' && (
+{editData.category === '校内' && (
   <div>
     <label style={{
       display: 'block',
@@ -4988,8 +4988,8 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     </label>
 
     <select
-      value={templateSubCategory || ''}
-      onChange={(e) => setTemplateSubCategory(e.target.value)}
+      value={editData.subCategory || ''}
+      onChange={(e) => setEditData({ ...editData, subCategory: e.target.value })}
       style={{
         width: '100%',
         height: 36,
@@ -5013,7 +5013,6 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     </select>
   </div>
 )}
-
 
 </div>
 
