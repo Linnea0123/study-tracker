@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
-// 重命名文件顶部的 categories 为 baseCategories
+// 重命名文222件顶部的 categories 为 baseCategories
 const baseCategories = [
   { 
     name: "校内", 
