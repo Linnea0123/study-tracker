@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
-// 重命名文222件顶部的 categories 为 baseCategories
+// 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
   { 
     name: "校内", 
@@ -2791,43 +2791,48 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
             </div>
 
          
-{/* 子类别选择 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: 600,
-    color: '#333',
-    fontSize: 14,
-  }}>
-    子类别
-  </label>
 
-  <select
-  value={templateSubCategory || ''}
-  onChange={(e) => setTemplateSubCategory(e.target.value)}
-  style={{
-    width: '100%',
-    height: 36,
-    padding: '0 10px',
-    border: '1px solid #ccc',
-    borderRadius: 6,
-    fontSize: 14,
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-  }}
->
-     <option value="">选择子类别（可选）</option>
-    {categories
-      .find((cat) => cat.name === templateCategory)
-      ?.subCategories?.map((subCat) => (
-        <option key={subCat} value={subCat}>
-          {subCat}
-        </option>
-      ))}
-  </select>
-</div>
+{/* 子类别选择 - 仅校内类别显示 */}
+{editData.category === '校内' && (
+  <div>
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}>
+      子类别
+    </label>
+
+    <select
+      value={editData.subCategory || ''}
+      onChange={(e) => setEditData({ ...editData, subCategory: e.target.value })}
+      style={{
+        width: '100%',
+        height: 36,
+        padding: '0 10px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        backgroundColor: '#fff',
+        cursor: 'pointer',
+        boxSizing: 'border-box',
+      }}
+    >
+      <option value="">选择子类别（可选）</option>
+      {categories
+        .find((c) => c.name === '校内')
+        ?.subCategories?.map((subCat) => (
+          <option key={subCat} value={subCat}>
+            {subCat}
+          </option>
+        ))}
+    </select>
+  </div>
+)}
+
+
 
 
 
@@ -4968,25 +4973,23 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     </div>
   </div>
 
-  {/* 子类别选择 */}
+
+{/* 子类别选择 - 仅校内类别显示 */}
+{templateCategory === '校内' && (
   <div>
-    <label
-      style={{
-        display: 'block',
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14,
-      }}
-    >
+    <label style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}>
       子类别
     </label>
 
     <select
-      value={editData.subCategory || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, subCategory: e.target.value })
-      }
+      value={templateSubCategory || ''}
+      onChange={(e) => setTemplateSubCategory(e.target.value)}
       style={{
         width: '100%',
         height: 36,
@@ -5001,7 +5004,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     >
       <option value="">选择子类别（可选）</option>
       {categories
-        .find((c) => c.name === editData.category)
+        .find((c) => c.name === '校内')
         ?.subCategories?.map((subCat) => (
           <option key={subCat} value={subCat}>
             {subCat}
@@ -5009,6 +5012,9 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
         ))}
     </select>
   </div>
+)}
+
+
 </div>
 
 
@@ -12744,25 +12750,29 @@ if (isInitialized && todayTasks.length === 0) {
       {isComplete && " ✓"}
     </span>
     
-    {/* 子类别管理按钮 */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setEditingCategory(c);
-      }}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        color: '#fff',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '10px',
-        padding: '1px 6px'
-      }}
-      title="管理子类别"
-    >
-      📁
-    </button>
+   
+
+   {/* 子类别管理按钮 - 仅校内类别显示 */}
+{c.name === '校内' && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setEditingCategory(c);
+    }}
+    style={{
+      background: 'transparent',
+      border: 'none',
+      color: '#fff',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '10px',
+      padding: '1px 6px'
+    }}
+    title="管理子类别"
+  >
+    📁
+  </button>
+)}
   </div>
 
   {/* 将计时器和时间显示移到右边 */}
@@ -12795,28 +12805,31 @@ if (isInitialized && todayTasks.length === 0) {
       {activeTimer?.category === c.name && !activeTimer?.subCategory ? "⏸️" : "⏱️"}
     </button>
 
-    {/* 时间显示 */}
-   {/* 时间显示 - 优化版本 */}
+   
+
+
+
+{/* 时间显示 */}
 <span
   onClick={(e) => {
     e.stopPropagation();
     editCategoryTime(c.name);
   }}
   style={{
-    fontSize: 11, // 稍微减小字体
+    fontSize: 11,
     color: isComplete ? "#888" : "#fff",
     cursor: "pointer",
     padding: "2px 6px",
     borderRadius: "4px",
     backgroundColor: "rgba(255,255,255,0.2)",
-    minWidth: "50px", // 确保最小宽度
-    maxWidth: "70px", // 限制最大宽度
+    minWidth: "50px",
+    maxWidth: "70px",
     textAlign: "center",
     whiteSpace: "nowrap",
     overflow: "hidden",
-    textOverflow: "ellipsis", // 文字过多显示...
-    flexShrink: 0, // 防止被压缩
-    fontFamily: "monospace" // 等宽字体，显示更整齐
+    textOverflow: "ellipsis",
+    flexShrink: 0,
+    fontFamily: "monospace"
   }}
   title="点击修改总时间"
 >
@@ -12831,211 +12844,226 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
-
 {!isCollapsed && (
   <div style={{ padding: 8 }}>
-    {(() => {
-      const subCategoryTasks = getTasksBySubCategory(c.name);
-      const subCategoryKeys = Object.keys(subCategoryTasks);
-      
-      return subCategoryKeys.map((subCat) => {
-        const subCatTasks = subCategoryTasks[subCat];
-        const subCatKey = `${c.name}_${subCat}`;
-        const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
+    {c.name === '校内' ? (
+      // 校内类别：显示子类别分组
+      (() => {
+        const subCategoryTasks = getTasksBySubCategory(c.name);
+        const subCategoryKeys = Object.keys(subCategoryTasks);
         
-        
-
-      // 只根据用户手动设置决定是否折叠
-const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
-        
-        // add - 计算子类别总时间
-        const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
-          const taskTime = task.timeSpent || 0;
-          // 如果任务正在计时，加上实时计时
-          if (activeTimer && activeTimer.taskId === task.id) {
-            return sum + taskTime + elapsedTime;
-          }
-          return sum + taskTime;
-        }, 0);
-        // end
-        
-        return (
-          <div key={subCat} style={{ marginBottom: 8 }}>
-            <div
-              onClick={() => setCollapsedSubCategories(prev => ({
-                ...prev,
-                [subCatKey]: !isSubCollapsed
-              }))}
-              style={{
-                backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
-                color: '#333',
-                padding: '4px 8px',
-                fontWeight: 'bold',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                borderRadius: '6px',
-                fontSize: '12px',
-                marginBottom: '4px',
-                border: allDone ? '1px solid #4CAF50' : 'none'
-              }}
-            >
-              <span>
-                {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
-                {allDone && " ✓"}
-              </span>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              
-              <button
-  onClick={(e) => {
-    e.stopPropagation();
-    const currentSubCat = subCat === '未分类' ? null : subCat;
-    if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
-      handlePauseCategoryTimer(c.name, currentSubCat);
-    } else {
-      handleStartTimer({
-        category: c.name,
-        subCategory: currentSubCat
-      });
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    color: '#333',
-    cursor: 'pointer',
-    fontSize: '10px',
-    padding: '1px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }}
-  title={activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "暂停子分类计时" : "开始子分类计时"}
->
-  {activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "⏸️" : "⏱️"}
-</button>
-
-               
-               
-                {/* add - 子类别计时器开始 */}
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const newTime = window.prompt(`修改 ${subCat} 子类别总时间（分钟）`, Math.floor(subCategoryTotalTime / 60));
-                    if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
-                      const seconds = parseInt(newTime) * 60;
-                      const timeDifference = seconds - subCategoryTotalTime;
-                      
-                      if (timeDifference !== 0 && subCatTasks.length > 0) {
-                        // 平均分配到每个任务
-                        const timePerTask = Math.floor(timeDifference / subCatTasks.length);
-                        
-                        setTasksByDate(prev => {
-                          const newTasksByDate = { ...prev };
-                          const todayTasks = newTasksByDate[selectedDate] || [];
-                          
-                          newTasksByDate[selectedDate] = todayTasks.map(t => 
-                            t.category === c.name && t.subCategory === subCat 
-                              ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
-                              : t
-                          );
-                          
-                          return newTasksByDate;
+        return subCategoryKeys.map((subCat) => {
+          const subCatTasks = subCategoryTasks[subCat];
+          const subCatKey = `${c.name}_${subCat}`;
+          const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
+          const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
+          
+          const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
+            const taskTime = task.timeSpent || 0;
+            if (activeTimer && activeTimer.taskId === task.id) {
+              return sum + taskTime + elapsedTime;
+            }
+            return sum + taskTime;
+          }, 0);
+          
+          return (
+            <div key={subCat} style={{ marginBottom: 8 }}>
+              <div
+                onClick={() => setCollapsedSubCategories(prev => ({
+                  ...prev,
+                  [subCatKey]: !isSubCollapsed
+                }))}
+                style={{
+                  backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
+                  color: '#333',
+                  padding: '4px 8px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  marginBottom: '4px',
+                  border: allDone ? '1px solid #4CAF50' : 'none'
+                }}
+              >
+                <span>
+                  {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+                  {allDone && " ✓"}
+                </span>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentSubCat = subCat === '未分类' ? null : subCat;
+                      if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
+                        handlePauseCategoryTimer(c.name, currentSubCat);
+                      } else {
+                        handleStartTimer({
+                          category: c.name,
+                          subCategory: currentSubCat
                         });
                       }
-                    }
-                  }}
-                  style={{
-                    fontSize: '11px',
-                    color: '#666',
-                    cursor: 'pointer',
-                    padding: '2px 6px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                    backgroundColor: '#f5f5f5',
-                    whiteSpace: 'nowrap'
-                  }}
-                  title="点击修改子类别总时间"
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#333',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      padding: '1px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title={activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "暂停子分类计时" : "开始子分类计时"}
                   >
-                  {(() => {
-                    const baseTime = subCategoryTotalTime;
-                    // 如果这个子分类正在计时，加上实时计时
-                    const currentSubCat = subCat === '未分类' ? null : subCat;
-                    if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
-                      return formatCategoryTime(baseTime + elapsedTime);
-                    }
-                    return formatCategoryTime(baseTime);
-                  })()}
+                    {activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "⏸️" : "⏱️"}
+                  </button>
+
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newTime = window.prompt(`修改 ${subCat} 子类别总时间（分钟）`, Math.floor(subCategoryTotalTime / 60));
+                      if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
+                        const seconds = parseInt(newTime) * 60;
+                        const timeDifference = seconds - subCategoryTotalTime;
+                        
+                        if (timeDifference !== 0 && subCatTasks.length > 0) {
+                          const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+                          
+                          setTasksByDate(prev => {
+                            const newTasksByDate = { ...prev };
+                            const todayTasks = newTasksByDate[selectedDate] || [];
+                            
+                            newTasksByDate[selectedDate] = todayTasks.map(t => 
+                              t.category === c.name && t.subCategory === subCat 
+                                ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+                                : t
+                            );
+                            
+                            return newTasksByDate;
+                          });
+                        }
+                      }
+                    }}
+                    style={{
+                      fontSize: '11px',
+                      color: '#666',
+                      cursor: 'pointer',
+                      padding: '2px 6px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '4px',
+                      backgroundColor: '#f5f5f5',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title="点击修改子类别总时间"
+                  >
+                    {(() => {
+                      const baseTime = subCategoryTotalTime;
+                      const currentSubCat = subCat === '未分类' ? null : subCat;
+                      if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
+                        return formatCategoryTime(baseTime + elapsedTime);
+                      }
+                      return formatCategoryTime(baseTime);
+                    })()}
                   </span>
-
-
-
-                 
-        
-                {/* end - 子类别计时器结束 */}
-                
-                
+                </div>
               </div>
+              
+              {!isSubCollapsed && (
+                <ul style={{
+                  listStyle: "none",
+                  padding: "0 0 0 8px",
+                  margin: 0,
+                  borderLeft: "2px solid #e0e0e0"
+                }}>
+                  {subCatTasks
+                    .sort((a, b) => {
+                      if (a.pinned && !b.pinned) return -1;
+                      if (!a.pinned && b.pinned) return 1;
+                      return 0;
+                    })
+                    .map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        onEditTime={editTaskTime}
+                        onDeleteImage={handleDeleteImage} 
+                        onEditNote={editTaskNote}
+                        onEditReflection={editTaskReflection}
+                        onOpenEditModal={openTaskEditModal}
+                        onShowImageModal={setShowImageModal}
+                        toggleDone={toggleDone}
+                        formatTimeNoSeconds={formatTimeNoSeconds}
+                        formatTimeWithSeconds={formatTimeWithSeconds}
+                        onMoveTask={moveTask}
+                        categories={baseCategories}
+                        activeTimer={activeTimer}
+                        setShowMoveModal={setShowMoveModal}
+                        onUpdateProgress={handleUpdateProgress}
+                        onStartTimer={handleStartTimer}
+                        onPauseTimer={handlePauseTimer}
+                        onEditSubTask={editSubTask}
+                        onToggleSubTask={toggleSubTask}
+                        isTimerRunning={activeTimer?.taskId === task.id}
+                        elapsedTime={elapsedTime}
+                      />
+                    ))}
+                </ul>
+              )}
             </div>
-            
-            {!isSubCollapsed && (
-              <ul style={{
-                listStyle: "none",
-                padding: "0 0 0 8px",
-                margin: 0,
-                borderLeft: "2px solid #e0e0e0"
-              }}>
-                {subCatTasks
-                  .sort((a, b) => {
-                    if (a.pinned && !b.pinned) return -1;
-                    if (!a.pinned && b.pinned) return 1;
-                    return 0;
-                  })
-                  .map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      onEditTime={editTaskTime}
-                      onDeleteImage={handleDeleteImage} 
-                      onEditNote={editTaskNote}
-                      onEditReflection={editTaskReflection}
-                      onOpenEditModal={openTaskEditModal}
-                      onShowImageModal={setShowImageModal}
-                      toggleDone={toggleDone}
-                      formatTimeNoSeconds={formatTimeNoSeconds}
-                      formatTimeWithSeconds={formatTimeWithSeconds}
-                      onMoveTask={moveTask}
-                      categories={baseCategories}
-                      activeTimer={activeTimer}
-                      setShowMoveModal={setShowMoveModal}
-                      onUpdateProgress={handleUpdateProgress}
-                      onStartTimer={handleStartTimer}
-                      onPauseTimer={handlePauseTimer}
-                      onEditSubTask={editSubTask}
-                      onToggleSubTask={toggleSubTask}
-                      isTimerRunning={activeTimer?.taskId === task.id}
-                      elapsedTime={elapsedTime}
-                    />
-                  ))}
-              </ul>
-            )}
-          </div>
-        );
-      });
-    })()}
+          );
+        });
+      })()
+    ) : (
+      // 非校内类别：直接显示任务列表，不分组
+      <ul style={{
+        listStyle: "none",
+        padding: 0,
+        margin: 0
+      }}>
+        {getCategoryTasks(c.name)
+          .sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return 0;
+          })
+          .map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onEditTime={editTaskTime}
+              onDeleteImage={handleDeleteImage} 
+              onEditNote={editTaskNote}
+              onEditReflection={editTaskReflection}
+              onOpenEditModal={openTaskEditModal}
+              onShowImageModal={setShowImageModal}
+              toggleDone={toggleDone}
+              formatTimeNoSeconds={formatTimeNoSeconds}
+              formatTimeWithSeconds={formatTimeWithSeconds}
+              onMoveTask={moveTask}
+              categories={baseCategories}
+              activeTimer={activeTimer}
+              setShowMoveModal={setShowMoveModal}
+              onUpdateProgress={handleUpdateProgress}
+              onStartTimer={handleStartTimer}
+              onPauseTimer={handlePauseTimer}
+              onEditSubTask={editSubTask}
+              onToggleSubTask={toggleSubTask}
+              isTimerRunning={activeTimer?.taskId === task.id}
+              elapsedTime={elapsedTime}
+            />
+          ))}
+      </ul>
+    )}
   </div>
 )}
 </div>
 );
 })}
-
-
-
-
-
-
 
 
 
@@ -13399,8 +13427,10 @@ marginTop: 10
 
 
 
-{/* 在添加任务按钮区域后面添加子类别选择 */}
-{newTaskCategory && categories.find(c => c.name === newTaskCategory)?.subCategories?.length > 0 && (
+
+
+{/* 子类别选择 - 仅校内类别显示 */}
+{newTaskCategory === '校内' && categories.find(c => c.name === '校内')?.subCategories?.length > 0 && (
   <div style={{ marginBottom: 8 }}>
     <label style={{
       display: 'block',
@@ -13425,12 +13455,13 @@ marginTop: 10
       }}
     >
       <option value="">选择子类别（可选）</option>
-      {categories.find(c => c.name === newTaskCategory)?.subCategories?.map(subCat => (
+      {categories.find(c => c.name === '校内')?.subCategories?.map(subCat => (
         <option key={subCat} value={subCat}>{subCat}</option>
       ))}
     </select>
   </div>
 )}
+
 
         </div>
       )}
