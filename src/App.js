@@ -8756,9 +8756,10 @@ const formatCategoryTime = (seconds) => {
   return `${minutes}m${remainingSeconds}s`;
 };
 
-// 格式化时间为小时
+// 格式化时间为小时（使用实际时间，不强制递增）
 const formatTimeInHours = (seconds) => {
-  const hours = (seconds / 3600).toFixed(1);
+  const totalMinutes = Math.floor(seconds / 60);
+  const hours = (totalMinutes / 60).toFixed(1);
   return `${hours}h`;
 };
 
@@ -9291,6 +9292,130 @@ useEffect(() => {
 
   const { todayPoints, weekPoints, monthPoints, totalPoints, pointsByCategory } = calculateHonorPoints();
 
+  
+// 计算今日统计数据（排除运动类别）
+const calculateTodayStats = () => {
+  const learningTime = todayTasks
+    .filter(t => t.category !== "运动")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  
+  const sportTime = todayTasks
+    .filter(t => t.category === "运动")
+    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
+  
+  const learningTasks = todayTasks.filter(t => t.category !== "运动");
+  const totalLearningTasks = learningTasks.length;
+  const completedLearningTasks = learningTasks.filter(t => t.done).length;
+  const completionRate = totalLearningTasks === 0 ? 0 :
+    Math.round((completedLearningTasks / totalLearningTasks) * 100);
+
+  return {
+    learningTime,
+    sportTime,
+    totalLearningTasks,
+    completedLearningTasks,
+    completionRate
+  };
+};
+
+
+
+  const generateChartData = () => {
+  let dateRange = [];
+  if (statsMode === "week") {
+    dateRange = getWeekDates(currentMonday).map(d => d.date);
+  } else {
+    dateRange = getWeekDates(currentMonday).map(d => d.date);
+  }
+
+  const stats = {
+    totalTime: 0,
+    byCategory: {},
+    byDay: {},
+    tasksByDay: {},
+    completionRates: [],
+    dailyTimes: [],
+    bySubCategory: {} // 新增：校内子分类统计
+  };
+
+  dateRange.forEach(date => {
+    const dayTasks = tasksByDate[date] || [];
+    
+    // 排除运动类别的任务
+    const learningTasks = dayTasks.filter(task => task.category !== "运动");
+    let dayTotal = 0;
+    let completedTasks = 0;
+
+    learningTasks.forEach(task => {
+      stats.totalTime += task.timeSpent || 0;
+      dayTotal += task.timeSpent || 0;
+
+      if (!stats.byCategory[task.category]) {
+        stats.byCategory[task.category] = 0;
+      }
+      stats.byCategory[task.category] += task.timeSpent || 0;
+
+         // 修复：校内子分类统计 - 确保包含所有校内任务
+    if (task.category === '校内') {
+      const subCat = task.subCategory || '未分类';
+      if (!stats.bySubCategory[subCat]) {
+        stats.bySubCategory[subCat] = 0;
+      }
+      stats.bySubCategory[subCat] += task.timeSpent || 0;
+    }
+
+      if (task.done) completedTasks++;
+    });
+
+    stats.byDay[date] = dayTotal;
+    stats.tasksByDay[date] = completedTasks;
+
+    if (learningTasks.length > 0) {
+      stats.completionRates.push((completedTasks / learningTasks.length) * 100);
+    }
+
+    stats.dailyTimes.push(dayTotal);
+  });
+
+  return {
+    dailyStudyData: Object.entries(stats.byDay).map(([date, time]) => {
+      const minutes = Math.round(time / 60);
+      return {
+        name: `${new Date(date).getDate()}日`,
+        time: minutes,
+        date: date.slice(5)
+      };
+    }),
+    categoryData: categories
+      .filter(cat => cat.name !== "运动")
+      .map(cat => ({
+        name: cat.name,
+        time: Math.round((stats.byCategory[cat.name] || 0) / 60),
+        color: cat.color
+      })),
+    dailyTasksData: Object.entries(stats.tasksByDay).map(([date, count]) => ({
+      name: `${new Date(date).getDate()}日`,
+      tasks: count,
+      date: date.slice(5)
+    })),
+    // 新增：校内子分类数据
+    subCategoryData: Object.entries(stats.bySubCategory).map(([subCat, time]) => ({
+      name: subCat,
+      time: Math.round(time / 60),
+      color: '#1a73e8' // 校内主题色
+    })),
+    avgCompletion: stats.completionRates.length > 0 ?
+      Math.round(stats.completionRates.reduce((a, b) => a + b, 0) / stats.completionRates.length) : 0,
+    avgDailyTime: stats.dailyTimes.length > 0 ?
+      Math.round(stats.dailyTimes.reduce((a, b) => a + b, 0) / stats.dailyTimes.length / 60) : 0
+  };
+};
+
+
+
+
+  
+  
   // 判断分类是否全部完成
   const isCategoryComplete = (catName) => {
     const catTasks = getCategoryTasks(catName);
@@ -9298,91 +9423,21 @@ useEffect(() => {
     return catTasks.every(task => task.done);
   };
 
-  // 计算统计数据
-  const calculateStats = (dateRange) => {
-    const stats = {
-      totalTime: 0,
-      byCategory: {},
-      byDay: {},
-      tasksByDay: {},
-      completionRates: [],
-      dailyTimes: []
-    };
-
-    dateRange.forEach(date => {
-      const dayTasks = tasksByDate[date] || [];
-      let dayTotal = 0;
-      let completedTasks = 0;
-
-      dayTasks.forEach(task => {
-        stats.totalTime += task.timeSpent || 0;
-        dayTotal += task.timeSpent || 0;
-
-        if (!stats.byCategory[task.category]) {
-          stats.byCategory[task.category] = 0;
-        }
-        stats.byCategory[task.category] += task.timeSpent || 0;
-
-        if (task.done) completedTasks++;
-      });
-
-      stats.byDay[date] = dayTotal;
-      stats.tasksByDay[date] = completedTasks;
-
-      if (dayTasks.length > 0) {
-        stats.completionRates.push((completedTasks / dayTasks.length) * 100);
-      }
-
-      stats.dailyTimes.push(dayTotal);
-    });
-
-    return stats;
-  };
-
-  // 生成图表数据
-  const generateChartData = () => {
-    let dateRange = [];
-    if (statsMode === "week") {
-      // 使用正确的周一到周日日期范围
-      dateRange = getWeekDates(currentMonday).map(d => d.date);
-      console.log('📊 统计周日期范围:', dateRange);
-    } else if (statsMode === "month") {
-      // ... 月份逻辑保持不变
-    } else {
-      dateRange = getWeekDates(currentMonday).map(d => d.date);
-    }
 
 
 
 
-    const stats = calculateStats(dateRange);
 
 
 
-    
 
-    return {
-      dailyStudyData: Object.entries(stats.byDay).map(([date, time]) => ({
-        name: `${new Date(date).getDate()}日`,
-        time: Math.round(time / 60),
-        date: date.slice(5)
-      })),
-      categoryData: categories.map(cat => ({
-        name: cat.name,
-        time: Math.round((stats.byCategory[cat.name] || 0) / 60),
-        color: cat.color
-      })),
-      dailyTasksData: Object.entries(stats.tasksByDay).map(([date, count]) => ({
-        name: `${new Date(date).getDate()}日`,
-        tasks: count,
-        date: date.slice(5)
-      })),
-      avgCompletion: stats.completionRates.length > 0 ?
-        Math.round(stats.completionRates.reduce((a, b) => a + b, 0) / stats.completionRates.length) : 0,
-      avgDailyTime: stats.dailyTimes.length > 0 ?
-        Math.round(stats.dailyTimes.reduce((a, b) => a + b, 0) / stats.dailyTimes.length / 60) : 0
-    };
-  };
+
+
+
+
+
+
+
 
 // 修复 SubCategoryModal 的 onSave
 const handleSaveSubCategories = (categoryName, subCategories) => {
@@ -10921,17 +10976,10 @@ const generateMarkdownContent = () => {
   };
 
   // 计算今日统计数据
-  const learningTime = todayTasks
-    .filter(t => t.category !== "运动")
-    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
-  const sportTime = todayTasks
-    .filter(t => t.category === "运动")
-    .reduce((sum, t) => sum + (t.timeSpent || 0), 0);
-  const totalTasks = todayTasks.length;
-  const completionRate = totalTasks === 0 ? 0 :
-    Math.round((todayTasks.filter(t => t.done).length / totalTasks) * 100);
-  const { dailyStudyData, categoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
+
+const todayStats = calculateTodayStats();
+const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
   // 积分荣誉模态框 - 调整后的版本
   const HonorModal = () => {
@@ -11815,43 +11863,138 @@ const generateMarkdownContent = () => {
           ))}
         </div>
 
-        <div style={{ height: chartHeight, marginBottom: 30 }}>
-          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-            每日学习时间
-          </h3>
-          <ResponsiveContainer width="100%" height="80%">
-            <BarChart data={dailyStudyData} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize }} />
-              <YAxis tick={{ fontSize }} />
-              <Bar
-                dataKey="time"
-                fill="#1a73e8"
-                radius={[4, 4, 0, 0]}
-                label={{ position: "top", fontSize }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
 
+<div style={{ height: chartHeight, marginBottom: 30 }}>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    每日学习时间（排除运动）
+  </h3>
+  <ResponsiveContainer width="100%" height="80%">
+    <BarChart 
+      data={dailyStudyData} 
+      margin={{ top: 20, right: 10, left: -20, bottom: 5 }} // 增加顶部边距
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" tick={{ fontSize }} />
+      <YAxis 
+        tick={{ fontSize }} 
+        domain={[0, 'dataMax + 20']} // 给Y轴更多空间
+      />
+      <Bar
+        dataKey="time"
+        fill="#1a73e8"
+        radius={[4, 4, 0, 0]}
+        label={{ 
+          position: "top", 
+          fontSize: fontSize - 1, // 稍微减小字体
+          formatter: (value) => `${value}分钟`,
+          fill: "#333", // 确保标签颜色可见
+          offset: 8 // 增加标签与柱子的距离
+        }}
+      />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+       {/* 校内子分类学习时间 */}
+<div style={{ height: chartHeight, marginBottom: 30 }}>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    校内子分类学习时间
+  </h3>
+  
+  {subCategoryData && subCategoryData.length > 0 ? (
+    <>
+      <div style={{
+        backgroundColor: "#f8f9fa",
+        padding: "8px",
+        borderRadius: "6px",
+        marginBottom: "10px",
+        fontSize: "11px",
+        textAlign: "center",
+        color: "#666"
+      }}>
+        统计校内各科目的学习时间分布
+      </div>
+      <ResponsiveContainer width="100%" height="80%">
+        <BarChart 
+          data={subCategoryData} 
+          margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" tick={{ fontSize }} />
+          <YAxis 
+            tick={{ fontSize }} 
+            domain={[0, 'dataMax + 20']}
+          />
+          <Bar
+            dataKey="time"
+            fill="#1a73e8"
+            radius={[4, 4, 0, 0]}
+            label={{ 
+              position: "top", 
+              fontSize: fontSize - 1,
+              formatter: (value) => `${value}分钟`,
+              fill: "#333",
+              offset: 8
+            }}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </>
+  ) : (
+    <div style={{
+      backgroundColor: "#f8f9fa",
+      padding: "30px 20px",
+      borderRadius: "8px",
+      textAlign: "center",
+      color: "#666",
+      fontSize: "13px"
+    }}>
+      📚 暂无校内子分类学习时间数据
+      <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.4" }}>
+        请在"校内"分类的任务中设置子分类并记录时间<br/>
+        支持的子分类：数学、语文、英语、运动等
+      </div>
+    </div>
+  )}
+</div>
+
+
+
+
+
+        
         <div style={{ height: chartHeight, marginBottom: 30 }}>
-          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-            各科目学习时间
-          </h3>
-          <ResponsiveContainer width="100%" height="80%">
-            <BarChart data={categoryData} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize }} />
-              <YAxis tick={{ fontSize }} />
-              <Bar
-                dataKey="time"
-                fill="#4a90e2"
-                radius={[4, 4, 0, 0]}
-                label={{ position: "top", fontSize }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    各科目学习时间
+  </h3>
+  <ResponsiveContainer width="100%" height="80%">
+    <BarChart 
+      data={categoryData} 
+      margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" tick={{ fontSize }} />
+      <YAxis 
+        tick={{ fontSize }} 
+        domain={[0, 'dataMax + 20']}
+      />
+      <Bar
+        dataKey="time"
+        fill="#4a90e2"
+        radius={[4, 4, 0, 0]}
+        label={{ 
+          position: "top", 
+          fontSize: fontSize - 1,
+          formatter: (value) => `${value}分钟`,
+          fill: "#333",
+          offset: 8
+        }}
+      />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+
+
+
 
         <div style={{ height: chartHeight }}>
           <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
@@ -13726,55 +13869,75 @@ marginTop: 10
           
         </div>
       )}
-
-
-
-
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginTop: 20,
-        padding: "8px 0",
-        backgroundColor: "#e8f0fe",
-        borderRadius: 10,
-  maxWidth: "100%", // 确保不超出容器
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  marginTop: 20,
+  padding: "8px 0",
+  backgroundColor: "#e8f0fe",
+  borderRadius: 10,
+  maxWidth: "100%",
   overflow: "hidden"
+}}>
+  {[
+    { 
+      label: "学习时间", 
+      value: formatTimeInHours(todayStats.learningTime),
+      title: `学习时间: ${Math.floor(todayStats.learningTime / 60)}分钟`
+    },
+    { 
+      label: "运动时间", 
+      value: formatTimeInHours(todayStats.sportTime),
+      title: `运动时间: ${Math.floor(todayStats.sportTime / 60)}分钟`
+    },
+    { 
+      label: "任务数量", 
+      value: `${todayStats.completedLearningTasks}/${todayStats.totalLearningTasks}`,
+      title: `完成: ${todayStats.completedLearningTasks} / 总计: ${todayStats.totalLearningTasks}`
+    },
+    { 
+      label: "完成进度", 
+      value: `${todayStats.completionRate}%`,
+      title: `完成率: ${todayStats.completionRate}%`
+    },
+    {
+      label: "统计汇总",
+      value: "",
+      onClick: () => setShowStats(true),
+      title: "查看详细统计"
+    }
+  ].map((item, idx) => (
+    <div
+      key={idx}
+      onClick={item.onClick}
+      style={{
+        flex: 1,
+        textAlign: "center",
+        fontSize: 12,
+        borderRight: idx < 4 ? "1px solid #cce0ff" : "none",
+        padding: "4px 0",
+        cursor: item.onClick ? "pointer" : "default"
+      }}
+      title={item.title}
+    >
+      <div>{item.label}</div>
+      <div style={{
+        fontWeight: "bold",
+        marginTop: 2,
+        display: "flex",
+        justifyContent: "center"
       }}>
-        {[
-          { label: "学习时间", value: formatTimeInHours(learningTime) },
-          { label: "运动时间", value: formatTimeInHours(sportTime) },
-          { label: "任务数量", value: `${todayTasks.filter(t => t.done).length}/${totalTasks}` },
-          { label: "完成进度", value: `${completionRate}%` },
-          {
-            label: "统计汇总",
-            value: "",
-            onClick: () => setShowStats(true)
-          }
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            onClick={item.onClick}
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 12,
-              borderRight: idx < 4 ? "1px solid #cce0ff" : "none",
-              padding: "4px 0",
-              cursor: item.onClick ? "pointer" : "default"
-            }}
-          >
-            <div>{item.label}</div>
-            <div style={{
-              fontWeight: "bold",
-              marginTop: 2,
-              display: "flex",
-              justifyContent: "center"
-            }}>
-              {item.value || ""}
-            </div>
-          </div>
-        ))}
+        {item.value || ""}
       </div>
+    </div>
+  ))}
+</div>
+
+
+
+   
+
+
 
 
 
