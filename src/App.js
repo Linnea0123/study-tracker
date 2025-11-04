@@ -2055,7 +2055,7 @@ const ImageModal = ({ imageUrl, onClose }) => (
 // 重复设置模态框
 const RepeatModal = ({ config, onSave, onClose }) => {
   const [frequency, setFrequency] = useState(config.frequency|| '');
-  const [days, setDays] = useState([...config.days]);
+  const [days, setDays] = useState(config.days ? [...config.days] : []);
 
 
 
@@ -4392,14 +4392,13 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     subCategory: task.subCategory || '', // 新增子类别字段
     note: task.note || '',
     reflection: task.reflection || '',
-    
-    scheduledTime: task.scheduledTime || '',
     tags: task.tags || [],
+    scheduledTime: task.scheduledTime || '',
     reminderYear: task.reminderTime?.year || '',
     reminderMonth: task.reminderTime?.month || '',
     reminderDay: task.reminderTime?.day || '',
     reminderHour: task.reminderTime?.hour || '',
-     repeatFrequency: task.repeatFrequency || '', // 'daily', 'weekly', or ''
+    repeatFrequency: task.repeatFrequency || '', // 'daily', 'weekly', or ''
   repeatDays: task.repeatDays || [false, false, false, false, false, false, false],
     reminderMinute: task.reminderTime?.minute || '',
     subTasks: task.subTasks || [], // 确保子任务初始状态
@@ -4430,14 +4429,16 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 
     
     // 构建提醒时间对象
-    const reminderTime = {};
-    if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
-    if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
-    if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
-    if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
-    if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
-
-    // 构建计划时间字符串
+  // 构建提醒时间对象
+  const reminderTime = {};
+  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
+  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
+  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
+  if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
+  if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
+    
+  
+  // 构建计划时间字符串
     let scheduledTime = '';
     if (editData.startHour && editData.startMinute && editData.endHour && editData.endMinute) {
       const formatTime = (hour, minute) => {
@@ -7383,14 +7384,42 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     );
   };
 
+ // 2. 在这里添加保存函数 ↓↓↓
   const handleSave = () => {
-    const selectedDates = getDateOptions()
-      .filter(option => selectedDays.includes(option.day))
-      .map(option => option.value);
-    
-    onSave(task, selectedDates);
+    if (editData.text.trim() === '') {
+      alert('任务内容不能为空！');
+      return;
+    }
+
+    // 构建提醒时间对象
+    const reminderTime = {};
+    if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
+    if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
+    if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
+    if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
+    if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
+
+    const finalEditData = {
+      ...editData,
+      // 添加提醒时间对象
+      reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+      // 移除临时的提醒时间字段（避免数据冗余）
+      // ✅ 保留临时的提醒时间字段，用于编辑界面显示
+    reminderYear: editData.reminderYear,
+    reminderMonth: editData.reminderMonth,
+    reminderDay: editData.reminderDay,
+    reminderHour: editData.reminderHour,
+    reminderMinute: editData.reminderMinute
+    };
+
+    console.log('💾 保存任务数据:', finalEditData);
+    onSave(finalEditData);
     onClose();
   };
+  // 在这里添加保存函数 ↑↑↑
+
+
+
 
   return (
     <div style={{
@@ -8571,12 +8600,19 @@ useEffect(() => {
 
 
 
-  // 检查提醒时间并置顶到期任务
+ 
+
+// 修复：检查提醒时间并置顶到期任务
 useEffect(() => {
+  const checkReminders = () => {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const currentDay = now.getDate();
+
+  console.log('🔔🔔 检查提醒日期:', {
+    当前日期: `${currentYear}-${currentMonth}-${currentDay}`
+  });
 
   const updatedTasksByDate = { ...tasksByDate };
   let hasChanges = false;
@@ -8586,10 +8622,17 @@ useEffect(() => {
       if (task.reminderTime && !task.pinned) {
         const { year, month, day } = task.reminderTime;
         
-        // 检查是否到达提醒日期
+        console.log('📋📋 检查任务提醒:', {
+          任务: task.text,
+          提醒日期: `${year}-${month}-${day}`,
+          是否今天: year === currentYear && month === currentMonth && day === currentDay
+        });
+
+        // 只检查日期是否匹配
         if (year === currentYear && 
             month === currentMonth && 
             day === currentDay) {
+          console.log('🎯🎯 触发提醒并置顶任务:', task.text);
           hasChanges = true;
           return { ...task, pinned: true };
         }
@@ -8599,15 +8642,23 @@ useEffect(() => {
   });
 
   if (hasChanges) {
+    console.log('✅ 更新任务状态，置顶到期任务');
     setTasksByDate(updatedTasksByDate);
+    localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(updatedTasksByDate));
   }
-}, [tasksByDate]);
+};
 
+
+
+
+  // 每分钟检查一次提醒
+  const intervalId = setInterval(checkReminders, 60000);
   
+  // 立即检查2  是一次
+  checkReminders();
 
-
-
-
+  return () => clearInterval(intervalId);
+}, [tasksByDate]);
 
 
   // 进度更新函数
@@ -8672,6 +8723,164 @@ useEffect(() => {
 
 
 
+// 添加全局调试函数
+useEffect(() => {
+  // 调试函数：查看所有提醒任务
+  window.debugReminders = () => {
+    const now = new Date();
+    console.log('=== 提醒任务调试 ===');
+    console.log('当前时间:', now.toLocaleString());
+    
+    Object.entries(tasksByDate).forEach(([date, tasks]) => {
+      tasks.forEach(task => {
+        if (task.reminderTime) {
+          const rt = task.reminderTime;
+          const reminderDate = new Date(
+            rt.year || now.getFullYear(),
+            (rt.month || now.getMonth() + 1) - 1,
+            rt.day || now.getDate(),
+            rt.hour || 0,
+            rt.minute || 0
+          );
+          const isToday = reminderDate.toDateString() === now.toDateString();
+          const isPast = reminderDate <= now;
+          
+          console.log(`任务: "${task.text}"`, {
+            提醒时间: `${rt.year || 'undefined'}-${rt.month || 'undefined'}-${rt.day || 'undefined'} ${rt.hour || 0}:${rt.minute || 0}`,
+            是否今天: isToday,
+            是否已过时: isPast,
+            是否置顶: task.pinned,
+            提醒时间对象: rt
+          });
+        }
+      });
+    });
+  };
+
+  // 强制修复提醒函数
+  window.forceFixReminders = () => {
+    console.log('🛠️ 强制修复提醒任务...');
+    
+    const now = new Date();
+    const updatedTasksByDate = { ...tasksByDate };
+    let fixedCount = 0;
+
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
+        if (task.reminderTime && !task.pinned) {
+          const rt = task.reminderTime;
+          
+          // 检查是否应该置顶
+          const shouldPin = (rt.year || now.getFullYear()) === now.getFullYear() &&
+                           (rt.month || now.getMonth() + 1) === (now.getMonth() + 1) &&
+                           (rt.day || now.getDate()) === now.getDate() &&
+                           (now.getHours() > (rt.hour || 0) || 
+                            (now.getHours() === (rt.hour || 0) && 
+                             now.getMinutes() >= (rt.minute || 0)));
+
+          if (shouldPin) {
+            console.log('🎯 强制置顶任务:', task.text);
+            fixedCount++;
+            return { ...task, pinned: true };
+          }
+        }
+        return task;
+      });
+    });
+
+    if (fixedCount > 0) {
+      console.log(`✅ 强制置顶了 ${fixedCount} 个任务`);
+      setTasksByDate(updatedTasksByDate);
+      // 保存到本地存储
+      localStorage.setItem('tasks', JSON.stringify(updatedTasksByDate));
+    } else {
+      console.log('ℹ️ 没有需要置顶的任务');
+    }
+  };
+
+  // 手动检查提醒函数
+  window.checkReminders = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    console.log('🔔 手动检查提醒时间:', `${currentYear}-${currentMonth}-${currentDay} ${currentHour}:${currentMinute}`);
+
+    const updatedTasksByDate = { ...tasksByDate };
+    let hasChanges = false;
+
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
+        if (task.reminderTime && !task.pinned) {
+          const rt = task.reminderTime;
+          const year = rt.year || currentYear;
+          const month = rt.month || currentMonth;
+          const day = rt.day || currentDay;
+          const hour = rt.hour || 0;
+          const minute = rt.minute || 0;
+
+          console.log('📋 检查任务:', task.text, {
+            设置时间: `${year}-${month}-${day} ${hour}:${minute}`,
+            是否匹配: year === currentYear && month === currentMonth && day === currentDay &&
+                    (currentHour > hour || (currentHour === hour && currentMinute >= minute))
+          });
+
+          if (year === currentYear && 
+              month === currentMonth && 
+              day === currentDay &&
+              (currentHour > hour || (currentHour === hour && currentMinute >= minute))) {
+            console.log('🎯 触发提醒:', task.text);
+            hasChanges = true;
+            return { ...task, pinned: true };
+          }
+        }
+        return task;
+      });
+    });
+
+    if (hasChanges) {
+      setTasksByDate(updatedTasksByDate);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasksByDate));
+      console.log('✅ 已更新任务状态');
+    }
+  };
+
+}, [tasksByDate]);
+
+
+
+
+
+  // 在全局调试函数中添加提醒检查
+useEffect(() => {
+  window.debugReminders = () => {
+    const now = new Date();
+    console.log('=== 提醒任务调试 ===');
+    console.log('当前时间:', now.toLocaleString());
+    
+    Object.entries(tasksByDate).forEach(([date, tasks]) => {
+      tasks.forEach(task => {
+        if (task.reminderTime) {
+          const rt = task.reminderTime;
+          const reminderDate = new Date(rt.year, rt.month - 1, rt.day, rt.hour || 0, rt.minute || 0);
+          const isPast = reminderDate < now;
+          const isToday = reminderDate.toDateString() === now.toDateString();
+          
+          console.log(`任务: "${task.text}"`, {
+            提醒时间: `${rt.year}-${rt.month}-${rt.day} ${rt.hour || 0}:${rt.minute || 0}`,
+            是否今天: isToday,
+            是否已过时: isPast,
+            是否置顶: task.pinned,
+            提醒时间对象: rt
+          });
+        }
+      });
+    });
+  };
+}, [tasksByDate]);
 
 
 
@@ -9569,20 +9778,34 @@ const handleAddWeekTask = (text) => {
     const weekDates = getWeekDates(currentMonday); // 这里使用 currentMonday
     const taskId = Date.now().toString();
   
-    const newTask = {
-      id: taskId,
-      text: text.trim(),
-      category: "本周任务",
-      done: false,
-      timeSpent: 0,
-      note: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      isWeekTask: true,
-      reflection: ""
-    };
-  
+    
+  const newTask = {
+  id: taskId,
+  text: text.trim(),
+  category: "本周任务",
+  done: false,
+  timeSpent: 0,
+  note: "",
+  image: null,
+  scheduledTime: "",
+  pinned: false,
+  isWeekTask: true,
+  reflection: "",
+  // ✅ 添加这6行代码
+  reminderTime: reminderTimeData ? {
+    year: parseInt(reminderTimeData.reminderYear),
+    month: parseInt(reminderTimeData.reminderMonth),
+    day: parseInt(reminderTimeData.reminderDay),
+    hour: parseInt(reminderTimeData.reminderHour) || 0,
+    minute: parseInt(reminderTimeData.reminderMinute) || 0
+  } : null,
+  // ✅ 同时添加临时字段用于编辑界面
+  reminderYear: reminderTimeData?.reminderYear || '',
+  reminderMonth: reminderTimeData?.reminderMonth || '',
+  reminderDay: reminderTimeData?.reminderDay || '',
+  reminderHour: reminderTimeData?.reminderHour || '',
+  reminderMinute: reminderTimeData?.reminderMinute || ''
+};
     const newTasksByDate = { ...tasksByDate };
   
     weekDates.forEach(dateObj => {
@@ -9990,6 +10213,21 @@ const toggleSubTask = (task, subTaskIndex) => {
   const saveTaskEdit = (task, editData) => {
     console.log('saveTaskEdit 被调用:', editData.repeatFrequency);
     // 如果有重复设置，先删除原有的重复任务（如果是重复任务的话）
+
+
+
+// 构建提醒时间对象 - 修复这部分
+  const reminderTime = {};
+  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
+  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
+  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
+  if (editData.reminderHour !== '') reminderTime.hour = parseInt(editData.reminderHour) || 0;
+  if (editData.reminderMinute !== '') reminderTime.minute = parseInt(editData.reminderMinute) || 0;
+
+  console.log('📅 保存的提醒时间:', reminderTime);
+
+
+    
     if (task.repeatId) {
       setTasksByDate(prev => {
         const newTasksByDate = { ...prev };
