@@ -6217,515 +6217,607 @@ const TaskItem = ({
         </div>
       </div>
 
-      {/* 第二行：备注和感想 */}
-      {(task.note || task.reflection) && (
-        <div style={{ 
-          marginLeft: "20px", 
-          marginBottom: 4,
-          position: "relative" // 为计时器定位做准备
-        }}>
-          {/* 备注 */}
-          {task.note && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(task);
-              }}
-              style={{
-                fontSize: 12,
-                color: "#666",
-                cursor: "pointer",
-                backgroundColor: 'transparent',
-                lineHeight: "1.3",
-                whiteSpace: "pre-wrap",
-                marginBottom: task.reflection ? "2px" : "0",
-                paddingRight: "60px" // 为计时器留出空间
-              }}
-            >
-              {task.note}
-            </div>
-          )}
-          
-          {/* 感想 */}
-          {task.reflection && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(task);
-                const newReflection = window.prompt("编辑感想", task.reflection);
-                if (newReflection !== null) {
-                  onEditReflection(task, newReflection);
-                }
-              }}
-              style={{
-                fontSize: 12,
-                color: "#000",
-                cursor: "pointer",
-                backgroundColor: '#fff9c4',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                lineHeight: "1.3",
-                whiteSpace: "pre-wrap",
-                border: '1px solid #ffd54f',
-                marginBottom: "4px",
-                paddingRight: "60px" // 为计时器留出空间
-              }}
-            >
-              💭 {task.reflection}
-            </div>
-          )}
+{/* 第二行：备注、感想、计划时间、提醒时间 */}
+{(task.note || task.reflection || task.scheduledTime || task.reminderTime) && (
+  <div style={{ 
+    marginLeft: "20px", 
+    marginBottom: 4,
+    position: "relative" // 为计时器定位做准备
+  }}>
+    {/* 备注 */}
+    {task.note && (
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenEditModal(task);
+        }}
+        style={{
+          fontSize: 12,
+          color: "#666",
+          cursor: "pointer",
+          backgroundColor: 'transparent',
+          lineHeight: "1.3",
+          whiteSpace: "pre-wrap",
+          marginBottom: (task.reflection || task.scheduledTime || task.reminderTime) ? "2px" : "0",
+          paddingRight: "60px" // 为计时器留出空间
+        }}
+      >
+        {task.note}
+      </div>
+    )}
+    
+    {/* 感想 */}
+    {task.reflection && (
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenEditModal(task);
+          const newReflection = window.prompt("编辑感想", task.reflection);
+          if (newReflection !== null) {
+            onEditReflection(task, newReflection);
+          }
+        }}
+        style={{
+          fontSize: 12,
+          color: "#000",
+          cursor: "pointer",
+          backgroundColor: '#fff9c4',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          lineHeight: "1.3",
+          whiteSpace: "pre-wrap",
+          border: '1px solid #ffd54f',
+          marginBottom: (task.scheduledTime || task.reminderTime) ? "2px" : "0",
+          paddingRight: "60px" // 为计时器留出空间
+        }}
+      >
+        💭 {task.reflection}
+      </div>
+    )}
 
-          {/* 计时器 - 显示在右下角 */}
-          <div style={{
-            position: "absolute",
-            right: 0,
-            bottom: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 4
-          }}>
-
-
-
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-    if (activeTimer?.taskId === task.id) {
-      handlePauseTimer(task);
-    } else {
-      handleStartTimer(task);
-    }
-              }}
-              style={{
-                fontSize: 12,
-                border: "none",
-                background: "transparent",
-                color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-                cursor: "pointer",
-                padding: "2px"
-              }}
-              title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-            >
-              {isThisTaskRunning ? "⏸️" : "⏱️"}
-            </button>
-
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTime?.(task);
-              }}
-              style={{
-                fontSize: 12,
-                color: "#333",
-                border: "1px solid #e0e0e0",
-                borderRadius: 4,
-                backgroundColor: "#f5f5f5",
-                padding: "2px 6px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                minWidth: "45px",
-                textAlign: "center"
-              }}
-              title="点击修改时间"
-            >
-              {isThisTaskRunning
-                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                : formatTimeNoSeconds(task.timeSpent || 0)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* 如果没有备注和感想，计时器单独一行显示在右下角 */}
-      {!task.note && !task.reflection && (
-        <div style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          marginTop: 4,
-          marginLeft: "20px"
-        }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4
-          }}>
-
-{/* 循环图标 */}
-{task.isRepeating && (
-    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-  )}
-
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleTimerClick();
-              }}
-              style={{
-                fontSize: 12,
-                border: "none",
-                background: "transparent",
-                color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-                cursor: "pointer",
-                padding: "2px"
-              }}
-              title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-            >
-              {isThisTaskRunning ? "⏸️" : "⏱️"}
-            </button>
-
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTime?.(task);
-              }}
-              style={{
-                fontSize: 12,
-                color: "#333",
-                border: "1px solid #e0e0e0",
-                borderRadius: 4,
-                backgroundColor: "#f5f5f5",
-                padding: "2px 6px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                minWidth: "45px",
-                textAlign: "center"
-              }}
-              title="点击修改时间"
-            >
-              {isThisTaskRunning
-                ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-                : formatTimeNoSeconds(task.timeSpent || 0)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* 标签显示 */}
-      {task.tags && task.tags.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: 3,
-          flexWrap: 'wrap',
-          marginLeft: "20px",
-          marginTop: 4,
-          marginBottom: 4
-        }}>
-          {task.tags.map((tag, index) => (
-            <span
-              key={index}
-              style={{
-                fontSize: 9,
-                padding: '1px 4px',
-                backgroundColor: tag.color,
-                color: '#fff',
-                borderRadius: 6,
-                border: 'none',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                maxWidth: '40px'
-              }}
-              title={tag.name}
-            >
-              {tag.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* 进度条和其他内容 */}
-      {task.progress && task.progress.target > 0 && (
-        <div style={{ marginTop: 6 }}>
+    {/* 计划时间和提醒时间 */}
+    {(task.scheduledTime || task.reminderTime) && (
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        alignItems: 'center',
+        marginBottom: '4px',
+        paddingRight: "60px" // 为计时器留出空间
+      }}>
+        {/* 计划时间 */}
+        {task.scheduledTime && (
           <div
             onClick={(e) => {
               e.stopPropagation();
-              setShowProgressControls(!showProgressControls);
+              onOpenEditModal(task);
             }}
-            style={{ cursor: 'pointer' }}
-          >
-            <div style={{
-              width: '100%',
-              height: 10,
-              backgroundColor: '#f0f0f0',
-              borderRadius: 5,
-              overflow: 'hidden',
-              marginBottom: 6
-            }}>
-              <div style={{
-                width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
-                height: '100%',
-                backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
-                borderRadius: 5,
-                transition: 'width 0.3s ease'
-              }} />
-            </div>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 0,
-            height: '24px'
-          }}>
-            <div style={{
+            style={{
+              fontSize: 11,
+              color: "#1a73e8",
+              cursor: "pointer",
+              backgroundColor: '#e8f0fe',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              border: '1px solid #1a73e8',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              fontSize: 11.5,
-              color: '#666'
-            }}>
-              <span>{(() => {
-                const current = Number(task.progress.current) || 0;
-                const initial = Number(task.progress.initial) || 0;
-                const target = Number(task.progress.target) || 0;
-                const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
-                return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
-              })()}</span>
-              <span>|</span>
-              <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
-            </div>
-
-            {showProgressControls ? (
-              <div style={{
-                display: 'flex',
-                gap: 4,
-                width: '68px',
-                justifyContent: 'flex-end'
-              }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProgressAdjust(-1);
-                  }}
-                  style={{
-                    padding: '1px 6px',
-                    fontSize: 10,
-                    border: '1px solid #ccc',
-                    borderRadius: 3,
-                    backgroundColor: '#fff',
-                    color: '#333',
-                    cursor: 'pointer',
-                    minWidth: '26px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  -
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProgressAdjust(1);
-                  }}
-                  style={{
-                    padding: '1px 6px',
-                    fontSize: 10,
-                    border: '1px solid #ccc',
-                    borderRadius: 3,
-                    backgroundColor: '#fff',
-                    color: '#333',
-                    cursor: 'pointer',
-                    minWidth: '26px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            ) : (
-              <div style={{ width: '60px' }} />
-            )}
+              gap: '2px',
+              whiteSpace: 'nowrap'
+            }}
+            title="点击编辑计划时间"
+          >
+            ⏰ {task.scheduledTime}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 备注、感想和子任务的容器 */}
-      <div style={{ marginLeft: "20px" }}>
-        {task.subTasks && task.subTasks.length > 0 && (
-          <div style={{ 
-            marginTop: (task.note || task.reflection) ? 2 : -2,
-            marginBottom: 0,
-            borderLeft: '2px solid #e0e0e0', 
-            paddingLeft: 8
-          }}>
-            {task.subTasks.map((subTask, index) => (
-              <div key={index} style={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                gap: 1,
-                marginBottom: 4,
-                fontSize: 13, 
-                color: task.done ? '#999' : '#666',
-                minHeight: '18px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <input
-                    type="checkbox"
-                    checked={subTask.done}
-                    onChange={() => onToggleSubTask(task, index)}
-                    style={{ transform: 'scale(0.8)' }}
-                  />
-                  
-                  {editingSubTaskIndex === index ? (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <input
-                        type="text"
-                        value={editSubTaskText}
-                        onChange={(e) => setEditSubTaskText(e.target.value)}
-                        onBlur={saveEditSubTask}
-                        onKeyDown={handleKeyPress}
-                        autoFocus
-                        style={{
-                          padding: '1px 4px',
-                          border: '1px solid #1a73e8',
-                          borderRadius: '3px',
-                          fontSize: '13px',
-                          outline: 'none',
-                          height: '20px'
-                        }}
-                      />
-                      {/* 编辑模式下也显示备注 */}
-                      {subTask.note && (
-                        <div style={{ 
-                          fontSize: '11px', 
-                          color: '#333',
-                          marginLeft: '0px',
-                          padding: '2px 6px',
-                          backgroundColor: '#fff9c4',
-                          borderRadius: '3px',
-                          border: '1px solid #ffd54f',
-                          lineHeight: '1.3'
-                        }}>
-                          💭 {subTask.note}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span 
-                      onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const newNote = window.prompt("添加备注", subTask.note || "");
-                        if (newNote !== null) {
-                          onEditSubTask(task, index, subTask.text, newNote);
-                        }
-                      }}
-                      style={{ 
-                        textDecoration: "none",
-                        cursor: 'pointer',
-                        flex: 1,
-                        padding: '3px 4px 1px 4px',
-                        borderRadius: '3px',
-                        transition: 'background-color 0.2s',
-                        minHeight: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        lineHeight: '1.5'
-                      }}
-                      onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                      onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                      title="左键编辑文本，右键添加备注"
-                    >
-                      {subTask.text}
-                    </span>
-                  )}
-                </div>
-                
-                {/* 非编辑模式下备注显示在子任务下面 - 内联编辑版本 */}
-                {editingSubTaskIndex !== index && subTask.note && (
-                  <div style={{ 
-                    marginLeft: '20px'
-                  }}>
-                    {editingSubTaskNoteIndex === index ? (
-                      <input
-                        type="text"
-                        defaultValue={subTask.note}
-                        onBlur={(e) => {
-                          const newNote = e.target.value.trim();
-                          if (newNote !== subTask.note) {
-                            onEditSubTask(task, index, subTask.text, newNote);
-                          }
-                          setEditingSubTaskNoteIndex(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const newNote = e.target.value.trim();
-                            if (newNote !== subTask.note) {
-                              onEditSubTask(task, index, subTask.text, newNote);
-                            }
-                            setEditingSubTaskNoteIndex(null);
-                          } else if (e.key === 'Escape') {
-                            setEditingSubTaskNoteIndex(null);
-                          }
-                        }}
-                        autoFocus
-                        style={{
-                          fontSize: '10px',
-                          padding: '2px 6px',
-                          border: '1px solid #1a73e8',
-                          borderRadius: '3px',
-                          outline: 'none',
-                          width: '100%',
-                          backgroundColor: '#fff9c4'
-                        }}
-                      />
-                    ) : (
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSubTaskNoteIndex(index);
-                        }}
-                        style={{ 
-                          fontSize: '11px', 
-                          color: '#333',
-                          padding: '2px 6px',
-                          backgroundColor: '#fff9c4',
-                          borderRadius: '3px',
-                          border: '1px solid #ffd54f',
-                          lineHeight: '1.3',
-                          cursor: 'pointer'
-                        }}
-                        title="点击编辑备注"
-                      >
-                        💭 {subTask.note}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+        {/* 提醒时间 */}
+        {task.reminderTime && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenEditModal(task);
+            }}
+            style={{
+              fontSize: 11,
+              color: "#d32f2f",
+              cursor: "pointer",
+              backgroundColor: '#ffebee',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              border: '1px solid #d32f2f',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              whiteSpace: 'nowrap'
+            }}
+            title="点击编辑提醒时间"
+          >
+            🔔 {(() => {
+              const rt = task.reminderTime;
+              const month = String(rt.month || 1).padStart(2, '0');
+              const day = String(rt.day || 1).padStart(2, '0');
+              const hour = String(rt.hour || 0).padStart(2, '0');
+              const minute = String(rt.minute || 0).padStart(2, '0');
+              return `${month}/${day} ${hour}:${minute}`;
+            })()}
           </div>
         )}
       </div>
+    )}
 
-      {task.scheduledTime && (
-        <div style={{
-          fontSize: "11px",
-          color: "#666",
-          marginTop: "4px",
-          marginBottom: "4px",
-          padding: "2px 6px",
-          backgroundColor: "#f0f0f0",
-          borderRadius: "4px",
-          display: "inline-block",
-          border: "1px solid #ddd"
-        }}>
-          ⏰ {task.scheduledTime}
-        </div>
+    {/* 计时器 - 显示在右下角 */}
+    <div style={{
+      position: "absolute",
+      right: 0,
+      bottom: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 4
+    }}>
+      {/* 循环图标 - 调整重复任务显示 */}
+      {task.isRepeating && (
+        <span 
+          style={{ 
+            fontSize: "12px", 
+            cursor: "pointer",
+            padding: "2px 4px",
+            backgroundColor: "#f0f0f0",
+            borderRadius: "3px",
+            border: "1px solid #ddd"
+          }} 
+          title="重复任务"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal?.(task);
+          }}
+        >
+          🔄
+        </span>
       )}
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (activeTimer?.taskId === task.id) {
+            handlePauseTimer(task);
+          } else {
+            handleStartTimer(task);
+          }
+        }}
+        style={{
+          fontSize: 12,
+          border: "none",
+          background: "transparent",
+          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+          cursor: "pointer",
+          padding: "2px"
+        }}
+        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+      >
+        {isThisTaskRunning ? "⏸️" : "⏱️"}
+      </button>
+
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          onEditTime?.(task);
+        }}
+        style={{
+          fontSize: 12,
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          borderRadius: 4,
+          backgroundColor: "#f5f5f5",
+          padding: "2px 6px",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          minWidth: "45px",
+          textAlign: "center"
+        }}
+        title="点击修改时间"
+      >
+        {isThisTaskRunning
+          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+          : formatTimeNoSeconds(task.timeSpent || 0)}
+      </span>
+    </div>
+  </div>
+)}
+
+{/* 如果没有备注、感想、计划时间、提醒时间，但需要显示计时器 */}
+{(!task.note && !task.reflection && !task.scheduledTime && !task.reminderTime) && (
+  <div style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 4,
+    marginLeft: "20px"
+  }}>
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 4
+    }}>
+      {/* 循环图标 - 调整重复任务显示 */}
+      {task.isRepeating && (
+        <span 
+          style={{ 
+            fontSize: "12px", 
+            cursor: "pointer",
+            padding: "2px 4px",
+            backgroundColor: "#f0f0f0",
+            borderRadius: "3px",
+            border: "1px solid #ddd"
+          }} 
+          title="重复任务"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal?.(task);
+          }}
+        >
+          🔄
+        </span>
+      )}
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (activeTimer?.taskId === task.id) {
+            handlePauseTimer(task);
+          } else {
+            handleStartTimer(task);
+          }
+        }}
+        style={{
+          fontSize: 12,
+          border: "none",
+          background: "transparent",
+          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+          cursor: "pointer",
+          padding: "2px"
+        }}
+        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
+      >
+        {isThisTaskRunning ? "⏸️" : "⏱️"}
+      </button>
+
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          onEditTime?.(task);
+        }}
+        style={{
+          fontSize: 12,
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          borderRadius: 4,
+          backgroundColor: "#f5f5f5",
+          padding: "2px 6px",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          minWidth: "45px",
+          textAlign: "center"
+        }}
+        title="点击修改时间"
+      >
+        {isThisTaskRunning
+          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+          : formatTimeNoSeconds(task.timeSpent || 0)}
+      </span>
+    </div>
+  </div>
+)}
+
+{/* 标签显示 */}
+{task.tags && task.tags.length > 0 && (
+  <div style={{
+    display: 'flex',
+    gap: 3,
+    flexWrap: 'wrap',
+    marginLeft: "20px",
+    marginTop: 4,
+    marginBottom: 4
+  }}>
+    {task.tags.map((tag, index) => (
+      <span
+        key={index}
+        style={{
+          fontSize: 9,
+          padding: '1px 4px',
+          backgroundColor: tag.color,
+          color: '#fff',
+          borderRadius: 6,
+          border: 'none',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          maxWidth: '40px'
+        }}
+        title={tag.name}
+      >
+        {tag.name}
+      </span>
+    ))}
+  </div>
+)}
+
+{/* 进度条和其他内容 */}
+{task.progress && task.progress.target > 0 && (
+  <div style={{ marginTop: 6 }}>
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowProgressControls(!showProgressControls);
+      }}
+      style={{ cursor: 'pointer' }}
+    >
+      <div style={{
+        width: '100%',
+        height: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 5,
+        overflow: 'hidden',
+        marginBottom: 6
+      }}>
+        <div style={{
+          width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
+          height: '100%',
+          backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
+          borderRadius: 5,
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
+
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 0,
+      height: '24px'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 11.5,
+        color: '#666'
+      }}>
+        <span>{(() => {
+          const current = Number(task.progress.current) || 0;
+          const initial = Number(task.progress.initial) || 0;
+          const target = Number(task.progress.target) || 0;
+          const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
+          return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
+        })()}</span>
+        <span>|</span>
+        <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
+      </div>
+
+      {showProgressControls ? (
+        <div style={{
+          display: 'flex',
+          gap: 4,
+          width: '68px',
+          justifyContent: 'flex-end'
+        }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProgressAdjust(-1);
+            }}
+            style={{
+              padding: '1px 6px',
+              fontSize: 10,
+              border: '1px solid #ccc',
+              borderRadius: 3,
+              backgroundColor: '#fff',
+              color: '#333',
+              cursor: 'pointer',
+              minWidth: '26px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            -
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProgressAdjust(1);
+            }}
+            style={{
+              padding: '1px 6px',
+              fontSize: 10,
+              border: '1px solid #ccc',
+              borderRadius: 3,
+              backgroundColor: '#fff',
+              color: '#333',
+              cursor: 'pointer',
+              minWidth: '26px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <div style={{ width: '60px' }} />
+      )}
+    </div>
+  </div>
+)}
+
+{/* 备注、感想和子任务的容器 */}
+<div style={{ marginLeft: "20px" }}>
+  {task.subTasks && task.subTasks.length > 0 && (
+    <div style={{ 
+      marginTop: (task.note || task.reflection) ? 2 : -2,
+      marginBottom: 0,
+      borderLeft: '2px solid #e0e0e0', 
+      paddingLeft: 8
+    }}>
+      {task.subTasks.map((subTask, index) => (
+        <div key={index} style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: 1,
+          marginBottom: 4,
+          fontSize: 13, 
+          color: task.done ? '#999' : '#666',
+          minHeight: '18px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <input
+              type="checkbox"
+              checked={subTask.done}
+              onChange={() => onToggleSubTask(task, index)}
+              style={{ transform: 'scale(0.8)' }}
+            />
+            
+            {editingSubTaskIndex === index ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <input
+                  type="text"
+                  value={editSubTaskText}
+                  onChange={(e) => setEditSubTaskText(e.target.value)}
+                  onBlur={saveEditSubTask}
+                  onKeyDown={handleKeyPress}
+                  autoFocus
+                  style={{
+                    padding: '1px 4px',
+                    border: '1px solid #1a73e8',
+                    borderRadius: '3px',
+                    fontSize: '13px',
+                    outline: 'none',
+                    height: '20px'
+                  }}
+                />
+                {/* 编辑模式下也显示备注 */}
+                {subTask.note && (
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: '#333',
+                    marginLeft: '0px',
+                    padding: '2px 6px',
+                    backgroundColor: '#fff9c4',
+                    borderRadius: '3px',
+                    border: '1px solid #ffd54f',
+                    lineHeight: '1.3'
+                  }}>
+                    💭 {subTask.note}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span 
+                onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const newNote = window.prompt("添加备注", subTask.note || "");
+                  if (newNote !== null) {
+                    onEditSubTask(task, index, subTask.text, newNote);
+                  }
+                }}
+                style={{ 
+                  textDecoration: "none",
+                  cursor: 'pointer',
+                  flex: 1,
+                  padding: '3px 4px 1px 4px',
+                  borderRadius: '3px',
+                  transition: 'background-color 0.2s',
+                  minHeight: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  lineHeight: '1.5'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                title="左键编辑文本，右键添加备注"
+              >
+                {subTask.text}
+              </span>
+            )}
+          </div>
+          
+          {/* 非编辑模式下备注显示在子任务下面 - 内联编辑版本 */}
+          {editingSubTaskIndex !== index && subTask.note && (
+            <div style={{ 
+              marginLeft: '20px'
+            }}>
+              {editingSubTaskNoteIndex === index ? (
+                <input
+                  type="text"
+                  defaultValue={subTask.note}
+                  onBlur={(e) => {
+                    const newNote = e.target.value.trim();
+                    if (newNote !== subTask.note) {
+                      onEditSubTask(task, index, subTask.text, newNote);
+                    }
+                    setEditingSubTaskNoteIndex(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const newNote = e.target.value.trim();
+                      if (newNote !== subTask.note) {
+                        onEditSubTask(task, index, subTask.text, newNote);
+                      }
+                      setEditingSubTaskNoteIndex(null);
+                    } else if (e.key === 'Escape') {
+                      setEditingSubTaskNoteIndex(null);
+                    }
+                  }}
+                  autoFocus
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    border: '1px solid #1a73e8',
+                    borderRadius: '3px',
+                    outline: 'none',
+                    width: '100%',
+                    backgroundColor: '#fff9c4'
+                  }}
+                />
+              ) : (
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingSubTaskNoteIndex(index);
+                  }}
+                  style={{ 
+                    fontSize: '11px', 
+                    color: '#333',
+                    padding: '2px 6px',
+                    backgroundColor: '#fff9c4',
+                    borderRadius: '3px',
+                    border: '1px solid #ffd54f',
+                    lineHeight: '1.3',
+                    cursor: 'pointer'
+                  }}
+                  title="点击编辑备注"
+                >
+                  💭 {subTask.note}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+
 
 {task.image && (
   <div style={{ marginTop: 4, marginBottom: 4, position: 'relative', display: 'inline-block' }}>
