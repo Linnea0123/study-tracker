@@ -4386,36 +4386,59 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
 
 // 任务编辑模态框
 const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal }) => {
-  const [editData, setEditData] = useState({
-    text: task.text || '',
-    category: task.category || categories[0].name,
-    subCategory: task.subCategory || '', // 新增子类别字段
-    note: task.note || '',
-    reflection: task.reflection || '',
-    tags: task.tags || [],
-    scheduledTime: task.scheduledTime || '',
-    reminderYear: task.reminderTime?.year || '',
-    reminderMonth: task.reminderTime?.month || '',
-    reminderDay: task.reminderTime?.day || '',
-    reminderHour: task.reminderTime?.hour || '',
-    repeatFrequency: task.repeatFrequency || '', // 'daily', 'weekly', or ''
+const [editData, setEditData] = useState({
+  text: task.text || '',
+  category: task.category || categories[0].name,
+  subCategory: task.subCategory || '',
+  note: task.note || '',
+  reflection: task.reflection || '',
+  tags: task.tags || [],
+  scheduledTime: task.scheduledTime || '',
+  
+  // 修复提醒时间字段
+  reminderYear: task.reminderTime?.year?.toString() || '',
+  reminderMonth: task.reminderTime?.month?.toString() || '',
+  reminderDay: task.reminderTime?.day?.toString() || '',
+  reminderHour: task.reminderTime?.hour?.toString() || '',
+  reminderMinute: task.reminderTime?.minute?.toString() || '',
+  
+  repeatFrequency: task.repeatFrequency || '',
   repeatDays: task.repeatDays || [false, false, false, false, false, false, false],
-    reminderMinute: task.reminderTime?.minute || '',
-    subTasks: task.subTasks || [], // 确保子任务初始状态
-    // 计划时间字段
-    startHour: task.scheduledTime ? task.scheduledTime.split('-')[0]?.split(':')[0] || '' : '',
-    startMinute: task.scheduledTime ? task.scheduledTime.split('-')[0]?.split(':')[1] || '' : '',
-    endHour: task.scheduledTime ? task.scheduledTime.split('-')[1]?.split(':')[0] || '' : '',
-    endMinute: task.scheduledTime ? task.scheduledTime.split('-')[1]?.split(':')[1] || '' : '',
-    progress: task.progress || {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    pinned: task.pinned || false
-    
-  });
+  subTasks: task.subTasks || [],
+  
+  // 🔴 修复这里：正确初始化计划时间字段
+  startHour: task.scheduledTime ? 
+    (() => {
+      const startPart = task.scheduledTime.split('-')[0];
+      return startPart ? startPart.split(':')[0] || '' : '';
+    })() : '',
+  
+  startMinute: task.scheduledTime ? 
+    (() => {
+      const startPart = task.scheduledTime.split('-')[0];
+      return startPart ? startPart.split(':')[1] || '' : '';
+    })() : '',
+  
+  endHour: task.scheduledTime ? 
+    (() => {
+      const endPart = task.scheduledTime.split('-')[1];
+      return endPart ? endPart.split(':')[0] || '' : '';
+    })() : '',
+  
+  endMinute: task.scheduledTime ? 
+    (() => {
+      const endPart = task.scheduledTime.split('-')[1];
+      return endPart ? endPart.split(':')[1] || '' : '';
+    })() : '',
+  
+  progress: task.progress || {
+    initial: 0,
+    current: 0,
+    target: 0,
+    unit: "%"
+  },
+  pinned: task.pinned || false
+});
 
   const fileInputRef = useRef(null);
 
@@ -4462,6 +4485,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
     onSave(finalEditData);
     onClose();
   };
+
+
+
+
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -5400,153 +5427,132 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal,setShowMoveTask
 
 
 
+
 {/* 🕓 计划时间 */}
 <div>
-  <label
-    style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: 600,
-      color: '#333',
-      fontSize: 14,
-    }}
-  >
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14,
+  }}>
     ⏰ 计划时间
   </label>
 
-  <div
-    style={{
-      display: 'flex',
-      gap: 6,
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'nowrap',
-    }}
-  >
-    {/* 年 */}
-    <input
-      type="number"
-      min="2024"
-      max="2030"
-      placeholder="2025"
-      value={editData.planYear || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, planYear: e.target.value })
-      }
-      style={{
-        flex: 1,
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
+  <div style={{
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap',
+  }}>
+    {/* 开始时间 */}
+    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        placeholder="时"
+        value={editData.startHour}
+        onChange={(e) => setEditData({ ...editData, startHour: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        placeholder="分"
+        value={editData.startMinute}
+        onChange={(e) => setEditData({ ...editData, startMinute: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
 
-    <span style={{ color: '#666' }}>/</span>
+    <span style={{ color: '#666', fontSize: 12 }}>至</span>
 
-    {/* 月 */}
-    <input
-      type="number"
-      min="1"
-      max="12"
-      placeholder="MM"
-      value={editData.planMonth || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, planMonth: e.target.value })
-      }
-      style={{
-        flex: 1,
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666' }}>/</span>
-
-    {/* 日 */}
-    <input
-      type="number"
-      min="1"
-      max="31"
-      placeholder="DD"
-      value={editData.planDay || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, planDay: e.target.value })
-      }
-      style={{
-        flex: 1,
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666' }}> </span>
-
-    {/* 时 */}
-    <input
-      type="number"
-      min="0"
-      max="23"
-      placeholder="HH"
-      value={editData.planHour || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, planHour: e.target.value })
-      }
-      style={{
-        flex: 1,
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666' }}>:</span>
-
-    {/* 分 */}
-    <input
-      type="number"
-      min="0"
-      max="59"
-      placeholder="MM"
-      value={editData.planMinute || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, planMinute: e.target.value })
-      }
-      style={{
-        flex: 1,
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
+    {/* 结束时间 */}
+    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        placeholder="时"
+        value={editData.endHour}
+        onChange={(e) => setEditData({ ...editData, endHour: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        placeholder="分"
+        value={editData.endMinute}
+        onChange={(e) => setEditData({ ...editData, endMinute: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
   </div>
+
+  {/* 显示当前设置的计划时间 */}
+  {editData.startHour && editData.startMinute && editData.endHour && editData.endMinute && (
+    <div style={{
+      fontSize: 12,
+      color: '#28a745',
+      textAlign: 'center',
+      marginTop: 6,
+      padding: 4,
+      backgroundColor: '#e8f5e8',
+      borderRadius: 4
+    }}>
+      计划时间: {editData.startHour}:{editData.startMinute} - {editData.endHour}:{editData.endMinute}
+    </div>
+  )}
 </div>
+
+
 
 {/* 🔔 提醒时间 */}
 <div>
@@ -7384,39 +7390,57 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     );
   };
 
- // 2. 在这里添加保存函数 ↓↓↓
-  const handleSave = () => {
-    if (editData.text.trim() === '') {
-      alert('任务内容不能为空！');
-      return;
-    }
 
-    // 构建提醒时间对象
-    const reminderTime = {};
-    if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
-    if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
-    if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
-    if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
-    if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
+const handleSave = () => {
+  if (editData.text.trim() === '') {
+    alert('任务内容不能为空！');
+    return;
+  }
 
-    const finalEditData = {
-      ...editData,
-      // 添加提醒时间对象
-      reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-      // 移除临时的提醒时间字段（避免数据冗余）
-      // ✅ 保留临时的提醒时间字段，用于编辑界面显示
-    reminderYear: editData.reminderYear,
-    reminderMonth: editData.reminderMonth,
-    reminderDay: editData.reminderDay,
-    reminderHour: editData.reminderHour,
-    reminderMinute: editData.reminderMinute
+  console.log('保存的数据:', editData);
+
+  // 构建提醒时间对象
+  const reminderTime = {};
+  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
+  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
+  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
+  if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
+  if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
+
+  // 构建计划时间字符串
+  let scheduledTime = '';
+  if (editData.startHour && editData.startMinute && editData.endHour && editData.endMinute) {
+    const formatTime = (hour, minute) => {
+      // 确保格式为两位数字
+      const h = hour.toString().padStart(2, '0');
+      const m = minute.toString().padStart(2, '0');
+      return `${h}:${m}`;
     };
+    scheduledTime = `${formatTime(editData.startHour, editData.startMinute)}-${formatTime(editData.endHour, editData.endMinute)}`;
+    console.log('构建的计划时间:', scheduledTime);
+  }
 
-    console.log('💾 保存任务数据:', finalEditData);
-    onSave(finalEditData);
-    onClose();
+
+
+
+
+  const finalEditData = {
+    ...editData,
+    tags: editData.tags || [],
+    subCategory: editData.subCategory || '',
+    subTasks: editData.subTasks || [],
+    reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+    scheduledTime: scheduledTime,
+    repeatFrequency: editData.repeatFrequency || '',
+    repeatDays: editData.repeatDays || [false, false, false, false, false, false, false]
   };
-  // 在这里添加保存函数 ↑↑↑
+
+  console.log('💾 最终保存的任务数据:', finalEditData);
+  onSave(finalEditData);
+  onClose();
+};
+
+
 
 
 
@@ -8489,6 +8513,8 @@ const generateDailyLog = () => {
 
 
 
+
+  
 
 // 暴露实例给全局调试
 useEffect(() => {
@@ -9668,44 +9694,43 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
         
 
 
+
+
 const handleAddTask = (template = null) => {
   console.log('=== 开始添加任务 ===');
   console.log('template:', template);
-  console.log('newTaskText:', newTaskText);
-  console.log('newTaskCategory:', newTaskCategory);
-  console.log('selectedDate:', selectedDate);
+  console.log('repeatConfig:', repeatConfig); // 添加这行来调试
   
   let text, category;
 
   if (template) {
     text = template.content;
     category = template.category;
-    console.log('使用模板:', { text, category });
   } else {
     text = newTaskText.trim();
     category = newTaskCategory;
-    console.log('手动输入:', { text, category });
     if (!text) {
-      console.log('❌ 任务内容为空，停止添加');
       alert('请输入任务内容');
       return;
     }
   }
 
-  // 检查当前选中的日期是否是今天
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  console.log('今天日期:', todayStr);
-  
-  if (selectedDate !== todayStr) {
-    const confirmAdd = window.confirm(
-      `当前选中的日期是 ${selectedDate}，不是今天(${todayStr})。确定要在这个日期添加任务吗？`
-    );
-    if (!confirmAdd) {
-      console.log('❌ 用户取消在非今天日期添加');
-      return;
-    }
+  // 构建计划时间字符串
+  let scheduledTime = '';
+  if (repeatConfig.startHour && repeatConfig.startMinute && repeatConfig.endHour && repeatConfig.endMinute) {
+    const formatTime = (hour, minute) => {
+      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    };
+    scheduledTime = `${formatTime(repeatConfig.startHour, repeatConfig.startMinute)}-${formatTime(repeatConfig.endHour, repeatConfig.endMinute)}`;
   }
+
+  // 构建提醒时间对象
+  const reminderTime = {};
+  if (repeatConfig.reminderYear) reminderTime.year = parseInt(repeatConfig.reminderYear);
+  if (repeatConfig.reminderMonth) reminderTime.month = parseInt(repeatConfig.reminderMonth);
+  if (repeatConfig.reminderDay) reminderTime.day = parseInt(repeatConfig.reminderDay);
+  if (repeatConfig.reminderHour) reminderTime.hour = parseInt(repeatConfig.reminderHour);
+  if (repeatConfig.reminderMinute) reminderTime.minute = parseInt(repeatConfig.reminderMinute);
 
   const baseTask = {
     id: Date.now().toString(),
@@ -9718,31 +9743,30 @@ const handleAddTask = (template = null) => {
     note: "",
     reflection: "",
     image: null,
-    scheduledTime: "",
+    scheduledTime: scheduledTime, // 添加计划时间
     pinned: false,
     progress: {
       initial: 0,
       current: 0,
       target: 0,
       unit: "%"
-    }
+    },
+    // 添加重复设置和提醒时间
+    reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+    repeatFrequency: repeatConfig.frequency || '',
+    repeatDays: repeatConfig.days || [false, false, false, false, false, false, false],
+    isRepeating: !!repeatConfig.frequency
   };
 
   console.log('✅ 准备添加任务:', baseTask);
 
   setTasksByDate(prev => {
-    console.log('=== 开始更新状态 ===');
-    console.log('之前的 tasksByDate:', prev);
-    
     const newTasksByDate = { ...prev };
     
-    // 确保选中日期的任务数组存在
     if (!newTasksByDate[selectedDate]) {
-      console.log('📅 创建新的日期数组:', selectedDate);
       newTasksByDate[selectedDate] = [];
     }
 
-    // 检查是否已存在相同任务
     const existingTask = newTasksByDate[selectedDate].find(
       task => task.text === text && task.category === category
     );
@@ -9750,12 +9774,10 @@ const handleAddTask = (template = null) => {
     if (!existingTask) {
       newTasksByDate[selectedDate].push(baseTask);
       console.log(`✅ 任务已添加到 ${selectedDate}`, baseTask);
-      console.log(`该日期现在有 ${newTasksByDate[selectedDate].length} 个任务`);
     } else {
       console.log('⚠️ 任务已存在，跳过添加');
     }
 
-    console.log('更新后的 tasksByDate:', newTasksByDate);
     return newTasksByDate;
   });
 
@@ -9763,10 +9785,22 @@ const handleAddTask = (template = null) => {
     setNewTaskText("");
     setShowAddInput(false);
     setNewTaskSubCategory('');
-    console.log('✅ 重置表单状态');
+    
+    // 重置重复配置
+    setRepeatConfig({
+      frequency: "",
+      days: [false, false, false, false, false, false, false],
+      startHour: "",
+      startMinute: "",
+      endHour: "",
+      endMinute: "",
+      reminderYear: "",
+      reminderMonth: "",
+      reminderDay: "",
+      reminderHour: "",
+      reminderMinute: "",
+    });
   }
-
-  console.log('=== 添加任务完成 ===');
 };
 
 
