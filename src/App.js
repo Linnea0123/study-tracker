@@ -6217,12 +6217,12 @@ const TaskItem = ({
         </div>
       </div>
 
-{/* 第二行：备注、感想、计划时间、提醒时间 */}
-{(task.note || task.reflection || task.scheduledTime || task.reminderTime) && (
+      {/* 第二行：备注和感想 */}
+{(task.note || task.reflection) && (
   <div style={{ 
     marginLeft: "20px", 
     marginBottom: 4,
-    position: "relative" // 为计时器定位做准备
+    position: "relative"
   }}>
     {/* 备注 */}
     {task.note && (
@@ -6238,8 +6238,7 @@ const TaskItem = ({
           backgroundColor: 'transparent',
           lineHeight: "1.3",
           whiteSpace: "pre-wrap",
-          marginBottom: (task.reflection || task.scheduledTime || task.reminderTime) ? "2px" : "0",
-          paddingRight: "60px" // 为计时器留出空间
+          marginBottom: task.reflection ? "2px" : "0",
         }}
       >
         {task.note}
@@ -6267,207 +6266,211 @@ const TaskItem = ({
           lineHeight: "1.3",
           whiteSpace: "pre-wrap",
           border: '1px solid #ffd54f',
-          marginBottom: (task.scheduledTime || task.reminderTime) ? "2px" : "0",
-          paddingRight: "60px" // 为计时器留出空间
+          marginBottom: "4px",
         }}
       >
         💭 {task.reflection}
       </div>
     )}
 
-    {/* 计划时间和提醒时间 */}
-    {(task.scheduledTime || task.reminderTime) && (
+    {/* 时间信息行 - 计划时间、提醒时间、计时器 */}
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 4,
+      gap: 8,
+      flexWrap: "wrap"
+    }}>
+      {/* 左侧：计划时间和提醒时间 */}
       <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '8px',
-        alignItems: 'center',
-        marginBottom: '4px',
-        paddingRight: "60px" // 为计时器留出空间
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flex: 1,
+        minWidth: 0
       }}>
         {/* 计划时间 */}
         {task.scheduledTime && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenEditModal(task);
-            }}
+          <span
             style={{
               fontSize: 11,
-              color: "#1a73e8",
-              cursor: "pointer",
-              backgroundColor: '#e8f0fe',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              border: '1px solid #1a73e8',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              whiteSpace: 'nowrap'
+              color: "#666",
+              backgroundColor: "#f0f0f0",
+              padding: "2px 6px",
+              borderRadius: 4,
+              border: "1px solid #e0e0e0",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: 2
             }}
-            title="点击编辑计划时间"
+            title="计划时间"
           >
             ⏰ {task.scheduledTime}
-          </div>
+          </span>
         )}
 
         {/* 提醒时间 */}
         {task.reminderTime && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenEditModal(task);
-            }}
+          <span
             style={{
               fontSize: 11,
-              color: "#d32f2f",
-              cursor: "pointer",
-              backgroundColor: '#ffebee',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              border: '1px solid #d32f2f',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              whiteSpace: 'nowrap'
+              color: "#666",
+              backgroundColor: "#fff0f0",
+              padding: "2px 6px",
+              borderRadius: 4,
+              border: "1px solid #ffcccc",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: 2
             }}
-            title="点击编辑提醒时间"
+            title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
           >
-            🔔 {(() => {
-              const rt = task.reminderTime;
-              const month = String(rt.month || 1).padStart(2, '0');
-              const day = String(rt.day || 1).padStart(2, '0');
-              const hour = String(rt.hour || 0).padStart(2, '0');
-              const minute = String(rt.minute || 0).padStart(2, '0');
-              return `${month}/${day} ${hour}:${minute}`;
-            })()}
-          </div>
+            🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+          </span>
         )}
       </div>
-    )}
 
-    {/* 计时器 - 显示在右下角 */}
-    <div style={{
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      display: "flex",
-      alignItems: "center",
-      gap: 4
-    }}>
-      {/* 循环图标 - 调整重复任务显示 */}
-      {task.isRepeating && (
-        <span 
-          style={{ 
-            fontSize: "12px", 
-            cursor: "pointer",
-            padding: "2px 4px",
-            backgroundColor: "#f0f0f0",
-            borderRadius: "3px",
-            border: "1px solid #ddd"
-          }} 
-          title="重复任务"
+      {/* 右侧：计时器区域 */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4
+      }}>
+        {/* 循环图标 */}
+        {task.isRepeating && (
+          <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+        )}
+
+        <button
           onClick={(e) => {
             e.stopPropagation();
-            onOpenEditModal?.(task);
+            if (activeTimer?.taskId === task.id) {
+              handlePauseTimer(task);
+            } else {
+              handleStartTimer(task);
+            }
           }}
+          style={{
+            fontSize: 12,
+            border: "none",
+            background: "transparent",
+            color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
+            cursor: "pointer",
+            padding: "2px"
+          }}
+          title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
         >
-          🔄
+          {isThisTaskRunning ? "⏸️" : "⏱️"}
+        </button>
+
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditTime?.(task);
+          }}
+          style={{
+            fontSize: 12,
+            color: "#333",
+            border: "1px solid #e0e0e0",
+            borderRadius: 4,
+            backgroundColor: "#f5f5f5",
+            padding: "2px 6px",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            minWidth: "45px",
+            textAlign: "center"
+          }}
+          title="点击修改时间"
+        >
+          {isThisTaskRunning
+            ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
+            : formatTimeNoSeconds(task.timeSpent || 0)}
         </span>
-      )}
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (activeTimer?.taskId === task.id) {
-            handlePauseTimer(task);
-          } else {
-            handleStartTimer(task);
-          }
-        }}
-        style={{
-          fontSize: 12,
-          border: "none",
-          background: "transparent",
-          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-          cursor: "pointer",
-          padding: "2px"
-        }}
-        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-      >
-        {isThisTaskRunning ? "⏸️" : "⏱️"}
-      </button>
-
-      <span
-        onClick={(e) => {
-          e.stopPropagation();
-          onEditTime?.(task);
-        }}
-        style={{
-          fontSize: 12,
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          borderRadius: 4,
-          backgroundColor: "#f5f5f5",
-          padding: "2px 6px",
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          minWidth: "45px",
-          textAlign: "center"
-        }}
-        title="点击修改时间"
-      >
-        {isThisTaskRunning
-          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-          : formatTimeNoSeconds(task.timeSpent || 0)}
-      </span>
+      </div>
     </div>
   </div>
 )}
 
-{/* 如果没有备注、感想、计划时间、提醒时间，但需要显示计时器 */}
-{(!task.note && !task.reflection && !task.scheduledTime && !task.reminderTime) && (
+{/* 如果没有备注和感想，时间信息单独一行显示 */}
+{!task.note && !task.reflection && (
   <div style={{
     display: "flex",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     marginTop: 4,
-    marginLeft: "20px"
+    marginLeft: "20px",
+    gap: 8,
+    flexWrap: "wrap"
   }}>
+    {/* 左侧：计划时间和提醒时间 */}
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      flex: 1,
+      minWidth: 0
+    }}>
+      {/* 计划时间 */}
+      {task.scheduledTime && (
+        <span
+          style={{
+            fontSize: 11,
+            color: "#666",
+            backgroundColor: "#f0f0f0",
+            padding: "2px 6px",
+            borderRadius: 4,
+            border: "1px solid #e0e0e0",
+            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: 2
+          }}
+          title="计划时间"
+        >
+          ⏰ {task.scheduledTime}
+        </span>
+      )}
+
+      {/* 提醒时间 */}
+      {task.reminderTime && (
+        <span
+          style={{
+            fontSize: 11,
+            color: "#666",
+            backgroundColor: "#fff0f0",
+            padding: "2px 6px",
+            borderRadius: 4,
+            border: "1px solid #ffcccc",
+            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: 2
+          }}
+          title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+        >
+          🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+        </span>
+      )}
+    </div>
+
+    {/* 右侧：计时器区域 */}
     <div style={{
       display: "flex",
       alignItems: "center",
       gap: 4
     }}>
-      {/* 循环图标 - 调整重复任务显示 */}
+      {/* 循环图标 */}
       {task.isRepeating && (
-        <span 
-          style={{ 
-            fontSize: "12px", 
-            cursor: "pointer",
-            padding: "2px 4px",
-            backgroundColor: "#f0f0f0",
-            borderRadius: "3px",
-            border: "1px solid #ddd"
-          }} 
-          title="重复任务"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEditModal?.(task);
-          }}
-        >
-          🔄
-        </span>
+        <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
       )}
 
       <button
         onClick={(e) => {
           e.stopPropagation();
-          if (activeTimer?.taskId === task.id) {
-            handlePauseTimer(task);
-          } else {
-            handleStartTimer(task);
-          }
+          handleTimerClick();
         }}
         style={{
           fontSize: 12,
@@ -6816,8 +6819,6 @@ const TaskItem = ({
     </div>
   )}
 </div>
-
-
 
 {task.image && (
   <div style={{ marginTop: 4, marginBottom: 4, position: 'relative', display: 'inline-block' }}>
