@@ -1823,7 +1823,32 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
           alignItems: 'center',
           marginBottom: '8px'
         }}>
-          <button onClick={onClose}>⬅️</button>
+{/* 修改后的返回按钮 */}
+          {/* 修改后的返回按钮 */}
+<button 
+  onClick={onClose}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    fontSize: '20px',
+    cursor: 'pointer',
+    padding: '0',
+    margin: '0',
+    color: '#1a73e8',
+    width: '30px',
+    height: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}
+>
+  ⬅️
+</button>
+
+          
+
+
+
           <h1 style={{ textAlign: 'center', color: '#1a73e8', fontSize: '16px', margin: 0 }}>
             📅 本周时间表
           </h1>
@@ -1978,87 +2003,141 @@ const SchedulePage = ({ tasksByDate, currentMonday, onClose, formatTimeNoSeconds
         </div>
       </div>
 
-      {/* 时间线详情弹窗 */}
-      {selectedTimeSlot && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }} onClick={() => setSelectedTimeSlot(null)}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '15px',
-            borderRadius: '8px',
-            width: '95%',
-            maxWidth: '400px',
-            maxHeight: '80vh',
-            overflow: 'auto'
-          }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ textAlign: 'center', marginBottom: '10px', color: '#1a73e8' }}>
-              ⏱ 时间段详情
-            </h3>
-            
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                {selectedTimeSlot.dateLabel} {selectedTimeSlot.time}
-              </div>
-              <div style={{ fontSize: '12px', color: '#666' }}>
-                共 {selectedTimeSlot.tasks.length} 个任务
-              </div>
-            </div>
+ 
 
-            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-              {selectedTimeSlot.tasks.map((task, index) => {
-                const timeInfo = getTaskTimeInfo(task, selectedTimeSlot.date);
-                return (
-                  <div key={index} style={{
-                    padding: '8px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                    marginBottom: '5px',
-                    backgroundColor: '#f8f9fa'
-                  }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>
-                      {task.text}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      📚 {task.category}
-                    </div>
-                    {timeInfo && (
-                      <div style={{ fontSize: '11px', color: '#666' }}>
-                        🕐 {timeInfo.startTime} - {timeInfo.endTime}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
-            <button
-              onClick={() => setSelectedTimeSlot(null)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                marginTop: '10px',
-                backgroundColor: '#1a73e8',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              关闭
-            </button>
-          </div>
+{/* 时间线详情弹窗 */}
+{selectedTimeSlot && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  }} onClick={() => setSelectedTimeSlot(null)}>
+    <div style={{
+      backgroundColor: 'white',
+      padding: '15px',
+      borderRadius: '8px',
+      width: '95%',
+      maxWidth: '400px',
+      maxHeight: '80vh',
+      overflow: 'auto'
+    }} onClick={e => e.stopPropagation()}>
+      <h3 style={{ textAlign: 'center', marginBottom: '10px', color: '#1a73e8' }}>
+        ⏱ 时间段详情
+      </h3>
+      
+      <div style={{ marginBottom: '8px' }}>
+        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+          {selectedTimeSlot.dateLabel} {selectedTimeSlot.time}
         </div>
-      )}
+        <div style={{ fontSize: '12px', color: '#666' }}>
+          共 {selectedTimeSlot.tasks.length} 个任务
+        </div>
+      </div>
+
+      <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+        {selectedTimeSlot.tasks.map((task, index) => {
+          const timeInfo = getTaskTimeInfo(task, selectedTimeSlot.date);
+          
+          // 计算任务时长（分钟）
+          const calculateDuration = () => {
+            if (!timeInfo) return 0;
+            
+            const [startHour, startMinute] = timeInfo.startTime.split(':').map(Number);
+            const [endHour, endMinute] = timeInfo.endTime.split(':').map(Number);
+            
+            const startTotalMinutes = startHour * 60 + startMinute;
+            const endTotalMinutes = endHour * 60 + endMinute;
+            
+            return endTotalMinutes - startTotalMinutes;
+          };
+          
+          const duration = calculateDuration();
+          const durationText = duration >= 60 
+            ? `${Math.floor(duration / 60)}小时${duration % 60}分钟`
+            : `${duration}分钟`;
+
+          return (
+            <div key={index} style={{
+              padding: '8px',
+              border: '1px solid #e0e0e0',
+              borderRadius: '4px',
+              marginBottom: '5px',
+              backgroundColor: '#f8f9fa',
+              position: 'relative'
+            }}>
+              {/* 任务文本 */}
+              <div style={{ 
+                fontWeight: 'bold', 
+                fontSize: '13px',
+                paddingRight: '70px',
+                marginBottom: '4px',
+                lineHeight: '1.3'
+              }}>
+                {task.text}
+              </div>
+              
+              {/* 时长显示在右上角 */}
+              <div style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                fontSize: '10px',
+                color: '#1a73e8',
+                fontWeight: 'bold',
+                backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                border: '1px solid rgba(26, 115, 232, 0.2)',
+                whiteSpace: 'nowrap'
+              }}>
+                ⏱ {durationText}
+              </div>
+              
+              {/* 其他信息 */}
+              <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>
+                📚 {task.category}
+              </div>
+              {timeInfo && (
+                <div style={{ fontSize: '11px', color: '#666' }}>
+                  🕐 {timeInfo.startTime} - {timeInfo.endTime}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={() => setSelectedTimeSlot(null)}
+        style={{
+          width: '100%',
+          padding: '8px',
+          marginTop: '10px',
+          backgroundColor: '#1a73e8',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        关闭
+      </button>
+    </div>
+  </div>
+)}
+
+
+
+
+
     </div>
   );
 };
@@ -11014,16 +11093,20 @@ const generateMarkdownContent = () => {
       markdown += `- **评分**: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
     }
     
-    // 复盘显示
-    if (dailyReflection) {
-      markdown += `- **复盘**: ${dailyReflection}\n`;
-    }
-    
-    markdown += "\n";
-  }
-  
-  markdown += logData.markdownContent.replace('# 学习任务\n\n', '');
-  return markdown;
+  // 复盘显示
+if (dailyReflection) {
+  markdown += `- **复盘**: ${dailyReflection}\n`;
+}
+
+markdown += "\n";
+}
+
+markdown += logData.markdownContent
+  .replace('# 学习任务\n\n', '')
+  .replace(/✔️/g, '[x]')  // 将 ✔️ 替换为 [x]
+  .replace(/❌❌/g, '[ ]'); // 将 ❌❌ 替换为 [ ]
+
+return markdown;
 };
 
 
