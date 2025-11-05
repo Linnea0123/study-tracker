@@ -611,6 +611,88 @@ const baseCategories = [
 const PAGE_ID = 'PAGE_A'; 
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
+// ========== Gist 同步配置 ==========
+const GIST_SYNC = {
+  GIST_ID: null, // 会自动创建
+  TOKEN: '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', // 🔐 替换为您刚创建的新token
+  FILENAME: 'study-tracker-data.json',
+  SYNC_ENABLED: true
+};
+
+// Gist 同步功能
+const gistSync = {
+  // 保存数据到 Gist
+  saveToGist: async (data) => {
+    if (!GIST_SYNC.SYNC_ENABLED || !GIST_SYNC.TOKEN) return false;
+    
+    try {
+      const gistData = {
+        description: '学习记录数据同步 - ' + new Date().toLocaleString(),
+        public: false,
+        files: {
+          [GIST_SYNC.FILENAME]: {
+            content: JSON.stringify({
+              ...data,
+              syncTime: new Date().toISOString(),
+              version: '1.0'
+            }, null, 2)
+          }
+        }
+      };
+
+      const url = GIST_SYNC.GIST_ID 
+        ? `https://api.github.com/gists/${GIST_SYNC.GIST_ID}`
+        : 'https://api.github.com/gists';
+
+      const response = await fetch(url, {
+        method: GIST_SYNC.GIST_ID ? 'PATCH' : 'POST',
+        headers: {
+          'Authorization': `token ${GIST_SYNC.TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(gistData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        GIST_SYNC.GIST_ID = result.id;
+        console.log('✅ 数据同步到 Gist 成功');
+        return true;
+      } else {
+        console.error('❌ Gist 同步失败:', await response.text());
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Gist 同步错误:', error);
+      return false;
+    }
+  },
+
+  // 从 Gist 加载数据
+  loadFromGist: async () => {
+    if (!GIST_SYNC.SYNC_ENABLED || !GIST_SYNC.TOKEN || !GIST_SYNC.GIST_ID) return null;
+    
+    try {
+      const response = await fetch(`https://api.github.com/gists/${GIST_SYNC.GIST_ID}`, {
+        headers: {
+          'Authorization': `token ${GIST_SYNC.TOKEN}`,
+        }
+      });
+
+      if (response.ok) {
+        const gist = await response.json();
+        const content = gist.files[GIST_SYNC.FILENAME].content;
+        const data = JSON.parse(content);
+        console.log('✅ 从 Gist 加载数据成功');
+        return data;
+      }
+    } catch (error) {
+      console.error('❌ Gist 加载错误:', error);
+    }
+    return null;
+  }
+};
+
 // ========== 成就系统配置 ==========
 const ACHIEVEMENTS_CONFIG = {
   // 新手成就
@@ -2106,7 +2188,81 @@ const loadMainData = async (key) => {
 
 
 
- 
+
+ // 保存数据并同步到 Gist
+const saveDataWithSync = async (key, data) => {
+  // 原有的本地保存
+  await saveMainData(key, data);
+  
+  // 同步到 Gist（只在关键数据变化时同步）
+  if (['tasks', 'templates', 'pointHistory', 'exchange'].includes(key)) {
+    setTimeout(() => syncAllDataToGist(), 1000); // 延迟同步避免频繁请求
+  }
+};
+
+
+
+
+const syncAllDataToGist = async () => {
+  if (!GIST_SYNC.TOKEN || isSyncing) return;
+  
+  setIsSyncing(true);
+  try {
+    const allData = {
+      tasks: tasksByDate,
+      templates: templates,
+      pointHistory: pointHistory,
+      exchange: exchangeItems,
+      customAchievements: customAchievements,
+      unlockedAchievements: unlockedAchievements,
+      categories: categories,
+      syncTime: new Date().toISOString()
+    };
+    
+    const success = await gistSync.saveToGist(allData);
+    if (success) {
+      console.log('🔄 数据同步完成');
+      // 不再使用 setLastSyncTime，直接显示当前时间
+      alert('✅ 数据已成功同步到云端！时间: ' + new Date().toLocaleString());
+    }
+  } catch (error) {
+    console.error('同步失败:', error);
+    alert('❌ 同步失败: ' + error.message);
+  } finally {
+    setIsSyncing(false);
+  }
+};
+
+// 从 Gist 恢复数据
+const restoreFromGist = async () => {
+  if (!GIST_SYNC.TOKEN) return;
+  
+  if (window.confirm('确定要从云端恢复数据吗？这会覆盖当前数据！')) {
+    setIsSyncing(true);
+    try {
+      const cloudData = await gistSync.loadFromGist();
+      if (cloudData) {
+        // 恢复数据
+        if (cloudData.tasks) setTasksByDate(cloudData.tasks);
+        if (cloudData.templates) setTemplates(cloudData.templates);
+        if (cloudData.pointHistory) setPointHistory(cloudData.pointHistory);
+        if (cloudData.exchange) setExchangeItems(cloudData.exchange);
+        if (cloudData.customAchievements) setCustomAchievements(cloudData.customAchievements);
+        if (cloudData.unlockedAchievements) setUnlockedAchievements(cloudData.unlockedAchievements);
+        if (cloudData.categories) setCategories(cloudData.categories);
+        
+        setLastSyncTime(new Date());
+        alert('数据恢复成功！');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('恢复失败:', error);
+      alert('数据恢复失败');
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+};
 
 
 // 数据迁移函数 - 从旧版本迁移数据
@@ -7654,6 +7810,7 @@ function App() {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false); // eslint-disable-line
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
@@ -8720,7 +8877,7 @@ const handleAddCustomAchievement = (achievement) => {
   console.log('添加自定义成就:', achievement);
   const updatedAchievements = [...customAchievements, achievement];
   setCustomAchievements(updatedAchievements);
-  saveMainData('customAchievements', updatedAchievements);
+  saveDataWithSync('customAchievements', updatedAchievements);
   setShowCustomAchievementModal(false);
   setEditingAchievement(null);
 };
@@ -9020,7 +9177,7 @@ useEffect(() => {
       setNewAchievements(newlyUnlocked);
       
       // 保存到存储
-      saveMainData('unlockedAchievements', updatedUnlocked);
+      saveDataWithSync('unlockedAchievements', updatedUnlocked);
       
       // 显示成就弹窗
       setTimeout(() => {
@@ -9931,7 +10088,7 @@ useEffect(() => {
 useEffect(() => {
   const saveTemplateData = async () => {
     if (templates.length > 0) {
-      await saveMainData('templates', templates);
+      await saveDataWithSync('templates', templates);
     }
   };
   saveTemplateData();
@@ -9940,7 +10097,7 @@ useEffect(() => {
 useEffect(() => {
   const saveExchangeData = async () => {
     if (exchangeItems.length > 0) {
-      await saveMainData('exchange', exchangeItems);
+      await saveDataWithSync('exchange', exchangeItems);
     }
   };
   saveExchangeData();
@@ -9949,7 +10106,7 @@ useEffect(() => {
 useEffect(() => {
   const savePointHistory = async () => {
     if (pointHistory.length > 0) {
-      await saveMainData('pointHistory', pointHistory);
+      await saveDataWithSync('pointHistory', pointHistory);
     }
   };
   savePointHistory();
@@ -10056,7 +10213,7 @@ if (savedCategories) {
   });
   
   setCategories(updatedCategories);
-  await saveMainData('categories', updatedCategories);
+  await saveDataWithSync('categories', updatedCategories);
 } else {
   // 没有保存的分类数据，使用预设值初始化
   const categoriesWithSubCategories = baseCategories.map(cat => {
@@ -10182,16 +10339,35 @@ useEffect(() => {
 
 
 
-
-
-
-// 自动保存任务数据
+// 找到 tasksByDate 的自动保存 useEffect（大约第7800行）
+// 替换为：
+// 简化版本 - 只在任务数据变化时同步
 useEffect(() => {
-  if (isInitialized) { // 这里必须使用 isInitialized
+  if (isInitialized) {
     console.log('💾 自动保存任务数据...');
-    saveMainData('tasks', tasksByDate);
+    saveDataWithSync('tasks', tasksByDate);
   }
 }, [tasksByDate, isInitialized]);
+
+// 单独的同步效果 - 每天自动同步一次
+useEffect(() => {
+  if (isInitialized && GIST_SYNC.TOKEN && !isSyncing) {
+    const lastSync = localStorage.getItem('last_auto_sync');
+    const today = new Date().toDateString();
+    
+    if (lastSync !== today) {
+      console.log('🔄 触发每日自动同步');
+      const timer = setTimeout(() => {
+        syncAllDataToGist();
+      }, 10000); // 10秒后自动同步
+      localStorage.setItem('last_auto_sync', today);
+      return () => clearTimeout(timer);
+    }
+  }
+}, [isInitialized, isSyncing]);
+
+
+
 
 // 自动保存模板数据
 useEffect(() => {
@@ -15183,7 +15359,19 @@ marginTop: 10
 
 
 
-
+{/* 简化同步状态显示 */}
+<div style={{
+  textAlign: "center",
+  fontSize: "11px",
+  color: "#666",
+  margin: "10px 0 5px 0",
+  padding: "6px",
+  backgroundColor: "#f0f8ff",
+  borderRadius: "6px",
+  border: "1px solid #d1e7ff"
+}}>
+  {isSyncing ? "🔄 数据同步中..." : "🌐 准备好同步到云端"}
+</div>
 
 
       {/* 底部按钮区域 */}
@@ -15211,6 +15399,44 @@ marginTop: 10
         >
           每日日志
         </button>
+        {/* 在现有的按钮组中添加这两个按钮 */}
+<button
+  onClick={syncAllDataToGist}
+  disabled={isSyncing}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: isSyncing ? "#ccc" : "#1a73e8",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "85px",
+    height: "30px",
+    cursor: isSyncing ? "not-allowed" : "pointer"
+  }}
+  title="备份数据到云端"
+>
+  {isSyncing ? "同步中..." : "🌐 云端同步"}
+</button>
+
+<button
+  onClick={restoreFromGist}
+  disabled={isSyncing}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: isSyncing ? "#ccc" : "#28a745",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "85px",
+    height: "30px",
+    cursor: isSyncing ? "not-allowed" : "pointer"
+  }}
+  title="从云端恢复数据"
+>
+  📥 恢复云端数据
+</button>
         <button
           onClick={handleExportData}
 
