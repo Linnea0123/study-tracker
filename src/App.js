@@ -3832,49 +3832,69 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
     dotFuture: '#F39C12'
   };
 
-  // 日期圆点组件
-  const DateDot = ({ date, tasksByDate }) => {
-    if (!tasksByDate) {
-      return null;
-    }
+  // 日期圆点组件 - 修改后版本（文字颜色跟随圆点变化）
+const DateDot = ({ date, tasksByDate }) => {
+  if (!tasksByDate) {
+    return null;
+  }
 
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const dayTasks = tasksByDate[dateStr] || [];
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const dayTasks = tasksByDate[dateStr] || [];
+  const filteredTasks = dayTasks.filter(task => task.category !== "本周任务");
 
-    const filteredTasks = dayTasks.filter(task => task.category !== "本周任务");
+  if (filteredTasks.length === 0) return null;
   
-    if (filteredTasks.length === 0) return null;
-    
-   
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const taskDate = new Date(dateStr);
-    taskDate.setHours(0, 0, 0, 0);
-    
-    const isFuture = taskDate > today;
-    const allDone = filteredTasks.every(task => task.done)
-    
-    let dotColor = '';
-    if (isFuture) {
-      dotColor = softColors.dotFuture;
-    } else if (allDone) {
-      dotColor = softColors.dotComplete;
-    } else {
-      dotColor = softColors.dotIncomplete;
-    }
-    
-    return (
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const taskDate = new Date(dateStr);
+  taskDate.setHours(0, 0, 0, 0);
+  
+  const isFuture = taskDate > today;
+  const allDone = filteredTasks.every(task => task.done);
+  const totalCount = filteredTasks.length;
+  
+  let dotColor = '';
+  let textColor = '';
+  
+  if (isFuture) {
+    dotColor = softColors.dotFuture;
+    textColor = '#F39C12'; // 未来任务 - 橙色文字
+  } else if (allDone) {
+    dotColor = softColors.dotComplete;
+    textColor = '#2ECC71'; // 全部完成 - 绿色文字
+  } else {
+    dotColor = softColors.dotIncomplete;
+    textColor = '#E74C3C'; // 未完成 - 红色文字
+  }
+  
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '2px',
+      marginTop: '2px'
+    }}>
+      {/* 圆点 */}
       <div style={{
         width: '6px',
         height: '6px',
         borderRadius: '50%',
         backgroundColor: dotColor,
-        margin: '2px auto 0',
         boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
       }} />
-    );
-  };
+      
+      {/* 任务总数 - 文字颜色跟随圆点状态 */}
+      <span style={{
+        fontSize: '9px',
+        fontWeight: 'bold',
+        color: textColor // 使用动态颜色
+      }}>
+        {totalCount}
+      </span>
+    </div>
+  );
+};
 
   const isToday = (day) => {
     const today = new Date();
@@ -4060,7 +4080,14 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
               <button
                 key={index}
                 onClick={() => {
-                  const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                  const selectedDate = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    day,
+    12, // 设置为中午12点，避免时区偏移
+    0,
+    0
+  );
                   onSelectDate(selectedDate);
                 }}
                 style={{
@@ -11093,20 +11120,16 @@ const generateMarkdownContent = () => {
       markdown += `- **评分**: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
     }
     
-  // 复盘显示
-if (dailyReflection) {
-  markdown += `- **复盘**: ${dailyReflection}\n`;
-}
-
-markdown += "\n";
-}
-
-markdown += logData.markdownContent
-  .replace('# 学习任务\n\n', '')
-  .replace(/✔️/g, '[x]')  // 将 ✔️ 替换为 [x]
-  .replace(/❌❌/g, '[ ]'); // 将 ❌❌ 替换为 [ ]
-
-return markdown;
+    // 复盘显示
+    if (dailyReflection) {
+      markdown += `- **复盘**: ${dailyReflection}\n`;
+    }
+    
+    markdown += "\n";
+  }
+  
+  markdown += logData.markdownContent.replace('# 学习任务\n\n', '');
+  return markdown;
 };
 
 
@@ -13055,24 +13078,25 @@ if (isInitialized && todayTasks.length === 0) {
       })()}
 
 
-{/* 日期选择器 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   marginBottom: 10
 }}>
-  {getWeekDates(currentMonday).map((d) => {
-    const today = new Date();
-    // 使用本地日期格式，不要用 toISOString()
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    
-    const isSelected = d.date === selectedDate;
-    const isToday = d.date === todayStr;
+  {weekDates.map((d) => {
+    const dateStr = d.date;
+    const isSelected = dateStr === selectedDate;
+    const dayTasks = tasksByDate[dateStr] || [];
+    const filteredTasks = dayTasks.filter(task => task.category !== "本周任务");
+    const totalCount = filteredTasks.length;
+    const completedCount = filteredTasks.filter(task => task.done).length;
+    const allDone = totalCount > 0 && completedCount === totalCount;
+    const hasIncomplete = totalCount > 0 && completedCount < totalCount;
     
     return (
       <div
-        key={d.date}
-        onClick={() => setSelectedDate(d.date)}
+        key={dateStr}
+        onClick={() => setSelectedDate(dateStr)}
         style={{
           padding: "4px 6px",
           borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
@@ -13081,13 +13105,44 @@ if (isInitialized && todayTasks.length === 0) {
           margin: "0 2px",
           fontSize: 12,
           cursor: "pointer",
-          backgroundColor: isToday ? "#1a73e8" : (isSelected ? "#fff9c4" : "transparent"),
-          color: isToday ? "#fff" : (isSelected ? "#000" : "#000"),
-          borderRadius: isSelected ? "4px" : "0",
+          backgroundColor: isSelected ? "#fff9c4" : "transparent",
+          color: isSelected ? "#000" : "#000",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          minHeight: "20px"
         }}
       >
         <div>{d.label}</div>
         <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+        
+        {/* 添加圆点和任务数显示 */}
+        {totalCount > 0 && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "2px",
+            marginTop: "4px"
+          }}>
+            {/* 圆点 */}
+            <div style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+            }} />
+            
+            {/* 任务数 */}
+            <span style={{
+  fontSize: "9px",
+  fontWeight: "bold",
+  color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+}}>
+  {completedCount}/{totalCount}
+</span>
+          </div>
+        )}
       </div>
     );
   })}
