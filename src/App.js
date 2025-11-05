@@ -4,6 +4,595 @@ import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
 
+
+const GradeModal = ({ onClose, isVisible }) => {
+  const [grades, setGrades] = useState([]);
+  const [filterSubject, setFilterSubject] = useState('全部');
+  const [newGrade, setNewGrade] = useState({
+    date: new Date().toISOString().split('T')[0],
+    subject: '语文',
+    testContent: '',
+    score: '',
+    scoreType: '100分制',
+    fullScore: '100',
+    wrongQuestions: '',
+    analysis: ''
+  });
+
+  // 定义scoreTypes常量
+  const scoreTypes = [
+    { value: '100分制', label: '100分制', maxScore: 100 },
+    { value: '5星制', label: '5星制', maxScore: 5 },
+    { value: '6星制', label: '6星制', maxScore: 6 },
+    { value: '自定义', label: '自定义', maxScore: null }
+  ];
+
+  const subjects = ['全部', '语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治', '其他'];
+
+  // 处理分数类型变化
+  const handleScoreTypeChange = (e) => {
+    const selectedType = scoreTypes.find(type => type.value === e.target.value);
+    setNewGrade({
+      ...newGrade,
+      scoreType: e.target.value,
+      fullScore: selectedType.maxScore ? selectedType.maxScore.toString() : newGrade.fullScore,
+      score: '' // 清空得分，让用户重新选择
+    });
+  };
+
+  // 获取分数显示格式
+  const getScoreDisplay = (grade) => {
+    const scoreType = grade.scoreType || '100分制';
+    const score = parseInt(grade.score || 0);
+    const fullScore = parseInt(grade.fullScore || 100);
+    
+    if (scoreType.includes('星制')) {
+      const stars = '⭐'.repeat(Math.min(score, fullScore));
+      return `${stars} (${score}/${fullScore})`;
+    }
+    return `${score}/${fullScore}`;
+  };
+
+  // 初始化加载成绩数据
+  useEffect(() => {
+    const loadGrades = async () => {
+      try {
+        const savedGrades = await loadMainData('grades');
+        if (savedGrades) {
+          // 为旧数据添加默认scoreType
+          const normalizedGrades = savedGrades.map(grade => ({
+            ...grade,
+            scoreType: grade.scoreType || '100分制'
+          }));
+          setGrades(normalizedGrades);
+        }
+      } catch (error) {
+        console.error('加载成绩数据失败:', error);
+      }
+    };
+    
+    if (isVisible) {
+      loadGrades();
+    }
+  }, [isVisible]);
+
+  // 保存成绩数据
+  const saveGrades = async (updatedGrades) => {
+    setGrades(updatedGrades);
+    await saveMainData('grades', updatedGrades);
+  };
+
+  // 添加新成绩记录
+  const handleAddGrade = () => {
+    if (!newGrade.testContent || !newGrade.score) {
+      alert('请填写测试内容和得分');
+      return;
+    }
+
+    const updatedGrades = [...grades, {
+      id: Date.now().toString(),
+      ...newGrade,
+      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+    }];
+    
+    saveGrades(updatedGrades);
+    setNewGrade({
+      date: new Date().toISOString().split('T')[0],
+      subject: '语文',
+      testContent: '',
+      score: '',
+      scoreType: '100分制',
+      fullScore: '100',
+      wrongQuestions: '',
+      analysis: ''
+    });
+  };
+
+  // 删除成绩记录
+  const handleDeleteGrade = (id) => {
+    if (window.confirm('确定要删除这条成绩记录吗？')) {
+      const updatedGrades = grades.filter(grade => grade.id !== id);
+      saveGrades(updatedGrades);
+    }
+  };
+
+  // 筛选后的成绩记录
+  const filteredGrades = filterSubject === '全部' 
+    ? grades 
+    : grades.filter(grade => grade.subject === filterSubject);
+
+  // 统计信息
+  const stats = {
+    totalTests: filteredGrades.length,
+    fullMarkTests: filteredGrades.filter(g => g.isFullMark).length,
+    averageScore: filteredGrades.length > 0 
+      ? (filteredGrades.reduce((sum, g) => {
+          const percentage = (parseInt(g.score || 0) / parseInt(g.fullScore || 100)) * 100;
+          return sum + percentage;
+        }, 0) / filteredGrades.length).toFixed(1)
+      : 0
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: 10
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '16px',
+        width: '95%',
+        maxWidth: '800px',
+        maxHeight: '90vh',
+        overflow: 'auto',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+        position: 'relative'
+      }}>
+        {/* 关闭按钮 */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            background: 'transparent',
+            border: 'none',
+            fontSize: '20px',
+            cursor: 'pointer',
+            color: '#666'
+          }}
+        >
+          ×
+        </button>
+
+        <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#1a73e8' }}>
+          成绩记录
+        </h2>
+
+        {/* 筛选和统计区域 */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '15px',
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px'
+        }}>
+          {/* 筛选行 */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <select
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              style={{
+                padding: '10px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                minWidth: '120px',
+                flex: '1'
+              }}
+            >
+              {subjects.map(subject => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 统计信息行 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+            gap: '10px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              padding: '10px',
+              backgroundColor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>总测试</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }}>{stats.totalTests}</div>
+            </div>
+            
+            <div style={{
+              padding: '10px',
+              backgroundColor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>满分次数</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>{stats.fullMarkTests}</div>
+            </div>
+            
+            <div style={{
+              padding: '10px',
+              backgroundColor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>平均分</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.averageScore}%</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 添加新成绩表单 */}
+        <div style={{
+          padding: '15px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', fontSize: '16px', textAlign: 'center' }}>添加新成绩记录</h3>
+          
+          {/* 第一行：日期、科目、测试内容 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px',
+            marginBottom: '12px'
+          }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>日期</label>
+              <input
+                type="date"
+                value={newGrade.date}
+                onChange={(e) => setNewGrade({...newGrade, date: e.target.value})}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>科目</label>
+              <select
+                value={newGrade.subject}
+                onChange={(e) => setNewGrade({...newGrade, subject: e.target.value})}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {subjects.filter(s => s !== '全部').map(subject => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>测试内容</label>
+              <input
+                type="text"
+                value={newGrade.testContent}
+                onChange={(e) => setNewGrade({...newGrade, testContent: e.target.value})}
+                placeholder="如：单元测试、期中考试等"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '极简风格',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* 第二行：分数类型、得分、满分 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px',
+            marginBottom: '12px'
+          }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '极简风格', fontSize: '14px', fontWeight: '500' }}>分数类型</label>
+              <select
+                value={newGrade.scoreType}
+                onChange={handleScoreTypeChange}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {scoreTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                {newGrade.scoreType.includes('星制') ? '星级' : '得分'}
+              </label>
+              {newGrade.scoreType.includes('星制') ? (
+                <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {[...Array(parseInt(newGrade.fullScore || 5))].map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setNewGrade({...newGrade, score: (index + 1).toString()})}
+                      style={{
+                        width: '30px',
+                        height: '30px',
+                        backgroundColor: parseInt(newGrade.score || 0) >= index + 1 ? '#ffd700' : '#e5e7eb',
+                        border: 'none',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  type="number"
+                  value={newGrade.score}
+                  onChange={(极简风格) => setNewGrade({...newGrade, score: e.target.value})}
+                  max={newGrade.fullScore}
+                  placeholder={`0-${newGrade.fullScore}`}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              )}
+            </div>
+            
+            <div>
+              <label style={{ display: '极简风格', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                {newGrade.scoreType.includes('星制') ? '总星级' : '满分'}
+              </label>
+              {newGrade.scoreType === '自定义' ? (
+                <input
+                  type="number"
+                  value={newGrade.fullScore}
+                  onChange={(e) => setNewGrade({...newGrade, fullScore: e.target.value})}
+                  placeholder="输入满分值"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              ) : (
+                <input
+                  type="number"
+                  value={newGrade.fullScore}
+                  readOnly
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    backgroundColor: '#f9fafb',
+                    boxSizing: 'border-box',
+                    color: '#6b7280'
+                  }}
+                />
+              )}
+            </div>
+          </div>
+          
+          {/* 错题分析 */}
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>错题分析</label>
+            <textarea
+              value={newGrade.wrongQuestions}
+              onChange={(e) => setNewGrade({...newGrade, wrongQuestions: e.target.value})}
+              placeholder="记录错题内容和原因分析"
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                minHeight: '80px',
+                resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          {/* 总结与改进 */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}极简风格>总结与改进</label>
+            <textarea
+              value={newGrade.analysis}
+              onChange={(e) => setNewGrade({...newGrade, analysis: e.target.value})}
+              placeholder="总结经验教训和改进计划"
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                minHeight: '80px',
+                resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={handleAddGrade}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#1a73e8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#0b5ed7';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#1a73e8';
+            }}
+          >
+            添加记录
+          </button>
+        </div>
+
+        {/* 成绩记录列表 */}
+        <div>
+          <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
+          
+          {filteredGrades.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+              暂无成绩记录
+            </div>
+          ) : (
+            <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+              {filteredGrades.map(grade => (
+                <div
+                  key={grade.id}
+                  style={{
+                    padding: '15px',
+                    border: '1极简风格 solid #e0e0e0',
+                    borderRadius: '8px',
+                    marginBottom: '10px',
+                    backgroundColor: grade.isFullMark ? '#e8f5e8' : '#fff'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ fontWeight: 'bold' }}>
+                      {grade.date} {grade.subject} - {grade.testContent}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold', 
+                        color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
+                      }}>
+                        {getScoreDisplay(grade)}
+                      </span>
+                      {grade.isFullMark && (
+                        <span style={{ 
+                          backgroundColor: '#4caf50', 
+                          color: 'white', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontSize: '12px'
+                        }}>
+                          满分
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleDeleteGrade(grade.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#f44336',
+                          cursor: 'pointer',
+                          fontSize: '16px'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {grade.wrongQuestions && (
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>错题分析:</div>
+                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.wrongQuestions}</div>
+                    </div>
+                  )}
+                  
+                  {grade.analysis && (
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>总结改进:</div>
+                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.analysis}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
 // 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
   { 
@@ -7039,6 +7628,7 @@ const TaskItem = ({
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
+  const [showGradeModal, setShowGradeModal] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
@@ -12735,6 +13325,14 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
 
+    {showGradeModal && (
+      <GradeModal 
+        onClose={() => setShowGradeModal(false)} 
+        isVisible={showGradeModal}
+      />
+    )}
+ 
+
 
       {showHonorModal && <HonorModal />}
       {showRepeatModal && (
@@ -12835,6 +13433,9 @@ if (isInitialized && todayTasks.length === 0) {
           onClose={() => setShowTimeModal(false)}
         />
       )}
+
+
+
 
 
 
@@ -12954,17 +13555,52 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
 
-      {/* 主页面内容 */}
-      <h1 style={{
-        textAlign: "center",
-        color: "#1a73e8",
-        fontSize: "20px",
-        marginTop: "-5px",      // 确保为0
-        marginBottom: "10px",  // 调整下边距
-        paddingTop: "0px"      // 确保为0
-      }}>
-        汤圆学习记录
-      </h1>
+
+
+<div style={{
+  position: "relative",
+  textAlign: "center",
+  marginBottom: 15,
+  padding: "0 40px"
+}}>
+  {/* 右上角成绩记录按钮 */}
+  <button
+    onClick={() => setShowGradeModal(true)}
+    style={{
+      position: "absolute",
+      top: 0, // 直接定位到顶部
+      right: 0,
+      width: 36,
+      height: 36,
+      backgroundColor: "#f0f0f0",
+      border: "1px solid #ddd",
+      borderRadius: "50%",
+      cursor: "pointer",
+      fontSize: "16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10
+    }}
+    title="成绩记录"
+  >
+    📊
+  </button>
+  
+  {/* 标题 */}
+  <h1 style={{
+    textAlign: "center",
+    color: "#1a73e8",
+    fontSize: "20px",
+    margin: 0,
+    padding: "10px 0", // 添加上下内边距来垂直居中
+    lineHeight: "16px" // 恢复默认行高
+  }}>
+    汤圆学习记录
+  </h1>
+</div>
+
+      
       <div style={{
         textAlign: "center",
         fontSize: 13,
