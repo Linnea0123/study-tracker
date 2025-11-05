@@ -561,8 +561,39 @@ const BackupManagerModal = ({ onClose }) => {
 };
 
 
-// 在这里添加计时记录模态框组件 ↓
-const TimerRecordsModal = ({ records, onClose }) => {
+
+// 计时记录模态框组件（支持编辑）
+const TimerRecordsModal = ({ records, onClose, onUpdateRecord }) => {
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+
+  // 格式化时间为 HH:MM
+  const formatTimeForInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  // 保存编辑的时间
+  const saveEditTime = () => {
+    if (!editingRecord) return;
+
+    const [startHour, startMinute] = editStartTime.split(':').map(Number);
+    const [endHour, endMinute] = editEndTime.split(':').map(Number);
+    
+    const startDate = new Date(editingRecord.startTime);
+    const endDate = new Date(editingRecord.startTime); // 使用同一天
+    
+    startDate.setHours(startHour, startMinute, 0, 0);
+    endDate.setHours(endHour, endMinute, 0, 0);
+    
+    const newDuration = Math.max(0, Math.floor((endDate - startDate) / 1000));
+    
+    onUpdateRecord(editingRecord.id, newDuration, startDate.toISOString(), endDate.toISOString());
+    setEditingRecord(null);
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -570,7 +601,7 @@ const TimerRecordsModal = ({ records, onClose }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.8)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -580,88 +611,146 @@ const TimerRecordsModal = ({ records, onClose }) => {
         backgroundColor: 'white',
         padding: 20,
         borderRadius: 15,
-        width: '90%',
+        width: '95%',
         maxWidth: 500,
         maxHeight: '80vh',
-        overflow: 'auto',
-        position: 'relative' // 添加相对定位
+        overflow: 'auto'
       }}>
-         {/* 右上角关闭按钮 */}
+        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>⏱⏱ 计时记录</h3>
+        
+        <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
+          {records.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
+              暂无计时记录
+            </div>
+          ) : (
+            records.map((record) => (
+              <div key={record.id} style={{
+                padding: 12,
+                border: '1px solid #e0e0e0',
+                borderRadius: 8,
+                marginBottom: 10,
+                backgroundColor: '#f9f9f9'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+                      {record.taskText}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                      📚 {record.category}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      {editingRecord && editingRecord.id === record.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>开始:</span>
+                            <input
+                              type="time"
+                              value={editStartTime}
+                              onChange={(e) => setEditStartTime(e.target.value)}
+                              style={{ padding: '4px', border: '1px solid #ccc', borderRadius: 4 }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>结束:</span>
+                            <input
+                              type="time"
+                              value={editEndTime}
+                              onChange={(e) => setEditEndTime(e.target.value)}
+                              style={{ padding: '4px', border: '1px solid #ccc', borderRadius: 4 }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        `⏰ ${new Date(record.startTime).toLocaleTimeString()} - ${record.endTime ? new Date(record.endTime).toLocaleTimeString() : '进行中'}`
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div style={{ textAlign: 'right', minWidth: 80 }}>
+                    <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
+                      {Math.floor(record.duration / 60)}分钟
+                    </div>
+                    {editingRecord && editingRecord.id === record.id ? (
+                      <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                        <button
+                          onClick={saveEditTime}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => setEditingRecord(null)}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingRecord(record);
+                          setEditStartTime(formatTimeForInput(record.startTime));
+                          setEditEndTime(formatTimeForInput(record.endTime));
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#1a73e8',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 4,
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          marginTop: 8
+                        }}
+                      >
+                        编辑
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         <button
           onClick={onClose}
           style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            background: 'transparent',
+            width: '100%',
+            padding: 10,
+            backgroundColor: '#1a73e8',
+            color: 'white',
             border: 'none',
-            fontSize: '24px',
-            cursor: 'pointer',
-            color: '#666',
-            width: '30px',
-            height: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            zIndex: 1001
+            borderRadius: 8,
+            marginTop: 15,
+            cursor: 'pointer'
           }}
-          title="关闭"
         >
-          ×
+          关闭
         </button>
-
-        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-          ⏱️ 计时记录
-        </h3>
-        
-        {records.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>
-            暂无计时记录
-          </div>
-        ) : (
-          <div style={{ maxHeight: 400, overflow: 'auto' }}>
-            {records.map(record => (
-              <div key={record.id} style={{ 
-                padding: '12px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                backgroundColor: '#f8f9fa'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                  {record.taskText}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  📚 {record.category}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-  {/* 把开始和结束时间放在同一行 */}
-  🕐 {new Date(record.startTime).toLocaleString()} 
-  {record.endTime && ` →  ${new Date(record.endTime).toLocaleString()}`}
-</div>
-                
-                <div style={{ 
-                  fontSize: '14px', 
-                  fontWeight: 'bold', 
-                  color: record.endTime ? '#28a745' : '#ffc107',
-                  textAlign: 'right'
-                }}>
-                  {record.endTime ? 
-                    `${Math.floor(record.duration / 60)}分${record.duration % 60}秒` : 
-                    '进行中...'
-                  }
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-    
       </div>
     </div>
   );
 };
+
 
 
 
@@ -6965,6 +7054,61 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 });
 
 
+// 在 App 组件中添加更新计时记录的函数
+const updateTimerRecord = (recordId, newDuration, newStartTime, newEndTime) => {
+  setTimerRecords(prev => 
+    prev.map(record => 
+      record.id === recordId 
+        ? { 
+            ...record, 
+            duration: newDuration,
+            startTime: newStartTime || record.startTime,
+            endTime: newEndTime || record.endTime
+          }
+        : record
+    )
+  );
+  
+
+
+
+
+
+  // 同时更新对应任务的时间
+  const record = timerRecords.find(r => r.id === recordId);
+  if (record && record.taskId) {
+    setTasksByDate(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(date => {
+        updated[date] = updated[date].map(task => {
+          if (task.id === record.taskId) {
+            // 计算新的总时间（累加所有时间段）
+            const totalTime = task.timeSegments 
+              ? task.timeSegments.reduce((total, segment) => {
+                  return total + (segment.id === recordId ? newDuration : segment.duration);
+                }, 0)
+              : newDuration;
+            
+            return {
+              ...task,
+              timeSpent: totalTime,
+              timeSegments: task.timeSegments ? task.timeSegments.map(segment => 
+                segment.id === recordId 
+                  ? { ...segment, duration: newDuration }
+                  : segment
+              ) : []
+            };
+          }
+          return task;
+        });
+      });
+      return updated;
+    });
+  }
+};
+
+
+
 
 // 获取当前日期的心情和评价
 const getCurrentDailyMood = useCallback(() => {
@@ -12740,6 +12884,7 @@ if (isInitialized && todayTasks.length === 0) {
   <TimerRecordsModal 
     records={timerRecords}
     onClose={() => setShowTimerRecords(false)}
+    onUpdateRecord={updateTimerRecord}  // 添加这行
   />
 )}
 
@@ -14384,25 +14529,7 @@ marginTop: 10
           导入数据
         </button>
         
-        <button
-  onClick={() => {
-    // 这里可以跳转到个人成长页面或打开模态框
-    alert('个人成长功能开发中...');
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
->
-  个人成长
-</button>
+       
 
         
 <input
