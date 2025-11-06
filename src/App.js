@@ -8220,6 +8220,7 @@ const validateAchievements = () => {
   return true;
 };
 
+
 // 在初始化时调用
 useEffect(() => {
   if (isInitialized) {
@@ -8507,6 +8508,7 @@ const saveDailyData = useCallback(async () => {
 
 
     
+// 3. 修复计时器状态恢复（在现有的 restoreTimer 函数中）
 const restoreTimer = useCallback(() => {
   try {
     const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
@@ -8520,7 +8522,7 @@ const restoreTimer = useCallback(() => {
     const timerData = JSON.parse(saved);
     const now = Date.now();
     
-    // 修复：计算从保存时间到现在经过的时间
+    // 计算从保存时间到现在经过的时间
     const timeSinceSave = Math.floor((now - timerData.savedAt) / 1000);
     const totalElapsed = timerData.elapsedTime + timeSinceSave;
     
@@ -8564,7 +8566,8 @@ const clearTimerState = useCallback(() => {
   console.log('🗑️ 清理计时器状态');
 }, []);
 
-// 5. 开始计时 - 统一函数
+
+// 4. 修复计时记录的数据结构（在 handleStartTimer 中）
 const handleStartTimer = (target) => {
   console.log('🎯 开始计时:', target.text || target.category);
   
@@ -8604,13 +8607,18 @@ const handleStartTimer = (target) => {
       category: target.category,
       startTime: new Date().toISOString(),
       endTime: null,
-      duration: 0
+      duration: 0,
+      // 添加更多详细信息以便恢复
+      date: selectedDate,
+      isWeekTask: target.isWeekTask || false
     };
     setTimerRecords(prev => [newRecord, ...prev]);
   }
 
   console.log('✅ 计时器启动完成');
 };
+
+
 
 // 6. 暂停计时 - 统一函数
 const handlePauseTimer = (task) => {
@@ -9102,6 +9110,10 @@ useEffect(() => {
 
 
 
+
+
+
+
 // 在现有的初始化 useEffect 后面添加：
 
 // 监听初始化状态，自动恢复数据
@@ -9116,6 +9128,38 @@ useEffect(() => {
   }
 }, [isInitialized, tasksByDate, autoRestoreLatestData]);
 
+
+
+// 1. 加载计时记录
+useEffect(() => {
+  const loadTimerRecords = async () => {
+    try {
+      const savedRecords = await loadMainData('timerRecords');
+      if (savedRecords) {
+        setTimerRecords(savedRecords);
+        console.log('✅ 加载计时记录:', savedRecords.length, '条');
+      }
+    } catch (error) {
+      console.error('加载计时记录失败:', error);
+    }
+  };
+
+  if (isInitialized) {
+    loadTimerRecords();
+  }
+}, [isInitialized]);
+
+// 2. 保存计时记录
+useEffect(() => {
+  const saveTimerRecords = async () => {
+    if (isInitialized && timerRecords.length > 0) {
+      await saveMainData('timerRecords', timerRecords);
+      console.log('💾 保存计时记录:', timerRecords.length, '条');
+    }
+  };
+
+  saveTimerRecords();
+}, [timerRecords, isInitialized]);
 
 
 
@@ -16413,7 +16457,7 @@ reader.onload = async (event) => {
   onClick={syncToGitHub}
   style={{
     padding: "6px 10px",
-    backgroundColor: "#28a745",
+    backgroundColor: "#1a73e8",
     color: "#fff",
     border: "none",
     fontSize: 12,
@@ -16429,7 +16473,7 @@ reader.onload = async (event) => {
   onClick={() => setShowRestoreModal(true)}
   style={{
     padding: "6px 10px",
-    backgroundColor: "#ff6b6b",
+    backgroundColor: "#1a73e8",
     color: "#fff",
     border: "none",
     fontSize: 12,
@@ -16495,7 +16539,7 @@ reader.onload = async (event) => {
   }}
   style={{
     padding: "6px 10px",
-    backgroundColor: "#ff6b6b",
+    backgroundColor: "#1a73e8",
     color: "#fff",
     border: "none",
     fontSize: 12,
@@ -16506,7 +16550,7 @@ reader.onload = async (event) => {
   }}
   title="强制从云端恢复数据（覆盖本地）"
 >
-  恢复云端数据
+  恢复云端
 </button>
       </div>
     </div>
