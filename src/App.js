@@ -16544,7 +16544,7 @@ reader.onload = async (event) => {
     border: "none",
     fontSize: 12,
     borderRadius: 6,
-    width: "85px",
+    width: "70px",
     height: "30px",
     cursor: "pointer"
   }}
