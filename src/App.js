@@ -2275,23 +2275,45 @@ const calculateCurrentStreak = (tasksByDate) => {
 };
 
 
-// 修改成就检查函数，添加 customAchievements 参数
+// 修改成就检查函数，添加错误处理
 const checkAchievements = (userData, unlockedAchievements, customAchievements = []) => {
   const newAchievements = [];
   
-  // 获取所有系统成就（排除custom数组）
-  const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
-    .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
-    .flat();
-  
-  // 合并系统成就和自定义成就
-  const allAchievements = [...allSystemAchievements, ...customAchievements];
-  
-  allAchievements.forEach(achievement => {
-    if (!unlockedAchievements.includes(achievement.id) && achievement.condition(userData)) {
-      newAchievements.push(achievement);
-    }
-  });
+  try {
+    // 获取所有系统成就（排除custom数组）
+    const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
+      .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
+      .flat();
+    
+    // 合并系统成就和自定义成就
+    const allAchievements = [...allSystemAchievements, ...customAchievements];
+    
+    console.log('🔍 检查成就:', {
+      总成就数: allAchievements.length,
+      系统成就: allSystemAchievements.length,
+      自定义成就: customAchievements.length,
+      已解锁: unlockedAchievements.length
+    });
+    
+    allAchievements.forEach(achievement => {
+      try {
+        // 添加类型检查
+        if (!achievement || typeof achievement.condition !== 'function') {
+          console.warn('❌ 无效的成就对象:', achievement);
+          return;
+        }
+        
+        if (!unlockedAchievements.includes(achievement.id) && achievement.condition(userData)) {
+          console.log('🎉 解锁新成就:', achievement.name);
+          newAchievements.push(achievement);
+        }
+      } catch (error) {
+        console.error(`❌ 检查成就 "${achievement?.name || '未知'}" 时出错:`, error);
+      }
+    });
+  } catch (error) {
+    console.error('❌ 成就检查系统错误:', error);
+  }
   
   return newAchievements;
 };
@@ -8176,6 +8198,35 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 
 
 
+
+// 添加成就数据验证函数
+const validateAchievements = () => {
+  console.log('🔍 验证成就数据...');
+  
+  const allAchievements = Object.values(ACHIEVEMENTS_CONFIG)
+    .filter(config => Array.isArray(config))
+    .flat();
+  
+  const invalidAchievements = allAchievements.filter(ach => 
+    !ach || typeof ach.condition !== 'function'
+  );
+  
+  if (invalidAchievements.length > 0) {
+    console.warn('⚠️ 发现无效的成就:', invalidAchievements);
+    return false;
+  }
+  
+  console.log('✅ 所有成就数据有效');
+  return true;
+};
+
+// 在初始化时调用
+useEffect(() => {
+  if (isInitialized) {
+    validateAchievements();
+  }
+}, [isInitialized]);
+
 // 🔽 在这里添加获取Gist列表的函数 🔽
   const getLatestStudyTrackerGist = async (token) => {
     try {
@@ -9069,7 +9120,9 @@ useEffect(() => {
 
 
 
-  // 修复：成就检查逻辑
+
+
+// 修复：成就检查逻辑
 useEffect(() => {
   const checkAndUnlockAchievements = () => {
     console.log('🔍 开始成就检查:', {
@@ -9079,37 +9132,41 @@ useEffect(() => {
     });
 
     if (isInitialized && Object.keys(tasksByDate).length > 0) {
-      const userData = {
-        tasksByDate,
-        templates,
-        pointHistory,
-        exchangeItems
-      };
-      
-      const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
-      
-      console.log('🎯 新解锁成就检查结果:', newlyUnlocked);
-      
-      if (newlyUnlocked.length > 0) {
-        console.log('🎉 发现新成就，准备解锁:', newlyUnlocked.map(a => a.name));
+      try {
+        const userData = {
+          tasksByDate: tasksByDate || {},
+          templates: templates || [],
+          pointHistory: pointHistory || [],
+          exchangeItems: exchangeItems || []
+        };
         
-        // 修复：确保状态更新和存储保存
-        const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
-        const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
+        const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
         
-        // 先更新状态
-        setUnlockedAchievements(updatedUnlocked);
-        setNewAchievements(newlyUnlocked);
+        console.log('🎯 新解锁成就检查结果:', newlyUnlocked);
         
-        // 然后保存到存储
-        saveMainData('unlockedAchievements', updatedUnlocked)
-          .then(() => {
-            console.log('✅ 成就数据保存成功');
-            setShowAchievementsModal(true);
-          })
-          .catch(error => {
-            console.error('❌ 成就数据保存失败:', error);
-          });
+        if (newlyUnlocked.length > 0) {
+          console.log('🎉 发现新成就，准备解锁:', newlyUnlocked.map(a => a.name));
+          
+          // 修复：确保状态更新和存储保存
+          const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
+          const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
+          
+          // 先更新状态
+          setUnlockedAchievements(updatedUnlocked);
+          setNewAchievements(newlyUnlocked);
+          
+          // 然后保存到存储
+          saveMainData('unlockedAchievements', updatedUnlocked)
+            .then(() => {
+              console.log('✅ 成就数据保存成功');
+              setShowAchievementsModal(true);
+            })
+            .catch(error => {
+              console.error('❌ 成就数据保存失败:', error);
+            });
+        }
+      } catch (error) {
+        console.error('❌ 成就检查过程出错:', error);
       }
     }
   };
@@ -9119,9 +9176,7 @@ useEffect(() => {
     const timer = setTimeout(checkAndUnlockAchievements, 1500);
     return () => clearTimeout(timer);
   }
-  
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [tasksByDate, isInitialized]);
+}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
 
 
   
