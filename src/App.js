@@ -1,4 +1,4 @@
-
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
@@ -1506,6 +1506,469 @@ const CustomAchievementModal = ({ onSave, onClose, editAchievement = null }) => 
   );
 };
 
+
+
+
+// 在其它模态框组件后面添加这个
+const GitHubSyncModal = ({ config, onSave, onClose }) => {
+  const [token, setToken] = useState(config.token || '');
+  const [autoSync, setAutoSync] = useState(config.autoSync || false);
+
+  const handleSave = () => {
+    onSave({
+      token: token.trim(),
+      autoSync
+    });
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 400
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>GitHub 同步设置</h3>
+        
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+            GitHub Personal Access Token:
+          </label>
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="输入 GitHub Token"
+            style={{
+              width: '100%',
+              padding: 8,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14
+            }}
+          />
+          <div style={{ fontSize: 12, color: '#666', marginTop: 5 }}>
+            需要 gist 权限。获取地址：https://github.com/settings/tokens
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={autoSync}
+              onChange={(e) => setAutoSync(e.target.checked)}
+            />
+            <span>自动同步（每30分钟）</span>
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              flex: 1,
+              padding: 10,
+              background: '#1a73e8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+// 在 GitHubSyncModal 组件后面添加：
+
+// 恢复数据模态框组件
+const RestoreDataModal = ({ onClose, onRestore }) => {
+  const [gistUrl, setGistUrl] = useState('');
+  const [fileContent, setFileContent] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+// 从 Gist URL 提取 ID - 最宽松的版本
+const extractGistId = (url) => {
+  // 如果看起来像完整的 URL，尝试提取 ID
+  if (url.includes('gist.github.com')) {
+    const parts = url.split('/');
+    const lastPart = parts[parts.length - 1];
+    // 返回最后一个部分，去掉可能的查询参数
+    return lastPart.split('?')[0];
+  }
+  // 否则直接返回输入
+  return url;
+};
+
+
+
+
+  
+// 从 GitHub 获取数据
+const fetchFromGitHub = async (gistId) => {
+  try {
+    setIsLoading(true);
+    
+    // 尝试不使用 token 访问（公开 Gist）
+    const response = await fetch(`https://api.github.com/gists/${gistId}`);
+    
+    if (!response.ok) {
+      // 如果是 404 或 403，尝试使用用户自己的 token
+      const token = localStorage.getItem('github_token');
+      if (token) {
+        const authResponse = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (authResponse.ok) {
+          const gist = await authResponse.json();
+          const files = Object.values(gist.files);
+          
+          // 查找学习跟踪器数据文件
+          const dataFile = files.find(file => 
+            file.filename.includes('study-tracker') || 
+            file.filename.includes('json') ||
+            file.filename.includes('backup')
+          );
+          
+          if (!dataFile) {
+            throw new Error('未找到学习跟踪器数据文件');
+          }
+
+          return JSON.parse(dataFile.content);
+        }
+      }
+      
+      throw new Error(`获取失败: ${response.status} - 请确保 Gist 是公开的或提供正确的访问权限`);
+    }
+
+    const gist = await response.json();
+    const files = Object.values(gist.files);
+    
+    // 查找学习跟踪器数据文件（更宽松的匹配）
+    const dataFile = files.find(file => 
+      file.filename.includes('study-tracker') || 
+      file.filename.includes('json') ||
+      file.filename.includes('backup') ||
+      file.filename === 'study-tracker-data.json'
+    );
+    
+    if (!dataFile) {
+      throw new Error('未找到学习跟踪器数据文件，请检查文件名称');
+    }
+
+    return JSON.parse(dataFile.content);
+  } catch (error) {
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
+  // 从文件恢复
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = JSON.parse(e.target.result);
+        setFileContent(JSON.stringify(content, null, 2));
+      } catch (error) {
+        alert('文件格式错误: ' + error.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+ 
+
+
+// 从 URL 恢复
+const handleUrlRestore = async () => {
+  if (!gistUrl.trim()) {
+    alert('请输入 Gist URL 或 ID');
+    return;
+  }
+
+  try {
+    const gistId = extractGistId(gistUrl);
+    
+    // 移除格式验证，让 GitHub API 自己处理
+    console.log('尝试获取 Gist ID:', gistId);
+    
+    const data = await fetchFromGitHub(gistId);
+    setFileContent(JSON.stringify(data, null, 2));
+  } catch (error) {
+    alert('恢复失败: ' + error.message + '\n\n提示：请确保：\n1. Gist 是公开的\n2. 或者您有该 Gist 的访问权限\n3. 或者先设置 GitHub Token');
+  }
+};
+
+// 在 RestoreDataModal 组件内部添加这个方法：
+
+// 测试 Gist 访问
+const testGistAccess = async () => {
+  if (!gistUrl.trim()) {
+    alert('请输入 Gist URL 或 ID');
+    return;
+  }
+
+  try {
+    const gistId = extractGistId(gistUrl);
+    console.log('测试 Gist ID:', gistId);
+    
+    // 测试公开访问
+    const publicResponse = await fetch(`https://api.github.com/gists/${gistId}`);
+    console.log('公开访问状态:', publicResponse.status);
+    
+    // 测试带 token 访问
+    const token = localStorage.getItem('github_token');
+    if (token) {
+      const authResponse = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('带 Token 访问状态:', authResponse.status);
+    }
+    
+    alert(`测试结果：
+公开访问: ${publicResponse.status}
+带 Token 访问: ${token ? '已测试' : '未设置 Token'}
+
+如果都是 404，说明 Gist 不存在或 ID 错误
+如果是 403，说明需要权限`);
+    
+  } catch (error) {
+    console.error('测试失败:', error);
+    alert('测试失败: ' + error.message);
+  }
+};
+
+
+  // 确认恢复
+  const confirmRestore = () => {
+    if (!fileContent) {
+      alert('请先选择数据源');
+      return;
+    }
+
+    try {
+      const data = JSON.parse(fileContent);
+      
+      // 验证数据格式
+      if (!data.tasks && !data.tasksByDate) {
+        throw new Error('无效的数据格式');
+      }
+
+      if (window.confirm('确定要恢复这个备份吗？当前数据将被覆盖！')) {
+        onRestore(data);
+        onClose();
+      }
+    } catch (error) {
+      alert('数据格式错误: ' + error.message);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 500,
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
+          🔄 恢复数据
+        </h3>
+
+        {/* 方法1: 从文件恢复 */}
+        <div style={{ marginBottom: 20 }}>
+          <h4 style={{ marginBottom: 10 }}>📁 从文件恢复</h4>
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleFileUpload}
+            style={{
+              width: '100%',
+              padding: 8,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              marginBottom: 10
+            }}
+          />
+          <div style={{ fontSize: 12, color: '#666' }}>
+            选择之前导出的 .json 备份文件
+          </div>
+        </div>
+
+        {/* 方法2: 从 GitHub Gist 恢复 */}
+        <div style={{ marginBottom: 20 }}>
+          <h4 style={{ marginBottom: 10 }}>🌐 从 GitHub 恢复</h4>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <input
+              type="text"
+              placeholder="输入 Gist URL 或 ID"
+              value={gistUrl}
+              onChange={(e) => setGistUrl(e.target.value)}
+              style={{
+                flex: 1,
+                padding: 8,
+                border: '1px solid #ccc',
+                borderRadius: 6
+              }}
+            />
+            <button
+              onClick={handleUrlRestore}
+              disabled={isLoading}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: isLoading ? '#ccc' : '#1a73e8',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: isLoading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isLoading ? '加载中...' : '获取'}
+            </button>
+    {/* 添加测试按钮 */}
+    <button
+      onClick={testGistAccess}
+      style={{
+        padding: '8px 12px',
+        backgroundColor: '#6c757d',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 6,
+        cursor: 'pointer',
+        fontSize: '12px'
+      }}
+      title="测试 Gist 访问"
+    >
+      测试
+    </button>
+
+
+
+          </div>
+          <div style={{ fontSize: 12, color: '#666' }}>
+            示例: https://gist.github.com/username/1234567890abcdef
+          </div>
+        </div>
+
+
+
+
+        {/* 数据预览 */}
+        {fileContent && (
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ marginBottom: 10 }}>👀 数据预览</h4>
+            <div style={{
+              backgroundColor: '#f5f5f5',
+              padding: 10,
+              borderRadius: 6,
+              maxHeight: 200,
+              overflow: 'auto',
+              fontSize: 12,
+              border: '1px solid #e0e0e0'
+            }}>
+              <pre>{fileContent.substring(0, 500)}...</pre>
+            </div>
+          </div>
+        )}
+
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#ccc',
+              color: '#000',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={confirmRestore}
+            disabled={!fileContent}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: !fileContent ? '#ccc' : '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: !fileContent ? 'not-allowed' : 'pointer'
+            }}
+          >
+            确认恢复
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -7628,10 +8091,12 @@ const TaskItem = ({
 
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
+  const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [pointHistory, setPointHistory] = useState([]);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
@@ -7710,6 +8175,134 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 });
 
 
+
+// 🔽 在这里添加获取Gist列表的函数 🔽
+  const getLatestStudyTrackerGist = async (token) => {
+    try {
+      const response = await fetch('https://api.github.com/gists', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error('无法获取Gist列表');
+      
+      const gists = await response.json();
+      
+      // 过滤出学习跟踪器的gist，按更新时间排序
+      const studyGists = gists
+        .filter(gist => {
+          const files = Object.values(gist.files);
+          return files.some(file => 
+            file.filename.includes('study-tracker') || 
+            file.filename.includes('json')
+          );
+        })
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      
+      return studyGists[0]; // 返回最新的一个
+    } catch (error) {
+      console.error('获取Gist列表失败:', error);
+      return null;
+    }
+  };
+
+
+  
+const restoreFromGitHub = useCallback(async () => {
+  console.log('🔍 开始恢复流程');
+  
+  const token = localStorage.getItem('github_token');
+  let gistId = localStorage.getItem('github_gist_id');
+  
+  console.log('Token:', token ? '已设置' : '未设置');
+  console.log('Gist ID:', gistId || '未设置');
+  
+  if (!token) {
+    alert('请先设置 GitHub Token');
+    setShowGitHubSyncModal(true);
+    return;
+  }
+
+  // 如果没有 Gist ID，让用户输入
+  if (!gistId) {
+    gistId = window.prompt('请输入 Gist ID（在之前浏览器的同步设置中可以找到）');
+    console.log('用户输入的 Gist ID:', gistId);
+    if (!gistId) return;
+  }
+
+  try {
+    console.log('📡 开始请求 Gist 数据...');
+    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('响应状态:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`获取数据失败: ${response.status}`);
+    }
+
+    const gist = await response.json();
+    console.log('Gist 获取成功:', gist);
+    
+    const content = gist.files['study-tracker-data.json'].content;
+    const backupData = JSON.parse(content);
+    console.log('备份数据:', backupData);
+
+    if (window.confirm(`确定要恢复 ${new Date(backupData.syncTime).toLocaleString()} 的备份数据吗？这将覆盖当前所有数据！`)) {
+      console.log('用户确认恢复，开始设置状态...');
+      
+      // 立即保存到 localStorage
+      await saveMainData('tasks', backupData.tasksByDate || {});
+      await saveMainData('templates', backupData.templates || []);
+      await saveMainData('pointHistory', backupData.pointHistory || []);
+      await saveMainData('exchangeItems', backupData.exchangeItems || []);
+      await saveMainData('customAchievements', backupData.customAchievements || []);
+      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
+      
+      console.log('数据已保存到 localStorage');
+      
+      // 然后设置状态
+      setTasksByDate(backupData.tasksByDate || {});
+      setTemplates(backupData.templates || []);
+      setPointHistory(backupData.pointHistory || []);
+      setExchangeItems(backupData.exchangeItems || []);
+      setCustomAchievements(backupData.customAchievements || []);
+      setUnlockedAchievements(backupData.unlockedAchievements || []);
+      
+      // 保存 Gist ID
+      localStorage.setItem('github_gist_id', gistId);
+      
+      console.log('状态设置完成，准备重新加载...');
+      
+      alert('数据恢复成功！页面将重新加载。');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('恢复失败:', error);
+    alert('恢复失败: ' + error.message);
+  }
+}, []);
+
+
+
+
+
+// 在 App 组件的状态中找到 useState 部分，添加：
+const [syncConfig, setSyncConfig] = useState({
+  token: localStorage.getItem('github_token') || '',
+  gistId: localStorage.getItem('github_gist_id') || '',
+  autoSync: localStorage.getItem('github_auto_sync') === 'true',
+  lastSync: localStorage.getItem('github_last_sync') || ''
+});
+
 // 在 App 组件中添加更新计时记录的函数
 const updateTimerRecord = (recordId, newDuration, newStartTime, newEndTime) => {
   setTimerRecords(prev => 
@@ -7725,7 +8318,6 @@ const updateTimerRecord = (recordId, newDuration, newStartTime, newEndTime) => {
     )
   );
   
-
 
 
 
@@ -8081,6 +8673,277 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
   setTimeout(clearTimerState, 100);
 };
 
+
+// 在 App 组件的方法区域添加：
+
+
+
+
+
+
+// 🔽 改成这样：🔽
+const handleRestoreData = useCallback(async (backupData) => {
+  try {
+    console.log('🔄 开始恢复数据...', backupData);
+
+    // 数据格式兼容性处理
+    const normalizedData = {
+      tasksByDate: backupData.tasksByDate || backupData.tasks || {},
+      templates: backupData.templates || [],
+      pointHistory: backupData.pointHistory || [],
+      exchangeItems: backupData.exchange || backupData.exchangeItems || [],
+      customAchievements: backupData.customAchievements || [],
+      unlockedAchievements: backupData.unlockedAchievements || [],
+      categories: backupData.categories || baseCategories
+    };
+
+    // 保存到存储
+    await saveMainData('tasks', normalizedData.tasksByDate);
+    await saveMainData('templates', normalizedData.templates);
+    await saveMainData('pointHistory', normalizedData.pointHistory);
+    await saveMainData('exchange', normalizedData.exchangeItems);
+    await saveMainData('customAchievements', normalizedData.customAchievements);
+    await saveMainData('unlockedAchievements', normalizedData.unlockedAchievements);
+    await saveMainData('categories', normalizedData.categories);
+
+    // 更新状态
+    setTasksByDate(normalizedData.tasksByDate);
+    setTemplates(normalizedData.templates);
+    setPointHistory(normalizedData.pointHistory);
+    setExchangeItems(normalizedData.exchangeItems);
+    setCustomAchievements(normalizedData.customAchievements);
+    setUnlockedAchievements(normalizedData.unlockedAchievements);
+    setCategories(normalizedData.categories);
+
+    console.log('✅ 数据恢复完成');
+    
+    alert('数据恢复成功！页面将重新加载。');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+
+  } catch (error) {
+    console.error('恢复失败:', error);
+    alert('恢复失败: ' + error.message);
+  }
+}, []);
+
+
+// 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
+// eslint-disable-next-line no-unused-vars
+
+
+
+const syncToGitHub = useCallback(async () => {
+  const token = localStorage.getItem('github_token');
+  if (!token) {
+    setShowGitHubSyncModal(true);
+    alert('请先设置 GitHub Token');
+    return;
+  }
+
+  try {
+    const syncData = {
+      tasksByDate,
+      templates,
+      pointHistory,
+      exchangeItems,
+      customAchievements,
+      unlockedAchievements,
+      syncTime: new Date().toISOString(),
+      version: '1.1'
+    };
+
+    const gistId = localStorage.getItem('github_gist_id');
+    const jsonData = JSON.stringify(syncData, null, 2);
+    
+    let response;
+    
+    if (gistId) {
+      // 更新现有Gist
+      response = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          description: 'Study Tracker Data Backup - ' + new Date().toLocaleString(),
+          files: {
+            'study-tracker-data.json': {
+              content: jsonData
+            }
+          }
+        })
+      });
+    } else {
+      // 创建新Gist
+      response = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          description: 'Study Tracker Data Backup',
+          public: false,
+          files: {
+            'study-tracker-data.json': {
+              content: jsonData
+            }
+          }
+        })
+      });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`同步失败: ${response.status} - ${errorText}`);
+    }
+
+    // 🔽 修复这里：确保正确解析响应
+    const result = await response.json();
+    
+    if (!result || !result.id) {
+      throw new Error('GitHub 响应格式错误');
+    }
+
+    // 保存Gist ID（新建或更新都要保存）
+    localStorage.setItem('github_gist_id', result.id);
+    localStorage.setItem('github_last_sync', new Date().toISOString());
+    
+    // 更新同步配置状态
+    setSyncConfig(prev => ({
+      ...prev,
+      gistId: result.id,
+      lastSync: new Date().toISOString()
+    }));
+    
+    alert('同步成功！数据已备份到云端。');
+    
+  } catch (error) {
+    console.error('同步失败:', error);
+    
+    // 更详细的错误信息
+    let errorMessage = '同步失败: ';
+    if (error.message.includes('401')) {
+      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
+    } else if (error.message.includes('403')) {
+      errorMessage += '权限不足，请检查 Token 是否有 gist 权限';
+    } else if (error.message.includes('404')) {
+      errorMessage += 'Gist 不存在，将创建新的备份';
+      // 清除无效的gistId，下次会创建新的
+      localStorage.removeItem('github_gist_id');
+    } else {
+      errorMessage += error.message;
+    }
+    
+    alert(errorMessage);
+  }
+}, [tasksByDate, templates, pointHistory, exchangeItems, customAchievements, unlockedAchievements]);
+
+
+// 在现有的 useCallback 函数后面添加这个：
+
+
+
+
+
+// 修复 autoRestoreLatestData 函数
+const autoRestoreLatestData = useCallback(async () => {
+  const token = localStorage.getItem('github_token');
+  
+  if (!token) {
+    console.log('❌ 没有GitHub Token，跳过自动恢复');
+    return;
+  }
+
+  console.log('🔍 开始自动恢复最新数据...');
+  
+  try {
+    // 1. 先尝试使用保存的gistId
+    const savedGistId = localStorage.getItem('github_gist_id');
+    let targetGistId = savedGistId;
+    
+    if (!savedGistId) {
+      console.log('🔍 搜索最新的学习跟踪器Gist...');
+      const latestGist = await getLatestStudyTrackerGist(token);
+      
+      if (latestGist) {
+        targetGistId = latestGist.id;
+        console.log('✅ 找到最新Gist:', targetGistId);
+      } else {
+        console.log('❌ 未找到学习跟踪器数据');
+        return;
+      }
+    }
+
+    console.log('📁 尝试获取Gist数据:', targetGistId);
+    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`获取数据失败: ${response.status}`);
+    }
+
+    const gist = await response.json();
+    const content = gist.files['study-tracker-data.json']?.content;
+    
+    if (!content) {
+      throw new Error('未找到学习跟踪器数据文件');
+    }
+
+    const backupData = JSON.parse(content);
+    console.log('✅ 获取到备份数据，更新时间:', gist.updated_at);
+    
+    // 🔽 修复这里：总是询问用户是否要恢复，即使本地有数据
+    const localDataCount = Object.keys(tasksByDate).length;
+    const cloudDataCount = Object.keys(backupData.tasksByDate || {}).length;
+    
+    const confirmMessage = `发现云端备份数据，是否要恢复？\n\n` +
+      `云端数据：\n` +
+      `• 备份时间：${new Date(backupData.syncTime || gist.updated_at).toLocaleString()}\n` +
+      `• 任务天数：${cloudDataCount}\n` +
+      `• 模板数量：${(backupData.templates || []).length}\n\n` +
+      `本地数据：\n` +
+      `• 任务天数：${localDataCount}\n\n` +
+      `恢复将覆盖当前所有本地数据！`;
+
+    if (window.confirm(confirmMessage)) {
+      console.log('用户确认恢复，开始设置状态...');
+      
+      // 保存这个gistId供以后使用
+      if (!savedGistId) {
+        localStorage.setItem('github_gist_id', targetGistId);
+      }
+      
+      await handleRestoreData(backupData);
+    } else {
+      console.log('用户取消恢复');
+    }
+    
+  } catch (error) {
+    console.error('自动恢复失败:', error);
+    
+    // 提供更友好的错误信息
+    let errorMessage = '恢复失败: ';
+    if (error.message.includes('401') || error.message.includes('403')) {
+      errorMessage += 'Token 无效或权限不足，请检查同步设置';
+    } else if (error.message.includes('404')) {
+      errorMessage += '未找到备份数据，请检查 Gist ID 是否正确';
+    } else {
+      errorMessage += error.message;
+    }
+    
+    alert(errorMessage);
+  }
+}, [tasksByDate, handleRestoreData]);
+
+
 // 8. 实时计时器
 useEffect(() => {
   let intervalId = null;
@@ -8107,6 +8970,11 @@ useEffect(() => {
     }
   };
 }, [activeTimer, saveTimerState]);
+
+
+
+
+
 
 // 9. 页面关闭前保存
 useEffect(() => {
@@ -8183,11 +9051,22 @@ useEffect(() => {
 
 
 
+// 在现有的初始化 useEffect 后面添加：
+
+// 监听初始化状态，自动恢复数据
+useEffect(() => {
+  if (isInitialized && Object.keys(tasksByDate).length === 0) {
+    console.log('🔄 初始化完成，检查是否需要恢复数据');
+    const timer = setTimeout(() => {
+      autoRestoreLatestData();
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }
+}, [isInitialized, tasksByDate, autoRestoreLatestData]);
 
 
 
-
-  
 
 
   // 修复：成就检查逻辑
@@ -10082,6 +10961,13 @@ if (savedCategories) {
       console.log('✅ 初始化状态已保存到存储');
       setIsInitialized(true);
       console.log('✅ isInitialized 设置为 true');
+
+
+
+
+
+
+      
 
     // 设置定时备份 - 添加这3行代码
     const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
@@ -12879,6 +13765,9 @@ const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompl
     const chartHeight = window.innerWidth <= 768 ? 200 : 300;
     const fontSize = window.innerWidth <= 768 ? 10 : 12;
 
+
+
+    
     return (
       <div style={{
         maxWidth: 600,
@@ -13454,6 +14343,31 @@ if (isInitialized && todayTasks.length === 0) {
           onDelete={handleDeleteTemplate}
         />
       )}
+
+
+{showGitHubSyncModal && (
+  <GitHubSyncModal
+    config={syncConfig}
+    onSave={(newConfig) => {
+      // 保存配置到 localStorage
+      localStorage.setItem('github_token', newConfig.token);
+      localStorage.setItem('github_auto_sync', newConfig.autoSync.toString());
+      setSyncConfig({ ...syncConfig, ...newConfig });
+      setShowGitHubSyncModal(false);
+    }}
+    onClose={() => setShowGitHubSyncModal(false)}
+  />
+)}
+
+
+{showRestoreModal && (
+  <RestoreDataModal
+    onClose={() => setShowRestoreModal(false)}
+    onRestore={handleRestoreData}
+  />
+)}
+
+
 
       {/* 在模态框渲染部分添加 */}
       {showReminderModal && (
@@ -15423,6 +16337,122 @@ reader.onload = async (event) => {
           我的成就
         </button>
 
+<button
+  onClick={() => setShowGitHubSyncModal(true)}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#1a73e8",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+>
+  同步设置
+</button>
+
+<button
+  onClick={syncToGitHub}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#28a745",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+>
+  立即同步
+</button>
+<button
+  onClick={() => setShowRestoreModal(true)}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#ff6b6b",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+>
+  恢复数据
+</button>
+<button
+  onClick={() => {
+    // 直接调用恢复函数，不检查本地数据
+    const token = localStorage.getItem('github_token');
+    if (!token) {
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+    
+    if (window.confirm('确定要从云端恢复最新数据吗？这将覆盖当前所有本地数据！')) {
+      // 创建一个不检查本地数据的恢复函数
+      const forceRestoreFromCloud = async () => {
+        try {
+          const token = localStorage.getItem('github_token');
+          const gistId = localStorage.getItem('github_gist_id');
+          
+          let targetGistId = gistId;
+          if (!targetGistId) {
+            const latestGist = await getLatestStudyTrackerGist(token);
+            if (latestGist) {
+              targetGistId = latestGist.id;
+              localStorage.setItem('github_gist_id', targetGistId);
+            } else {
+              throw new Error('未找到云端备份数据');
+            }
+          }
+
+          const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) throw new Error(`获取失败: ${response.status}`);
+
+          const gist = await response.json();
+          const content = gist.files['study-tracker-data.json']?.content;
+          const backupData = JSON.parse(content);
+
+          await handleRestoreData(backupData);
+          
+        } catch (error) {
+          console.error('强制恢复失败:', error);
+          alert('恢复失败: ' + error.message);
+        }
+      };
+      
+      forceRestoreFromCloud();
+    }
+  }}
+  style={{
+    padding: "6px 10px",
+    backgroundColor: "#ff6b6b",
+    color: "#fff",
+    border: "none",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "85px",
+    height: "30px",
+    cursor: "pointer"
+  }}
+  title="强制从云端恢复数据（覆盖本地）"
+>
+  恢复云端数据
+</button>
       </div>
     </div>
   );
