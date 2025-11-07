@@ -9601,50 +9601,69 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
           管理类别和子类别
         </h3>
 
-        {/* 添加新类别 */}
-        <div style={{ marginBottom: 20, padding: 15, border: '1px solid #e0e0e0', borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 10 }}>添加新类别</h4>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-            <input
-              type="text"
-              placeholder="类别名称"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                fontSize: 14
-              }}
-            />
-            <input
-              type="color"
-              value={newCategoryColor}
-              onChange={(e) => setNewCategoryColor(e.target.value)}
-              style={{
-                width: 50,
-                height: 40,
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                cursor: 'pointer'
-              }}
-            />
-            <button
-              onClick={handleAddCategory}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#1a73e8',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer'
-              }}
-            >
-              添加
-            </button>
-          </div>
-        </div>
+        
+
+
+{/* 添加新类别 */}
+<div style={{ marginBottom: 20, padding: 15, border: '1px solid #e0e0e0', borderRadius: 8 }}>
+  <h4 style={{ marginBottom: 10 }}>添加新类别</h4>
+  <div style={{ 
+    display: 'flex', 
+    gap: 8, 
+    alignItems: 'center', 
+    marginBottom: 10,
+    flexWrap: 'nowrap' // 确保不换行
+  }}>
+    <input
+      type="text"
+      placeholder="类别名称"
+      value={newCategoryName}
+      onChange={(e) => setNewCategoryName(e.target.value)}
+      style={{
+        flex: 1,
+        padding: '8px 12px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        minWidth: 0 // 防止在移动端溢出
+      }}
+    />
+    <input
+      type="color"
+      value={newCategoryColor}
+      onChange={(e) => setNewCategoryColor(e.target.value)}
+      style={{
+        width: '40px', // 固定宽度
+        height: '40px', // 固定高度，确保正方形
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        cursor: 'pointer',
+        padding: 0, // 移除内边距
+        flexShrink: 0 // 防止被压缩
+      }}
+    />
+    <button
+      onClick={handleAddCategory}
+      style={{
+        width: '40px', // 固定宽度
+        height: '40px', // 固定高度，与颜色选择框一致
+        padding: 0, // 移除内边距
+        backgroundColor: '#1a73e8',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 6,
+        cursor: 'pointer',
+        fontSize: '16px', // 调整字体大小
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0 // 防止被压缩
+      }}
+    >
+      添加
+    </button>
+  </div>
+</div>
 
         {/* 类别列表 */}
         <div style={{ marginBottom: 20 }}>
@@ -9745,30 +9764,27 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
         
       </div>
       
-    <div style={{ 
+
+
+
+<div style={{ 
   display: 'flex', 
   alignItems: 'center', 
   gap: 6,
-  flexShrink: 1,       // ✅ 允许缩放
-  flexWrap: 'wrap',    // ✅ 窄屏可自动换行
-  minWidth: '100px',   // ✅ 保留最小宽度
-  justifyContent: 'flex-end',
+  flexShrink: 0
 }}>
   <input
     type="color"
     value={category.color}
     onChange={(e) => handleColorChange(index, e.target.value)}
     style={{
-      appearance: 'none',      // ✅ 移除默认UI
-      WebkitAppearance: 'none',
-      width: 32,
-      height: 32,
+      width: '32px', // 固定宽度
+      height: '32px', // 固定高度
       border: '1px solid #ccc',
       borderRadius: 4,
       cursor: 'pointer',
-      padding: 0,
-      flexShrink: 0,
-      backgroundColor: category.color,
+      padding: 0, // 移除内边距
+      flexShrink: 0
     }}
   />
 
@@ -9776,25 +9792,26 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
     <button
       onClick={() => handleDeleteCategory(index)}
       style={{
-        padding: '6px 10px',
+        width: '32px', // 固定宽度
+        height: '32px', // 固定高度
+        padding: 0, // 移除内边距
         backgroundColor: '#dc3545',
         color: '#fff',
         border: 'none',
         borderRadius: 4,
         cursor: 'pointer',
-        fontSize: 12,
-        height: 32,
+        fontSize: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flexShrink: 0,
-        minWidth: '55px',
+        flexShrink: 0
       }}
     >
       删除
     </button>
-        )}
-      </div>
+  )}
+</div>
+
     </div>
 
 
@@ -17352,4 +17369,4 @@ reader.onload = async (event) => {
 
   
   
-  export default App;
+  export default App
