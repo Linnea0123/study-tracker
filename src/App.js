@@ -9650,6 +9650,8 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
         <div style={{ marginBottom: 20 }}>
           <h4 style={{ marginBottom: 10 }}>现有类别 ({localCategories.length})</h4>
           
+
+
 {localCategories.map((category, index) => (
   <div
     key={category.name}
@@ -9657,33 +9659,43 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
       border: '1px solid #e0e0e0',
       borderRadius: 6,
       marginBottom: 12,
-      backgroundColor: '#fff', // 改为白色背景
+      backgroundColor: '#fff',
       overflow: 'hidden'
     }}
   >
-    {/* 类别头部 - 去掉背景色 */}
+    {/* 类别头部 - 调整布局 */}
     <div style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '10px 12px',
-      backgroundColor: '#fff', // 改为白色背景
-      color: '#333', // 改为深色文字
-      borderBottom: '1px solid #f0f0f0' // 添加底部边框
+      padding: '8px 12px',
+      backgroundColor: '#fff',
+      color: '#333',
+      borderBottom: '1px solid #f0f0f0',
+      gap: '8px'
     }}>
-
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* 左侧：颜色圆点 + 类别名称输入框 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 8,
+        flex: 1,
+        minWidth: 0
+      }}>
+        {/* 颜色圆点 */}
         <div
           style={{
             width: 20,
             height: 20,
             borderRadius: '50%',
             backgroundColor: category.color,
-            border: '1px solid #ccc'
+            border: '1px solid #ccc',
+            flexShrink: 0
           }}
         />
         
+        {/* 类别名称输入框 - 缩短宽度 */}
         <input
           type="text"
           value={category.name}
@@ -9696,83 +9708,106 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
           style={{
             border: category.name === '校内' ? 'none' : '1px solid #ccc',
             borderRadius: '4px',
-            padding: '4px 8px',
+            padding: '6px 8px',
             fontSize: '14px',
             fontWeight: 'bold',
             backgroundColor: category.name === '校内' ? 'transparent' : '#fff',
-            color: '#333', // 改为深色文字
+            color: '#333',
             cursor: category.name === '校内' ? 'default' : 'text',
-            minWidth: '80px'
+            minWidth: '80px', // 缩短最小宽度
+            maxWidth: '120px', // 限制最大宽度
+            flex: 1,
+            boxSizing: 'border-box'
           }}
+          onBlur={(e) => {
+            if (!e.target.value.trim()) {
+              const newCategories = [...localCategories];
+              newCategories[index].name = category.name;
+              setLocalCategories(newCategories);
+              alert('类别名称不能为空');
+              return;
+            }
+            
+            const isDuplicate = localCategories.some((cat, i) => 
+              i !== index && cat.name === e.target.value.trim()
+            );
+            
+            if (isDuplicate) {
+              const newCategories = [...localCategories];
+              newCategories[index].name = category.name;
+              setLocalCategories(newCategories);
+              alert('类别名称已存在，请使用其他名称');
+            }
+          }}
+        />
+        
+        {/* 系统默认标签 - 靠左显示，不换行 */}
+        {category.name === '校内' && (
+          <span style={{ 
+            fontSize: 12, 
+            backgroundColor: 'rgba(139, 157, 195, 0.1)', 
+            padding: '2px 6px', 
+            borderRadius: 4,
+            flexShrink: 0,
+            whiteSpace: 'nowrap', // 确保不换行
+            color: '#1a73e8',
+            border: '1px solid rgba(139, 157, 195, 0.3)'
+          }}>
+            系统默认
+          </span>
+        )}
+      </div>
+      
+      {/* 右侧操作区域 - 确保按钮等高 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 6, // 缩小间距
+        flexShrink: 0
+      }}>
+        {/* 颜色选择器 - 改为正方形，与删除按钮同高 */}
+        <input
+          type="color"
+          value={category.color}
+          onChange={(e) => handleColorChange(index, e.target.value)}
+          style={{
+            width: 32, // 正方形
+            height: 32, // 与按钮同高
+            border: '1px solid #ccc',
+            borderRadius: 4, // 直角
+            cursor: 'pointer',
+            padding: 0,
+            flexShrink: 0
+          }}
+        />
+        
+        {/* 删除按钮 - 调整高度与颜色框一致 */}
+        {category.name !== '校内' && (
+          <button
+            onClick={() => handleDeleteCategory(index)}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontSize: 12,
+              height: 32, // 固定高度与颜色框一致
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              minWidth: '50px' // 确保删除按钮有足够宽度
+            }}
+          >
+            删除
+          </button>
+        )}
+      </div>
+    </div>
 
 
-
-
-                    onBlur={(e) => {
-                      if (!e.target.value.trim()) {
-                        const newCategories = [...localCategories];
-                        newCategories[index].name = category.name;
-                        setLocalCategories(newCategories);
-                        alert('类别名称不能为空');
-                        return;
-                      }
-                      
-                      const isDuplicate = localCategories.some((cat, i) => 
-                        i !== index && cat.name === e.target.value.trim()
-                      );
-                      
-                      if (isDuplicate) {
-                        const newCategories = [...localCategories];
-                        newCategories[index].name = category.name;
-                        setLocalCategories(newCategories);
-                        alert('类别名称已存在，请使用其他名称');
-                      }
-                    }}
-                  />
-                  
-                  {category.name === '校内' && (
-                    <span style={{ 
-                      fontSize: 12, 
-                      backgroundColor: 'rgba(255,255,255,0.2)', 
-                      padding: '2px 6px', 
-                      borderRadius: 4 
-                    }}>
-                      系统默认
-                    </span>
-                  )}
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="color"
-                    value={category.color}
-                    onChange={(e) => handleColorChange(index, e.target.value)}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      border: '1px solid #ccc',
-                      borderRadius: 4,
-                      cursor: 'pointer'
-                    }}
-                  />
-                  {category.name !== '校内' && (
-                    <button
-                      onClick={() => handleDeleteCategory(index)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#dc3545',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        fontSize: 12
-                      }}
-                    >
-                      删除
-                    </button>
-                  )}
-                </div>
-              </div>
 
               {/* 子类别管理 - 只有校内类别显示 */}
               {category.name === '校内' && (
