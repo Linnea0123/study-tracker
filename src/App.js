@@ -9745,51 +9745,54 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
         
       </div>
       
-      {/* 右侧操作区域 - 确保按钮等高 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 6, // 缩小间距
-        flexShrink: 0
-      }}>
-        {/* 颜色选择器 - 改为正方形，与删除按钮同高 */}
-        <input
-          type="color"
-          value={category.color}
-          onChange={(e) => handleColorChange(index, e.target.value)}
-          style={{
-            width: 32, // 正方形
-            height: 32, // 与按钮同高
-            border: '1px solid #ccc',
-            borderRadius: 4, // 直角
-            cursor: 'pointer',
-            padding: 0,
-            flexShrink: 0
-          }}
-        />
-        
-        {/* 删除按钮 - 调整高度与颜色框一致 */}
-        {category.name !== '校内' && (
-          <button
-            onClick={() => handleDeleteCategory(index)}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#dc3545',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: 12,
-              height: 32, // 固定高度与颜色框一致
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              minWidth: '50px' // 确保删除按钮有足够宽度
-            }}
-          >
-            删除
-          </button>
+    <div style={{ 
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: 6,
+  flexShrink: 1,       // ✅ 允许缩放
+  flexWrap: 'wrap',    // ✅ 窄屏可自动换行
+  minWidth: '100px',   // ✅ 保留最小宽度
+  justifyContent: 'flex-end',
+}}>
+  <input
+    type="color"
+    value={category.color}
+    onChange={(e) => handleColorChange(index, e.target.value)}
+    style={{
+      appearance: 'none',      // ✅ 移除默认UI
+      WebkitAppearance: 'none',
+      width: 32,
+      height: 32,
+      border: '1px solid #ccc',
+      borderRadius: 4,
+      cursor: 'pointer',
+      padding: 0,
+      flexShrink: 0,
+      backgroundColor: category.color,
+    }}
+  />
+
+  {category.name !== '校内' && (
+    <button
+      onClick={() => handleDeleteCategory(index)}
+      style={{
+        padding: '6px 10px',
+        backgroundColor: '#dc3545',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontSize: 12,
+        height: 32,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        minWidth: '55px',
+      }}
+    >
+      删除
+    </button>
         )}
       </div>
     </div>
