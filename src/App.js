@@ -9666,6 +9666,7 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
     {/* 类别头部 - 调整布局 */}
     <div style={{
       display: 'flex',
+      flexWrap: 'wrap', // ✅ 允许自动换行
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '8px 12px',
@@ -9679,7 +9680,7 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: 8,
+        gap: 6,
         flex: 1,
         minWidth: 0
       }}>
@@ -9706,18 +9707,18 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
           }}
           disabled={category.name === '校内'}
           style={{
-            border: category.name === '校内' ? 'none' : '1px solid #ccc',
-            borderRadius: '4px',
-            padding: '6px 8px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            backgroundColor: category.name === '校内' ? 'transparent' : '#fff',
-            color: '#333',
-            cursor: category.name === '校内' ? 'default' : 'text',
-            minWidth: '80px', // 缩短最小宽度
-            maxWidth: '120px', // 限制最大宽度
-            flex: 1,
-            boxSizing: 'border-box'
+             border: category.name === '校内' ? 'none' : '1px solid #ccc',
+    borderRadius: '4px',
+    padding: '6px 8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    backgroundColor: category.name === '校内' ? 'transparent' : '#fff',
+    color: '#333',
+    cursor: category.name === '校内' ? 'default' : 'text',
+    // 移除宽度限制，让输入框自适应
+    flex: 1,
+    minWidth: '150px', // 设置一个合适的最小宽度
+    boxSizing: 'border-box'
           }}
           onBlur={(e) => {
             if (!e.target.value.trim()) {
@@ -9741,21 +9742,7 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
           }}
         />
         
-        {/* 系统默认标签 - 靠左显示，不换行 */}
-        {category.name === '校内' && (
-          <span style={{ 
-            fontSize: 12, 
-            backgroundColor: 'rgba(139, 157, 195, 0.1)', 
-            padding: '2px 6px', 
-            borderRadius: 4,
-            flexShrink: 0,
-            whiteSpace: 'nowrap', // 确保不换行
-            color: '#1a73e8',
-            border: '1px solid rgba(139, 157, 195, 0.3)'
-          }}>
-            系统默认
-          </span>
-        )}
+        
       </div>
       
       {/* 右侧操作区域 - 确保按钮等高 */}
