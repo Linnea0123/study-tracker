@@ -8203,17 +8203,18 @@ const moodOptions = [
   { emoji: '😴', label: '困倦', value: 6 }
 ];
 
-const saveDailyData = useCallback(async () => {
+// 保存每日数据（包括心情、评分、复盘）
+const saveDailyData = useCallback(async (date = selectedDate) => {
   const dailyData = {
-    mood: getCurrentDailyMood(),
-    rating: getCurrentDailyRating(),
-    reflection: dailyReflections[selectedDate] || '',
-    date: selectedDate
+    mood: dailyMoods[date] || 0,
+    rating: dailyRatings[date] || 0,
+    reflection: dailyReflections[date] || '',
+    date: date
   };
-  await saveMainData(`daily_${selectedDate}`, dailyData);
-}, [selectedDate, dailyReflections, getCurrentDailyMood, getCurrentDailyRating]);
-
-
+  
+  await saveMainData(`daily_${date}`, dailyData);
+  console.log(`💾 已保存 ${date} 的每日数据:`, dailyData);
+}, [dailyMoods, dailyRatings, dailyReflections, selectedDate]);
 
 
 
@@ -8497,6 +8498,7 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 // 从云端恢复数据
+// 从云端恢复数据
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -8515,15 +8517,6 @@ const handleRestoreData = useCallback(async (backupData) => {
     // 恢复每日数据
     if (backupData.dailyMoods) {
       setDailyMoods(backupData.dailyMoods);
-      // 保存每个日期的数据
-      Object.entries(backupData.dailyMoods).forEach(([date, mood]) => {
-        saveMainData(`daily_${date}`, {
-          mood,
-          rating: backupData.dailyRatings?.[date] || 0,
-          reflection: backupData.dailyReflections?.[date] || '',
-          date
-        });
-      });
     }
     
     if (backupData.dailyRatings) {
@@ -8531,7 +8524,23 @@ const handleRestoreData = useCallback(async (backupData) => {
     }
     
     if (backupData.dailyReflections) {
+      console.log('📝 恢复复盘数据:', {
+        天数: Object.keys(backupData.dailyReflections).length,
+        示例: Object.entries(backupData.dailyReflections).slice(0, 2)
+      });
+      
       setDailyReflections(backupData.dailyReflections);
+      
+      // 保存每个日期的复盘到 localStorage
+      Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
+        const dailyData = {
+          mood: backupData.dailyMoods?.[date] || 0,
+          rating: backupData.dailyRatings?.[date] || 0,
+          reflection: reflection,
+          date: date
+        };
+        saveMainData(`daily_${date}`, dailyData);
+      });
     }
     
     // 恢复计时记录
@@ -8560,9 +8569,9 @@ const handleRestoreData = useCallback(async (backupData) => {
       setCurrentMonday(new Date(backupData.lastCurrentMonday));
     }
 
-    console.log('✅ 数据恢复完成');
+    console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
     
-    alert('✅ 数据恢复成功！页面将重新加载。');
+    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据`);
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -8579,6 +8588,7 @@ const handleRestoreData = useCallback(async (backupData) => {
 
 
 // 完整的同步到 GitHub 函数（不包含成就系统）
+// 完整的同步到 GitHub 函数
 const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -8588,13 +8598,16 @@ const syncToGitHub = useCallback(async () => {
   }
 
   try {
+    // 先保存当前日期的数据
+    await saveDailyData(selectedDate);
+    
     // 收集所有需要同步的数据
     const syncData = {
       // 核心数据
       tasksByDate,
       templates,
       
-      // 每日数据（心情、评分、复盘）
+      // 每日数据（确保包含所有复盘）
       dailyMoods,
       dailyRatings,
       dailyReflections,
@@ -8610,7 +8623,7 @@ const syncToGitHub = useCallback(async () => {
       
       // 元数据
       syncTime: new Date().toISOString(),
-      version: '2.0',
+      version: '2.1',
       lastSelectedDate: selectedDate,
       lastCurrentMonday: currentMonday.toISOString()
     };
@@ -8618,9 +8631,8 @@ const syncToGitHub = useCallback(async () => {
     console.log('📤 准备同步数据:', {
       任务天数: Object.keys(tasksByDate).length,
       模板数量: templates.length,
-      每日数据: Object.keys(dailyMoods).length,
-      成绩记录: syncData.grades.length,
-      计时记录: timerRecords.length
+      有复盘的日期: Object.keys(dailyReflections).length,
+      复盘示例: Object.entries(dailyReflections).slice(0, 2).map(([date, text]) => ({date, text: text?.substring(0, 20)}))
     });
 
     const gistId = localStorage.getItem('github_gist_id');
@@ -8687,7 +8699,7 @@ const syncToGitHub = useCallback(async () => {
       lastSync: new Date().toISOString()
     }));
     
-    alert('✅ 同步成功！数据已备份到云端。\n\nGist ID: ' + result.id);
+    alert(`✅ 同步成功！\n\n同步了 ${Object.keys(dailyReflections).length} 天的复盘数据\nGist ID: ${result.id}`);
     
   } catch (error) {
     console.error('同步失败:', error);
@@ -8706,8 +8718,7 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates, dailyMoods, dailyRatings, dailyReflections, timerRecords, categories, selectedDate, currentMonday]);
-
+}, [tasksByDate, templates, dailyMoods, dailyRatings, dailyReflections, timerRecords, categories, selectedDate, currentMonday, saveDailyData]);
 
 // 在现有的 useCallback 函数后面添加这个：
 
@@ -11116,46 +11127,58 @@ if (savedCategories) {
 
 
 
-// ==== 替换：调用 loadDailyData 的 useEffect ====
+// 加载所有日期的每日数据
 useEffect(() => {
-  const loadData = async () => {
-    if (isInitialized) {
-      const today = new Date().toISOString().split("T")[0];
-      const savedDailyData = await loadMainData(`daily_${today}`);
-      if (savedDailyData) {
-        setCurrentDailyRating(savedDailyData.rating || 0);
-        setCurrentDailyMood(savedDailyData.mood || 0);
-      }
+  const loadAllDailyData = async () => {
+    if (!isInitialized) return;
+    
+    try {
+      console.log('📥 开始加载所有每日数据...');
       
-      // 加载所有日期的复盘数据
-      const allReflections = {};
       const allMoods = {};
       const allRatings = {};
+      const allReflections = {};
+      
+      // 获取所有 localStorage 键
       const allKeys = Object.keys(localStorage);
       const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
       
+      console.log(`找到 ${dailyKeys.length} 个每日数据记录`);
+      
       for (const key of dailyKeys) {
         try {
-          const data = await loadMainData(key.replace(`${STORAGE_KEY}_`, ''));
+          const dataStr = localStorage.getItem(key);
+          if (!dataStr) continue;
+          
+          const data = JSON.parse(dataStr);
           if (data && data.date) {
-            allReflections[data.date] = data.reflection || '';
             allMoods[data.date] = data.mood || 0;
             allRatings[data.date] = data.rating || 0;
+            allReflections[data.date] = data.reflection || '';
+            console.log(`✅ 加载 ${data.date} 的复盘:`, data.reflection?.substring(0, 30));
           }
         } catch (error) {
-          console.error('加载每日数据失败:', key, error);
+          console.error('解析每日数据失败:', key, error);
         }
       }
+      
       setDailyMoods(allMoods);
       setDailyRatings(allRatings);
       setDailyReflections(allReflections);
+      
+      console.log('✅ 每日数据加载完成:', {
+        有心情的日期: Object.keys(allMoods).length,
+        有评分的日期: Object.keys(allRatings).length,
+        有复盘的日期: Object.keys(allReflections).length
+      });
+      
+    } catch (error) {
+      console.error('加载每日数据失败:', error);
     }
   };
-
-  loadData();
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  
+  loadAllDailyData();
 }, [isInitialized]);
-
 
 
 
@@ -11178,6 +11201,9 @@ useEffect(() => {
   }
 }, [tasksByDate, isInitialized]);
 
+
+
+
 // 自动保存模板数据
 useEffect(() => {
   if (isInitialized) { // 这里必须使用 isInitialized
@@ -11187,7 +11213,12 @@ useEffect(() => {
 }, [templates, isInitialized]);
 
 
-
+// 切换日期时保存当前日期的数据
+useEffect(() => {
+  if (isInitialized) {
+    saveDailyData(selectedDate);
+  }
+}, [selectedDate, isInitialized, saveDailyData]);
 
 
 
@@ -14752,7 +14783,7 @@ if (isInitialized && todayTasks.length === 0) {
         </button>
         <button
           onClick={() => {
-            saveDailyData();
+            saveDailyData(selectedDate);  // 修改为传入 selectedDate
             setShowReflectionModal(false);
           }}
           style={{
