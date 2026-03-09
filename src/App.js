@@ -13777,7 +13777,7 @@ if (isInitialized && todayTasks.length === 0) {
     {/* 右侧：学习状态评价 - 使用最小宽度而不是固定宽度 */}
    {/* 右侧：学习状态评价 - 无箭头版本 */}
 <div style={{
-  minWidth: '35px',
+  minWidth: '30px',
   flexShrink: 0,
   marginLeft: 'auto'
 }}>
@@ -13785,9 +13785,9 @@ if (isInitialized && todayTasks.length === 0) {
     value={getCurrentDailyRating()}
     onChange={(e) => setCurrentDailyRating(parseInt(e.target.value))}
     style={{
-      width: '100%',
+      width: '30px',
       height: '28px',
-      padding: '0',
+      padding: '0 2px',  // 减小左右内边距
       border: '1px solid #ddd',
       borderRadius: '4px',
       fontSize: '11px',
@@ -13798,6 +13798,8 @@ if (isInitialized && todayTasks.length === 0) {
       boxSizing: 'border-box',
       textAlign: 'center',
       textAlignLast: 'center',
+      WebkitAppearance: 'none', // Safari兼容
+      MozAppearance: 'none', // Firefox兼容
       appearance: 'none' // 完全移除箭头
     }}
     title="今日学习状态评分"
