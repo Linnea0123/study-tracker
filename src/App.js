@@ -8473,7 +8473,6 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 
-// 🔽 改成这样：🔽
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -8482,18 +8481,36 @@ const handleRestoreData = useCallback(async (backupData) => {
     const normalizedData = {
       tasksByDate: backupData.tasksByDate || backupData.tasks || {},
       templates: backupData.templates || [],
-
+      customAchievements: backupData.customAchievements || [],
+      unlockedAchievements: backupData.unlockedAchievements || [],
       categories: backupData.categories || baseCategories
     };
+
+    // 验证任务数据中的备注字段
+    const tasksWithNotes = Object.values(normalizedData.tasksByDate).flat()
+      .filter(task => task.note || task.reflection);
+    console.log('📝 准备恢复的备注数据:', {
+      任务总数: Object.values(normalizedData.tasksByDate).flat().length,
+      包含备注的任务数: tasksWithNotes.length,
+      示例: tasksWithNotes.slice(0, 3).map(t => ({
+        任务: t.text,
+        备注: t.note,
+        感想: t.reflection
+      }))
+    });
 
     // 保存到存储
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
+    await saveMainData('customAchievements', normalizedData.customAchievements);
+    await saveMainData('unlockedAchievements', normalizedData.unlockedAchievements);
     await saveMainData('categories', normalizedData.categories);
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
+    setCustomAchievements(normalizedData.customAchievements);
+    setUnlockedAchievements(normalizedData.unlockedAchievements);
     setCategories(normalizedData.categories);
 
     console.log('✅ 数据恢复完成');
@@ -8524,13 +8541,25 @@ const syncToGitHub = useCallback(async () => {
   }
 
   try {
+    // 确保同步数据包含备注（note）和感想（reflection）
     const syncData = {
       tasksByDate,
       templates,
-  
+      categories,
       syncTime: new Date().toISOString(),
       version: '1.1'
     };
+
+    // 可选：验证数据中包含备注
+    console.log('📝 同步数据验证:', {
+      任务天数: Object.keys(tasksByDate).length,
+      示例任务: Object.values(tasksByDate)[0]?.map(t => ({
+        内容: t.text,
+        是否有备注: !!t.note,
+        备注内容: t.note,
+        是否有感想: !!t.reflection
+      })).slice(0, 3)
+    });
 
     const gistId = localStorage.getItem('github_gist_id');
     const jsonData = JSON.stringify(syncData, null, 2);
@@ -8579,14 +8608,13 @@ const syncToGitHub = useCallback(async () => {
       throw new Error(`同步失败: ${response.status} - ${errorText}`);
     }
 
-    // 🔽 修复这里：确保正确解析响应
     const result = await response.json();
     
     if (!result || !result.id) {
       throw new Error('GitHub 响应格式错误');
     }
 
-    // 保存Gist ID（新建或更新都要保存）
+    // 保存Gist ID
     localStorage.setItem('github_gist_id', result.id);
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
@@ -8602,7 +8630,6 @@ const syncToGitHub = useCallback(async () => {
   } catch (error) {
     console.error('同步失败:', error);
     
-    // 更详细的错误信息
     let errorMessage = '同步失败: ';
     if (error.message.includes('401')) {
       errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
@@ -8610,7 +8637,6 @@ const syncToGitHub = useCallback(async () => {
       errorMessage += '权限不足，请检查 Token 是否有 gist 权限';
     } else if (error.message.includes('404')) {
       errorMessage += 'Gist 不存在，将创建新的备份';
-      // 清除无效的gistId，下次会创建新的
       localStorage.removeItem('github_gist_id');
     } else {
       errorMessage += error.message;
@@ -8618,8 +8644,7 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates]);
-
+}, [tasksByDate, templates,  categories]);
 
 // 在现有的 useCallback 函数后面添加这个：
 
@@ -8627,7 +8652,6 @@ const syncToGitHub = useCallback(async () => {
 
 
 
-// 修复 autoRestoreLatestData 函数
 const autoRestoreLatestData = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   
@@ -8639,7 +8663,6 @@ const autoRestoreLatestData = useCallback(async () => {
   console.log('🔍 开始自动恢复最新数据...');
   
   try {
-    // 1. 先尝试使用保存的gistId
     const savedGistId = localStorage.getItem('github_gist_id');
     let targetGistId = savedGistId;
     
@@ -8678,7 +8701,15 @@ const autoRestoreLatestData = useCallback(async () => {
     const backupData = JSON.parse(content);
     console.log('✅ 获取到备份数据，更新时间:', gist.updated_at);
     
-    // 🔽 修复这里：总是询问用户是否要恢复，即使本地有数据
+    // 验证备份数据中的备注
+    const sampleTask = Object.values(backupData.tasksByDate || {})[0]?.[0];
+    console.log('📝 备份数据中的备注示例:', {
+      任务: sampleTask?.text,
+      备注: sampleTask?.note,
+      感想: sampleTask?.reflection,
+      备注是否存在: !!sampleTask?.note
+    });
+    
     const localDataCount = Object.keys(tasksByDate).length;
     const cloudDataCount = Object.keys(backupData.tasksByDate || {}).length;
     
@@ -8694,7 +8725,6 @@ const autoRestoreLatestData = useCallback(async () => {
     if (window.confirm(confirmMessage)) {
       console.log('用户确认恢复，开始设置状态...');
       
-      // 保存这个gistId供以后使用
       if (!savedGistId) {
         localStorage.setItem('github_gist_id', targetGistId);
       }
@@ -8707,7 +8737,6 @@ const autoRestoreLatestData = useCallback(async () => {
   } catch (error) {
     console.error('自动恢复失败:', error);
     
-    // 提供更友好的错误信息
     let errorMessage = '恢复失败: ';
     if (error.message.includes('401') || error.message.includes('403')) {
       errorMessage += 'Token 无效或权限不足，请检查同步设置';
@@ -10790,7 +10819,33 @@ useEffect(() => {
   };
 }, [activeTimer, elapsedTime, clearTimerState]); // ← 添加 clearTimerState 依赖
 
-
+// 添加调试函数来检查同步数据（包含备注）
+useEffect(() => {
+  window.debugSyncData = () => {
+    const sampleDate = Object.keys(tasksByDate)[0];
+    if (sampleDate) {
+      const tasks = tasksByDate[sampleDate];
+      console.log('📝 待同步数据示例:', {
+        日期: sampleDate,
+        任务数: tasks.length,
+        备注统计: {
+          有备注的任务数: tasks.filter(t => t.note).length,
+          有感想任务数: tasks.filter(t => t.reflection).length,
+          备注内容示例: tasks.filter(t => t.note).slice(0, 3).map(t => ({
+            任务: t.text,
+            备注: t.note
+          })),
+          感想内容示例: tasks.filter(t => t.reflection).slice(0, 3).map(t => ({
+            任务: t.text,
+            感想: t.reflection
+          }))
+        }
+      });
+    } else {
+      console.log('没有任务数据');
+    }
+  };
+}, [tasksByDate]); // 依赖 tasksByDate
 
 // 修改 - 恢复计时器状态
 useEffect(() => {
