@@ -13617,6 +13617,7 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
+
 {showReflectionModal && (
   <div style={{
     position: 'fixed',
@@ -13628,17 +13629,28 @@ if (isInitialized && todayTasks.length === 0) {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000
+    zIndex: 1000,
+    padding: '10px' // 添加内边距防止贴边
   }}>
     <div style={{
       backgroundColor: 'white',
-      padding: 16,
+      padding: '16px',
       borderRadius: 8,
       width: '90%',
-      maxWidth: 400,
-      maxHeight: '80vh'
+      maxWidth: '400px', // 改为px而不是单纯数字
+      maxHeight: '80vh',
+      overflow: 'hidden', // 改为hidden避免整体滚动
+      display: 'flex',
+      flexDirection: 'column',
+      boxSizing: 'border-box' // 确保padding包含在宽度内
     }}>
-      <h3 style={{ textAlign: 'center', marginBottom: 12, fontSize: 15, color: '#1a73e8' }}>
+      <h3 style={{ 
+        textAlign: 'center', 
+        marginBottom: '12px', 
+        fontSize: '15px', 
+        color: '#1a73e8',
+        flexShrink: 0
+      }}>
         今日复盘
       </h3>
       
@@ -13648,49 +13660,57 @@ if (isInitialized && todayTasks.length === 0) {
         placeholder="记录今日的学习收获、反思和改进点..."
         style={{
           width: '100%',
-          minHeight: 120,
-          padding: '8px',
+          minHeight: '120px',
+          padding: '12px', // 增加内边距
           border: '1px solid #ddd',
-          borderRadius: 4,
-          fontSize: 13,
-          lineHeight: 1.4,
+          borderRadius: '4px',
+          fontSize: '13px',
+          lineHeight: 1.5,
           resize: 'vertical',
           backgroundColor: '#fafafa',
-          fontFamily: 'inherit'
+          fontFamily: 'inherit',
+          boxSizing: 'border-box', // 关键：确保padding不增加宽度
+          marginBottom: '12px'
         }}
         autoFocus
       />
       
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        flexShrink: 0
+      }}>
         <button
           onClick={() => setShowReflectionModal(false)}
           style={{
             flex: 1,
-            padding: 6,
+            padding: '8px',
             backgroundColor: '#f0f0f0',
             color: '#000',
             border: 'none',
-            borderRadius: 4,
-            fontSize: 13,
-            cursor: 'pointer'
+            borderRadius: '4px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxSizing: 'border-box'
           }}
         >
           取消
         </button>
         <button
           onClick={() => {
-            saveDailyData(selectedDate);  // 修改为传入 selectedDate
+            saveDailyData(selectedDate);
             setShowReflectionModal(false);
           }}
           style={{
             flex: 1,
-            padding: 6,
+            padding: '8px',
             backgroundColor: '#1a73e8',
             color: '#fff',
             border: 'none',
-            borderRadius: 4,
-            fontSize: 13,
-            cursor: 'pointer'
+            borderRadius: '4px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxSizing: 'border-box'
           }}
         >
           保存
