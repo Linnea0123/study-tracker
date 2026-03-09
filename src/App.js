@@ -13672,20 +13672,20 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
+{/* 主界面的复盘框 - 只保留学习状态评价 */}
 <div style={{ marginBottom: 8 }}>
-  {/* 复盘输入框 - 点击弹窗 */}
   <div style={{
     backgroundColor: '#fff',
     border: '1px solid #e0e0e0',
     borderRadius: 6,
     padding: '8px 12px'
   }}>
+    {/* 第一行：复盘标签和内容 */}
     <div style={{
       display: 'flex',
       alignItems: 'center',
       gap: 8
     }}>
-      {/* 左边：复盘标签 */}
       <div style={{
         fontSize: 13,
         fontWeight: 'bold',
@@ -13695,7 +13695,7 @@ if (isInitialized && todayTasks.length === 0) {
         复盘
       </div>
       
-      {/* 右边：输入框（点击弹窗） */}
+      {/* 复盘输入框 */}
       <div style={{ flex: 1 }}>
         <div
           onClick={() => setShowReflectionModal(true)}
@@ -13716,8 +13716,43 @@ if (isInitialized && todayTasks.length === 0) {
             boxSizing: 'border-box' 
           }}
         >
-          {getCurrentDailyReflection() || '...'}
+          {getCurrentDailyReflection() || '点击添加复盘...'}
         </div>
+      </div>
+
+      {/* 右侧：学习状态评价 - 简洁显示 */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2px',
+        marginLeft: 'auto'
+      }}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentDailyRating(star);
+            }}
+            style={{
+              width: '24px',
+              height: '24px',
+              border: 'none',
+              borderRadius: '4px',
+              backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
+              fontSize: '14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              color: getCurrentDailyRating() >= star ? '#000' : '#999'
+            }}
+            title={`学习状态 ${star}星`}
+          >
+            ⭐
+          </button>
+        ))}
       </div>
     </div>
   </div>
@@ -13736,19 +13771,19 @@ if (isInitialized && todayTasks.length === 0) {
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    padding: '10px' // 添加内边距防止贴边
+    padding: '10px'
   }}>
     <div style={{
       backgroundColor: 'white',
       padding: '16px',
       borderRadius: 8,
       width: '90%',
-      maxWidth: '400px', // 改为px而不是单纯数字
+      maxWidth: '400px',
       maxHeight: '80vh',
-      overflow: 'hidden', // 改为hidden避免整体滚动
+      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      boxSizing: 'border-box' // 确保padding包含在宽度内
+      boxSizing: 'border-box'
     }}>
       <h3 style={{ 
         textAlign: 'center', 
@@ -13760,14 +13795,15 @@ if (isInitialized && todayTasks.length === 0) {
         今日复盘
       </h3>
       
+      {/* 复盘输入框 */}
       <textarea
         value={getCurrentDailyReflection()}
         onChange={(e) => setCurrentDailyReflection(e.target.value)}
         placeholder="记录今日的学习收获、反思和改进点..."
         style={{
           width: '100%',
-          minHeight: '120px',
-          padding: '12px', // 增加内边距
+          minHeight: '100px',
+          padding: '12px',
           border: '1px solid #ddd',
           borderRadius: '4px',
           fontSize: '13px',
@@ -13775,12 +13811,101 @@ if (isInitialized && todayTasks.length === 0) {
           resize: 'vertical',
           backgroundColor: '#fafafa',
           fontFamily: 'inherit',
-          boxSizing: 'border-box', // 关键：确保padding不增加宽度
-          marginBottom: '12px'
+          boxSizing: 'border-box',
+          marginBottom: '16px'
         }}
         autoFocus
       />
-      
+
+      {/* 心情选择 - 新增在这里 */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '8px', 
+          color: '#555', 
+          fontSize: '13px',
+          fontWeight: 'bold'
+        }}>
+          心情
+        </label>
+        <div style={{ 
+          display: 'flex', 
+          gap: '4px', 
+          justifyContent: 'space-between',
+          flexWrap: 'wrap'
+        }}>
+          {moodOptions.map((mood) => (
+            <button
+              key={mood.value}
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentDailyMood(mood.value);
+              }}
+              style={{
+                flex: '1 1 auto',
+                minWidth: '40px',
+                padding: '8px 0',
+                border: 'none',
+                borderRadius: 6,
+                backgroundColor: getCurrentDailyMood() === mood.value ? '#ffe066' : '#f1f3f4',
+                fontSize: mood.emoji ? '16px' : '11px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: getCurrentDailyMood() === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
+              title={mood.label}
+            >
+              {mood.emoji || mood.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 评分选择 - 新增在这里 */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '8px', 
+          color: '#555', 
+          fontSize: '13px',
+          fontWeight: 'bold'
+        }}>
+          今日评价
+        </label>
+        <div style={{ 
+          display: 'flex', 
+          gap: '4px',
+          justifyContent: 'space-between'
+        }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentDailyRating(star);
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                border: 'none',
+                borderRadius: 6,
+                backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
+                fontSize: 16,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: getCurrentDailyRating() >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ⭐
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 按钮区域 */}
       <div style={{ 
         display: 'flex', 
         gap: '8px', 
