@@ -5057,32 +5057,32 @@ const [editData, setEditData] = useState({
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
            
 
-          <button
-    onClick={() => {
-      onClose();
-      setTimeout(() => {
-        setShowCrossDateModal(task);
-      }, 100);
-    }}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: '#f8f9fa',
-      color: '#666',
-      border: "1px solid #e0e0e0",
-      borderRadius: 6,
-      cursor: "pointer",
-      fontSize: "16px",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="跨日期显示"
-  >
-    📅
-  </button>
+        <button
+  onClick={() => {
+    onClose(); // 关闭编辑模态框
+    setTimeout(() => {
+      setShowCrossDateModal(task); // 打开跨日期模态框，传递当前任务
+    }, 100);
+  }}
+  style={{
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    backgroundColor: '#f8f9fa',
+    color: '#666',
+    border: "1px solid #e0e0e0",
+    borderRadius: 6,
+    cursor: "pointer",
+    fontSize: "16px",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  }}
+  title="跨日期显示"
+>
+  📅
+</button>
   {/* 迁移按钮 */}
   <button
     onClick={() => {
@@ -8606,61 +8606,20 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     );
   };
 
-
 const handleSave = () => {
-  if (editData.text.trim() === '') {
-    alert('任务内容不能为空！');
+  // 获取选中的日期
+  const targetDates = getDateOptions()
+    .filter(option => selectedDays.includes(option.day))
+    .map(option => option.value);
+  
+  if (targetDates.length === 0) {
+    alert('请至少选择一个日期');
     return;
   }
-
-  console.log('保存的数据:', editData);
-
-  // 构建提醒时间对象
-  const reminderTime = {};
-  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
-  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
-  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
-  if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
-  if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
-
-  // 构建计划时间字符串
-  let scheduledTime = '';
-  if (editData.startHour && editData.startMinute && editData.endHour && editData.endMinute) {
-    const formatTime = (hour, minute) => {
-      // 确保格式为两位数字
-      const h = hour.toString().padStart(2, '0');
-      const m = minute.toString().padStart(2, '0');
-      return `${h}:${m}`;
-    };
-    scheduledTime = `${formatTime(editData.startHour, editData.startMinute)}-${formatTime(editData.endHour, editData.endMinute)}`;
-    console.log('构建的计划时间:', scheduledTime);
-  }
-
-
-
-
-
-  const finalEditData = {
-    ...editData,
-    tags: editData.tags || [],
-    subCategory: editData.subCategory || '',
-    subTasks: editData.subTasks || [],
-    reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-    scheduledTime: scheduledTime,
-    repeatFrequency: editData.repeatFrequency || '',
-    repeatDays: editData.repeatDays || [false, false, false, false, false, false, false]
-  };
-
-  console.log('💾 最终保存的任务数据:', finalEditData);
-  onSave(finalEditData);
+  
+  onSave(task, targetDates); // 传递 task 和 targetDates
   onClose();
 };
-
-
-
-
-
-
   return (
     <div style={{
       position: 'fixed',
@@ -8764,49 +8723,56 @@ const handleSave = () => {
 };
 
 const handleCrossDateTask = (task, targetDates) => {
-  const taskId = task.crossDateId || task.id || `cross_${Date.now()}`;
+  // 如果没有传入 task 对象，说明是从编辑模态框调用，需要获取当前任务
+  if (!task) return;
+  
+  // 生成一个唯一的跨日期ID（如果任务已经有crossDateId，则使用现有的）
+  const crossDateId = task.crossDateId || task.id || `cross_${Date.now()}`;
   
   console.log('创建/更新跨日期任务:', {
     任务: task.text,
-    跨日期ID: taskId,
-    目标日期: targetDates
+    跨日期ID: crossDateId,
+    目标日期: targetDates,
+    原始任务: task
   });
   
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
+    // 1. 首先，删除这个任务所有日期的版本（如果它是跨日期任务）
+    if (task.crossDateId) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].filter(t => 
+          t.crossDateId !== task.crossDateId
+        );
+      });
+    } else {
+      // 如果不是跨日期任务，只删除当前日期的这个任务
+      if (newTasksByDate[selectedDate]) {
+        newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => 
+          t.id !== task.id
+        );
+      }
+    }
+    
+    // 2. 在选中的目标日期创建任务
     targetDates.forEach(date => {
       if (!newTasksByDate[date]) {
         newTasksByDate[date] = [];
       }
       
-      // 查找是否已存在相同任务（按文本和分类）
-      const existingTaskIndex = newTasksByDate[date].findIndex(
-        t => t.text === task.text && t.category === task.category
-      );
+      // 创建新任务（保持原有的完成状态）
+      const newTask = {
+        ...task,
+        id: `${crossDateId}_${date}`, // 每个日期的任务有唯一ID
+        crossDateId: crossDateId,
+        isCrossDate: true,
+        crossDates: targetDates,
+        done: task.done || false // 保持原有的完成状态
+      };
       
-      if (existingTaskIndex !== -1) {
-        // 更新现有任务为跨日期任务
-        console.log(`更新现有任务在 ${date}`);
-        newTasksByDate[date][existingTaskIndex] = {
-          ...newTasksByDate[date][existingTaskIndex],
-          crossDateId: taskId,
-          isCrossDate: true,
-          crossDates: targetDates,
-          done: task.done // 保持原有完成状态
-        };
-      } else {
-        // 创建新的跨日期任务
-        console.log(`创建新任务在 ${date}`);
-        newTasksByDate[date].push({
-          ...task,
-          id: `${taskId}_${date}`,
-          crossDateId: taskId,
-          isCrossDate: true,
-          crossDates: targetDates,
-          done: false // 新创建的任务默认未完成
-        });
-      }
+      newTasksByDate[date].push(newTask);
+      console.log(`创建任务在 ${date}:`, newTask);
     });
     
     return newTasksByDate;
@@ -8895,14 +8861,7 @@ const toggleDone = (task) => {
     }
   }
 
-  setTimeout(() => {
-    const { totalPoints: newTotal } = calculateHonorPoints();
-    if (!wasDone) {
-      recordPointChange(1, `完成任务: ${task.text}`, newTotal);
-    } else {
-      recordPointChange(-1, `取消完成: ${task.text}`, newTotal);
-    }
-  }, 100);
+  
 };
 
 
@@ -9911,22 +9870,19 @@ useEffect(() => {
 // 修改 - 统一修改时间显示格式
 const formatTimeNoSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m${remainingSeconds}s`;
+  return `${minutes}m`;
 };
 
 // 修改 - 添加新的时间格式化函数，显示分钟和秒数
 const formatTimeWithSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m${remainingSeconds}s`;
+  return `${minutes}m`;
 };
 
 // 新增：分类标题专用时间格式（去掉0s）
 const formatCategoryTime = (seconds) => {
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m${remainingSeconds}s`;
+  return `${minutes}m`;
 };
 
 // 格式化时间为小时（使用实际时间，不强制递增）
@@ -10903,33 +10859,21 @@ const toggleSubTask = (task, subTaskIndex) => {
 
   
 
-// 编辑任务时间 - 支持分钟和秒
+// 编辑任务时间 - 只支持分钟
 const editTaskTime = (task) => {
   const currentTotal = task.timeSpent || 0;
   const currentMinutes = Math.floor(currentTotal / 60);
-  const currentSeconds = currentTotal % 60;
   
-  // 显示当前时间为 分钟:秒 格式
+  // 显示当前时间为 分钟 格式
   const newTimeStr = window.prompt(
-    "设置任务总时间（格式：分钟:秒，例如 5:30 表示5分30秒）", 
-    `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`
+    "设置任务总时间（单位：分钟，例如 5 表示5分钟）", 
+    currentMinutes.toString()
   );
 
   if (newTimeStr !== null) {
-    // 解析输入的分钟:秒格式
-    const parts = newTimeStr.split(':');
-    let newSeconds = 0;
-    
-    if (parts.length === 2) {
-      // 格式为 分钟:秒
-      const minutes = parseInt(parts[0]) || 0;
-      const seconds = parseInt(parts[1]) || 0;
-      newSeconds = minutes * 60 + seconds;
-    } else {
-      // 如果只输入数字，默认为分钟
-      const minutes = parseInt(newTimeStr) || 0;
-      newSeconds = minutes * 60;
-    }
+    // 解析输入的数字
+    const minutes = parseInt(newTimeStr) || 0;
+    const newSeconds = minutes * 60; // 转换为秒存储
     
     if (newSeconds >= 0) {
       if (task.isWeekTask) {
@@ -11507,32 +11451,19 @@ const deleteTask = (task, deleteOption = 'today') => {
     reader.readAsDataURL(file);
   };
 
-  // 手动修改分类总时间 - 支持分钟和秒
+// 修改分类总时间 - 只支持分钟
 const editCategoryTime = (catName) => {
   const currentTime = totalTime(catName);
   const currentMinutes = Math.floor(currentTime / 60);
-  const currentSeconds = currentTime % 60;
   
   const newTimeStr = window.prompt(
-    `修改 ${catName} 的总时间（格式：分钟:秒，例如 30:45 表示30分45秒）`,
-    `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`
+    `修改 ${catName} 的总时间（单位：分钟，输入0可删除所有时间）`,
+    currentMinutes.toString()
   );
 
   if (newTimeStr !== null) {
-    // 解析输入的分钟:秒格式
-    const parts = newTimeStr.split(':');
-    let newSeconds = 0;
-    
-    if (parts.length === 2) {
-      // 格式为 分钟:秒
-      const minutes = parseInt(parts[0]) || 0;
-      const seconds = parseInt(parts[1]) || 0;
-      newSeconds = minutes * 60 + seconds;
-    } else {
-      // 如果只输入数字，默认为分钟
-      const minutes = parseInt(newTimeStr) || 0;
-      newSeconds = minutes * 60;
-    }
+    const minutes = parseInt(newTimeStr) || 0;
+    const newSeconds = minutes * 60;
     
     if (newSeconds >= 0) {
       const timeDifference = newSeconds - currentTime;
@@ -11544,11 +11475,16 @@ const editCategoryTime = (catName) => {
 
           const catTasks = todayTasks.filter(t => t.category === catName);
           if (catTasks.length > 0) {
-            const firstTask = catTasks[0];
+            // 平均分配到该分类的所有任务
+            const timePerTask = Math.floor(timeDifference / catTasks.length);
+            
             newTasksByDate[selectedDate] = todayTasks.map(t =>
-              t.id === firstTask.id ? { ...t, timeSpent: (t.timeSpent || 0) + timeDifference } : t
+              t.category === catName 
+                ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+                : t
             );
           } else {
+            // 如果没有任务，创建一个时间记录任务
             if (!newTasksByDate[selectedDate]) {
               newTasksByDate[selectedDate] = [];
             }
@@ -13591,68 +13527,55 @@ if (isInitialized && todayTasks.length === 0) {
                   
 
                   <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                     // 修改这段代码
-const newTime = window.prompt(
-  `修改 ${subCat} 子类别总时间（格式：分钟:秒，例如 30:45 表示30分45秒）`,
-  `${Math.floor(subCategoryTotalTime / 60)}:${(subCategoryTotalTime % 60).toString().padStart(2, '0')}`
-);
+  onClick={(e) => {
+    e.stopPropagation();
+    // 修改这段代码 - 只接受分钟输入
+    const newTime = window.prompt(
+      `修改 ${subCat} 子类别总时间（单位：分钟，例如 30 表示30分钟）`,
+      Math.floor(subCategoryTotalTime / 60).toString()
+    );
 
-if (newTime !== null) {
-  const parts = newTime.split(':');
-  let newSeconds = 0;
-  
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0]) || 0;
-    const seconds = parseInt(parts[1]) || 0;
-    newSeconds = minutes * 60 + seconds;
-  } else {
-    const minutes = parseInt(newTime) || 0;
-    newSeconds = minutes * 60;
-  }
-  
-  if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
-    const timeDifference = newSeconds - subCategoryTotalTime;
-    
-    if (timeDifference !== 0 && subCatTasks.length > 0) {
-      const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+    if (newTime !== null) {
+      const minutes = parseInt(newTime) || 0;
+      const newSeconds = minutes * 60;
       
-      setTasksByDate(prev => {
-        const newTasksByDate = { ...prev };
-        const todayTasks = newTasksByDate[selectedDate] || [];
+      if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
+        const timeDifference = newSeconds - subCategoryTotalTime;
         
-        newTasksByDate[selectedDate] = todayTasks.map(t => 
-          t.category === c.name && t.subCategory === subCat 
-            ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
-            : t
-        );
-        
-        return newTasksByDate;
-      });
+        if (timeDifference !== 0 && subCatTasks.length > 0) {
+          const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+          
+          setTasksByDate(prev => {
+            const newTasksByDate = { ...prev };
+            const todayTasks = newTasksByDate[selectedDate] || [];
+            
+            newTasksByDate[selectedDate] = todayTasks.map(t => 
+              t.category === c.name && t.subCategory === subCat 
+                ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+                : t
+            );
+            
+            return newTasksByDate;
+          });
+        }
+      }
     }
-  }
-}
-                    }}
-                    style={{
-                      fontSize: '11px',
-                      color: '#666',
-                      cursor: 'pointer',
-                      fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加这行
-                      padding: '2px 6px',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '4px',
-                      backgroundColor: '#f5f5f5',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title="点击修改子类别总时间"
-                  >
-                    {(() => {
-                      const baseTime = subCategoryTotalTime;
-                      const currentSubCat = subCat === '未分类' ? null : subCat;
-  return formatCategoryTime(subCategoryTotalTime);
-                    })()}
-                  </span>
+  }}
+  style={{
+    fontSize: '11px',
+    color: '#666',
+    cursor: 'pointer',
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',
+    padding: '2px 6px',
+    border: '1px solid #e0e0e0',
+    borderRadius: '4px',
+    backgroundColor: '#f5f5f5',
+    whiteSpace: 'nowrap'
+  }}
+  title="点击修改子类别总时间（单位：分钟）"
+>
+  {formatCategoryTime(subCategoryTotalTime)}
+</span>
                 </div>
               </div>
               
