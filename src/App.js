@@ -13711,6 +13711,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 {/* 主界面的复盘框 - 只保留学习状态评价 */}
 {/* 主界面的复盘框 - 只保留学习状态评价 */}
+{/* 主界面的复盘框 - 只保留学习状态评价 */}
 <div style={{ marginBottom: 8 }}>
   <div style={{
     backgroundColor: '#fff',
@@ -13732,10 +13733,10 @@ if (isInitialized && todayTasks.length === 0) {
       复盘
     </div>
     
-    {/* 复盘输入框 - 宽度调整 */}
+    {/* 复盘输入框 - 使用flex:1自动占据剩余空间 */}
     <div style={{ 
-      width: 'calc(100% - 120px)', // 从150px改为120px，给复盘框更多空间
-      minWidth: '250px' // 增加最小宽度
+      flex: 1,
+      minWidth: 0 // 允许内容收缩
     }}>
       <div
         onClick={() => setShowReflectionModal(true)}
@@ -13773,9 +13774,9 @@ if (isInitialized && todayTasks.length === 0) {
       </div>
     </div>
 
-    {/* 右侧：学习状态评价 - 固定宽度 */}
+    {/* 右侧：学习状态评价 - 使用最小宽度而不是固定宽度 */}
     <div style={{
-      width: '70px',
+      minWidth: '60px', // 使用最小宽度而不是固定宽度
       flexShrink: 0,
       marginLeft: 'auto'
     }}>
