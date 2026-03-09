@@ -1985,8 +1985,6 @@ const restoreBackup = async (backupKey) => {
       // 保存所有关键数据到 localStorage
       await saveMainData('tasks', backupData.tasks || {});
       await saveMainData('templates', backupData.templates || []);
-      await saveMainData('pointHistory', backupData.pointHistory || []);
-      await saveMainData('exchange', backupData.exchange || []);
       
       // ✅ 修复：添加缺失的数据恢复
       
@@ -8012,7 +8010,8 @@ const [syncConfig, setSyncConfig] = useState({
   autoSync: localStorage.getItem('github_auto_sync') === 'true',
   lastSync: localStorage.getItem('github_last_sync') || ''
 });
-
+const [lastSyncHash, setLastSyncHash] = useState('');
+const [isSyncing, setIsSyncing] = useState(false);
 
 
 // 修改计时记录编辑函数
@@ -8515,25 +8514,37 @@ const handleRestoreData = useCallback(async (backupData) => {
 }, []);
 
 
+// 计算数据哈希，用于检测数据变化
+const calculateDataHash = useCallback(() => {
+  const dataToHash = {
+    tasks: tasksByDate,
+    templates: templates
+  };
+  return JSON.stringify(dataToHash);
+}, [tasksByDate, templates]);
+
+
+
+
 // 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
 // eslint-disable-next-line no-unused-vars
 
 
 
-const syncToGitHub = useCallback(async () => {
+const syncToGitHub = useCallback(async (isAutoSync = false) => {
   const token = localStorage.getItem('github_token');
   if (!token) {
-    setShowGitHubSyncModal(true);
-    alert('请先设置 GitHub Token');
-    return;
+    if (!isAutoSync) setShowGitHubSyncModal(true);
+    return false;
   }
 
+  if (isSyncing) return false;
+
+  setIsSyncing(true);
   try {
     const syncData = {
       tasksByDate,
       templates,
-  
-  
       syncTime: new Date().toISOString(),
       version: '1.1'
     };
@@ -8544,7 +8555,6 @@ const syncToGitHub = useCallback(async () => {
     let response;
     
     if (gistId) {
-      // 更新现有Gist
       response = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: {
@@ -8561,7 +8571,6 @@ const syncToGitHub = useCallback(async () => {
         })
       });
     } else {
-      // 创建新Gist
       response = await fetch('https://api.github.com/gists', {
         method: 'POST',
         headers: {
@@ -8582,33 +8591,36 @@ const syncToGitHub = useCallback(async () => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`同步失败: ${response.status} - ${errorText}`);
+      throw new Error(`同步失败: ${response.status}`);
     }
 
-    // 🔽 修复这里：确保正确解析响应
     const result = await response.json();
     
     if (!result || !result.id) {
       throw new Error('GitHub 响应格式错误');
     }
 
-    // 保存Gist ID（新建或更新都要保存）
     localStorage.setItem('github_gist_id', result.id);
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
-    // 更新同步配置状态
+    // 更新哈希值
+    setLastSyncHash(calculateDataHash());
+    
     setSyncConfig(prev => ({
       ...prev,
       gistId: result.id,
       lastSync: new Date().toISOString()
     }));
     
-    alert('同步成功！数据已备份到云端。');
+    if (!isAutoSync) {
+      alert('同步成功！数据已备份到云端。');
+    }
+    
+    return true;
     
   } catch (error) {
     console.error('同步失败:', error);
     
-    // 更详细的错误信息
     let errorMessage = '同步失败: ';
     if (error.message.includes('401')) {
       errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
@@ -8616,20 +8628,109 @@ const syncToGitHub = useCallback(async () => {
       errorMessage += '权限不足，请检查 Token 是否有 gist 权限';
     } else if (error.message.includes('404')) {
       errorMessage += 'Gist 不存在，将创建新的备份';
-      // 清除无效的gistId，下次会创建新的
       localStorage.removeItem('github_gist_id');
     } else {
       errorMessage += error.message;
     }
     
-    alert(errorMessage);
+    if (!isAutoSync) {
+      alert(errorMessage);
+    }
+    return false;
+  } finally {
+    setIsSyncing(false);
   }
-}, [tasksByDate, templates]);
+}, [tasksByDate, templates, calculateDataHash, isSyncing]);
 
 
 
+// 自动恢复云端最新数据
+const autoRestoreFromCloud = useCallback(async () => {
+  const token = localStorage.getItem('github_token');
+  if (!token) return;
+
+  try {
+    const gistId = localStorage.getItem('github_gist_id');
+    if (!gistId) return;
+
+    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) return;
+
+    const gist = await response.json();
+    const content = gist.files['study-tracker-data.json']?.content;
+    if (!content) return;
+
+    const backupData = JSON.parse(content);
+    const cloudHash = JSON.stringify({
+      tasks: backupData.tasksByDate || {},
+      templates: backupData.templates || []
+    });
+
+    // 如果云端数据不同，自动恢复
+    if (cloudHash !== lastSyncHash) {
+      console.log('🔄 检测到云端更新，自动恢复...');
+      
+      if (window.confirm('检测到云端有更新的数据，是否恢复？')) {
+        await handleRestoreData(backupData);
+      } else {
+        // 如果用户拒绝恢复，更新哈希值避免重复提示
+        setLastSyncHash(calculateDataHash());
+      }
+    }
+  } catch (error) {
+    console.error('自动恢复检查失败:', error);
+  }
+}, [lastSyncHash, calculateDataHash, handleRestoreData]);
 
 
+// 数据变化时自动上传到云端
+useEffect(() => {
+  if (!isInitialized) return;
+  
+  const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
+  if (!autoSyncEnabled) return;
+
+  const currentHash = calculateDataHash();
+  
+  // 如果数据有变化且不是刚恢复的数据
+  if (currentHash !== lastSyncHash && lastSyncHash !== '') {
+    const timeoutId = setTimeout(() => {
+      console.log('🔄 检测到数据变化，自动同步到云端...');
+      syncToGitHub(true);
+    }, 5000); // 5秒后同步，避免频繁请求
+    
+    return () => clearTimeout(timeoutId);
+  }
+}, [tasksByDate, templates, lastSyncHash, calculateDataHash, syncToGitHub, isInitialized]);
+
+// 设置定时检查云端更新（每30分钟）
+useEffect(() => {
+  if (!isInitialized) return;
+  
+  const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
+  if (!autoSyncEnabled) return;
+
+  // 启动时检查一次
+  const checkTimeout = setTimeout(() => {
+    autoRestoreFromCloud();
+  }, 3000);
+
+  // 每30分钟检查一次
+  const intervalId = setInterval(() => {
+    autoRestoreFromCloud();
+  }, 30 * 60 * 1000);
+
+  return () => {
+    clearTimeout(checkTimeout);
+    clearInterval(intervalId);
+  };
+}, [isInitialized, autoRestoreFromCloud]);
 
 
 // 修复 autoRestoreLatestData 函数
@@ -8725,6 +8826,8 @@ const autoRestoreLatestData = useCallback(async () => {
     alert(errorMessage);
   }
 }, [tasksByDate, handleRestoreData]);
+
+
 
 
 // 8. 实时计时器
@@ -10888,6 +10991,11 @@ if (savedTemplates) {
   setTemplates(savedTemplates);
 }
 
+// 设置初始哈希值 - 使用加载的数据直接计算，而不是等待状态更新
+setLastSyncHash(JSON.stringify({
+  tasks: savedTasks || {},
+  templates: savedTemplates || []
+}));
 
 
 
@@ -11042,13 +11150,6 @@ useEffect(() => {
   }
 }, [templates, isInitialized]);
 
-// 自动保存积分历史
-useEffect(() => {
-  if (isInitialized) { // 这里必须使用 isInitialized
-    console.log('💾 自动保存积分历史...');
-    saveMainData('pointHistory', pointHistory);
-  }
-}, [pointHistory, isInitialized]);
 
 
 
@@ -11103,7 +11204,6 @@ useEffect(() => {
 
   
 
-  
 
 
   // 替换现有的 useEffect 点击外部处理逻辑
@@ -11185,58 +11285,7 @@ useEffect(() => {
   });
   console.log('=== 调试结束 ===');
 
-  // 计算积分荣誉
-  const calculateHonorPoints = () => {
-    const today = new Date().toISOString().split("T")[0];
-    const weekStart = getMonday(new Date()).toISOString().split("T")[0];
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-
-    let todayPoints = 0;
-    let weekPoints = 0;
-    let monthPoints = 0;
-    let totalPoints = 0;
-    const pointsByCategory = {};
-
-    categories.forEach(cat => {
-      pointsByCategory[cat.name] = {
-        today: 0,
-        week: 0,
-        month: 0,
-        total: 0
-      };
-    });
-
-    Object.entries(tasksByDate).forEach(([date, tasks]) => {
-      tasks.forEach(task => {
-        if (task.done) {
-          const points = 1;
-          totalPoints += points;
-
-          if (date === today) {
-            todayPoints += points;
-          }
-          if (date >= weekStart) {
-            weekPoints += points;
-          }
-          if (date >= monthStart) {
-            monthPoints += points;
-          }
-
-          if (pointsByCategory[task.category]) {
-            pointsByCategory[task.category].total += points;
-            if (date === today) pointsByCategory[task.category].today += points;
-            if (date >= weekStart) pointsByCategory[task.category].week += points;
-            if (date >= monthStart) pointsByCategory[task.category].month += points;
-          }
-        }
-      });
-    });
-
-    return { todayPoints, weekPoints, monthPoints, totalPoints, pointsByCategory };
-  };
-
-  const { todayPoints, weekPoints, monthPoints, totalPoints, pointsByCategory } = calculateHonorPoints();
-
+  
   
 // 计算今日统计数据（排除运动类别）
 const calculateTodayStats = () => {
@@ -12463,8 +12512,6 @@ const handleExportData = async () => {
     const allData = {
       tasks: await loadDataWithFallback('tasks', {}),
       templates: await loadDataWithFallback('templates', []),
-      exchange: await loadDataWithFallback('exchange', []),
-      pointHistory: await loadDataWithFallback('pointHistory', []),
 
       categories: await loadDataWithFallback('categories', baseCategories),
       exportDate: new Date().toISOString(),
@@ -12943,27 +12990,7 @@ const generateMarkdownContent = () => {
     handleAddTask(template);
   };
 
-  // 添加兑换物品
-  const handleAddExchangeItem = (newItemData) => {
-    if (newItemData.name && newItemData.points > 0) {
-      setExchangeItems(prev => [...prev, newItemData]);
-    }
-  };
-
-  // 删除兑换物品
-  const handleDeleteExchangeItem = (index) => {
-    setExchangeItems(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // 兑换物品
-  const handleExchange = (item, index) => {
-    if (totalPoints >= item.points) {
-      if (window.confirm(`确定要兑换 ${item.name} 吗？这将消耗 ${item.points} 积分。`)) {
-        alert(`成功兑换 ${item.name}！`);
-      }
-    }
-  };
-
+ 
   // 计算今日统计数据
 
 
@@ -13658,6 +13685,7 @@ if (isInitialized && todayTasks.length === 0) {
 
         <div style={{
           display: "flex",
+          marginLeft: "auto", 
           alignItems: "center"
         }}>
           <button
@@ -15344,7 +15372,6 @@ reader.onload = async (event) => {
       // 更新状态
       setTasksByDate(importedData.tasks || {});
       setTemplates(importedData.templates || []);
-      setExchangeItems(importedData.exchange || []);
   
       setCategories(importedData.categories || baseCategories);
       
