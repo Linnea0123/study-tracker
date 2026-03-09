@@ -2153,17 +2153,24 @@ const getWeekNumber = (date) => {
 };
 
 
-// 统一的存储函数
+// 检查 saveMainData 函数
 const saveMainData = async (key, data) => {
   const storageKey = `${STORAGE_KEY}_${key}`;
   try {
     localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data);
+    console.log(`💾 数据保存成功: ${key}`, {
+      大小: Array.isArray(data) ? data.length : Object.keys(data || {}).length
+    });
+    
+    // 验证保存是否成功
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) {
+      console.error(`❌ 保存后读取失败: ${key}`);
+    }
   } catch (error) {
-    console.error(`数据保存失败: ${key}`, error);
+    console.error(`❌ 数据保存失败: ${key}`, error);
   }
 };
-
 const loadMainData = async (key) => {
   const storageKey = `${STORAGE_KEY}_${key}`;
   try {
@@ -8493,21 +8500,44 @@ const handleRestoreData = useCallback(async (backupData) => {
     console.log('📊 恢复数据统计:', {
       任务天数: Object.keys(normalizedData.tasksByDate).length,
       模板数: normalizedData.templates.length,
-      分类数: normalizedData.categories.length,
-      成绩记录: normalizedData.grades.length,
-      复盘天数: Object.keys(normalizedData.dailyReflections).length,
-      计时记录: normalizedData.timerRecords.length
+      成绩记录: normalizedData.grades.length
     });
 
-    // 保存所有数据
+    // 先清除所有旧数据（可选，但确保完全覆盖）
+    const allKeys = Object.keys(localStorage);
+    const appKeys = allKeys.filter(key => key.startsWith(STORAGE_KEY));
+    appKeys.forEach(key => localStorage.removeItem(key));
+    console.log('🧹 已清除旧数据');
+
+    // 保存所有数据 - 确保使用 await 等待完成
+    console.log('💾 开始保存数据到 localStorage...');
+    
     await saveMainData('tasks', normalizedData.tasksByDate);
+    console.log('✅ 任务数据保存完成');
+    
     await saveMainData('templates', normalizedData.templates);
+    console.log('✅ 模板数据保存完成');
+    
     await saveMainData('categories', normalizedData.categories);
+    console.log('✅ 分类数据保存完成');
+    
     await saveMainData('grades', normalizedData.grades);
+    console.log('✅ 成绩数据保存完成');
+    
     await saveMainData('dailyReflections', normalizedData.dailyReflections);
     await saveMainData('dailyMoods', normalizedData.dailyMoods);
     await saveMainData('dailyRatings', normalizedData.dailyRatings);
+    console.log('✅ 每日数据保存完成');
+    
     await saveMainData('timerRecords', normalizedData.timerRecords);
+    console.log('✅ 计时记录保存完成');
+
+    // 验证数据是否正确保存
+    const verifyTasks = await loadMainData('tasks');
+    console.log('🔍 验证保存的数据:', {
+      任务天数: Object.keys(verifyTasks || {}).length,
+      示例: Object.keys(verifyTasks || {})[0]
+    });
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
@@ -8520,7 +8550,10 @@ const handleRestoreData = useCallback(async (backupData) => {
 
     console.log('✅ 所有数据恢复完成');
     
-    alert('所有数据恢复成功！页面将重新加载。');
+    // 添加一个标志，表示刚刚恢复了数据
+    localStorage.setItem(`${STORAGE_KEY}_just_restored`, 'true');
+    
+    alert('数据恢复成功！页面将重新加载。');
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -11047,46 +11080,46 @@ useEffect(() => {
 
 
 
-
 const initializeApp = async () => {
+  console.log('🚀 开始初始化应用...');
+  
+  // 检查是否刚刚恢复了数据
+  const justRestored = localStorage.getItem(`${STORAGE_KEY}_just_restored`);
+  if (justRestored) {
+    console.log('🔄 刚刚恢复了数据，跳过初始加载');
+    localStorage.removeItem(`${STORAGE_KEY}_just_restored`);
+    setIsInitialized(true);
+    return;
+  }
+
   // 先迁移旧数据
   await migrateLegacyData();
   
   try {
-    // 加载任务数据
-    const savedTasks = await loadDataWithFallback('tasks', {});
-    if (savedTasks) {
+    // 加载任务数据 - 使用 await 确保加载完成
+    const savedTasks = await loadMainData('tasks');
+    console.log('📥 加载的任务数据:', savedTasks ? `有数据 (${Object.keys(savedTasks).length}天)` : '无数据');
+    
+    if (savedTasks && Object.keys(savedTasks).length > 0) {
       setTasksByDate(savedTasks);
+      console.log('✅ 任务数据设置成功');
+    } else {
+      console.log('ℹ️ 没有任务数据，使用空对象');
+      setTasksByDate({});
     }
 
     // 加载模板数据
-    const savedTemplates = await loadDataWithFallback('templates', []);
-    if (savedTemplates) {
+    const savedTemplates = await loadMainData('templates');
+    if (savedTemplates && savedTemplates.length > 0) {
       setTemplates(savedTemplates);
     }
 
     // 加载分类数据
-    const savedCategories = await loadDataWithFallback('categories', null);
-    if (savedCategories) {
-      const updatedCategories = savedCategories.map(cat => {
-        let defaultSubCategories = [];
-        switch(cat.name) {
-          case '校内':
-            defaultSubCategories = ["数学", "语文", "英语", "运动"];
-            break;
-          default:
-            defaultSubCategories = [];
-        }
-        return {
-          ...cat,
-          subCategories: cat.subCategories && cat.subCategories.length > 0 
-            ? cat.subCategories 
-            : defaultSubCategories
-        };
-      });
-      setCategories(updatedCategories);
-      await saveMainData('categories', updatedCategories);
+    const savedCategories = await loadMainData('categories');
+    if (savedCategories && savedCategories.length > 0) {
+      setCategories(savedCategories);
     } else {
+      // 使用默认分类
       const categoriesWithSubCategories = baseCategories.map(cat => {
         let subCategories = [];
         switch(cat.name) {
@@ -11104,13 +11137,9 @@ const initializeApp = async () => {
 
     // 加载成绩数据
     const savedGrades = await loadMainData('grades');
-    if (savedGrades) {
-      console.log('✅ 成绩数据加载成功，记录数:', savedGrades.length);
-      // 注意：grades 状态在 GradeModal 组件内部管理
-      // 这里只是验证数据存在，不需要设置状态
-    }
+    console.log('📥 加载的成绩数据:', savedGrades ? `${savedGrades.length}条` : '无数据');
 
-    // 加载复盘相关数据
+    // 加载复盘数据
     const savedDailyReflections = await loadMainData('dailyReflections');
     if (savedDailyReflections) {
       setDailyReflections(savedDailyReflections);
@@ -11127,9 +11156,16 @@ const initializeApp = async () => {
       setDailyRatings(savedDailyRatings);
     }
 
-    // 设置定时备份
-    localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
+    // 加载计时记录
+    const savedTimerRecords = await loadMainData('timerRecords');
+    if (savedTimerRecords) {
+      setTimerRecords(savedTimerRecords);
+    }
+
+    // 所有数据加载完成
+    localStorage.setItem(`${STORAGE_KEY}_isInitialized`, 'true');
     setIsInitialized(true);
+    console.log('✅ 初始化完成');
 
     // 设置自动备份
     const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
