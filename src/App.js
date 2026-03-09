@@ -7368,6 +7368,7 @@ function App() {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
+  const reflectionTextareaRef = useRef(null);
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
   // 临时保留旧变量避免错误
@@ -8002,6 +8003,7 @@ window.testWeekDays = () => {
     selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
   ).filter(Boolean));
 };
+
 
 
 // 添加调试函数来检查重复任务创建
@@ -13708,87 +13710,100 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 {/* 主界面的复盘框 - 只保留学习状态评价 */}
+{/* 主界面的复盘框 - 只保留学习状态评价 */}
 <div style={{ marginBottom: 8 }}>
   <div style={{
     backgroundColor: '#fff',
     border: '1px solid #e0e0e0',
     borderRadius: 6,
-    padding: '8px 12px'
+    padding: '8px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
   }}>
-    {/* 第一行：复盘标签和内容 */}
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8
+      fontSize: 13,
+      fontWeight: 'bold',
+      color: '#333',
+      minWidth: '32px',
+      lineHeight: '28px',
+      flexShrink: 0
     }}>
-      <div style={{
-        fontSize: 13,
-        fontWeight: 'bold',
-        color: '#333',
-        minWidth: '32px'
-      }}>
-        复盘
+      复盘
+    </div>
+    
+    {/* 复盘输入框 - 宽度调整 */}
+    <div style={{ 
+      width: 'calc(100% - 120px)', // 从150px改为120px，给复盘框更多空间
+      minWidth: '250px' // 增加最小宽度
+    }}>
+      <div
+        onClick={() => setShowReflectionModal(true)}
+        style={{
+          width: '100%',
+          minHeight: '28px',
+          maxHeight: '200px',
+          padding: '4px 12px',
+          border: '1px solid #ddd',
+          borderRadius: 4,
+          fontSize: 13,
+          lineHeight: '20px',
+          backgroundColor: '#fafafa',
+          cursor: 'pointer',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+          overflow: 'hidden',
+          height: (() => {
+            const reflection = getCurrentDailyReflection();
+            const lineCount = reflection ? reflection.split('\n').length : 1;
+            const charCount = reflection ? reflection.length : 0;
+            
+            if (lineCount === 1 && charCount <= 40) {
+              return '28px';
+            }
+            return 'auto';
+          })(),
+          display: 'flex',
+          alignItems: 'center',
+          transition: 'height 0.2s ease',
+          boxSizing: 'border-box'
+        }}
+      >
+        {getCurrentDailyReflection() || <span style={{ color: '#999' }}>点击添加复盘...</span>}
       </div>
-      
-      {/* 复盘输入框 */}
-      <div style={{ flex: 1 }}>
-        <div
-          onClick={() => setShowReflectionModal(true)}
-          style={{
-            width: '100%',
-            minHeight: '20px',
-            maxHeight: '20px',
-            padding: '2px 8px',
-            border: '1px solid #ddd',
-            borderRadius: 4,
-            fontSize: 13,
-            lineHeight: 1.2,
-            backgroundColor: '#fafafa',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            boxSizing: 'border-box' 
-          }}
-        >
-          {getCurrentDailyReflection() || '点击添加复盘...'}
-        </div>
-      </div>
+    </div>
 
-      {/* 右侧：学习状态评价 - 简洁显示 */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2px',
-        marginLeft: 'auto'
-      }}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentDailyRating(star);
-            }}
-            style={{
-              width: '24px',
-              height: '24px',
-              border: 'none',
-              borderRadius: '4px',
-              backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              color: getCurrentDailyRating() >= star ? '#000' : '#999'
-            }}
-            title={`学习状态 ${star}星`}
-          >
-            ⭐
-          </button>
-        ))}
-      </div>
+    {/* 右侧：学习状态评价 - 固定宽度 */}
+    <div style={{
+      width: '70px',
+      flexShrink: 0,
+      marginLeft: 'auto'
+    }}>
+      <select
+        value={getCurrentDailyRating()}
+        onChange={(e) => setCurrentDailyRating(parseInt(e.target.value))}
+        style={{
+          width: '100%',
+          height: '28px',
+          padding: '0 4px',
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          fontSize: '12px',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          outline: 'none',
+          color: '#333',
+          boxSizing: 'border-box'
+        }}
+        title="今日学习状态评分"
+      >
+        <option value="0">未评分</option>
+        <option value="1">1⭐</option>
+        <option value="2">2⭐</option>
+        <option value="3">3⭐</option>
+        <option value="4">4⭐</option>
+        <option value="5">5⭐</option>
+      </select>
     </div>
   </div>
 </div>
