@@ -966,424 +966,8 @@ const BackupManagerModal = ({ onClose }) => {
 
 
 
-const TimerRecordsModal = ({ records, onClose, onUpdateRecord, setTimerRecords, setTasksByDate }) => {
-  const [editingRecord, setEditingRecord] = useState(null);
-  const [editStartTime, setEditStartTime] = useState('');
-  const [editEndTime, setEditEndTime] = useState('');
-
-  // 格式化时间为 HH:MM
-  const formatTimeForInput = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-  };
-
-  // 保存编辑的时间
-  const saveEditTime = () => {
-    if (!editingRecord) return;
-
-    const [startHour, startMinute] = editStartTime.split(':').map(Number);
-    const [endHour, endMinute] = editEndTime.split(':').map(Number);
-    
-    const startDate = new Date(editingRecord.startTime);
-    const endDate = new Date(editingRecord.startTime); // 使用同一天
-    
-    startDate.setHours(startHour, startMinute, 0, 0);
-    endDate.setHours(endHour, endMinute, 0, 0);
-    
-    const newDuration = Math.max(0, Math.floor((endDate - startDate) / 1000));
-    
-    onUpdateRecord(editingRecord.id, newDuration, startDate.toISOString(), endDate.toISOString());
-    setEditingRecord(null);
-  };
-
- // 在 TimerRecordsModal 组件中修改 handleDeleteRecord 函数
-const handleDeleteRecord = (recordId) => {
-  if (window.confirm('确定要删除这条计时记录吗？')) {
-    const recordToDelete = records.find(r => r.id === recordId);
-    
-    if (recordToDelete) {
-      // 从计时记录列表中删除
-      setTimerRecords(prev => prev.filter(record => record.id !== recordId));
-      
-      // 更新任务的总时间
-      if (recordToDelete.taskId) {
-        setTasksByDate(prev => {
-          const updated = { ...prev };
-          Object.keys(updated).forEach(date => {
-            updated[date] = updated[date].map(task => {
-              if (task.id === recordToDelete.taskId) {
-                // 从时间段中删除对应的记录
-                const updatedSegments = (task.timeSegments || []).filter(
-                  segment => segment.id !== recordId
-                );
-                
-                // 重新计算总时间（累加所有剩余时间段）
-                const newTotalTime = updatedSegments.reduce((sum, segment) => sum + (segment.duration || 0), 0);
-                
-                console.log('🔄 更新任务总时间:', {
-                  任务: task.text,
-                  删除的记录时长: recordToDelete.duration,
-                  原总时间: task.timeSpent,
-                  新总时间: newTotalTime,
-                  剩余时间段数: updatedSegments.length
-                });
-                
-                return {
-                  ...task,
-                  timeSpent: newTotalTime,
-                  timeSegments: updatedSegments
-                };
-              }
-              return task;
-            });
-          });
-          return updated;
-        });
-      }
-    }
-  }
-};
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 15,
-        width: '95%',
-        maxWidth: 500,
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 15 }}>⏱️ 计时记录</h3>
-        
-        <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
-          {records.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
-              暂无计时记录
-            </div>
-          ) : (
-            records.map((record) => (
-              <div key={record.id} style={{
-                padding: 12,
-                border: '1px solid #e0e0e0',
-                borderRadius: 8,
-                marginBottom: 10,
-                backgroundColor: '#f9f9f9'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
-                      {record.taskText}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
-                      📚 {record.category}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#666' }}>
-                      {editingRecord && editingRecord.id === record.id ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span>开始:</span>
-                            <input
-                              type="time"
-                              value={editStartTime}
-                              onChange={(e) => setEditStartTime(e.target.value)}
-                              style={{ padding: '4px', border: '1px solid #ccc', borderRadius: 4 }}
-                            />
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span>结束:</span>
-                            <input
-                              type="time"
-                              value={editEndTime}
-                              onChange={(e) => setEditEndTime(e.target.value)}
-                              style={{ padding: '4px', border: '1px solid #ccc', borderRadius: 4 }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        `⏰ ${new Date(record.startTime).toLocaleTimeString()} - ${record.endTime ? new Date(record.endTime).toLocaleTimeString() : '进行中'}`
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div style={{ textAlign: 'right', minWidth: 100 }}>
-                    <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-                      {Math.floor(record.duration / 60)}分钟
-                    </div>
-                    {editingRecord && editingRecord.id === record.id ? (
-                      <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                        <button
-                          onClick={saveEditTime}
-                          style={{
-                            padding: '4px 8px',
-                            backgroundColor: '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          保存
-                        </button>
-                        <button
-                          onClick={() => setEditingRecord(null)}
-                          style={{
-                            padding: '4px 8px',
-                            backgroundColor: '#6c757d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          取消
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                        <button
-                          onClick={() => {
-                            setEditingRecord(record);
-                            setEditStartTime(formatTimeForInput(record.startTime));
-                            setEditEndTime(formatTimeForInput(record.endTime));
-                          }}
-                          style={{
-                            padding: '4px 8px',
-                            backgroundColor: '#1a73e8',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          编辑
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRecord(record.id)}
-                          style={{
-                            padding: '4px 8px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          删除
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: 10,
-            backgroundColor: '#1a73e8',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            marginTop: 15,
-            cursor: 'pointer'
-          }}
-        >
-          关闭
-        </button>
-      </div>
-    </div>
-  );
-};
 
 
-
-
-
-
-const CustomAchievementModal = ({ onSave, onClose, editAchievement = null }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    targetType: 'taskCount',
-    targetValue: '',
-    subject: '语文',
-    icon: '🎯',
-    points: 10
-  });
-
-  const iconOptions = ['🎯', '⭐', '🏆', '🔥', '🌟', '💪', '📚', '⏱️', '✅', '📊'];
-
-  const handleSave = () => {
-    if (!formData.name.trim() || !formData.targetValue) {
-      alert('请填写成就名称和目标值');
-      return;
-    }
-
-    const customAchievement = {
-      id: `custom_${Date.now()}`,
-      name: formData.name.trim(),
-      description: formData.description.trim() || `完成目标：${formData.targetValue}`,
-      icon: formData.icon,
-      points: parseInt(formData.points) || 10,
-      condition: (userData) => {
-        switch (formData.targetType) {
-          case 'taskCount':
-            const allTasks = Object.values(userData.tasksByDate).flat();
-            return allTasks.filter(task => task.done).length >= parseInt(formData.targetValue);
-          case 'subjectTime':
-            const allTasks2 = Object.values(userData.tasksByDate).flat();
-            const subjectTime = allTasks2
-              .filter(task => task.category === formData.subject && task.done)
-              .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-            return subjectTime >= (parseInt(formData.targetValue) * 3600);
-          case 'totalTime':
-            const allTasks3 = Object.values(userData.tasksByDate).flat();
-            const totalTime = allTasks3
-              .filter(task => task.done)
-              .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-            return totalTime >= (parseInt(formData.targetValue) * 3600);
-          default:
-            return false;
-        }
-      },
-      isCustom: true
-    };
-
-    onSave(customAchievement);
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 15,
-        width: '95%',
-        maxWidth: 500,
-        // 修改高度设置
-        maxHeight: '90vh', // 改为90vh而不是固定高度
-        overflow: 'auto', // 整个模态框可以滚动
-        display: 'flex',
-        flexDirection: 'column',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#1a73e8' }}>
-          创建自定义成就
-        </h3>
-
-        {/* 图标选择 */}
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>选择图标:</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {iconOptions.map(icon => (
-              <button
-                key={icon}
-                onClick={() => setFormData({ ...formData, icon })}
-                style={{
-                  fontSize: '20px',
-                  padding: '8px',
-                  border: `2px solid ${formData.icon === icon ? '#1a73e8' : '#ddd'}`,
-                  borderRadius: '8px',
-                  backgroundColor: formData.icon === icon ? '#e8f0fe' : 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                {icon}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 成就名称 */}
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>成就名称:</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="例如：数学大师"
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
-          />
-        </div>
-
-        {/* 目标类型 */}
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>目标类型:</label>
-          <select
-            value={formData.targetType}
-            onChange={(e) => setFormData({ ...formData, targetType: e.target.value })}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
-          >
-            <option value="taskCount">完成任务数量</option>
-            <option value="subjectTime">科目学习时间</option>
-            <option value="totalTime">总学习时间</option>
-          </select>
-        </div>
-
-        {/* 目标值 */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>目标值:</label>
-          <input
-            type="number"
-            value={formData.targetValue}
-            onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
-            placeholder="例如：10"
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{ flex: 1, padding: '12px', backgroundColor: '#ccc', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            取消
-          </button>
-          <button
-            onClick={handleSave}
-            style={{ flex: 1, padding: '12px', backgroundColor: '#1a73e8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            创建
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -7012,13 +6596,7 @@ const TaskItem = ({
   categories,
   setShowMoveModal,
   onToggleSubTask,
-  onStartTimer,
-  onPauseTimer,
-  isTimerRunning,
-  elapsedTime,
   onUpdateProgress,
-  timerRecords = [] , // 添加这行
-  activeTimer,
   onDeleteImage, // 添加这行
   onEditSubTask = () => {}
 }) => {
@@ -7026,49 +6604,21 @@ const TaskItem = ({
   console.log('📊 TaskItem 渲染:', {
     任务: task.text,
     timeSpent: task.timeSpent,
-    timeSegments: task.timeSegments,
-    相关计时记录: timerRecords.filter(r => r.taskId === task.id)
+    timeSegments: task.timeSegments
   });
+
+
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
   const [editingSubTaskNoteIndex, setEditingSubTaskNoteIndex] = useState(null);
 
 
-  // 在 TaskItem 组件中，修复计时器状态判断
-  const isThisTaskRunning = activeTimer && (
-    activeTimer.taskId === task.id || 
-    (task.isWeekTask && activeTimer.taskText === task.text)
-  );
 
- // 在 TaskItem 组件中，确保总时间计算正确
-const calculateTotalTime = () => {
-  // 直接使用任务的 timeSpent，因为它已经包含了所有时间段的总和
-  // 包括手动设置的基础时间和所有计时器记录的时间
-  const totalFromSpent = task.timeSpent || 0;
-  
-  // 如果这个任务正在计时，加上实时计时
-  if (isThisTaskRunning) {
-    return totalFromSpent + elapsedTime;
-  }
-  
-  return totalFromSpent;
-};
 
-const totalTime = calculateTotalTime();
 
   
-  
 
-
-  // 在计时器按钮的点击处理中
-  const handleTimerClick = () => {
-    if (isThisTaskRunning) {
-      onPauseTimer(task);
-    } else {
-      onStartTimer(task);
-    }
-  };
 
 
 
@@ -7289,27 +6839,7 @@ const totalTime = calculateTotalTime();
           <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
         )}
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (activeTimer?.taskId === task.id) {
-              handlePauseTimer(task);
-            } else {
-              handleStartTimer(task);
-            }
-          }}
-          style={{
-            fontSize: 12,
-            border: "none",
-            background: "transparent",
-            color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-            cursor: "pointer",
-            padding: "2px"
-          }}
-          title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-        >
-          {isThisTaskRunning ? "⏸️" : "⏱️"}
-        </button>
+      
 
 <span
   onClick={(e) => {
@@ -7412,47 +6942,29 @@ const totalTime = calculateTotalTime();
         <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
       )}
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleTimerClick();
-        }}
-        style={{
-          fontSize: 12,
-          border: "none",
-          background: "transparent",
-          color: isThisTaskRunning ? "#ff4444" : "#4CAF50",
-          cursor: "pointer",
-          padding: "2px"
-        }}
-        title={isThisTaskRunning ? "点击暂停计时" : "点击开始计时"}
-      >
-        {isThisTaskRunning ? "⏸️" : "⏱️"}
-      </button>
+    
 
       <span
-        onClick={(e) => {
-          e.stopPropagation();
-          onEditTime?.(task);
-        }}
-        style={{
-          fontSize: 12,
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          borderRadius: 4,
-          backgroundColor: "#f5f5f5",
-          padding: "2px 6px",
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          minWidth: "45px",
-          textAlign: "center"
-        }}
-        title="点击修改时间"
-      >
-        {isThisTaskRunning
-          ? formatTimeNoSeconds((task.timeSpent || 0) + elapsedTime)
-          : formatTimeNoSeconds(task.timeSpent || 0)}
-      </span>
+  onClick={(e) => {
+    e.stopPropagation();
+    onEditTime?.(task);
+  }}
+  style={{
+    fontSize: 12,
+    color: "#333",
+    border: "1px solid #e0e0e0",
+    borderRadius: 4,
+    backgroundColor: "#f5f5f5",
+    padding: "2px 6px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    minWidth: "45px",
+    textAlign: "center"
+  }}
+  title="点击修改时间"
+>
+  {formatTimeNoSeconds(task.timeSpent || 0)}
+</span>
     </div>
   </div>
 )}
@@ -7855,7 +7367,6 @@ function App() {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
-  const runningRefs = useRef({});
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
   // 临时保留旧变量避免错误
@@ -7866,14 +7377,9 @@ const handleSaveCategories = (updatedCategories) => {
   setCategories(updatedCategories);
   saveMainData('categories', updatedCategories);
 };
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [timerRecords, setTimerRecords] = useState([]);
-  const [showTimerRecords, setShowTimerRecords] = useState(false);
-  const [customAchievements, setCustomAchievements] = useState([]);
-  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
-  const [editingAchievement, setEditingAchievement] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
- const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
+const [isInitialized, setIsInitialized] = useState(false);
+const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
+const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 
 const [categories, setCategories] = useState(baseCategories.map(cat => ({
   ...cat,
@@ -7897,9 +7403,6 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
-  const [activeTimer, setActiveTimer] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
   days: [false, false, false, false, false, false, false],
@@ -8044,86 +7547,6 @@ const [syncConfig, setSyncConfig] = useState({
 
 
 
-// 修改计时记录编辑函数
-const updateTimerRecord = (recordId, newDuration, newStartTime, newEndTime) => {
-  console.log('🔄 更新计时记录:', { recordId, newDuration, newStartTime, newEndTime });
-  
-  // 先找到要更新的记录
-  const recordToUpdate = timerRecords.find(r => r.id === recordId);
-  if (!recordToUpdate) return;
-
-  // 计算时间差
-  const oldDuration = recordToUpdate.duration || 0;
-  const timeDifference = newDuration - oldDuration;
-
-  console.log('时间差计算:', {
-    旧时长: oldDuration,
-    新时长: newDuration,
-    时间差: timeDifference
-  });
-
-  // 更新计时记录
-  setTimerRecords(prev => 
-    prev.map(record => 
-      record.id === recordId 
-        ? { 
-            ...record, 
-            duration: newDuration,
-            startTime: newStartTime || record.startTime,
-            endTime: newEndTime || record.endTime
-          }
-        : record
-    )
-  );
-  
-  // 更新任务总时间（在基础时间上累加时间差）
-  if (recordToUpdate.taskId) {
-    console.log('更新任务时间，任务ID:', recordToUpdate.taskId);
-    
-    setTasksByDate(prev => {
-      const updated = { ...prev };
-      
-      Object.keys(updated).forEach(date => {
-        updated[date] = updated[date].map(task => {
-          if (task.id === recordToUpdate.taskId || 
-              (recordToUpdate.isWeekTask && task.isWeekTask && task.text === recordToUpdate.taskText)) {
-            
-            const currentTime = task.timeSpent || 0;
-            const newTotalTime = currentTime + timeDifference;
-            
-            console.log('任务时间更新:', {
-              任务: task.text,
-              当前时间: currentTime,
-              时间差: timeDifference,
-              新总时间: newTotalTime
-            });
-            
-            // 更新时间段
-            const updatedSegments = (task.timeSegments || []).map(segment => 
-              segment.id === recordId 
-                ? {
-                    ...segment,
-                    startTime: newStartTime || segment.startTime,
-                    endTime: newEndTime || segment.endTime,
-                    duration: newDuration
-                  }
-                : segment
-            );
-            
-            return {
-              ...task,
-              timeSpent: Math.max(0, newTotalTime), // 确保不为负数
-              timeSegments: updatedSegments
-            };
-          }
-          return task;
-        });
-      });
-      
-      return updated;
-    });
-  }
-};
 
 
 
@@ -8221,283 +7644,6 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-
-
-// ========== 全新的计时器系统 ==========
-
-
-
-    
-// 3. 修复计时器状态恢复（在现有的 restoreTimer 函数中）
-const restoreTimer = useCallback(() => {
-  try {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_activeTimer`);
-    
-    if (!saved) {
-      setActiveTimer(null);
-      setElapsedTime(0);
-      return;
-    }
-
-    const timerData = JSON.parse(saved);
-    const now = Date.now();
-    
-    // 计算从保存时间到现在经过的时间
-    const timeSinceSave = Math.floor((now - timerData.savedAt) / 1000);
-    const totalElapsed = timerData.elapsedTime + timeSinceSave;
-    
-    console.log('恢复计时器:', {
-      保存时时间: timerData.elapsedTime + '秒',
-      离开时间: timeSinceSave + '秒',
-      总时间: totalElapsed + '秒'
-    });
-
-    setActiveTimer(timerData);
-    setElapsedTime(totalElapsed);
-
-  } catch (error) {
-    console.error('恢复计时器失败:', error);
-    localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-    setActiveTimer(null);
-    setElapsedTime(0);
-  }
-}, []);
-  
-
-
-// 3. 保存计时器状态
-const saveTimerState = useCallback((timer, currentElapsed, status = 'running') => {
-  const timerData = {
-    ...timer,
-    elapsedTime: currentElapsed,
-    savedAt: Date.now(),
-   
-  };
-  
-  localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-  console.log('💾 保存计时器状态:', status, currentElapsed + '秒');
-}, []);
-
-// 4. 清理计时器状态
-const clearTimerState = useCallback(() => {
-  localStorage.removeItem(`${STORAGE_KEY}_activeTimer`);
-  setActiveTimer(null);
-  setElapsedTime(0);
-  console.log('🗑️ 清理计时器状态');
-}, []);
-
-
-// 4. 修复计时记录的数据结构（在 handleStartTimer 中）
-const handleStartTimer = (target) => {
-  console.log('🎯 开始计时:', target.text || target.category);
-  
-  // 如果已有计时器在运行，先暂停它
-  if (activeTimer) {
-    if (activeTimer.taskId) {
-      handlePauseTimer({ id: activeTimer.taskId });
-    } else if (activeTimer.category) {
-      handlePauseCategoryTimer(activeTimer.category, activeTimer.subCategory);
-    }
-  }
-
-  const newTimer = target.id ? {
-    taskId: target.id,
-    startTime: Date.now(),
-    taskText: target.text,
-    isWeekTask: target.isWeekTask,
-    category: target.category
-  } : {
-    category: target.category,
-    subCategory: target.subCategory || null,
-    startTime: Date.now()
-  };
-
-  setActiveTimer(newTimer);
-  setElapsedTime(0);
-  
-  // 立即保存
-  saveTimerState(newTimer, 0, 'running');
-  
-   // 创建计时记录（仅任务）
-  if (target.id) {
-    const newRecord = {
-      id: Date.now().toString(),
-      taskId: target.id,
-      taskText: target.text,
-      category: target.category,
-      startTime: new Date().toISOString(),
-      endTime: null,
-      duration: 0,
-      date: selectedDate,
-      isWeekTask: target.isWeekTask || false
-    };
-    setTimerRecords(prev => [newRecord, ...prev]);
-    
-    // 同时为任务添加时间段记录
-    setTasksByDate(prev => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach(date => {
-        updated[date] = updated[date].map(t => {
-          if (t.id === target.id || (target.isWeekTask && t.isWeekTask && t.text === target.text)) {
-            const currentSegments = t.timeSegments || [];
-            return {
-              ...t,
-              timeSegments: [...currentSegments, {
-                id: newRecord.id, // 使用相同的ID
-                startTime: newRecord.startTime,
-                endTime: null,
-                duration: 0
-              }]
-            };
-          }
-          return t;
-        });
-      });
-      return updated;
-    });
-  }
-
-  console.log('✅ 计时器启动完成');
-};
-
-
-
-
-
-// 修改 handlePauseTimer 函数
-const handlePauseTimer = (task) => {
-  if (!activeTimer || !activeTimer.taskId) {
-    console.log('⚠️ 没有任务计时器可暂停');
-    return;
-  }
-
-  const endTime = Date.now();
-  const sessionTime = Math.floor((endTime - activeTimer.startTime) / 1000);
-
-  console.log('⏸️ 暂停任务计时器 - 累加时间:', {
-    任务: task.text,
-    本次计时: sessionTime + '秒',
-    当前总时间: (task.timeSpent || 0) + '秒',
-    累加后: (task.timeSpent || 0) + sessionTime + '秒'
-  });
-
-  // 更新计时记录
-  setTimerRecords(prev => 
-    prev.map(record => 
-      record.id === activeTimer.startTime.toString() 
-        ? {
-            ...record,
-            endTime: new Date(endTime).toISOString(),
-            duration: sessionTime
-          }
-        : record
-    )
-  );
-
-  // 累加时间到总时间并更新时间段
-  setTasksByDate(prev => {
-    const updated = { ...prev };
-    Object.keys(updated).forEach(date => {
-      updated[date] = updated[date].map(t => {
-        if (t.id === task.id || (task.isWeekTask && t.isWeekTask && t.text === task.text)) {
-          const updatedSegments = (t.timeSegments || []).map(segment => 
-            segment.id === activeTimer.startTime.toString()
-              ? {
-                  ...segment,
-                  endTime: new Date(endTime).toISOString(),
-                  duration: sessionTime
-                }
-              : segment
-          );
-          
-          const newTotalTime = (t.timeSpent || 0) + sessionTime;
-          
-          console.log('📊 更新任务时间段:', {
-            任务: t.text,
-            时间段ID: activeTimer.startTime.toString(),
-            时长: sessionTime,
-            新总时间: newTotalTime
-          });
-          
-          return {
-            ...t,
-            timeSpent: newTotalTime,
-            timeSegments: updatedSegments
-          };
-        }
-        return t;
-      });
-    });
-    return updated;
-  });
-
-  // 清理状态
-  setTimeout(clearTimerState, 100);
-};
-
-
-
-
-// 7. 暂停分类计时器
-const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
-  if (!activeTimer || activeTimer.category !== categoryName) {
-    console.log('⚠️ 没有分类计时器可暂停');
-    return;
-  }
-  
-  const endTime = Date.now();
-  const sessionTime = Math.floor((endTime - activeTimer.startTime) / 1000);
-  const totalElapsed = elapsedTime + sessionTime;
-
-  console.log('⏸️ 暂停分类计时器:', {
-    分类: categoryName,
-    子分类: subCategoryName,
-    计时: sessionTime + '秒'
-  });
-
-  // 时间分配到任务
-  let targetTasks = [];
-  if (subCategoryName) {
-    targetTasks = getCategoryTasks(categoryName).filter(task => task.subCategory === subCategoryName);
-  } else {
-    targetTasks = getCategoryTasks(categoryName);
-  }
-
-  if (targetTasks.length > 0) {
-    const timePerTask = Math.floor(sessionTime / targetTasks.length);
-    
-    setTasksByDate(prev => {
-      const updated = { ...prev };
-      const todayTasks = updated[selectedDate] || [];
-      
-      updated[selectedDate] = todayTasks.map(t => {
-        if (t.category === categoryName && (!subCategoryName || t.subCategory === subCategoryName)) {
-          return { 
-            ...t, 
-            timeSpent: (t.timeSpent || 0) + timePerTask
-          };
-        }
-        return t;
-      });
-      
-      return updated;
-    });
-  }
-
-  // 保存暂停状态
-  saveTimerState(activeTimer, totalElapsed, 'paused');
-  
-  // 清理状态
-  setTimeout(clearTimerState, 100);
-};
-
-
-// 在 App 组件的方法区域添加：
-
-
-
-
-// 从云端恢复数据
 // 从云端恢复数据
 const handleRestoreData = useCallback(async (backupData) => {
   try {
@@ -8543,11 +7689,7 @@ const handleRestoreData = useCallback(async (backupData) => {
       });
     }
     
-    // 恢复计时记录
-    if (backupData.timerRecords) {
-      setTimerRecords(backupData.timerRecords);
-      await saveMainData('timerRecords', backupData.timerRecords);
-    }
+   
     
     // 恢复类别配置
     if (backupData.categories) {
@@ -8612,8 +7754,7 @@ const syncToGitHub = useCallback(async () => {
       dailyRatings,
       dailyReflections,
       
-      // 计时记录
-      timerRecords,
+    
       
       // 类别配置
       categories,
@@ -8718,7 +7859,7 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates, dailyMoods, dailyRatings, dailyReflections, timerRecords, categories, selectedDate, currentMonday, saveDailyData]);
+}, [tasksByDate, templates, dailyMoods, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData]);
 
 // 在现有的 useCallback 函数后面添加这个：
 
@@ -8821,58 +7962,11 @@ const autoRestoreLatestData = useCallback(async () => {
 }, [tasksByDate, handleRestoreData]);
 
 
-// 8. 实时计时器
-useEffect(() => {
-  let intervalId = null;
-
-  if (activeTimer) {
-    console.log('▶️ 启动实时计时器');
-    
-    intervalId = setInterval(() => {
-      setElapsedTime(prev => {
-        const newTime = prev + 1;
-        // 每15秒保存一次
-        if (newTime % 15 === 0) {
-          saveTimerState(activeTimer, newTime, 'running');
-        }
-        return newTime;
-      });
-    }, 1000);
-  }
-
-  return () => {
-    if (intervalId) {
-      console.log('⏹️ 停止实时计时器');
-      clearInterval(intervalId);
-    }
-  };
-}, [activeTimer, saveTimerState]);
 
 
 
 
 
-
-// 9. 页面关闭前保存
-useEffect(() => {
-  const handleBeforeUnload = () => {
-    if (activeTimer) {
-      saveTimerState(activeTimer, elapsedTime, 'running');
-      console.log('🔒 页面关闭前保存计时器');
-    }
-  };
-
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-}, [activeTimer, elapsedTime, saveTimerState]);
-
-// 10. 初始化时恢复计时器
-useEffect(() => {
-  if (isInitialized) {
-    console.log('🔄 初始化完成，恢复计时器...');
-    restoreTimer();
-  }
-}, [isInitialized, restoreTimer]);
 
 
 
@@ -8949,36 +8043,8 @@ useEffect(() => {
 
 
 
-// 1. 加载计时记录
-useEffect(() => {
-  const loadTimerRecords = async () => {
-    try {
-      const savedRecords = await loadMainData('timerRecords');
-      if (savedRecords) {
-        setTimerRecords(savedRecords);
-        console.log('✅ 加载计时记录:', savedRecords.length, '条');
-      }
-    } catch (error) {
-      console.error('加载计时记录失败:', error);
-    }
-  };
 
-  if (isInitialized) {
-    loadTimerRecords();
-  }
-}, [isInitialized]);
 
-// 2. 保存计时记录
-useEffect(() => {
-  const saveTimerRecords = async () => {
-    if (isInitialized && timerRecords.length > 0) {
-      await saveMainData('timerRecords', timerRecords);
-      console.log('💾 保存计时记录:', timerRecords.length, '条');
-    }
-  };
-
-  saveTimerRecords();
-}, [timerRecords, isInitialized]);
 
 
 
@@ -10532,18 +9598,10 @@ useEffect(() => {
       templates,
       isInitialized,
       selectedDate,
-      // 添加模态框状态
-      showAchievementsModal,
-      showCustomAchievementModal,
-      editingAchievement,
       todayTasks: tasksByDate[selectedDate] || []
     }),
     // 添加setState方法
     setState: (newState) => {
-      if (newState.showAchievementsModal !== undefined) setShowAchievementsModal(newState.showAchievementsModal);
-      if (newState.showCustomAchievementModal !== undefined) setShowCustomAchievementModal(newState.showCustomAchievementModal);
-      if (newState.unlockedAchievements !== undefined) setUnlockedAchievements(newState.unlockedAchievements);
-      if (newState.customAchievements !== undefined) setCustomAchievements(newState.customAchievements);
       
     }
   };
@@ -10551,7 +9609,7 @@ useEffect(() => {
   return () => {
     delete window.appInstance;
   };
-}, [tasksByDate, templates, isInitialized, selectedDate, showAchievementsModal, showCustomAchievementModal, editingAchievement]);
+}, [tasksByDate, templates, isInitialized, selectedDate]);
   
 
 
@@ -10679,29 +9737,8 @@ useEffect(() => {
 
 
  
-// ========== 计时器持久化修复 ==========
 
-// 1. 修复计时器状态保存
-useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (activeTimer) {
-        const timerData = {
-          taskId: activeTimer.taskId,
-          startTime: activeTimer.startTime,
-          elapsedTime: elapsedTime, // 保存当前经过的时间
-          savedAt: Date.now()
-        };
-        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-        console.log('💾 页面关闭前保存计时器:', timerData);
-      }
-    };
   
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [activeTimer, elapsedTime]);
-  
-
-
 
 
 // 添加全局调试函数
@@ -10865,64 +9902,10 @@ useEffect(() => {
 
 
 
-// 暴露给控制台用于调试
-useEffect(() => {
-  window.debugTimer = {
-    getState: () => ({
-      activeTimer,
-      elapsedTime,
-      storage: localStorage.getItem(`${STORAGE_KEY}_activeTimer`)
-    }),
-    clear: clearTimerState, // ← 使用新的 clearTimerState 函数
-    forceSave: () => {
-      if (activeTimer) {
-        const timerData = {
-          ...activeTimer,
-          elapsedTime: elapsedTime,
-          savedAt: Date.now(),
-          status: 'running'
-        };
-        localStorage.setItem(`${STORAGE_KEY}_activeTimer`, JSON.stringify(timerData));
-        console.log('💾 强制保存:', timerData);
-      }
-    }
-  };
-}, [activeTimer, elapsedTime, clearTimerState]); // ← 添加 clearTimerState 依赖
 
 
 
-// 修改 - 恢复计时器状态
-useEffect(() => {
-  // 检查是否有未完成的计时器
-  const keys = Object.keys(localStorage);
-  const timerKeys = keys.filter(key => key.startsWith('timer_'));
 
-  if (timerKeys.length > 0) {
-    timerKeys.forEach(key => {
-      const taskId = key.replace('timer_', '');
-      const startTime = parseInt(localStorage.getItem(key));
-      const currentTime = Date.now();
-      const timeSpent = Math.floor((currentTime - startTime) / 1000);
-
-      // 更新任务时间
-      setTasksByDate(prev => {
-        const updatedTasksByDate = { ...prev };
-        Object.keys(updatedTasksByDate).forEach(date => {
-          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-            t.id === taskId ? {
-              ...t,
-              timeSpent: (t.timeSpent || 0) + timeSpent
-            } : t
-          );
-        });
-        return updatedTasksByDate;
-      });
-
-      // 重新开始计时
-      setActiveTimer({ taskId, startTime: Date.now() - timeSpent * 1000 });
-    });
-  }
-}, []);
 
 // 修改 - 统一修改时间显示格式
 const formatTimeNoSeconds = (seconds) => {
@@ -12575,7 +11558,7 @@ const clearAllData = async () => {
       reason: '系统初始化',
       totalAfterChange: 0
     }]);
-    await saveMainData('activeTimer', null);
+   
 
      // 清空初始化状态
     localStorage.removeItem('study-tracker-PAGE_A-v2_isInitialized');
@@ -13771,16 +12754,7 @@ if (isInitialized && todayTasks.length === 0) {
         <BackupManagerModal onClose={() => setShowBackupModal(false)} />
       )}
 
-{/* 在这里添加计时记录模态框 ↓ */}
-{showTimerRecords && (
-  <TimerRecordsModal 
-    records={timerRecords}
-    onClose={() => setShowTimerRecords(false)}
-    onUpdateRecord={updateTimerRecord}  // 添加这行
-    setTimerRecords={setTimerRecords} // 添加这行
-    setTasksByDate={setTasksByDate} // 添加这行
-  />
-)}
+
 
 
 
@@ -14024,31 +12998,26 @@ if (isInitialized && todayTasks.length === 0) {
 >
   <span>置顶 ({pinnedTasks.length})</span>
   <span
-    style={{
-      fontSize: 12,
-      color: "#333",
-      padding: "2px 8px",
-      border: "1px solid #e0e0e0",
-      borderRadius: "4px",
-      backgroundColor: "#f5f5f5",
-      flexShrink: 0,
-      whiteSpace: 'nowrap'
-    }}
-    title="置顶任务总时间"
-  >
-    {(() => {
-      // 计算所有置顶任务的总时间
-      const totalTime = pinnedTasks.reduce((sum, task) => {
-        const taskTime = task.timeSpent || 0;
-        // 如果这个任务正在计时，加上实时计时
-        if (activeTimer && activeTimer.taskId === task.id) {
-          return sum + taskTime + elapsedTime;
-        }
-        return sum + taskTime;
-      }, 0);
-      return formatTimeNoSeconds(totalTime);
-    })()}
-  </span>
+  style={{
+    fontSize: 12,
+    color: "#333",
+    padding: "2px 8px",
+    border: "1px solid #e0e0e0",
+    borderRadius: "4px",
+    backgroundColor: "#f5f5f5",
+    flexShrink: 0,
+    whiteSpace: 'nowrap'
+  }}
+  title="置顶任务总时间"
+>
+  {(() => {
+    // 计算所有置顶任务的总时间
+    const totalTime = pinnedTasks.reduce((sum, task) => {
+      return sum + (task.timeSpent || 0);
+    }, 0);
+    return formatTimeNoSeconds(totalTime);
+  })()}
+</span>
           </div>
           <ul style={{
             listStyle: "none",
@@ -14063,7 +13032,6 @@ if (isInitialized && todayTasks.length === 0) {
     <TaskItem
       key={task.id}
       task={task}
-      timerRecords={timerRecords}  // 添加这行
       onEditTime={editTaskTime}
       onEditNote={editTaskNote}
       onEditReflection={editTaskReflection}
@@ -14075,14 +13043,13 @@ if (isInitialized && todayTasks.length === 0) {
       formatTimeWithSeconds={formatTimeWithSeconds}
       onMoveTask={moveTask}
       categories={categories}
-      activeTimer={activeTimer}  // 添加这行
+   
       setShowMoveModal={setShowMoveModal}
       onUpdateProgress={handleUpdateProgress}
-      onStartTimer={handleStartTimer}
+     
       onToggleSubTask={toggleSubTask} // 添加这行
-      onPauseTimer={handlePauseTimer}
-      isTimerRunning={activeTimer?.taskId === task.id}
-      elapsedTime={elapsedTime} // 新增这行
+ 
+    
       onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
     />
 ))}
@@ -14278,14 +13245,14 @@ if (isInitialized && todayTasks.length === 0) {
   <TaskItem
     key={task.id}
     task={task}
-    timerRecords={timerRecords}  // 添加这行
+  
     onEditTime={editTaskTime}
     onEditNote={editTaskNote}
     onEditReflection={editTaskReflection}
     onOpenEditModal={openTaskEditModal}
     onShowImageModal={setShowImageModal}
     toggleDone={toggleDone}
-    activeTimer={activeTimer}  // 添加这行
+
     formatTimeNoSeconds={formatTimeNoSeconds}
     formatTimeWithSeconds={formatTimeWithSeconds}
     onMoveTask={moveTask}
@@ -14294,11 +13261,10 @@ if (isInitialized && todayTasks.length === 0) {
     setShowMoveModal={setShowMoveModal}
     onUpdateProgress={handleUpdateProgress}
     onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
-    onStartTimer={handleStartTimer}
-    elapsedTime={elapsedTime} // 新增这行
+
     onToggleSubTask={toggleSubTask}  // 添加这行
-    onPauseTimer={handlePauseTimer}
-    isTimerRunning={activeTimer?.taskId === task.id}
+  
+  
   />
 ))}
           </ul>
@@ -14380,33 +13346,6 @@ if (isInitialized && todayTasks.length === 0) {
   {/* 将计时器和时间显示移到右边 */}
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
     {/* 分类计时器按钮 */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
-          handlePauseCategoryTimer(c.name);
-        } else {
-          handleStartTimer({
-            category: c.name
-          });
-        }
-      }}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        color: isComplete ? "#888" : "#fff",
-        cursor: 'pointer',
-        fontSize: '12px',
-        padding: '1px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      title={activeTimer?.category === c.name && !activeTimer?.subCategory ? "暂停分类计时" : "开始分类计时"}
-    >
-      {activeTimer?.category === c.name && !activeTimer?.subCategory ? "⏸️" : "⏱️"}
-    </button>
-
    
 
 
@@ -14435,13 +13374,7 @@ if (isInitialized && todayTasks.length === 0) {
   }}
   title="点击修改总时间"
 >
-  {(() => {
-    const baseTime = totalTime(c.name);
-    if (activeTimer?.category === c.name && !activeTimer?.subCategory) {
-      return formatCategoryTime(baseTime + elapsedTime);
-    }
-    return formatCategoryTime(baseTime);
-  })()}
+  {formatCategoryTime(totalTime(c.name))}
 </span>
   </div>
 </div>
@@ -14461,12 +13394,8 @@ if (isInitialized && todayTasks.length === 0) {
           const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
           
           const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
-            const taskTime = task.timeSpent || 0;
-            if (activeTimer && activeTimer.taskId === task.id) {
-              return sum + taskTime + elapsedTime;
-            }
-            return sum + taskTime;
-          }, 0);
+  return sum + (task.timeSpent || 0);
+}, 0);
           
           return (
             <div key={subCat} style={{ marginBottom: 8 }}>
@@ -14496,34 +13425,7 @@ if (isInitialized && todayTasks.length === 0) {
                 </span>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const currentSubCat = subCat === '未分类' ? null : subCat;
-                      if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
-                        handlePauseCategoryTimer(c.name, currentSubCat);
-                      } else {
-                        handleStartTimer({
-                          category: c.name,
-                          subCategory: currentSubCat
-                        });
-                      }
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#333',
-                      cursor: 'pointer',
-                      fontSize: '10px',
-                      padding: '1px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title={activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "暂停子分类计时" : "开始子分类计时"}
-                  >
-                    {activeTimer?.category === c.name && activeTimer?.subCategory === (subCat === '未分类' ? null : subCat) ? "⏸️" : "⏱️"}
-                  </button>
+                  
 
                   <span
                     onClick={(e) => {
@@ -14566,10 +13468,7 @@ if (isInitialized && todayTasks.length === 0) {
                     {(() => {
                       const baseTime = subCategoryTotalTime;
                       const currentSubCat = subCat === '未分类' ? null : subCat;
-                      if (activeTimer?.category === c.name && activeTimer?.subCategory === currentSubCat) {
-                        return formatCategoryTime(baseTime + elapsedTime);
-                      }
-                      return formatCategoryTime(baseTime);
+  return formatCategoryTime(subCategoryTotalTime);
                     })()}
                   </span>
                 </div>
@@ -14592,7 +13491,7 @@ if (isInitialized && todayTasks.length === 0) {
                       <TaskItem
                         key={task.id}
                         task={task}
-                        timerRecords={timerRecords}  // 添加这行
+                    
                         onEditTime={editTaskTime}
                         onDeleteImage={handleDeleteImage} 
                         onEditNote={editTaskNote}
@@ -14604,15 +13503,14 @@ if (isInitialized && todayTasks.length === 0) {
                         formatTimeWithSeconds={formatTimeWithSeconds}
                         onMoveTask={moveTask}
                         categories={baseCategories}
-                        activeTimer={activeTimer}
+                      
                         setShowMoveModal={setShowMoveModal}
                         onUpdateProgress={handleUpdateProgress}
-                        onStartTimer={handleStartTimer}
-                        onPauseTimer={handlePauseTimer}
+                       
                         onEditSubTask={editSubTask}
                         onToggleSubTask={toggleSubTask}
-                        isTimerRunning={activeTimer?.taskId === task.id}
-                        elapsedTime={elapsedTime}
+                       
+                       
                       />
                     ))}
                 </ul>
@@ -14638,7 +13536,7 @@ if (isInitialized && todayTasks.length === 0) {
             <TaskItem
               key={task.id}
               task={task}
-              timerRecords={timerRecords}  // 添加这行
+              
               onEditTime={editTaskTime}
               onDeleteImage={handleDeleteImage} 
               onEditNote={editTaskNote}
@@ -14650,15 +13548,13 @@ if (isInitialized && todayTasks.length === 0) {
               formatTimeWithSeconds={formatTimeWithSeconds}
               onMoveTask={moveTask}
               categories={baseCategories}
-              activeTimer={activeTimer}
+             
               setShowMoveModal={setShowMoveModal}
               onUpdateProgress={handleUpdateProgress}
-              onStartTimer={handleStartTimer}
-              onPauseTimer={handlePauseTimer}
+           
               onEditSubTask={editSubTask}
               onToggleSubTask={toggleSubTask}
-              isTimerRunning={activeTimer?.taskId === task.id}
-              elapsedTime={elapsedTime}
+             
             />
           ))}
       </ul>
@@ -15446,22 +14342,7 @@ marginTop: 10
         >
           导出数据
         </button>
-        <button
-          onClick={() => setShowSchedule(true)}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          时间表
-        </button>
+       
         <button
           onClick={() => {
             document.getElementById('import-file').click();
@@ -15605,40 +14486,6 @@ reader.onload = async (event) => {
           备份管理
         </button>
        
-<button
-  onClick={() => setShowTimerRecords(true)}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
->
-  计时记录
-</button>
- 
-        {/* 在这里添加成就按钮 */}
-        <button
-          onClick={() => setShowAchievementsModal(true)}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          我的成就
-        </button>
 
 <button
   onClick={() => setShowGitHubSyncModal(true)}
