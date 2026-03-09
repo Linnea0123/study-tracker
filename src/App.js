@@ -13775,37 +13775,41 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
 
     {/* 右侧：学习状态评价 - 使用最小宽度而不是固定宽度 */}
-    <div style={{
-      minWidth: '60px', // 使用最小宽度而不是固定宽度
-      flexShrink: 0,
-      marginLeft: 'auto'
-    }}>
-      <select
-        value={getCurrentDailyRating()}
-        onChange={(e) => setCurrentDailyRating(parseInt(e.target.value))}
-        style={{
-          width: '100%',
-          height: '28px',
-          padding: '0 4px',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          fontSize: '12px',
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-          outline: 'none',
-          color: '#333',
-          boxSizing: 'border-box'
-        }}
-        title="今日学习状态评分"
-      >
-        <option value="0">未评分</option>
-        <option value="1">1⭐</option>
-        <option value="2">2⭐</option>
-        <option value="3">3⭐</option>
-        <option value="4">4⭐</option>
-        <option value="5">5⭐</option>
-      </select>
-    </div>
+   {/* 右侧：学习状态评价 - 无箭头版本 */}
+<div style={{
+  minWidth: '35px',
+  flexShrink: 0,
+  marginLeft: 'auto'
+}}>
+  <select
+    value={getCurrentDailyRating()}
+    onChange={(e) => setCurrentDailyRating(parseInt(e.target.value))}
+    style={{
+      width: '100%',
+      height: '28px',
+      padding: '0',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      fontSize: '11px',
+      backgroundColor: '#fff',
+      cursor: 'pointer',
+      outline: 'none',
+      color: '#333',
+      boxSizing: 'border-box',
+      textAlign: 'center',
+      textAlignLast: 'center',
+      appearance: 'none' // 完全移除箭头
+    }}
+    title="今日学习状态评分"
+  >
+    <option value="0">0</option>
+    <option value="1">1⭐</option>
+    <option value="2">2⭐</option>
+    <option value="3">3⭐</option>
+    <option value="4">4⭐</option>
+    <option value="5">5⭐</option>
+  </select>
+</div>
   </div>
 </div>
 
