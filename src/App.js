@@ -13000,6 +13000,7 @@ if (isInitialized && todayTasks.length === 0) {
       })()}
 
 
+{/* 修改上方的日期显示区域 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -13014,6 +13015,21 @@ if (isInitialized && todayTasks.length === 0) {
     const completedCount = filteredTasks.filter(task => task.done).length;
     const allDone = totalCount > 0 && completedCount === totalCount;
     const hasIncomplete = totalCount > 0 && completedCount < totalCount;
+    
+    // 获取当天的学习状态评分
+    const dailyRating = dailyRatings[dateStr] || 0;
+    
+    // 根据评分设置背景颜色
+    const getRatingColor = (rating) => {
+      switch(rating) {
+        case 5: return '#4CAF50'; // 很好 - 绿色
+        case 4: return '#8BC34A'; // 好 - 浅绿
+        case 3: return '#FFC107'; // 一般 - 黄色
+        case 2: return '#FF9800'; // 较差 - 橙色
+        case 1: return '#F44336'; // 差 - 红色
+        default: return 'transparent'; // 未评分
+      }
+    };
     
     return (
       <div
@@ -13032,20 +13048,39 @@ if (isInitialized && todayTasks.length === 0) {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          minHeight: "20px"
+          minHeight: "20px",
+          // 添加评分背景色 - 如果当天有评分
+          background: dailyRating > 0 
+            ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+            : isSelected ? '#fff9c4' : 'transparent'
         }}
       >
         <div>{d.label}</div>
         <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
         
-        {/* 添加圆点和任务数显示 */}
+        {/* 显示学习状态星星（1-5星） */}
+        {dailyRating > 0 && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1px",
+            marginTop: "2px",
+            fontSize: "8px",
+            color: "#FFB800"
+          }}>
+            {'⭐'.repeat(dailyRating)}
+          </div>
+        )}
+        
+        {/* 原有的圆点和任务数 */}
         {totalCount > 0 && (
           <div style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "2px",
-            marginTop: "4px"
+            marginTop: dailyRating > 0 ? "0px" : "4px"
           }}>
             {/* 圆点 */}
             <div style={{
@@ -13057,12 +13092,12 @@ if (isInitialized && todayTasks.length === 0) {
             
             {/* 任务数 */}
             <span style={{
-  fontSize: "9px",
-  fontWeight: "bold",
-  color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
-}}>
-  {completedCount}/{totalCount}
-</span>
+              fontSize: "9px",
+              fontWeight: "bold",
+              color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+            }}>
+              {completedCount}/{totalCount}
+            </span>
           </div>
         )}
       </div>
