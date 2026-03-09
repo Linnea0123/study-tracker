@@ -10958,50 +10958,141 @@ const editTaskTime = (task) => {
     }
   };
 
-  // 删除任务
-  const deleteTask = (task, deleteOption = 'today') => {
-    if (task.isWeekTask || deleteOption === 'all') {
-      const updatedTasksByDate = { ...tasksByDate };
-
-      Object.keys(updatedTasksByDate).forEach(date => {
+// 删除任务 - 调试版
+const deleteTask = (task, deleteOption = 'today') => {
+  console.log('========== 删除任务 ==========');
+  console.log('要删除的任务:', {
+    id: task.id,
+    text: task.text,
+    category: task.category,
+    isWeekTask: task.isWeekTask,
+    crossDateId: task.crossDateId
+  });
+  console.log('删除选项:', deleteOption);
+  console.log('当前选中日期:', selectedDate);
+  
+  // 复制当前数据
+  const updatedTasksByDate = { ...tasksByDate };
+  
+  if (deleteOption === 'future') {
+    console.log('执行删除今日及以后');
+    
+    // 获取所有日期并排序
+    const allDates = Object.keys(updatedTasksByDate).sort();
+    console.log('所有日期:', allDates);
+    
+    // 找出从选中日期开始的所有日期
+    const futureDates = allDates.filter(date => date >= selectedDate);
+    console.log('要处理的未来日期:', futureDates);
+    
+    let totalDeleted = 0;
+    
+    futureDates.forEach(date => {
+      const beforeCount = updatedTasksByDate[date]?.length || 0;
+      
+      // 过滤任务
+      updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
+        // 判断是否是同一个任务
+        let isSameTask = false;
+        
         if (task.isWeekTask) {
-          updatedTasksByDate[date] = updatedTasksByDate[date].filter(
-            t => !(t.isWeekTask && t.text === task.text)
-          );
+          isSameTask = t.isWeekTask && t.text === task.text;
+        } else if (task.crossDateId) {
+          isSameTask = t.crossDateId === task.crossDateId;
         } else {
-          updatedTasksByDate[date] = updatedTasksByDate[date].filter(
-            t => t.text !== task.text || t.category !== task.category
-          );
+          // 对于普通任务，用多个条件匹配
+          isSameTask = t.text === task.text && t.category === task.category;
+          // 也可以用 id，但注意不同日期的任务可能有不同id
+          // isSameTask = t.id === task.id;
         }
-      });
-
-      setTasksByDate(updatedTasksByDate);
-    } else if (deleteOption === 'future') {
-      const updatedTasksByDate = { ...tasksByDate };
-      const today = new Date(selectedDate);
-
-      Object.keys(updatedTasksByDate).forEach(date => {
-        const taskDate = new Date(date);
-        if (taskDate >= today) {
-          updatedTasksByDate[date] = updatedTasksByDate[date].filter(
-            t => t.id !== task.id
-          );
+        
+        if (isSameTask) {
+          console.log(`🗑️ 从 ${date} 删除任务:`, {
+            文本: t.text,
+            类别: t.category,
+            id: t.id
+          });
+          totalDeleted++;
+          return false; // 删除
         }
+        return true; // 保留
       });
-
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].filter(t => t.id !== task.id)
-      }));
-    }
-
-    if (runningRefs.current[task.id]) {
-      clearInterval(runningRefs.current[task.id]);
-      delete runningRefs.current[task.id];
-    }
-  };
+      
+      const afterCount = updatedTasksByDate[date]?.length || 0;
+      if (beforeCount !== afterCount) {
+        console.log(`✅ ${date}: ${beforeCount} -> ${afterCount} 个任务`);
+      }
+    });
+    
+    console.log(`总共删除了 ${totalDeleted} 个任务`);
+    
+  } else if (deleteOption === 'all') {
+    console.log('执行删除所有日期');
+    
+    let totalDeleted = 0;
+    
+    Object.keys(updatedTasksByDate).forEach(date => {
+      const beforeCount = updatedTasksByDate[date]?.length || 0;
+      
+      updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
+        let isSameTask = false;
+        
+        if (task.isWeekTask) {
+          isSameTask = t.isWeekTask && t.text === task.text;
+        } else if (task.crossDateId) {
+          isSameTask = t.crossDateId === task.crossDateId;
+        } else {
+          isSameTask = t.text === task.text && t.category === task.category;
+        }
+        
+        if (isSameTask) {
+          console.log(`🗑️ 从 ${date} 删除任务: "${t.text}"`);
+          totalDeleted++;
+          return false;
+        }
+        return true;
+      });
+      
+      const afterCount = updatedTasksByDate[date]?.length || 0;
+      if (beforeCount !== afterCount) {
+        console.log(`✅ ${date}: ${beforeCount} -> ${afterCount} 个任务`);
+      }
+    });
+    
+    console.log(`总共删除了 ${totalDeleted} 个任务`);
+    
+  } else {
+    console.log('执行仅删除今日');
+    
+    const beforeCount = updatedTasksByDate[selectedDate]?.length || 0;
+    
+    updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => {
+      let isSameTask = false;
+      
+      if (task.isWeekTask) {
+        isSameTask = t.isWeekTask && t.text === task.text;
+      } else if (task.crossDateId) {
+        isSameTask = t.crossDateId === task.crossDateId;
+      } else {
+        isSameTask = t.text === task.text && t.category === task.category;
+      }
+      
+      if (isSameTask) {
+        console.log(`🗑️ 从 ${selectedDate} 删除任务: "${t.text}"`);
+        return false;
+      }
+      return true;
+    });
+    
+    const afterCount = updatedTasksByDate[selectedDate]?.length || 0;
+    console.log(`${selectedDate}: ${beforeCount} -> ${afterCount} 个任务`);
+  }
+  
+  // 更新状态
+  setTasksByDate(updatedTasksByDate);
+  console.log('========== 删除完成 ==========');
+};
+  
 
   // 编辑任务文本
   const editTaskText = (task) => {
