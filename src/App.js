@@ -620,200 +620,7 @@ const baseCategories = [
 const PAGE_ID = 'PAGE_A'; 
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
-// ========== 成就系统配置 ==========
-const ACHIEVEMENTS_CONFIG = {
-  // 新手成就
-  beginner: [
-    {
-      id: 'first_task',
-      name: '启程之日',
-      description: '完成第一个任务',
-      icon: '🎯',
-      condition: (userData) => {
-        const allTasks = Object.values(userData.tasksByDate).flat();
-        return allTasks.some(task => task.done);
-      },
-      points: 5
-    },
-    {
-      id: 'first_30min',
-      name: '学习起步', 
-      description: '单日学习时间达到30分钟',
-      icon: '⏱️',
-      condition: (userData) => {
-        const today = new Date().toISOString().split('T')[0];
-        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
-        return todayTime >= 1800;
-      },
-      points: 10
-    },
-    {
-      id: 'plan_master',
-      name: '计划达人',
-      description: '创建10个任务',
-      icon: '📝',
-      condition: (userData) => {
-        const allTasks = Object.values(userData.tasksByDate).flat();
-        return allTasks.length >= 10;
-      },
-      points: 15
-    }
-  ],
-  
-  // 时间成就
-  time: [
-    {
-      id: 'one_hour',
-      name: '时间管理者',
-      description: '单日学习1小时',
-      icon: '🕐',
-      condition: (userData) => {
-        const today = new Date().toISOString().split('T')[0];
-        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
-        return todayTime >= 3600;
-      },
-      points: 20
-    },
-    {
-      id: 'three_hours',
-      name: '学习狂人',
-      description: '单日学习3小时', 
-      icon: '🕒',
-      condition: (userData) => {
-        const today = new Date().toISOString().split('T')[0];
-        const todayTime = userData.tasksByDate[today]?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
-        return todayTime >= 10800;
-      },
-      points: 40
-    }
-  ],
-  
-  // 连续成就
-  streak: [
-    {
-      id: 'three_days',
-      name: '渐入佳境',
-      description: '连续学习3天',
-      icon: '🔥',
-      condition: (userData) => {
-        return calculateCurrentStreak(userData.tasksByDate) >= 3; // 这里使用函数
-      },
-      points: 25
-    },
-    {
-      id: 'one_week',
-      name: '持之以恒',
-      description: '连续学习7天',
-      icon: '🌟',
-      condition: (userData) => {
-        return calculateCurrentStreak(userData.tasksByDate) >= 7; // 这里使用函数
-      },
-      points: 50
-    },
-    {
-      id: 'one_month',
-      name: '铁人',
-      description: '连续学习30天',
-      icon: '💪',
-      condition: (userData) => {
-        return calculateCurrentStreak(userData.tasksByDate) >= 30; // 这里使用函数
-      },
-      points: 100
-    }
-  ],
-  
-  // 科目成就
-  subject: [
-    {
-      id: 'math_lover',
-      name: '数学爱好者',
-      description: '数学学习时间达到2小时',
-      icon: '📐',
-      condition: (userData) => {
-        const allTasks = Object.values(userData.tasksByDate).flat();
-        const mathTime = allTasks
-          .filter(task => task.category === '数学')
-          .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-        return mathTime >= 7200;
-      },
-      points: 30
-    },
-    {
-      id: 'english_master',
-      name: '英语达人',
-      description: '英语学习时间达到2小时',
-      icon: '🔤',
-      condition: (userData) => {
-        const allTasks = Object.values(userData.tasksByDate).flat();
-        const englishTime = allTasks
-          .filter(task => task.category === '英语')
-          .reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-        return englishTime >= 7200;
-      },
-      points: 30
-    },
-    {
-  id: 'balanced',
-  name: '全面发展',
-  description: '所有科目都有学习记录',
-  icon: '⚖️',
-  condition: (userData) => {
-    const allTasks = Object.values(userData.tasksByDate).flat();
-    const studiedCategories = new Set(allTasks.map(task => task.category));
-    return baseCategories.every(cat => studiedCategories.has(cat.name));
-  },
-  points: 40
-}
-  ],
-  
-  custom: [
-    // 这里会动态添加用户自定义的成就
-  ],
 
-  // 特殊成就
-  special: [
-   {
-    id: 'early_bird',
-    name: '早起的鸟儿',
-    description: '在早上6-8点之间完成任务',
-    icon: '🐦',
-    condition: (userData) => {
-      const allTasks = Object.values(userData.tasksByDate).flat();
-      return allTasks.some(task => {
-        if (task.done && task.timeSegments) {
-          return task.timeSegments.some(segment => {
-            if (segment.startTime) {
-              const hour = new Date(segment.startTime).getHours();
-              return hour >= 6 && hour < 8; // 早上6-8点
-            }
-            return false;
-          });
-        }
-        return false;
-      });
-    },
-    points: 25
-  },
-    {
-    id: 'weekend_hero',
-    name: '周末英雄',
-    description: '在周末完成5个任务',
-    icon: '🎪',
-    condition: (userData) => {
-      const weekendTasks = Object.entries(userData.tasksByDate)
-        .filter(([date]) => {
-          const day = new Date(date).getDay();
-          return day === 0 || day === 6; // 周六或周日
-        })
-        .flatMap(([_, tasks]) => tasks.filter(task => task.done));
-      
-      return weekendTasks.length >= 5;
-    },
-    points: 35
-  }
-  ]
-};
-//成就系统end
 
 
 
@@ -2046,256 +1853,6 @@ const testGistAccess = async () => {
 
 
 
-// 修改成就模态框组件
-const AchievementsModal = ({ 
-  achievements, 
-  onClose, 
-  isNew = false, 
-  unlockedAchievements = [], 
-  onAddCustom, 
-  onEditCustom, 
-  onDeleteCustom, 
-  customAchievements = [] 
-}) => {
-  
-  // 获取所有系统成就（排除custom数组）
-  const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
-    .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
-    .flat();
-  
-  // 合并系统成就和自定义成就
-  const allAchievements = [...allSystemAchievements, ...customAchievements];
-  
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 15,
-        width: '95%',
-        maxWidth: 500,
-        maxHeight: '80vh',
-        overflow: 'auto',
-        textAlign: 'center',
-        position: 'relative' // 添加相对定位
-      }}>
- {/* 右上角关闭按钮 */}
- <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            background: 'transparent',
-            border: 'none',
-            fontSize: '24px',
-            cursor: 'pointer',
-            color: '#666',
-            width: '30px',
-            height: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            zIndex: 1001
-          }}
-          title="关闭"
-        >
-          ×
-        </button>
-
-
-
-
-        {isNew && achievements.length > 0 && (
-          <div style={{ fontSize: 24, marginBottom: 10, color: '#ff6b6b', fontWeight: 'bold' }}>
-            🎉 成就解锁！
-          </div>
-        )}
-        
-        <h3 style={{ marginBottom: 20, color: '#1a73e8' }}>🏆 成就徽章墙</h3>
-        
-        {/* 自定义成就按钮 */}
-        <div style={{ marginBottom: 15 }}>
-          <button
-            onClick={(e) => {
-              
-              e.stopPropagation(); // 阻止事件冒泡
-              onAddCustom();
-            }}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}
-          >
-            ➕ 创建自定义成就
-          </button>
-        </div>
-
-        {/* 统计信息 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '10px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px',
-          marginBottom: '15px',
-          fontSize: '12px'
-        }}>
-          <div>
-            <div style={{ fontWeight: 'bold' }}>已解锁</div>
-            <div>{unlockedAchievements.length}/{allAchievements.length}</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 'bold' }}>总积分</div>
-            <div>{allAchievements
-              .filter(ach => unlockedAchievements.includes(ach.id))
-              .reduce((sum, ach) => sum + ach.points, 0)}分</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 'bold' }}>完成度</div>
-            <div>{allAchievements.length > 0 ? Math.round((unlockedAchievements.length / allAchievements.length) * 100) : 0}%</div>
-          </div>
-        </div>
-
-        {/* 成就网格 */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: 10,
-          marginBottom: 20
-        }}>
-          {allAchievements.map((achievement) => {
-            const isUnlocked = unlockedAchievements.includes(achievement.id);
-            const isCustom = achievement.isCustom;
-            
-            return (
-              <div
-                key={achievement.id}
-                style={{
-                  padding: '12px 8px',
-                  backgroundColor: isUnlocked ? '#e8f5e8' : '#f5f5f5',
-                  borderRadius: '10px',
-                  border: `2px solid ${isUnlocked ? '#4CAF50' : isCustom ? '#ffa726' : '#ddd'}`,
-                  textAlign: 'center',
-                  opacity: isUnlocked ? 1 : 0.7,
-                  position: 'relative'
-                }}
-              >
-                {/* 自定义成就标识 */}
-                {isCustom && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    fontSize: '10px',
-                    color: '#ffa726'
-                  }}>
-                    ✏️
-                  </div>
-                )}
-                
-                <div style={{
-                  fontSize: '24px',
-                  marginBottom: '8px',
-                  filter: isUnlocked ? 'none' : 'grayscale(100%)'
-                }}>
-                  {achievement.icon}
-                </div>
-                
-                <div style={{
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  marginBottom: '4px',
-                  color: isUnlocked ? '#333' : '#999'
-                }}>
-                  {achievement.name}
-                </div>
-                
-                <div style={{
-                  fontSize: '10px',
-                  color: isUnlocked ? '#666' : '#999',
-                  marginBottom: '6px',
-                  lineHeight: '1.2'
-                }}>
-                  {achievement.description}
-                </div>
-                
-                <div style={{
-                  fontSize: '9px',
-                  color: isUnlocked ? '#4CAF50' : '#ccc',
-                  fontWeight: 'bold'
-                }}>
-                  {isUnlocked ? `+${achievement.points}积分` : '未解锁'}
-                </div>
-
-                {/* 自定义成就操作按钮 */}
-                {isCustom && (
-                  <div style={{ marginTop: '8px', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditCustom(achievement);
-                      }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        backgroundColor: '#17a2b8',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteCustom(achievement.id);
-                      }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      删除
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        
-      
-      </div>
-    </div>
-  );
-};
-//成就模块end
 
 
 
@@ -2348,48 +1905,6 @@ const calculateCurrentStreak = (tasksByDate) => {
 };
 
 
-// 修改成就检查函数，添加错误处理
-const checkAchievements = (userData, unlockedAchievements, customAchievements = []) => {
-  const newAchievements = [];
-  
-  try {
-    // 获取所有系统成就（排除custom数组）
-    const allSystemAchievements = Object.values(ACHIEVEMENTS_CONFIG)
-      .filter(config => Array.isArray(config) && config !== ACHIEVEMENTS_CONFIG.custom)
-      .flat();
-    
-    // 合并系统成就和自定义成就
-    const allAchievements = [...allSystemAchievements, ...customAchievements];
-    
-    console.log('🔍 检查成就:', {
-      总成就数: allAchievements.length,
-      系统成就: allSystemAchievements.length,
-      自定义成就: customAchievements.length,
-      已解锁: unlockedAchievements.length
-    });
-    
-    allAchievements.forEach(achievement => {
-      try {
-        // 添加类型检查
-        if (!achievement || typeof achievement.condition !== 'function') {
-          console.warn('❌ 无效的成就对象:', achievement);
-          return;
-        }
-        
-        if (!unlockedAchievements.includes(achievement.id) && achievement.condition(userData)) {
-          console.log('🎉 解锁新成就:', achievement.name);
-          newAchievements.push(achievement);
-        }
-      } catch (error) {
-        console.error(`❌ 检查成就 "${achievement?.name || '未知'}" 时出错:`, error);
-      }
-    });
-  } catch (error) {
-    console.error('❌ 成就检查系统错误:', error);
-  }
-  
-  return newAchievements;
-};
 
 
 // 替换现有的 autoBackup 函数
@@ -2404,8 +1919,7 @@ const autoBackup = async () => {
       templates: await loadMainData('templates') || [],
       pointHistory: await loadMainData('pointHistory') || [],
       exchange: await loadMainData('exchange') || [],
-      customAchievements: await loadMainData('customAchievements') || [],
-      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
+
       categories: await loadMainData('categories') || baseCategories,
       backupTime: new Date().toISOString(),
       version: '1.1' // 更新版本号
@@ -2475,8 +1989,8 @@ const restoreBackup = async (backupKey) => {
       await saveMainData('exchange', backupData.exchange || []);
       
       // ✅ 修复：添加缺失的数据恢复
-      await saveMainData('customAchievements', backupData.customAchievements || []);
-      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
+      
+
       await saveMainData('categories', backupData.categories || baseCategories);
       
       console.log('✅ 所有数据已保存到 localStorage');
@@ -2514,7 +2028,7 @@ window.debugStudyTracker = {
   // 检查所有存储数据
   checkStorage: () => {
     console.log('=== 学习跟踪器存储调试 ===');
-    const keys = ['tasks', 'templates', 'pointHistory', 'exchange', 'customAchievements', 'unlockedAchievements', 'categories'];
+    const keys = ['tasks', 'templates', 'pointHistory', 'exchange',   'categories'];
     keys.forEach(key => {
       const storageKey = `${STORAGE_KEY}_${key}`;
       const data = localStorage.getItem(storageKey);
@@ -2593,7 +2107,7 @@ window.debugStudyTracker = {
     console.log('🔧 开始修复缺失数据...');
     
     // 检查并修复所有关键数据
-    const keys = ['customAchievements', 'unlockedAchievements', 'categories'];
+    const keys = ['customAchievements',  'categories'];
     let fixedCount = 0;
     
     for (const key of keys) {
@@ -2613,7 +2127,7 @@ window.debugStudyTracker = {
   // 清除所有数据
   clearAll: () => {
     if (window.confirm('确定要清除所有数据吗？')) {
-      const keys = ['tasks', 'templates', 'pointHistory', 'exchange', 'customAchievements', 'unlockedAchievements', 'categories'];
+      const keys = ['tasks', 'templates', 'pointHistory', 'exchange', 'categories'];
       keys.forEach(key => {
         localStorage.removeItem(`${STORAGE_KEY}_${key}`);
       });
@@ -8315,10 +7829,6 @@ function App() {
   const [showDeleteModal, setShowDeleteModal] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templates, setTemplates] = useState([]);
-  const [showExchangeModal, setShowExchangeModal] = useState(false);
-  const [exchangeItems, setExchangeItems] = useState([]);
-  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
-  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
@@ -8334,9 +7844,6 @@ const handleSaveCategories = (updatedCategories) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
   const [showTimerRecords, setShowTimerRecords] = useState(false);
-  const [customAchievements, setCustomAchievements] = useState([]);
-  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
-  const [editingAchievement, setEditingAchievement] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
  const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 
@@ -8352,19 +7859,16 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
-  const [showHonorModal, setShowHonorModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyMoods, setDailyMoods] = useState({});
   const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
-  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [activeTimer, setActiveTimer] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
   days: [false, false, false, false, false, false, false],
@@ -8382,34 +7886,8 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 
 
 
-// 添加成就数据验证函数
-const validateAchievements = () => {
-  console.log('🔍 验证成就数据...');
-  
-  const allAchievements = Object.values(ACHIEVEMENTS_CONFIG)
-    .filter(config => Array.isArray(config))
-    .flat();
-  
-  const invalidAchievements = allAchievements.filter(ach => 
-    !ach || typeof ach.condition !== 'function'
-  );
-  
-  if (invalidAchievements.length > 0) {
-    console.warn('⚠️ 发现无效的成就:', invalidAchievements);
-    return false;
-  }
-  
-  console.log('✅ 所有成就数据有效');
-  return true;
-};
 
 
-// 在初始化时调用
-useEffect(() => {
-  if (isInitialized) {
-    validateAchievements();
-  }
-}, [isInitialized]);
 
 // 🔽 在这里添加获取Gist列表的函数 🔽
   const getLatestStudyTrackerGist = async (token) => {
@@ -8495,20 +7973,17 @@ const restoreFromGitHub = useCallback(async () => {
       // 立即保存到 localStorage
       await saveMainData('tasks', backupData.tasksByDate || {});
       await saveMainData('templates', backupData.templates || []);
-      await saveMainData('pointHistory', backupData.pointHistory || []);
-      await saveMainData('exchangeItems', backupData.exchangeItems || []);
-      await saveMainData('customAchievements', backupData.customAchievements || []);
-      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
+  
+
       
       console.log('数据已保存到 localStorage');
       
       // 然后设置状态
       setTasksByDate(backupData.tasksByDate || {});
       setTemplates(backupData.templates || []);
-      setPointHistory(backupData.pointHistory || []);
-      setExchangeItems(backupData.exchangeItems || []);
-      setCustomAchievements(backupData.customAchievements || []);
-      setUnlockedAchievements(backupData.unlockedAchievements || []);
+   
+    
+
       
       // 保存 Gist ID
       localStorage.setItem('github_gist_id', gistId);
@@ -9003,29 +8478,27 @@ const handleRestoreData = useCallback(async (backupData) => {
     const normalizedData = {
       tasksByDate: backupData.tasksByDate || backupData.tasks || {},
       templates: backupData.templates || [],
-      pointHistory: backupData.pointHistory || [],
-      exchangeItems: backupData.exchange || backupData.exchangeItems || [],
-      customAchievements: backupData.customAchievements || [],
-      unlockedAchievements: backupData.unlockedAchievements || [],
+
+
+
+  
       categories: backupData.categories || baseCategories
     };
 
     // 保存到存储
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
-    await saveMainData('pointHistory', normalizedData.pointHistory);
-    await saveMainData('exchange', normalizedData.exchangeItems);
-    await saveMainData('customAchievements', normalizedData.customAchievements);
-    await saveMainData('unlockedAchievements', normalizedData.unlockedAchievements);
+  
+  
+
     await saveMainData('categories', normalizedData.categories);
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
-    setPointHistory(normalizedData.pointHistory);
-    setExchangeItems(normalizedData.exchangeItems);
-    setCustomAchievements(normalizedData.customAchievements);
-    setUnlockedAchievements(normalizedData.unlockedAchievements);
+ 
+
+
     setCategories(normalizedData.categories);
 
     console.log('✅ 数据恢复完成');
@@ -9059,10 +8532,8 @@ const syncToGitHub = useCallback(async () => {
     const syncData = {
       tasksByDate,
       templates,
-      pointHistory,
-      exchangeItems,
-      customAchievements,
-      unlockedAchievements,
+  
+  
       syncTime: new Date().toISOString(),
       version: '1.1'
     };
@@ -9153,10 +8624,9 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates, pointHistory, exchangeItems, customAchievements, unlockedAchievements]);
+}, [tasksByDate, templates]);
 
 
-// 在现有的 useCallback 函数后面添加这个：
 
 
 
@@ -9421,61 +8891,6 @@ useEffect(() => {
 
 
 
-// 修复：成就检查逻辑
-useEffect(() => {
-  const checkAndUnlockAchievements = () => {
-    console.log('🔍 开始成就检查:', {
-      isInitialized,
-      任务天数: Object.keys(tasksByDate).length,
-      已解锁成就: unlockedAchievements.length
-    });
-
-    if (isInitialized && Object.keys(tasksByDate).length > 0) {
-      try {
-        const userData = {
-          tasksByDate: tasksByDate || {},
-          templates: templates || [],
-          pointHistory: pointHistory || [],
-          exchangeItems: exchangeItems || []
-        };
-        
-        const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
-        
-        console.log('🎯 新解锁成就检查结果:', newlyUnlocked);
-        
-        if (newlyUnlocked.length > 0) {
-          console.log('🎉 发现新成就，准备解锁:', newlyUnlocked.map(a => a.name));
-          
-          // 修复：确保状态更新和存储保存
-          const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
-          const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
-          
-          // 先更新状态
-          setUnlockedAchievements(updatedUnlocked);
-          setNewAchievements(newlyUnlocked);
-          
-          // 然后保存到存储
-          saveMainData('unlockedAchievements', updatedUnlocked)
-            .then(() => {
-              console.log('✅ 成就数据保存成功');
-              setShowAchievementsModal(true);
-            })
-            .catch(error => {
-              console.error('❌ 成就数据保存失败:', error);
-            });
-        }
-      } catch (error) {
-        console.error('❌ 成就检查过程出错:', error);
-      }
-    }
-  };
-
-  // 延迟检查，确保数据完全加载
-  if (isInitialized) {
-    const timer = setTimeout(checkAndUnlockAchievements, 1500);
-    return () => clearTimeout(timer);
-  }
-}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
 
 
 
@@ -10462,35 +9877,6 @@ const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
   }
 };
 
-// ========== 自定义成就处理函数 ==========
-const handleAddCustomAchievement = (achievement) => {
-  console.log('添加自定义成就:', achievement);
-  const updatedAchievements = [...customAchievements, achievement];
-  setCustomAchievements(updatedAchievements);
-  saveMainData('customAchievements', updatedAchievements);
-  setShowCustomAchievementModal(false);
-  setEditingAchievement(null);
-};
-
-const handleEditCustomAchievement = (achievement) => {
-  setCustomAchievements(prev => prev.map(a => 
-    a.id === achievement.id ? achievement : a
-  ));
-  saveMainData('customAchievements', customAchievements);
-};
-
-const handleDeleteCustomAchievement = (achievementId) => {
-  if (window.confirm('确定要删除这个自定义成就吗？')) {
-    setCustomAchievements(prev => prev.filter(a => a.id !== achievementId));
-    setUnlockedAchievements(prev => prev.filter(id => id !== achievementId));
-    saveMainData('customAchievements', customAchievements.filter(a => a.id !== achievementId));
-  }
-};
-
-const handleOpenCustomAchievementModal = (achievement = null) => {
-  setEditingAchievement(achievement);
-  setShowCustomAchievementModal(true);
-};
 
 
 // 子类别管理模态框组件
@@ -10678,105 +10064,7 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-// 加载已解锁的成就
-useEffect(() => {
-  const loadUnlockedAchievements = async () => {
-    try {
-      const savedAchievements = await loadMainData('unlockedAchievements');
-      if (savedAchievements) {
-        setUnlockedAchievements(savedAchievements);
-      }
-    } catch (error) {
-      console.error('加载成就数据失败:', error);
-    }
-  };
 
-  if (isInitialized) {
-    loadUnlockedAchievements();
-  }
-}, [isInitialized]);
-
-// 保存已解锁的成就
-useEffect(() => {
-  const saveUnlockedAchievements = async () => {
-    if (isInitialized && unlockedAchievements.length > 0) {
-      await saveMainData('unlockedAchievements', unlockedAchievements);
-    }
-  };
-
-  saveUnlockedAchievements();
-}, [unlockedAchievements, isInitialized]);
-
-// 调试函数 - 在控制台测试成就
-useEffect(() => {
-  window.debugAchievements = {
-    // 强制检查所有成就
-    checkAll: () => {
-      const userData = {
-        tasksByDate,
-        templates,
-        pointHistory,
-        exchangeItems
-      };
-      const allAchievements = Object.values(ACHIEVEMENTS_CONFIG).flat();
-      const unlocked = allAchievements.filter(ach => ach.condition(userData));
-      console.log('可解锁成就:', unlocked);
-      return unlocked;
-    },
-    // 重置成就
-    reset: async () => {
-      setUnlockedAchievements([]);
-      await saveMainData('unlockedAchievements', []);
-      console.log('成就已重置');
-    },
-    // 解锁特定成就（用于测试）
-    unlock: (achievementId) => {
-      const allAchievements = Object.values(ACHIEVEMENTS_CONFIG).flat();
-      const achievement = allAchievements.find(ach => ach.id === achievementId);
-      if (achievement && !unlockedAchievements.includes(achievementId)) {
-        setNewAchievements([achievement]);
-        setUnlockedAchievements(prev => [...prev, achievementId]);
-        setShowAchievementsModal(true);
-      }
-    }
-  };
-}, [tasksByDate, templates, pointHistory, exchangeItems, unlockedAchievements]);
-
-// 修复：成就检查 - 只在任务数据变化时检查
-useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length > 0) {
-    console.log('🔄 任务数据变化，检查成就...');
-    
-    const userData = {
-      tasksByDate,
-      templates: templates || [],
-      pointHistory: pointHistory || [],
-      exchangeItems: exchangeItems || []
-    };
-    
-    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements || []);
-    
-    if (newlyUnlocked.length > 0) {
-      console.log('🎉 解锁新成就:', newlyUnlocked.map(a => a.name));
-      
-      // 更新状态
-      const newUnlockedIds = newlyUnlocked.map(ach => ach.id);
-      const updatedUnlocked = [...unlockedAchievements, ...newUnlockedIds];
-      
-      setUnlockedAchievements(updatedUnlocked);
-      setNewAchievements(newlyUnlocked);
-      
-      // 保存到存储
-      saveMainData('unlockedAchievements', updatedUnlocked);
-      
-      // 显示成就弹窗
-      setTimeout(() => {
-        setShowAchievementsModal(true);
-      }, 500);
-    }
-  }
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [tasksByDate, isInitialized]);
 
 
 
@@ -10787,11 +10075,6 @@ const generateDailyLog = () => {
 
   
  
-
-  // 获取当前日期的复盘内容
- 
-
-
 
   // 按分类和子分类组织任务
   const tasksByCategory = {};
@@ -11123,125 +10406,6 @@ const generateDailyLog = () => {
 
 
 
-
-
-
-
-
-
-
-
-
-  // 积分记录函数
-  const recordPointChange = (change, reason, currentTotal) => {
-    const historyEntry = {
-      date: new Date().toISOString(),
-      change: change,
-      reason: reason,
-      totalAfterChange: currentTotal
-    };
-
-    setPointHistory(prev => [historyEntry, ...prev]);
-  };
-
-
-
-
-
-
-
-
-
-
-
-  
-
-// 暴露实例给全局调试
-useEffect(() => {
-  window.appInstance = {
-    saveAllData: () => {
-      saveMainData('tasks', tasksByDate);
-      saveMainData('templates', templates);
-      saveMainData('pointHistory', pointHistory);
-      saveMainData('exchange', exchangeItems);
-      saveMainData('customAchievements', customAchievements);
-      saveMainData('unlockedAchievements', unlockedAchievements);
-      
-    },
-    getState: () => ({
-      tasksByDate,
-      templates,
-      pointHistory,
-      exchangeItems,
-      customAchievements,
-      unlockedAchievements,
-      isInitialized,
-      selectedDate,
-      // 添加模态框状态
-      showAchievementsModal,
-      showCustomAchievementModal,
-      editingAchievement,
-      todayTasks: tasksByDate[selectedDate] || []
-    }),
-    // 添加setState方法
-    setState: (newState) => {
-      if (newState.showAchievementsModal !== undefined) setShowAchievementsModal(newState.showAchievementsModal);
-      if (newState.showCustomAchievementModal !== undefined) setShowCustomAchievementModal(newState.showCustomAchievementModal);
-      if (newState.unlockedAchievements !== undefined) setUnlockedAchievements(newState.unlockedAchievements);
-      if (newState.customAchievements !== undefined) setCustomAchievements(newState.customAchievements);
-      
-    }
-  };
-  
-  return () => {
-    delete window.appInstance;
-  };
-}, [tasksByDate, templates, pointHistory, exchangeItems, customAchievements, unlockedAchievements, isInitialized, selectedDate, showAchievementsModal, showCustomAchievementModal, editingAchievement]);
-  
-
-
-// 成就检查逻辑
-useEffect(() => {
-  console.log('🔍 成就检查触发:', {
-    isInitialized,
-    tasksByDateCount: Object.keys(tasksByDate).length,
-    unlockedAchievementsCount: unlockedAchievements.length
-  });
-  
-  if (isInitialized && Object.keys(tasksByDate).length > 0) {
-    const userData = {
-      tasksByDate,
-      templates,
-      pointHistory,
-      exchangeItems
-    };
-    
-    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
-    
-    console.log('新解锁成就:', newlyUnlocked);
-    
-    if (newlyUnlocked.length > 0) {
-      setNewAchievements(newlyUnlocked);
-      setUnlockedAchievements(prev => [
-        ...prev,
-        ...newlyUnlocked.map(ach => ach.id)
-      ]);
-      
-      setTimeout(() => {
-        setShowAchievementsModal(true);
-      }, 1000);
-    }
-  }
-}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
-
-
-
-
-
-
-
-
-
   // ==== 新增：状态变化监听 ====
   useEffect(() => {
     console.log('🔄 tasksByDate 状态变化:', {
@@ -11255,13 +10419,8 @@ useEffect(() => {
     console.log('🔄 templates 状态变化:', templates);
   }, [templates]);
   
-  useEffect(() => {
-    console.log('🔄 pointHistory 状态变化:', pointHistory);
-  }, [pointHistory]);
-  
-  useEffect(() => {
-    console.log('🔄 exchangeItems 状态变化:', exchangeItems);
-  }, [exchangeItems]);
+
+
   
 
 
@@ -11684,23 +10843,9 @@ useEffect(() => {
   saveTemplateData();
 }, [templates]);
 
-useEffect(() => {
-  const saveExchangeData = async () => {
-    if (exchangeItems.length > 0) {
-      await saveMainData('exchange', exchangeItems);
-    }
-  };
-  saveExchangeData();
-}, [exchangeItems]);
 
-useEffect(() => {
-  const savePointHistory = async () => {
-    if (pointHistory.length > 0) {
-      await saveMainData('pointHistory', pointHistory);
-    }
-  };
-  savePointHistory();
-}, [pointHistory]);
+
+
 
 
 useEffect(() => {
@@ -11743,41 +10888,11 @@ if (savedTemplates) {
   setTemplates(savedTemplates);
 }
 
-// 加载积分历史
-const savedPointHistory = await loadDataWithFallback('pointHistory', []);
-if (savedPointHistory) {
-  setPointHistory(savedPointHistory);
-} else {
-  setPointHistory([{
-    date: new Date().toISOString(),
-    change: 0,
-    reason: '系统初始化',
-    totalAfterChange: 0
-  }]);
-}
 
-// 加载兑换物品
-const savedExchangeItems = await loadDataWithFallback('exchange', []);
-if (savedExchangeItems) {
-  setExchangeItems(savedExchangeItems);
-}
 
-// 加载自定义成就
-const savedCustomAchievements = await loadDataWithFallback('customAchievements', []);
-if (savedCustomAchievements) {
-  setCustomAchievements(savedCustomAchievements);
-} else {
-  setCustomAchievements([]);
-}
 
-// 加载已解锁成就
-const savedUnlockedAchievements = await loadDataWithFallback('unlockedAchievements', []);
-console.log('✅ 加载的已解锁成就:', savedUnlockedAchievements);
-if (savedUnlockedAchievements) {
-  setUnlockedAchievements(savedUnlockedAchievements);
-} else {
-  setUnlockedAchievements([]);
-}
+
+
 
 // 加载分类数据
 const savedCategories = await loadDataWithFallback('categories', null);
@@ -11903,34 +11018,6 @@ useEffect(() => {
 
 
 
-// ==== 保留：原来的成就检查 useEffect ====
-useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length > 0) {
-    const userData = {
-      tasksByDate,
-      templates,
-      pointHistory,
-      exchangeItems
-    };
-    
-    const newlyUnlocked = checkAchievements(userData, unlockedAchievements, customAchievements);
-    
-    if (newlyUnlocked.length > 0) {
-      setNewAchievements(newlyUnlocked);
-      setUnlockedAchievements(prev => [
-        ...prev,
-        ...newlyUnlocked.map(ach => ach.id)
-      ]);
-      
-      setTimeout(() => {
-        setShowAchievementsModal(true);
-      }, 1000);
-    }
-  }
-}, [tasksByDate, isInitialized, unlockedAchievements, templates, pointHistory, exchangeItems, customAchievements]);
-
-
-
 
 
 
@@ -11963,13 +11050,6 @@ useEffect(() => {
   }
 }, [pointHistory, isInitialized]);
 
-// 自动保存兑换物品
-useEffect(() => {
-  if (isInitialized) { // 这里必须使用 isInitialized
-    console.log('💾 自动保存兑换物品...');
-    saveMainData('exchange', exchangeItems);
-  }
-}, [exchangeItems, isInitialized]);
 
 
 
@@ -11980,8 +11060,6 @@ const checkDataIntegrity = async () => {
   const integrityReport = {
     tasks: { exists: false, count: 0 },
     templates: { exists: false, count: 0 },
-    customAchievements: { exists: false, count: 0 },
-    unlockedAchievements: { exists: false, count: 0 },
     categories: { exists: false, count: 0 }
   };
 
@@ -11995,13 +11073,6 @@ const checkDataIntegrity = async () => {
     integrityReport.templates.exists = !!templates;
     integrityReport.templates.count = templates ? templates.length : 0;
 
-    const customAchievements = await loadMainData('customAchievements');
-    integrityReport.customAchievements.exists = !!customAchievements;
-    integrityReport.customAchievements.count = customAchievements ? customAchievements.length : 0;
-
-    const unlockedAchievements = await loadMainData('unlockedAchievements');
-    integrityReport.unlockedAchievements.exists = !!unlockedAchievements;
-    integrityReport.unlockedAchievements.count = unlockedAchievements ? unlockedAchievements.length : 0;
 
     const categories = await loadMainData('categories');
     integrityReport.categories.exists = !!categories;
@@ -12014,16 +11085,9 @@ const checkDataIntegrity = async () => {
       console.log('⚠️ 任务数据缺失，重新初始化...');
       await saveMainData('tasks', {});
     }
+
     
-    if (!integrityReport.customAchievements.exists) {
-      console.log('⚠️ 自定义成就数据缺失，重新初始化...');
-      await saveMainData('customAchievements', []);
-    }
-    
-    if (!integrityReport.unlockedAchievements.exists) {
-      console.log('⚠️ 已解锁成就数据缺失，重新初始化...');
-      await saveMainData('unlockedAchievements', []);
-    }
+   
 
   } catch (error) {
     console.error('数据完整性检查失败:', error);
@@ -13347,10 +12411,7 @@ const clearAllData = async () => {
     setActiveTimer(null);
     setElapsedTime(0);
 
-     // 修复：清空成就数据
-    setUnlockedAchievements([]);
-    setNewAchievements([]);
-    setCustomAchievements([]);
+ 
     
     
     // 清空所有存储
@@ -13404,21 +12465,13 @@ const handleExportData = async () => {
       templates: await loadDataWithFallback('templates', []),
       exchange: await loadDataWithFallback('exchange', []),
       pointHistory: await loadDataWithFallback('pointHistory', []),
-      customAchievements: await loadDataWithFallback('customAchievements', []),
-      unlockedAchievements: await loadDataWithFallback('unlockedAchievements', []),
+
       categories: await loadDataWithFallback('categories', baseCategories),
       exportDate: new Date().toISOString(),
       version: '1.1'
     };
     
-    // 验证数据完整性
-    const dataStats = {
-      任务天数: Object.keys(allData.tasks).length,
-      模板数量: allData.templates.length,
-      成就数量: allData.customAchievements.length,
-      已解锁成就: allData.unlockedAchievements.length
-    };
-    console.log('📊 导出数据统计:', dataStats);
+  
     
     const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
@@ -13917,734 +12970,10 @@ const generateMarkdownContent = () => {
 const todayStats = calculateTodayStats();
 const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
-  // 积分荣誉模态框 - 调整后的版本
-  const HonorModal = () => {
-    const [showClearConfirm, setShowClearConfirm] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
-
-    
-    const handleClearPoints = async () => {
-      const currentPoints = totalPoints;
-      recordPointChange(-currentPoints, '积分清零', 0);
-    
-      const clearedTasksByDate = {};
-      Object.keys(tasksByDate).forEach(date => {
-        clearedTasksByDate[date] = tasksByDate[date].map(task => ({
-          ...task,
-          done: false
-        }));
-      });
-    
-      setTasksByDate(clearedTasksByDate);
-      
-      // 保存到存储
-      await saveMainData('tasks', clearedTasksByDate);
-      
-      setShowClearConfirm(false);
-      setShowHonorModal(false);
-      setTasksByDate(clearedTasksByDate);
-    };
-
-
-      
-    
-    
-
-    // 积分历史记录组件
-    const PointHistory = () => (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1002
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: 20,
-          borderRadius: 10,
-          width: '90%',
-          maxWidth: 400,
-          maxHeight: '80vh',
-          overflow: 'auto'
-        }}>
-          <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-            📊 积分历史记录
-          </h3>
-
-          <div style={{
-            backgroundColor: '#f8f9fa',
-            padding: 15,
-            borderRadius: 8,
-            marginBottom: 15,
-            maxHeight: 300,
-            overflow: 'auto'
-          }}>
-            {pointHistory.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>
-                暂无积分记录
-              </div>
-            ) : (
-              pointHistory.map((entry, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px 8px',
-                    borderBottom: index < pointHistory.length - 1 ? '1px solid #e0e0e0' : 'none',
-                    backgroundColor: index % 2 === 0 ? '#fff' : '#f8f9fa'
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: 14,
-                      fontWeight: 'bold',
-                      color: entry.change > 0 ? '#28a745' : entry.change < 0 ? '#dc3545' : '#666'
-                    }}>
-                      {entry.change > 0 ? '+' : ''}{entry.change} 分
-                    </div>
-                    <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                      {entry.reason}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>
-                      {new Date(entry.date).toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 12,
-                    fontWeight: 'bold',
-                    color: '#1a73e8',
-                    marginLeft: 10
-                  }}>
-                    总计: {entry.totalAfterChange}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <button
-            onClick={() => setShowHistory(false)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            关闭
-          </button>
-        </div>
-      </div>
-    );
-
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000
-      }}>
-        <div style={{
-          backgroundColor: "white",
-          padding: 20,
-          borderRadius: 10,
-          width: "90%",
-          maxWidth: 400,
-          maxHeight: "85vh",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column"
-        }}>
-          <h3 style={{
-            textAlign: "center",
-            marginBottom: 15,
-            color: "#1a73e8",
-            fontSize: 18,
-            marginTop: 0
-          }}>
-            🏆 积分荣誉
-          </h3>
-
-          {/* 积分显示区域 */}
-          <div style={{
-            textAlign: "center",
-            marginBottom: 15,
-            padding: 12,
-            backgroundColor: '#e8f0fe',
-            borderRadius: 10,
-            border: '2px solid #1a73e8'
-          }}>
-            <div style={{ fontSize: 14, color: "#666", marginBottom: 5 }}>
-              当前积分
-            </div>
-            <div style={{
-              fontSize: 28,
-              fontWeight: "bold",
-              color: "#1a73e8",
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
-            }}>
-              {totalPoints} 分
-            </div>
-          </div>
-
-          {/* 时间统计 */}
-          <div style={{
-            marginBottom: 15,
-            padding: 12,
-            backgroundColor: '#f8f9fa',
-            borderRadius: 8,
-            border: '1px solid #e0e0e0',
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto'
-          }}>
-            <div style={{ marginBottom: 12, fontWeight: "bold", color: "#333", fontSize: 14 }}>时间统计:</div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 8,
-              textAlign: 'center',
-              marginBottom: 15
-            }}>
-              <div style={{
-                padding: 10,
-                backgroundColor: '#fff',
-                borderRadius: 8,
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>今日</div>
-                <div style={{ fontSize: 16, fontWeight: 'bold', color: '#28a745' }}>
-                  {todayPoints} 分
-                </div>
-              </div>
-              <div style={{
-                padding: 10,
-                backgroundColor: '#fff',
-                borderRadius: 8,
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>本周</div>
-                <div style={{ fontSize: 16, fontWeight: 'bold', color: '#1a73e8' }}>
-                  {weekPoints} 分
-                </div>
-              </div>
-              <div style={{
-                padding: 10,
-                backgroundColor: '#fff',
-                borderRadius: 8,
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>本月</div>
-                <div style={{ fontSize: 16, fontWeight: 'bold', color: '#ff6b6b' }}>
-                  {monthPoints} 分
-                </div>
-              </div>
-            </div>
-
-            {/* 各科目积分 */}
-            <div style={{ marginBottom: 12, fontWeight: "bold", color: "#333", fontSize: 14 }}>各科目积分:</div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 6
-            }}>
-              {categories.map(cat => (
-                <div key={cat.name} style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "6px 8px",
-                  backgroundColor: '#fff',
-                  borderRadius: 6,
-                  border: '1px solid #e0e0e0',
-                  fontSize: 12
-                }}>
-                  <span>{cat.name}</span>
-                  <span style={{
-                    fontWeight: "bold",
-                    color: pointsByCategory[cat.name]?.total > 0 ? '#1a73e8' : '#666'
-                  }}>
-                    {pointsByCategory[cat.name]?.total || 0}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 按钮区域 - 确保在可视区域内 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 8,
-            marginTop: 'auto'
-          }}>
-            <button
-              onClick={() => {
-                setShowHonorModal(false);
-                setShowExchangeModal(true);
-              }}
-              style={{
-                padding: "10px 6px",
-                backgroundColor: "#28a745",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: "bold",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              🎁 兑换
-            </button>
-
-            <button
-              onClick={() => setShowHistory(true)}
-              style={{
-                padding: "10px 6px",
-                backgroundColor: "#17a2b8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: "bold",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              📊 历史
-            </button>
-
-            <button
-              onClick={() => setShowClearConfirm(true)}
-              style={{
-                padding: "10px 6px",
-                backgroundColor: "#ff6b6b",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: "bold",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              🗑️ 清零
-            </button>
-
-            <button
-              onClick={() => setShowHonorModal(false)}
-              style={{
-                padding: "10px 6px",
-                backgroundColor: "#6c757d",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: "bold",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4
-              }}
-            >
-              ❌ 关闭
-            </button>
-          </div>
-
-          {/* 积分历史模态框 */}
-          {showHistory && <PointHistory />}
-
-          {/* 清零确认模态框 */}
-          {showClearConfirm && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 1001
-            }}>
-              <div style={{
-                backgroundColor: 'white',
-                padding: 20,
-                borderRadius: 10,
-                width: '80%',
-                maxWidth: 300
-              }}>
-                <h4 style={{ textAlign: 'center', marginBottom: 15, color: '#d32f2f' }}>
-                  确认清零积分？
-                </h4>
-                <p style={{ textAlign: 'center', marginBottom: 15, fontSize: 14, lineHeight: 1.4 }}>
-                  这将重置所有任务的完成状态，当前积分 {totalPoints} 分将被清零。
-                </p>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={() => setShowClearConfirm(false)}
-                    style={{
-                      flex: 1,
-                      padding: 10,
-                      backgroundColor: '#ccc',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 14
-                    }}
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={handleClearPoints}
-                    style={{
-                      flex: 1,
-                      padding: 10,
-                      backgroundColor: '#d32f2f',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 14
-                    }}
-                  >
-                    确认清零
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
 
 
-  // 积分兑换模态框
-  const ExchangeModal = ({
-    exchangeItems,
-    totalPoints,
-    onClose,
-    onExchange,
-    onAddItem,
-    onDeleteItem
-  }) => {
-    const fileInputRef = useRef(null);
-    const [localName, setLocalName] = useState('');
-    const [localPoints, setLocalPoints] = useState(0);
-    const [localImage, setLocalImage] = useState(null);
-
-    const handleImageUpload = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setLocalImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    };
-
-    const handleAddItem = () => {
-      if (localName && localPoints > 0) {
-        const newItemData = {
-          name: localName,
-          points: localPoints,
-          image: localImage
-        };
-
-        onAddItem(newItemData);
-        setLocalName('');
-        setLocalPoints(0);
-        setLocalImage(null);
-
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    };
-
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: 20,
-          borderRadius: 10,
-          width: '90%',
-          maxWidth: 400,
-          maxHeight: '80vh',
-          overflow: 'auto',
-          position: 'relative'
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              backgroundColor: 'transparent',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#666',
-              width: '30px',
-              height: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              zIndex: 1001
-            }}
-            title="关闭"
-          >
-            ×
-          </button>
-
-          <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-            🎁 积分兑换
-          </h3>
-
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 12,
-            borderRadius: 8,
-            textAlign: 'center',
-            marginBottom: 15
-          }}>
-            <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>当前积分</div>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1a73e8' }}>
-              {totalPoints} 分
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 20, padding: 15, border: '1px solid #e0e0e0', borderRadius: 8 }}>
-            <div style={{ marginBottom: 12, fontWeight: 'bold', fontSize: 14 }}>添加兑换物品:</div>
-
-            <input
-              type="text"
-              placeholder="物品名称"
-              value={localName}
-              onChange={(e) => setLocalName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                marginBottom: 8,
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                fontSize: 14
-              }}
-            />
-
-            <input
-              type="number"
-              placeholder="所需积分"
-              value={localPoints}
-              onChange={(e) => setLocalPoints(parseInt(e.target.value) || 0)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                marginBottom: 8,
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                fontSize: 14
-              }}
-            />
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  flex: 1,
-                  padding: 8,
-                  backgroundColor: '#6c757d',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontSize: 12
-                }}
-              >
-                选择图片
-              </button>
-              {localImage && (
-                <button
-                  onClick={() => setLocalImage(null)}
-                  style={{
-                    padding: 8,
-                    backgroundColor: '#dc3545',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 12
-                  }}
-                >
-                  清除
-                </button>
-              )}
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-
-            {localImage && (
-              <img
-                src={localImage}
-                alt="预览"
-                style={{
-                  width: '100%',
-                  maxHeight: 100,
-                  objectFit: 'contain',
-                  borderRadius: 6,
-                  marginBottom: 8
-                }}
-              />
-            )}
-
-            <button
-              onClick={handleAddItem}
-              disabled={!localName || localPoints <= 0}
-              style={{
-                width: '100%',
-                padding: 10,
-                backgroundColor: (!localName || localPoints <= 0) ? '#ccc' : '#28a745',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: (!localName || localPoints <= 0) ? 'not-allowed' : 'pointer',
-                fontSize: 14
-              }}
-            >
-              添加物品
-            </button>
-          </div>
-
-          <div>
-            <div style={{ marginBottom: 8, fontWeight: 'bold', fontSize: 14 }}>可兑换物品:</div>
-            {exchangeItems.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#666', fontSize: 12, padding: 20 }}>
-                暂无兑换物品
-              </div>
-            ) : (
-              <div style={{ maxHeight: 300, overflow: 'auto' }}>
-                {exchangeItems.map((item, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: 10,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 6,
-                      marginBottom: 8,
-                      backgroundColor: totalPoints >= item.points ? '#f8f9fa' : '#f5f5f5'
-                    }}
-                  >
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        style={{
-                          width: 50,
-                          height: 50,
-                          objectFit: 'cover',
-                          borderRadius: 4,
-                          marginRight: 10
-                        }}
-                      />
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', fontSize: 14 }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: '#666' }}>需要 {item.points} 积分</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
-                      <button
-                        onClick={() => onExchange(item, index)}
-                        disabled={totalPoints < item.points}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: totalPoints < item.points ? '#ccc' : '#28a745',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: totalPoints < item.points ? 'not-allowed' : 'pointer',
-                          fontSize: 12
-                        }}
-                      >
-                        兑换
-                      </button>
-                      <button
-                        onClick={() => onDeleteItem(index)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#dc3545',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          fontSize: 12
-                        }}
-                      >
-                        删除
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  
 
   // 统计页面
   const StatsPage = () => {
@@ -14978,18 +13307,7 @@ const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompl
 
 
 // ==== 渲染调试 - 展开详细内容 ====
-console.log('🎨 组件渲染 - 详细状态:', {
-  任务天数: Object.keys(tasksByDate).length,
-  任务数据所有日期: Object.keys(tasksByDate),
-  选中日期: selectedDate,
-  今日任务数量: todayTasks.length,
-  今日任务详情: todayTasks,
-  模板数量: templates.length,
-  积分历史数量: pointHistory.length,
-  积分历史详情: pointHistory,
-  兑换物品数量: exchangeItems.length,
-  是否初始化: isInitialized
-});
+
 
 // 特别检查今日任务
 console.log('📅 今日任务检查:');
@@ -15042,25 +13360,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{console.log('渲染时 showCustomAchievementModal:', showCustomAchievementModal) || null}
-{showCustomAchievementModal && (
-  <CustomAchievementModal
-    onSave={(achievement) => {
-      console.log('保存成就:', achievement);
-      if (editingAchievement) {
-        handleEditCustomAchievement(achievement);
-      } else {
-        handleAddCustomAchievement(achievement);
-      }
-    }}
-    onClose={() => {
-      console.log('🔴 CustomAchievementModal onClose 被调用了！'); // 添加这行
-      setShowCustomAchievementModal(false);
-      setEditingAchievement(null);
-    }}
-    editAchievement={editingAchievement}
-  />
-)}
+
 
 {/* 子类别管理模态框 */}
 {editingCategory && (
@@ -15072,34 +13372,6 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
-
- 
-      {/* 成就模态框 */}
-      {showAchievementsModal && (
-  <AchievementsModal
-    achievements={newAchievements}
-    onClose={() => {
-      setShowAchievementsModal(false);
-      setNewAchievements([]);
-    }}
-    isNew={newAchievements.length > 0}
-    unlockedAchievements={unlockedAchievements}
-    onAddCustom={() => {
-      console.log('开始设置 showCustomAchievementModal 为 true');
-      setShowCustomAchievementModal(true);
-      console.log('设置 showCustomAchievementModal 为 true');
-  
-      // 添加一个延时检查状态
-      setTimeout(() => {
-        console.log('当前 showCustomAchievementModal 状态:', showCustomAchievementModal);
-      }, 100);
-    }}
-    onEditCustom={handleOpenCustomAchievementModal}
-    onDeleteCustom={handleDeleteCustomAchievement}
-    customAchievements={customAchievements}
-  />
-)}
-
     {showGradeModal && (
       <GradeModal 
         onClose={() => setShowGradeModal(false)} 
@@ -15109,14 +13381,7 @@ if (isInitialized && todayTasks.length === 0) {
  
 
 
-      {showHonorModal && <HonorModal />}
-      {showRepeatModal && (
-        <RepeatModal
-          config={repeatConfig}
-          onSave={(newConfig) => setRepeatConfig(newConfig)}
-          onClose={() => setShowRepeatModal(false)}
-        />
-      )}
+     
       
   
       {showDailyLogModal && (
@@ -15287,49 +13552,7 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
-      {showExchangeModal && (
-        <ExchangeModal
-          exchangeItems={exchangeItems}
-          totalPoints={totalPoints}
-          onClose={() => setShowExchangeModal(false)}
-          onExchange={handleExchange}
-          onAddItem={handleAddExchangeItem}
-          onDeleteItem={handleDeleteExchangeItem}
-        />
-      )}
-
-      {showDatePickerModal && (
-        <DatePickerModal
-          onClose={() => setShowDatePickerModal(false)}
-          onSelectDate={handleDateSelect}
-          tasksByDate={tasksByDate}  // 添加这行
-        />
-      )}
-
-{showTaskEditModal && (
-  <TaskEditModal
-    task={showTaskEditModal}
-    categories={categories}
-    onClose={() => setShowTaskEditModal(null)}
-    onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
-    onTogglePinned={togglePinned}
-    onImageUpload={handleImageUpload}
-    setShowDeleteModal={setShowDeleteModal}
-    setCategories={setCategories} // 添加这行
-    // ==== 添加这行 ====
-    setShowMoveTaskModal={setShowMoveTaskModal}
-    setShowCrossDateModal={setShowCrossDateModal}
-  />
-)}
-
-      {showMoveModal && (
-        <MoveSelectModal
-          task={showMoveModal}
-          categories={categories}
-          onClose={() => setShowMoveModal(null)}
-          onMove={moveTask}
-        />
-      )}
+      
 
       {showActionMenu && (
         <ActionMenuModal
@@ -15431,20 +13654,7 @@ if (isInitialized && todayTasks.length === 0) {
         alignItems: "center",
         marginBottom: 5
       }}>
-        <button
-          onClick={() => setShowHonorModal(true)}
-          style={{
-            padding: "4px 8px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            fontSize: 12,
-            cursor: "pointer"
-          }}
-        >
-          积分荣誉: {totalPoints}
-        </button>
+        
 
         <div style={{
           display: "flex",
@@ -17129,17 +15339,13 @@ reader.onload = async (event) => {
       await saveMainData('pointHistory', importedData.pointHistory || []);
       
       // ✅ 修复：导入所有关键数据
-      await saveMainData('customAchievements', importedData.customAchievements || []);
-      await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
       await saveMainData('categories', importedData.categories || baseCategories);
       
       // 更新状态
       setTasksByDate(importedData.tasks || {});
       setTemplates(importedData.templates || []);
       setExchangeItems(importedData.exchange || []);
-      setPointHistory(importedData.pointHistory || []);
-      setCustomAchievements(importedData.customAchievements || []);
-      setUnlockedAchievements(importedData.unlockedAchievements || []);
+  
       setCategories(importedData.categories || baseCategories);
       
       console.log('✅ 所有数据导入完成');
@@ -17224,24 +15430,7 @@ reader.onload = async (event) => {
   计时记录
 </button>
  
-        {/* 在这里添加成就按钮 */}
-        <button
-          onClick={() => setShowAchievementsModal(true)}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          我的成就
-        </button>
-
+        
 <button
   onClick={() => setShowGitHubSyncModal(true)}
   style={{
