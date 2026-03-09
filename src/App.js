@@ -6,6 +6,7 @@ import './App.css';
 
 
 const GradeModal = ({ onClose, isVisible }) => {
+  const [grades, setGrades] = useState([]);
   const [filterSubject, setFilterSubject] = useState('全部');
   const [newGrade, setNewGrade] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -618,7 +619,6 @@ const baseCategories = [
 // 保持这样就行
 const PAGE_ID = 'PAGE_A'; 
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
-
 
 
 
@@ -1864,6 +1864,7 @@ const testGistAccess = async () => {
 
 
 
+
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
   maxBackups: 7,                    // 保留7个备份
@@ -1906,6 +1907,7 @@ const calculateCurrentStreak = (tasksByDate) => {
 
 
 
+
 // 替换现有的 autoBackup 函数
 const autoBackup = async () => {
   try {
@@ -1916,9 +1918,8 @@ const autoBackup = async () => {
     const backupData = {
       tasks: await loadMainData('tasks') || {},
       templates: await loadMainData('templates') || [],
-      pointHistory: await loadMainData('pointHistory') || [],
-      exchange: await loadMainData('exchange') || [],
-
+      customAchievements: await loadMainData('customAchievements') || [],
+      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
       categories: await loadMainData('categories') || baseCategories,
       backupTime: new Date().toISOString(),
       version: '1.1' // 更新版本号
@@ -1984,10 +1985,11 @@ const restoreBackup = async (backupKey) => {
       // 保存所有关键数据到 localStorage
       await saveMainData('tasks', backupData.tasks || {});
       await saveMainData('templates', backupData.templates || []);
+
       
       // ✅ 修复：添加缺失的数据恢复
-      
-
+      await saveMainData('customAchievements', backupData.customAchievements || []);
+      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
       await saveMainData('categories', backupData.categories || baseCategories);
       
       console.log('✅ 所有数据已保存到 localStorage');
@@ -2025,7 +2027,7 @@ window.debugStudyTracker = {
   // 检查所有存储数据
   checkStorage: () => {
     console.log('=== 学习跟踪器存储调试 ===');
-    const keys = ['tasks', 'templates', 'pointHistory', 'exchange',   'categories'];
+    const keys = ['tasks', 'templates', 'categories'];
     keys.forEach(key => {
       const storageKey = `${STORAGE_KEY}_${key}`;
       const data = localStorage.getItem(storageKey);
@@ -2104,7 +2106,7 @@ window.debugStudyTracker = {
     console.log('🔧 开始修复缺失数据...');
     
     // 检查并修复所有关键数据
-    const keys = ['customAchievements',  'categories'];
+    const keys = ['customAchievements', 'unlockedAchievements', 'categories'];
     let fixedCount = 0;
     
     for (const key of keys) {
@@ -2124,7 +2126,7 @@ window.debugStudyTracker = {
   // 清除所有数据
   clearAll: () => {
     if (window.confirm('确定要清除所有数据吗？')) {
-      const keys = ['tasks', 'templates', 'pointHistory', 'exchange', 'categories'];
+      const keys = ['tasks', 'templates',  'categories'];
       keys.forEach(key => {
         localStorage.removeItem(`${STORAGE_KEY}_${key}`);
       });
@@ -2152,22 +2154,8 @@ const getWeekNumber = (date) => {
 const saveMainData = async (key, data) => {
   const storageKey = `${STORAGE_KEY}_${key}`;
   try {
-    // 检查数据中是否包含备注
-    if (key === 'tasks' && data) {
-      console.log('📝 保存任务数据，包含备注检查:');
-      Object.keys(data).forEach(date => {
-        const tasksWithNote = data[date].filter(t => t.note);
-        if (tasksWithNote.length > 0) {
-          console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
-          tasksWithNote.forEach(t => {
-            console.log(`    - ${t.text}: "${t.note}"`);
-          });
-        }
-      });
-    }
-    
     localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data ? '✅' : '❌');
+    console.log(`数据保存成功: ${key}`, data);
   } catch (error) {
     console.error(`数据保存失败: ${key}`, error);
   }
@@ -2205,7 +2193,7 @@ const migrateLegacyData = async () => {
     if (legacyTasks && !hasNewData) {
       console.log('🔁 检测到旧版本数据，开始迁移...');
       
-      const keys = ['tasks', 'templates', 'pointHistory', 'exchange'];
+      const keys = ['tasks', 'templates'];
       let migratedCount = 0;
       
       keys.forEach(key => {
@@ -7823,7 +7811,6 @@ function App() {
   const [newTaskText, setNewTaskText] = useState("");
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [pointHistory, setPointHistory] = useState([]);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
   const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
@@ -7840,10 +7827,11 @@ function App() {
   const [showDeleteModal, setShowDeleteModal] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templates, setTemplates] = useState([]);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
-  const [grades, setGrades] = useState([]);
   const bulkInputRef = useRef(null);
   // 临时保留旧变量避免错误
 
@@ -7856,6 +7844,9 @@ const handleSaveCategories = (updatedCategories) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [timerRecords, setTimerRecords] = useState([]);
   const [showTimerRecords, setShowTimerRecords] = useState(false);
+  const [customAchievements, setCustomAchievements] = useState([]);
+  const [showCustomAchievementModal, setShowCustomAchievementModal] = useState(false);
+  const [editingAchievement, setEditingAchievement] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
  const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 
@@ -7871,16 +7862,19 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [statsMode, setStatsMode] = useState("week");
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [showImageModal, setShowImageModal] = useState(null);
+  const [showHonorModal, setShowHonorModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyMoods, setDailyMoods] = useState({});
   const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [newAchievements, setNewAchievements] = useState([]);
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [activeTimer, setActiveTimer] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
   days: [false, false, false, false, false, false, false],
@@ -7894,6 +7888,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   reminderHour: "",
   reminderMinute: "",
 });
+
 
 
 
@@ -7985,17 +7980,14 @@ const restoreFromGitHub = useCallback(async () => {
       // 立即保存到 localStorage
       await saveMainData('tasks', backupData.tasksByDate || {});
       await saveMainData('templates', backupData.templates || []);
-  
-
+    
       
       console.log('数据已保存到 localStorage');
       
       // 然后设置状态
       setTasksByDate(backupData.tasksByDate || {});
       setTemplates(backupData.templates || []);
-   
-    
-
+  
       
       // 保存 Gist ID
       localStorage.setItem('github_gist_id', gistId);
@@ -8024,8 +8016,7 @@ const [syncConfig, setSyncConfig] = useState({
   autoSync: localStorage.getItem('github_auto_sync') === 'true',
   lastSync: localStorage.getItem('github_last_sync') || ''
 });
-const [lastSyncHash, setLastSyncHash] = useState('');
-const [isSyncing, setIsSyncing] = useState(false);
+
 
 
 // 修改计时记录编辑函数
@@ -8482,6 +8473,7 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 
+// 🔽 改成这样：🔽
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -8490,45 +8482,19 @@ const handleRestoreData = useCallback(async (backupData) => {
     const normalizedData = {
       tasksByDate: backupData.tasksByDate || backupData.tasks || {},
       templates: backupData.templates || [],
-      categories: backupData.categories || baseCategories,
-      dailyMoods: backupData.dailyMoods || {},
-      dailyRatings: backupData.dailyRatings || {},
-      dailyReflections: backupData.dailyReflections || {},
-      timerRecords: backupData.timerRecords || [],
-      grades: backupData.grades || [] // 添加 grades
-    };
 
-    // 调试：检查恢复数据中的备注
-    console.log('📝 恢复数据中的备注检查:');
-    Object.keys(normalizedData.tasksByDate).forEach(date => {
-      const tasksWithNote = normalizedData.tasksByDate[date].filter(t => t.note);
-      if (tasksWithNote.length > 0) {
-        console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
-        tasksWithNote.forEach(t => {
-          console.log(`    - ${t.text}: "${t.note}"`);
-        });
-      }
-    });
+      categories: backupData.categories || baseCategories
+    };
 
     // 保存到存储
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
     await saveMainData('categories', normalizedData.categories);
-    await saveMainData('dailyMoods', normalizedData.dailyMoods);
-    await saveMainData('dailyRatings', normalizedData.dailyRatings);
-    await saveMainData('dailyReflections', normalizedData.dailyReflections);
-    await saveMainData('timerRecords', normalizedData.timerRecords);
-    await saveMainData('grades', normalizedData.grades); // 保存 grades
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
     setCategories(normalizedData.categories);
-    setDailyMoods(normalizedData.dailyMoods);
-    setDailyRatings(normalizedData.dailyRatings);
-    setDailyReflections(normalizedData.dailyReflections);
-    setTimerRecords(normalizedData.timerRecords);
-    setGrades(normalizedData.grades); // 需要先声明这个 state
 
     console.log('✅ 数据恢复完成');
     
@@ -8543,74 +8509,36 @@ const handleRestoreData = useCallback(async (backupData) => {
   }
 }, []);
 
-// 计算数据哈希，用于检测数据变化
-const calculateDataHash = useCallback(() => {
-  const dataToHash = {
-    tasks: tasksByDate,
-    templates: templates
-  };
-  return JSON.stringify(dataToHash);
-}, [tasksByDate, templates]);
-
-
-
 
 // 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
 // eslint-disable-next-line no-unused-vars
 
 
 
-const syncToGitHub = useCallback(async (isAutoSync = false) => {
+const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
-    if (!isAutoSync) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-    }
-    return false;
+    setShowGitHubSyncModal(true);
+    alert('请先设置 GitHub Token');
+    return;
   }
 
-  if (isSyncing) return false;
-
-  setIsSyncing(true);
   try {
-    // 从存储加载所有数据
-    const savedGrades = await loadMainData('grades') || [];
-    
-    // 构建要同步的数据，确保包含所有字段
     const syncData = {
       tasksByDate,
       templates,
-      dailyMoods,
-      dailyRatings,
-      dailyReflections,
-      categories,
-      timerRecords,
-      grades: savedGrades,
+  
       syncTime: new Date().toISOString(),
-      version: '1.3' // 升级版本号
+      version: '1.1'
     };
-
-    // 调试：检查备注数据
-    console.log('📝 同步数据中的备注检查:');
-    Object.keys(tasksByDate).forEach(date => {
-      const tasksWithNote = tasksByDate[date].filter(t => t.note);
-      if (tasksWithNote.length > 0) {
-        console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
-        tasksWithNote.forEach(t => {
-          console.log(`    - ${t.text}: "${t.note}"`);
-        });
-      }
-    });
 
     const gistId = localStorage.getItem('github_gist_id');
     const jsonData = JSON.stringify(syncData, null, 2);
     
     let response;
-    let result;
     
     if (gistId) {
-      console.log('🔄 更新现有 Gist:', gistId);
+      // 更新现有Gist
       response = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: {
@@ -8626,16 +8554,8 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
           }
         })
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('更新失败:', response.status, errorText);
-        throw new Error(`更新失败: ${response.status}`);
-      }
-      
-      result = await response.json();
     } else {
-      console.log('🔄 创建新的 Gist');
+      // 创建新Gist
       response = await fetch('https://api.github.com/gists', {
         method: 'POST',
         headers: {
@@ -8652,42 +8572,37 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
           }
         })
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('创建失败:', response.status, errorText);
-        throw new Error(`创建失败: ${response.status}`);
-      }
-      
-      result = await response.json();
     }
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`同步失败: ${response.status} - ${errorText}`);
+    }
+
+    // 🔽 修复这里：确保正确解析响应
+    const result = await response.json();
+    
     if (!result || !result.id) {
       throw new Error('GitHub 响应格式错误');
     }
 
+    // 保存Gist ID（新建或更新都要保存）
     localStorage.setItem('github_gist_id', result.id);
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
-    // 更新哈希值
-    setLastSyncHash(calculateDataHash());
-    
+    // 更新同步配置状态
     setSyncConfig(prev => ({
       ...prev,
       gistId: result.id,
       lastSync: new Date().toISOString()
     }));
     
-    if (!isAutoSync) {
-      alert('✅ 同步成功！数据已备份到云端。\n备注数据已包含在备份中。');
-    }
-    
-    console.log('✅ 同步完成，Gist ID:', result.id);
-    return true;
+    alert('同步成功！数据已备份到云端。');
     
   } catch (error) {
     console.error('同步失败:', error);
     
+    // 更详细的错误信息
     let errorMessage = '同步失败: ';
     if (error.message.includes('401')) {
       errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
@@ -8695,109 +8610,21 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
       errorMessage += '权限不足，请检查 Token 是否有 gist 权限';
     } else if (error.message.includes('404')) {
       errorMessage += 'Gist 不存在，将创建新的备份';
+      // 清除无效的gistId，下次会创建新的
       localStorage.removeItem('github_gist_id');
     } else {
       errorMessage += error.message;
     }
     
-    if (!isAutoSync) {
-      alert(errorMessage);
-    }
-    return false;
-  } finally {
-    setIsSyncing(false);
+    alert(errorMessage);
   }
-}, [tasksByDate, templates, categories, dailyMoods, dailyRatings, dailyReflections, 
-    timerRecords, calculateDataHash, isSyncing]);
+}, [tasksByDate, templates]);
 
 
-// 自动恢复云端最新数据
-const autoRestoreFromCloud = useCallback(async () => {
-  const token = localStorage.getItem('github_token');
-  if (!token) return;
-
-  try {
-    const gistId = localStorage.getItem('github_gist_id');
-    if (!gistId) return;
-
-    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) return;
-
-    const gist = await response.json();
-    const content = gist.files['study-tracker-data.json']?.content;
-    if (!content) return;
-
-    const backupData = JSON.parse(content);
-    const cloudHash = JSON.stringify({
-      tasks: backupData.tasksByDate || {},
-      templates: backupData.templates || []
-    });
-
-    // 如果云端数据不同，自动恢复
-    if (cloudHash !== lastSyncHash) {
-      console.log('🔄 检测到云端更新，自动恢复...');
-      
-      if (window.confirm('检测到云端有更新的数据，是否恢复？')) {
-        await handleRestoreData(backupData);
-      } else {
-        // 如果用户拒绝恢复，更新哈希值避免重复提示
-        setLastSyncHash(calculateDataHash());
-      }
-    }
-  } catch (error) {
-    console.error('自动恢复检查失败:', error);
-  }
-}, [lastSyncHash, calculateDataHash, handleRestoreData]);
+// 在现有的 useCallback 函数后面添加这个：
 
 
-// 数据变化时自动上传到云端
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
-  if (!autoSyncEnabled) return;
 
-  const currentHash = calculateDataHash();
-  
-  // 如果数据有变化且不是刚恢复的数据
-  if (currentHash !== lastSyncHash && lastSyncHash !== '') {
-    const timeoutId = setTimeout(() => {
-      console.log('🔄 检测到数据变化，自动同步到云端...');
-      syncToGitHub(true);
-    }, 5000); // 5秒后同步，避免频繁请求
-    
-    return () => clearTimeout(timeoutId);
-  }
-}, [tasksByDate, templates, lastSyncHash, calculateDataHash, syncToGitHub, isInitialized]);
-
-// 设置定时检查云端更新（每30分钟）
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
-  if (!autoSyncEnabled) return;
-
-  // 启动时检查一次
-  const checkTimeout = setTimeout(() => {
-    autoRestoreFromCloud();
-  }, 3000);
-
-  // 每30分钟检查一次
-  const intervalId = setInterval(() => {
-    autoRestoreFromCloud();
-  }, 30 * 60 * 1000);
-
-  return () => {
-    clearTimeout(checkTimeout);
-    clearInterval(intervalId);
-  };
-}, [isInitialized, autoRestoreFromCloud]);
 
 
 // 修复 autoRestoreLatestData 函数
@@ -8893,8 +8720,6 @@ const autoRestoreLatestData = useCallback(async () => {
     alert(errorMessage);
   }
 }, [tasksByDate, handleRestoreData]);
-
-
 
 
 // 8. 实时计时器
@@ -10049,6 +9874,7 @@ const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
 
 
 
+
 // 子类别管理模态框组件
 const SubCategoryModal = ({ category, onSave, onClose }) => {
   const [subCategories, setSubCategories] = useState(category.subCategories || []);
@@ -10237,7 +10063,6 @@ useEffect(() => {
 
 
 
-
 const generateDailyLog = () => {
   const completedTasks = todayTasks.filter(task => task.done);
   const incompleteTasks = todayTasks.filter(task => !task.done);
@@ -10245,6 +10070,11 @@ const generateDailyLog = () => {
 
   
  
+
+  // 获取当前日期的复盘内容
+ 
+
+
 
   // 按分类和子分类组织任务
   const tasksByCategory = {};
@@ -10576,6 +10406,64 @@ const generateDailyLog = () => {
 
 
 
+
+
+
+
+
+
+
+
+
+ 
+
+  
+
+// 暴露实例给全局调试
+useEffect(() => {
+  window.appInstance = {
+    saveAllData: () => {
+      saveMainData('tasks', tasksByDate);
+      saveMainData('templates', templates);
+   
+      
+    },
+    getState: () => ({
+      tasksByDate,
+      templates,
+      isInitialized,
+      selectedDate,
+      // 添加模态框状态
+      showAchievementsModal,
+      showCustomAchievementModal,
+      editingAchievement,
+      todayTasks: tasksByDate[selectedDate] || []
+    }),
+    // 添加setState方法
+    setState: (newState) => {
+      if (newState.showAchievementsModal !== undefined) setShowAchievementsModal(newState.showAchievementsModal);
+      if (newState.showCustomAchievementModal !== undefined) setShowCustomAchievementModal(newState.showCustomAchievementModal);
+      if (newState.unlockedAchievements !== undefined) setUnlockedAchievements(newState.unlockedAchievements);
+      if (newState.customAchievements !== undefined) setCustomAchievements(newState.customAchievements);
+      
+    }
+  };
+  
+  return () => {
+    delete window.appInstance;
+  };
+}, [tasksByDate, templates, isInitialized, selectedDate, showAchievementsModal, showCustomAchievementModal, editingAchievement]);
+  
+
+
+
+
+
+
+
+
+
+
   // ==== 新增：状态变化监听 ====
   useEffect(() => {
     console.log('🔄 tasksByDate 状态变化:', {
@@ -10589,7 +10477,6 @@ const generateDailyLog = () => {
     console.log('🔄 templates 状态变化:', templates);
   }, [templates]);
   
-
 
   
 
@@ -11058,15 +10945,6 @@ if (savedTemplates) {
   setTemplates(savedTemplates);
 }
 
-// 设置初始哈希值 - 使用加载的数据直接计算，而不是等待状态更新
-setLastSyncHash(JSON.stringify({
-  tasks: savedTasks || {},
-  templates: savedTemplates || []
-}));
-
-
-
-
 
 
 // 加载分类数据
@@ -11201,6 +11079,9 @@ useEffect(() => {
 
 
 
+
+
+
 // 自动保存任务数据
 useEffect(() => {
   if (isInitialized) { // 这里必须使用 isInitialized
@@ -11221,6 +11102,8 @@ useEffect(() => {
 
 
 
+
+
 // 在组件中添加数据完整性检查函数
 const checkDataIntegrity = async () => {
   console.log('🔍 开始数据完整性检查...');
@@ -11228,6 +11111,8 @@ const checkDataIntegrity = async () => {
   const integrityReport = {
     tasks: { exists: false, count: 0 },
     templates: { exists: false, count: 0 },
+    customAchievements: { exists: false, count: 0 },
+    unlockedAchievements: { exists: false, count: 0 },
     categories: { exists: false, count: 0 }
   };
 
@@ -11241,6 +11126,13 @@ const checkDataIntegrity = async () => {
     integrityReport.templates.exists = !!templates;
     integrityReport.templates.count = templates ? templates.length : 0;
 
+    const customAchievements = await loadMainData('customAchievements');
+    integrityReport.customAchievements.exists = !!customAchievements;
+    integrityReport.customAchievements.count = customAchievements ? customAchievements.length : 0;
+
+    const unlockedAchievements = await loadMainData('unlockedAchievements');
+    integrityReport.unlockedAchievements.exists = !!unlockedAchievements;
+    integrityReport.unlockedAchievements.count = unlockedAchievements ? unlockedAchievements.length : 0;
 
     const categories = await loadMainData('categories');
     integrityReport.categories.exists = !!categories;
@@ -11253,9 +11145,16 @@ const checkDataIntegrity = async () => {
       console.log('⚠️ 任务数据缺失，重新初始化...');
       await saveMainData('tasks', {});
     }
-
     
-   
+    if (!integrityReport.customAchievements.exists) {
+      console.log('⚠️ 自定义成就数据缺失，重新初始化...');
+      await saveMainData('customAchievements', []);
+    }
+    
+    if (!integrityReport.unlockedAchievements.exists) {
+      console.log('⚠️ 已解锁成就数据缺失，重新初始化...');
+      await saveMainData('unlockedAchievements', []);
+    }
 
   } catch (error) {
     console.error('数据完整性检查失败:', error);
@@ -11271,6 +11170,7 @@ useEffect(() => {
 
   
 
+  
 
 
   // 替换现有的 useEffect 点击外部处理逻辑
@@ -11281,11 +11181,10 @@ useEffect(() => {
       const isTimeButton = event.target.closest('button')?.textContent?.includes('计划时间');
       const isTemplateButton = event.target.closest('button')?.textContent?.includes('模板');
       
-      // 新增：检查是否点击了自定义成就模态框
-      const isCustomAchievementModal = event.target.closest('[style*="position: fixed"]')?.querySelector('h3')?.textContent?.includes('自定义成就');
+
   
       // 如果点击了这些功能按钮或模态框，不关闭输入框
-      if (isRepeatButton || isTimeButton || isTemplateButton || isCustomAchievementModal) {
+      if (isRepeatButton || isTimeButton || isTemplateButton ) {
         return;
       }
 
@@ -11352,7 +11251,6 @@ useEffect(() => {
   });
   console.log('=== 调试结束 ===');
 
-  
   
 // 计算今日统计数据（排除运动类别）
 const calculateTodayStats = () => {
@@ -12527,7 +12425,10 @@ const clearAllData = async () => {
     setActiveTimer(null);
     setElapsedTime(0);
 
- 
+     // 修复：清空成就数据
+    setUnlockedAchievements([]);
+    setNewAchievements([]);
+    setCustomAchievements([]);
     
     
     // 清空所有存储
@@ -12579,13 +12480,21 @@ const handleExportData = async () => {
     const allData = {
       tasks: await loadDataWithFallback('tasks', {}),
       templates: await loadDataWithFallback('templates', []),
-
+      customAchievements: await loadDataWithFallback('customAchievements', []),
+      unlockedAchievements: await loadDataWithFallback('unlockedAchievements', []),
       categories: await loadDataWithFallback('categories', baseCategories),
       exportDate: new Date().toISOString(),
       version: '1.1'
     };
     
-  
+    // 验证数据完整性
+    const dataStats = {
+      任务天数: Object.keys(allData.tasks).length,
+      模板数量: allData.templates.length,
+      成就数量: allData.customAchievements.length,
+      已解锁成就: allData.unlockedAchievements.length
+    };
+    console.log('📊 导出数据统计:', dataStats);
     
     const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
@@ -13057,18 +12966,24 @@ const generateMarkdownContent = () => {
     handleAddTask(template);
   };
 
- 
+  
+
   // 计算今日统计数据
 
 
 const todayStats = calculateTodayStats();
 const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
+  
 
+      
+    
+    
+
+   
 
 
   
-
   // 统计页面
   const StatsPage = () => {
     const chartHeight = window.innerWidth <= 768 ? 200 : 300;
@@ -13401,7 +13316,15 @@ const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompl
 
 
 // ==== 渲染调试 - 展开详细内容 ====
-
+console.log('🎨 组件渲染 - 详细状态:', {
+  任务天数: Object.keys(tasksByDate).length,
+  任务数据所有日期: Object.keys(tasksByDate),
+  选中日期: selectedDate,
+  今日任务数量: todayTasks.length,
+  今日任务详情: todayTasks,
+  模板数量: templates.length,
+  是否初始化: isInitialized
+});
 
 // 特别检查今日任务
 console.log('📅 今日任务检查:');
@@ -13466,6 +13389,10 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
+
+ 
+   
+
     {showGradeModal && (
       <GradeModal 
         onClose={() => setShowGradeModal(false)} 
@@ -13475,6 +13402,7 @@ if (isInitialized && todayTasks.length === 0) {
  
 
 
+     
      
       
   
@@ -13646,7 +13574,40 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
-      
+
+
+      {showDatePickerModal && (
+        <DatePickerModal
+          onClose={() => setShowDatePickerModal(false)}
+          onSelectDate={handleDateSelect}
+          tasksByDate={tasksByDate}  // 添加这行
+        />
+      )}
+
+{showTaskEditModal && (
+  <TaskEditModal
+    task={showTaskEditModal}
+    categories={categories}
+    onClose={() => setShowTaskEditModal(null)}
+    onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
+    onTogglePinned={togglePinned}
+    onImageUpload={handleImageUpload}
+    setShowDeleteModal={setShowDeleteModal}
+    setCategories={setCategories} // 添加这行
+    // ==== 添加这行 ====
+    setShowMoveTaskModal={setShowMoveTaskModal}
+    setShowCrossDateModal={setShowCrossDateModal}
+  />
+)}
+
+      {showMoveModal && (
+        <MoveSelectModal
+          task={showMoveModal}
+          categories={categories}
+          onClose={() => setShowMoveModal(null)}
+          onMove={moveTask}
+        />
+      )}
 
       {showActionMenu && (
         <ActionMenuModal
@@ -13748,11 +13709,10 @@ if (isInitialized && todayTasks.length === 0) {
         alignItems: "center",
         marginBottom: 5
       }}>
-        
-
+       
         <div style={{
           display: "flex",
-          marginLeft: "auto", 
+           marginLeft: "auto" , // 添加这行，让整个区域靠右
           alignItems: "center"
         }}>
           <button
@@ -15430,16 +15390,20 @@ reader.onload = async (event) => {
       // 直接保存导入的数据，不需要调用 loadDataWithFallback
       await saveMainData('tasks', importedData.tasks || {});
       await saveMainData('templates', importedData.templates || []);
-      await saveMainData('exchange', importedData.exchange || []);
-      await saveMainData('pointHistory', importedData.pointHistory || []);
+   
       
       // ✅ 修复：导入所有关键数据
+      await saveMainData('customAchievements', importedData.customAchievements || []);
+      await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
       await saveMainData('categories', importedData.categories || baseCategories);
       
       // 更新状态
       setTasksByDate(importedData.tasks || {});
       setTemplates(importedData.templates || []);
-  
+      setExchangeItems(importedData.exchange || []);
+   
+      setCustomAchievements(importedData.customAchievements || []);
+      setUnlockedAchievements(importedData.unlockedAchievements || []);
       setCategories(importedData.categories || baseCategories);
       
       console.log('✅ 所有数据导入完成');
@@ -15524,7 +15488,24 @@ reader.onload = async (event) => {
   计时记录
 </button>
  
-        
+        {/* 在这里添加成就按钮 */}
+        <button
+          onClick={() => setShowAchievementsModal(true)}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#1a73e8",
+            color: "#fff",
+            border: "none",
+            fontSize: 12,
+            borderRadius: 6,
+            width: "70px",
+            height: "30px",
+            cursor: "pointer"
+          }}
+        >
+          我的成就
+        </button>
+
 <button
   onClick={() => setShowGitHubSyncModal(true)}
   style={{
