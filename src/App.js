@@ -6856,6 +6856,7 @@ const TaskItem = ({
     cursor: "pointer",
     whiteSpace: "nowrap",
     minWidth: "45px",
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',  // 添加这行
     textAlign: "center"
   }}
   title="点击修改时间"
@@ -7342,6 +7343,7 @@ const TaskItem = ({
 function App() {
   const [tasksByDate, setTasksByDate] = useState({});
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -7358,7 +7360,6 @@ function App() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
   const [showStats, setShowStats] = useState(false);
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(null);
@@ -10902,29 +10903,51 @@ const toggleSubTask = (task, subTaskIndex) => {
 
   
 
-// 编辑任务时间 - 设置基础时间
+// 编辑任务时间 - 支持分钟和秒
 const editTaskTime = (task) => {
   const currentTotal = task.timeSpent || 0;
-  const newTotal = window.prompt("设置任务总时间（分钟）", Math.floor(currentTotal / 60));
+  const currentMinutes = Math.floor(currentTotal / 60);
+  const currentSeconds = currentTotal % 60;
+  
+  // 显示当前时间为 分钟:秒 格式
+  const newTimeStr = window.prompt(
+    "设置任务总时间（格式：分钟:秒，例如 5:30 表示5分30秒）", 
+    `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`
+  );
 
-  if (newTotal !== null && !isNaN(newTotal) && newTotal >= 0) {
-    const seconds = parseInt(newTotal) * 60;
-
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? { ...t, timeSpent: seconds } : t
-        );
-      });
-      setTasksByDate(updatedTasksByDate);
+  if (newTimeStr !== null) {
+    // 解析输入的分钟:秒格式
+    const parts = newTimeStr.split(':');
+    let newSeconds = 0;
+    
+    if (parts.length === 2) {
+      // 格式为 分钟:秒
+      const minutes = parseInt(parts[0]) || 0;
+      const seconds = parseInt(parts[1]) || 0;
+      newSeconds = minutes * 60 + seconds;
     } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, timeSpent: seconds } : t
-        )
-      }));
+      // 如果只输入数字，默认为分钟
+      const minutes = parseInt(newTimeStr) || 0;
+      newSeconds = minutes * 60;
+    }
+    
+    if (newSeconds >= 0) {
+      if (task.isWeekTask) {
+        const updatedTasksByDate = { ...tasksByDate };
+        Object.keys(updatedTasksByDate).forEach(date => {
+          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? { ...t, timeSpent: newSeconds } : t
+          );
+        });
+        setTasksByDate(updatedTasksByDate);
+      } else {
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t =>
+            t.id === task.id ? { ...t, timeSpent: newSeconds } : t
+          )
+        }));
+      }
     }
   }
 };
@@ -11484,14 +11507,35 @@ const deleteTask = (task, deleteOption = 'today') => {
     reader.readAsDataURL(file);
   };
 
-  // 手动修改分类总时间
-  const editCategoryTime = (catName) => {
-    const currentTime = totalTime(catName);
-    const newTime = window.prompt(`修改 ${catName} 的总时间（分钟）`, Math.floor(currentTime / 60));
+  // 手动修改分类总时间 - 支持分钟和秒
+const editCategoryTime = (catName) => {
+  const currentTime = totalTime(catName);
+  const currentMinutes = Math.floor(currentTime / 60);
+  const currentSeconds = currentTime % 60;
+  
+  const newTimeStr = window.prompt(
+    `修改 ${catName} 的总时间（格式：分钟:秒，例如 30:45 表示30分45秒）`,
+    `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`
+  );
 
-    if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
-      const seconds = parseInt(newTime) * 60;
-      const timeDifference = seconds - currentTime;
+  if (newTimeStr !== null) {
+    // 解析输入的分钟:秒格式
+    const parts = newTimeStr.split(':');
+    let newSeconds = 0;
+    
+    if (parts.length === 2) {
+      // 格式为 分钟:秒
+      const minutes = parseInt(parts[0]) || 0;
+      const seconds = parseInt(parts[1]) || 0;
+      newSeconds = minutes * 60 + seconds;
+    } else {
+      // 如果只输入数字，默认为分钟
+      const minutes = parseInt(newTimeStr) || 0;
+      newSeconds = minutes * 60;
+    }
+    
+    if (newSeconds >= 0) {
+      const timeDifference = newSeconds - currentTime;
 
       if (timeDifference !== 0) {
         setTasksByDate(prev => {
@@ -11513,7 +11557,7 @@ const deleteTask = (task, deleteOption = 'today') => {
               text: `${catName}时间记录`,
               category: catName,
               done: true,
-              timeSpent: seconds,
+              timeSpent: newSeconds,
               note: "时间记录",
               image: null,
               scheduledTime: "",
@@ -11525,7 +11569,8 @@ const deleteTask = (task, deleteOption = 'today') => {
         });
       }
     }
-  };
+  }
+};
 
   // 获取分类任务
   const getCategoryTasks = (catName) =>
@@ -11553,13 +11598,28 @@ const getTasksBySubCategory = (catName) => {
   const totalTime = (catName) =>
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
+
+
   // 切换到上一周
-  const prevWeek = () => {
-    const monday = new Date(currentMonday);
-    monday.setDate(monday.getDate() - 7);
-    setCurrentMonday(monday);
-    setSelectedDate(monday.toISOString().split("T")[0]);
-  };
+const prevWeek = () => {
+  const monday = new Date(currentMonday);
+  monday.setDate(monday.getDate() - 7);
+  
+  console.log('prevWeek:', {
+    原周一: currentMonday.toLocaleDateString(),
+    新周一: monday.toLocaleDateString()
+  });
+  
+  setCurrentMonday(monday);
+  
+  // 使用本地日期格式，避免时区问题
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, '0');
+  const day = String(monday.getDate()).padStart(2, '0');
+  const newSelectedDate = `${year}-${month}-${day}`;
+  
+  setSelectedDate(newSelectedDate);
+};
 
 // 切换到下一周
 const nextWeek = () => {
@@ -12707,6 +12767,17 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
+{/* 添加这行 */}
+{showRepeatModal && (
+  <RepeatModal
+    config={repeatConfig}
+    onSave={(newConfig) => {
+      setRepeatConfig(newConfig);
+      setShowRepeatModal(false);
+    }}
+    onClose={() => setShowRepeatModal(false)}
+  />
+)}
 
 
 
@@ -13392,6 +13463,7 @@ if (isInitialized && todayTasks.length === 0) {
   style={{
     backgroundColor: isComplete ? "#f0f0f0" : c.color,
     color: isComplete ? "#888" : "#fff",
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加
     padding: "3px 8px",
     fontWeight: "bold",
     display: "flex",
@@ -13450,6 +13522,7 @@ if (isInitialized && todayTasks.length === 0) {
   style={{
     fontSize: 11,
     color: isComplete ? "#888" : "#fff",
+    fontStyle: 'Calibri, "微软雅黑", sans-serif',  // ← 添加
     cursor: "pointer",
     padding: "2px 6px",
     borderRadius: "4px",
@@ -13460,8 +13533,7 @@ if (isInitialized && todayTasks.length === 0) {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    flexShrink: 0,
-    fontFamily: "monospace"
+    flexShrink: 0
   }}
   title="点击修改总时间"
 >
@@ -13521,33 +13593,52 @@ if (isInitialized && todayTasks.length === 0) {
                   <span
                     onClick={(e) => {
                       e.stopPropagation();
-                      const newTime = window.prompt(`修改 ${subCat} 子类别总时间（分钟）`, Math.floor(subCategoryTotalTime / 60));
-                      if (newTime !== null && !isNaN(newTime) && newTime >= 0) {
-                        const seconds = parseInt(newTime) * 60;
-                        const timeDifference = seconds - subCategoryTotalTime;
-                        
-                        if (timeDifference !== 0 && subCatTasks.length > 0) {
-                          const timePerTask = Math.floor(timeDifference / subCatTasks.length);
-                          
-                          setTasksByDate(prev => {
-                            const newTasksByDate = { ...prev };
-                            const todayTasks = newTasksByDate[selectedDate] || [];
-                            
-                            newTasksByDate[selectedDate] = todayTasks.map(t => 
-                              t.category === c.name && t.subCategory === subCat 
-                                ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
-                                : t
-                            );
-                            
-                            return newTasksByDate;
-                          });
-                        }
-                      }
+                     // 修改这段代码
+const newTime = window.prompt(
+  `修改 ${subCat} 子类别总时间（格式：分钟:秒，例如 30:45 表示30分45秒）`,
+  `${Math.floor(subCategoryTotalTime / 60)}:${(subCategoryTotalTime % 60).toString().padStart(2, '0')}`
+);
+
+if (newTime !== null) {
+  const parts = newTime.split(':');
+  let newSeconds = 0;
+  
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0]) || 0;
+    const seconds = parseInt(parts[1]) || 0;
+    newSeconds = minutes * 60 + seconds;
+  } else {
+    const minutes = parseInt(newTime) || 0;
+    newSeconds = minutes * 60;
+  }
+  
+  if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
+    const timeDifference = newSeconds - subCategoryTotalTime;
+    
+    if (timeDifference !== 0 && subCatTasks.length > 0) {
+      const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+      
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        const todayTasks = newTasksByDate[selectedDate] || [];
+        
+        newTasksByDate[selectedDate] = todayTasks.map(t => 
+          t.category === c.name && t.subCategory === subCat 
+            ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+            : t
+        );
+        
+        return newTasksByDate;
+      });
+    }
+  }
+}
                     }}
                     style={{
                       fontSize: '11px',
                       color: '#666',
                       cursor: 'pointer',
+                      fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加这行
                       padding: '2px 6px',
                       border: '1px solid #e0e0e0',
                       borderRadius: '4px',
@@ -13903,7 +13994,7 @@ marginTop: 10
                 padding: 6,
                 borderRadius: 6,
                 border: "1px solid #ccc",
-                fontSize: "16px"
+                fontSize: "14px"
               }}
               onClick={(e) => e.stopPropagation()}
             />
