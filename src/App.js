@@ -6,7 +6,6 @@ import './App.css';
 
 
 const GradeModal = ({ onClose, isVisible }) => {
-  const [grades, setGrades] = useState([]);
   const [filterSubject, setFilterSubject] = useState('全部');
   const [newGrade, setNewGrade] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -2160,12 +2159,15 @@ const saveMainData = async (key, data) => {
         const tasksWithNote = data[date].filter(t => t.note);
         if (tasksWithNote.length > 0) {
           console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
+          tasksWithNote.forEach(t => {
+            console.log(`    - ${t.text}: "${t.note}"`);
+          });
         }
       });
     }
     
     localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data);
+    console.log(`数据保存成功: ${key}`, data ? '✅' : '❌');
   } catch (error) {
     console.error(`数据保存失败: ${key}`, error);
   }
@@ -7841,8 +7843,7 @@ function App() {
   const [showMoveModal, setShowMoveModal] = useState(null);
   const runningRefs = useRef({});
   const addInputRef = useRef(null);
-  // 在现有的 useState 声明中添加
-const [grades, setGrades] = useState([]);
+  const [grades, setGrades] = useState([]);
   const bulkInputRef = useRef(null);
   // 临时保留旧变量避免错误
 
@@ -8481,7 +8482,6 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 
-// 🔽 改成这样：🔽
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -8491,32 +8491,44 @@ const handleRestoreData = useCallback(async (backupData) => {
       tasksByDate: backupData.tasksByDate || backupData.tasks || {},
       templates: backupData.templates || [],
       categories: backupData.categories || baseCategories,
-      // 修复：恢复缺失的数据
       dailyMoods: backupData.dailyMoods || {},
       dailyRatings: backupData.dailyRatings || {},
       dailyReflections: backupData.dailyReflections || {},
-      timerRecords: backupData.timerRecords || []
+      timerRecords: backupData.timerRecords || [],
+      grades: backupData.grades || [] // 添加 grades
     };
 
-      // 保存到存储
+    // 调试：检查恢复数据中的备注
+    console.log('📝 恢复数据中的备注检查:');
+    Object.keys(normalizedData.tasksByDate).forEach(date => {
+      const tasksWithNote = normalizedData.tasksByDate[date].filter(t => t.note);
+      if (tasksWithNote.length > 0) {
+        console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
+        tasksWithNote.forEach(t => {
+          console.log(`    - ${t.text}: "${t.note}"`);
+        });
+      }
+    });
+
+    // 保存到存储
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
     await saveMainData('categories', normalizedData.categories);
-    // 修复：保存缺失的数据
     await saveMainData('dailyMoods', normalizedData.dailyMoods);
     await saveMainData('dailyRatings', normalizedData.dailyRatings);
     await saveMainData('dailyReflections', normalizedData.dailyReflections);
     await saveMainData('timerRecords', normalizedData.timerRecords);
+    await saveMainData('grades', normalizedData.grades); // 保存 grades
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
     setCategories(normalizedData.categories);
-    // 修复：更新缺失的状态
     setDailyMoods(normalizedData.dailyMoods);
     setDailyRatings(normalizedData.dailyRatings);
     setDailyReflections(normalizedData.dailyReflections);
     setTimerRecords(normalizedData.timerRecords);
+    setGrades(normalizedData.grades); // 需要先声明这个 state
 
     console.log('✅ 数据恢复完成');
     
@@ -8551,7 +8563,10 @@ const calculateDataHash = useCallback(() => {
 const syncToGitHub = useCallback(async (isAutoSync = false) => {
   const token = localStorage.getItem('github_token');
   if (!token) {
-    if (!isAutoSync) setShowGitHubSyncModal(true);
+    if (!isAutoSync) {
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+    }
     return false;
   }
 
@@ -8559,27 +8574,43 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
 
   setIsSyncing(true);
   try {
-    const savedGrades = await loadMainData('grades');  // 👈 从存储加载
+    // 从存储加载所有数据
+    const savedGrades = await loadMainData('grades') || [];
+    
+    // 构建要同步的数据，确保包含所有字段
     const syncData = {
       tasksByDate,
       templates,
-      dailyMoods,        // 每日心情
-      dailyRatings,      // 每日评分  
-      dailyReflections,  // 每日复盘
+      dailyMoods,
+      dailyRatings,
+      dailyReflections,
       categories,
       timerRecords,
-      // 成绩记录
-      grades: savedGrades || [],  // 👈 使用加载的数据
+      grades: savedGrades,
       syncTime: new Date().toISOString(),
-      version: '1.2'
+      version: '1.3' // 升级版本号
     };
+
+    // 调试：检查备注数据
+    console.log('📝 同步数据中的备注检查:');
+    Object.keys(tasksByDate).forEach(date => {
+      const tasksWithNote = tasksByDate[date].filter(t => t.note);
+      if (tasksWithNote.length > 0) {
+        console.log(`  ${date}: ${tasksWithNote.length}个任务有备注`);
+        tasksWithNote.forEach(t => {
+          console.log(`    - ${t.text}: "${t.note}"`);
+        });
+      }
+    });
 
     const gistId = localStorage.getItem('github_gist_id');
     const jsonData = JSON.stringify(syncData, null, 2);
     
     let response;
+    let result;
     
     if (gistId) {
+      console.log('🔄 更新现有 Gist:', gistId);
       response = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: {
@@ -8595,7 +8626,16 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
           }
         })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('更新失败:', response.status, errorText);
+        throw new Error(`更新失败: ${response.status}`);
+      }
+      
+      result = await response.json();
     } else {
+      console.log('🔄 创建新的 Gist');
       response = await fetch('https://api.github.com/gists', {
         method: 'POST',
         headers: {
@@ -8612,15 +8652,16 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
           }
         })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('创建失败:', response.status, errorText);
+        throw new Error(`创建失败: ${response.status}`);
+      }
+      
+      result = await response.json();
     }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`同步失败: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
     if (!result || !result.id) {
       throw new Error('GitHub 响应格式错误');
     }
@@ -8638,9 +8679,10 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
     }));
     
     if (!isAutoSync) {
-      alert('同步成功！数据已备份到云端。');
+      alert('✅ 同步成功！数据已备份到云端。\n备注数据已包含在备份中。');
     }
     
+    console.log('✅ 同步完成，Gist ID:', result.id);
     return true;
     
   } catch (error) {
@@ -8667,7 +8709,6 @@ const syncToGitHub = useCallback(async (isAutoSync = false) => {
   }
 }, [tasksByDate, templates, categories, dailyMoods, dailyRatings, dailyReflections, 
     timerRecords, calculateDataHash, isSyncing]);
-
 
 
 // 自动恢复云端最新数据
