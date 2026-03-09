@@ -1908,25 +1908,28 @@ const calculateCurrentStreak = (tasksByDate) => {
 
 
 
-// 替换现有的 autoBackup 函数
 const autoBackup = async () => {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
-    // ✅ 修复：包含所有关键数据
+    // 加载成绩数据
+    const grades = await loadMainData('grades') || [];
+    
     const backupData = {
       tasks: await loadMainData('tasks') || {},
       templates: await loadMainData('templates') || [],
-      customAchievements: await loadMainData('customAchievements') || [],
-      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
       categories: await loadMainData('categories') || baseCategories,
+      grades: grades,  // 添加成绩数据
+      dailyReflections: dailyReflections,
+      dailyMoods: dailyMoods,
+      dailyRatings: dailyRatings,
       backupTime: new Date().toISOString(),
-      version: '1.1' // 更新版本号
+      version: '1.3' // 更新版本号
     };
     
     localStorage.setItem(backupKey, JSON.stringify(backupData));
-    console.log('💾 完整备份创建成功:', backupKey);
+    console.log('💾 完整备份创建成功 (包含成绩和复盘):', backupKey);
     await cleanupOldBackups();
     
   } catch (error) {
@@ -8472,50 +8475,52 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 
-
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
 
-    // 数据格式兼容性处理
     const normalizedData = {
       tasksByDate: backupData.tasksByDate || backupData.tasks || {},
       templates: backupData.templates || [],
-      customAchievements: backupData.customAchievements || [],
-      unlockedAchievements: backupData.unlockedAchievements || [],
-      categories: backupData.categories || baseCategories
+      categories: backupData.categories || baseCategories,
+      grades: backupData.grades || [],
+      dailyReflections: backupData.dailyReflections || {},
+      dailyMoods: backupData.dailyMoods || {},
+      dailyRatings: backupData.dailyRatings || {},
+      timerRecords: backupData.timerRecords || []
     };
 
-    // 验证任务数据中的备注字段
-    const tasksWithNotes = Object.values(normalizedData.tasksByDate).flat()
-      .filter(task => task.note || task.reflection);
-    console.log('📝 准备恢复的备注数据:', {
-      任务总数: Object.values(normalizedData.tasksByDate).flat().length,
-      包含备注的任务数: tasksWithNotes.length,
-      示例: tasksWithNotes.slice(0, 3).map(t => ({
-        任务: t.text,
-        备注: t.note,
-        感想: t.reflection
-      }))
+    console.log('📊 恢复数据统计:', {
+      任务天数: Object.keys(normalizedData.tasksByDate).length,
+      模板数: normalizedData.templates.length,
+      分类数: normalizedData.categories.length,
+      成绩记录: normalizedData.grades.length,
+      复盘天数: Object.keys(normalizedData.dailyReflections).length,
+      计时记录: normalizedData.timerRecords.length
     });
 
-    // 保存到存储
+    // 保存所有数据
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
-    await saveMainData('customAchievements', normalizedData.customAchievements);
-    await saveMainData('unlockedAchievements', normalizedData.unlockedAchievements);
     await saveMainData('categories', normalizedData.categories);
+    await saveMainData('grades', normalizedData.grades);
+    await saveMainData('dailyReflections', normalizedData.dailyReflections);
+    await saveMainData('dailyMoods', normalizedData.dailyMoods);
+    await saveMainData('dailyRatings', normalizedData.dailyRatings);
+    await saveMainData('timerRecords', normalizedData.timerRecords);
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
-    setCustomAchievements(normalizedData.customAchievements);
-    setUnlockedAchievements(normalizedData.unlockedAchievements);
     setCategories(normalizedData.categories);
+    setDailyReflections(normalizedData.dailyReflections);
+    setDailyMoods(normalizedData.dailyMoods);
+    setDailyRatings(normalizedData.dailyRatings);
+    setTimerRecords(normalizedData.timerRecords);
 
-    console.log('✅ 数据恢复完成');
+    console.log('✅ 所有数据恢复完成');
     
-    alert('数据恢复成功！页面将重新加载。');
+    alert('所有数据恢复成功！页面将重新加载。');
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -8532,6 +8537,10 @@ const handleRestoreData = useCallback(async (backupData) => {
 
 
 
+
+
+
+
 const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -8541,24 +8550,39 @@ const syncToGitHub = useCallback(async () => {
   }
 
   try {
-    // 确保同步数据包含备注（note）和感想（reflection）
+    // 加载所有需要同步的数据
+    const grades = await loadMainData('grades') || [];
+    const timerRecords = await loadMainData('timerRecords') || [];
+    
     const syncData = {
+      // 核心数据
       tasksByDate,
       templates,
       categories,
+      
+      // 成绩数据
+      grades,
+      
+      // 每日总结数据
+      dailyReflections,
+      dailyMoods,
+      dailyRatings,
+      
+      // 计时记录
+      timerRecords,
+      
+      // 元数据
       syncTime: new Date().toISOString(),
-      version: '1.1'
+      version: '1.4'  // 最终版本
     };
 
-    // 可选：验证数据中包含备注
-    console.log('📝 同步数据验证:', {
+    console.log('📊 同步数据统计:', {
       任务天数: Object.keys(tasksByDate).length,
-      示例任务: Object.values(tasksByDate)[0]?.map(t => ({
-        内容: t.text,
-        是否有备注: !!t.note,
-        备注内容: t.note,
-        是否有感想: !!t.reflection
-      })).slice(0, 3)
+      模板数: templates.length,
+      分类数: categories.length,
+      成绩记录: grades.length,
+      复盘天数: Object.keys(dailyReflections).length,
+      计时记录: timerRecords.length
     });
 
     const gistId = localStorage.getItem('github_gist_id');
@@ -8567,7 +8591,6 @@ const syncToGitHub = useCallback(async () => {
     let response;
     
     if (gistId) {
-      // 更新现有Gist
       response = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: {
@@ -8584,7 +8607,6 @@ const syncToGitHub = useCallback(async () => {
         })
       });
     } else {
-      // 创建新Gist
       response = await fetch('https://api.github.com/gists', {
         method: 'POST',
         headers: {
@@ -8614,18 +8636,16 @@ const syncToGitHub = useCallback(async () => {
       throw new Error('GitHub 响应格式错误');
     }
 
-    // 保存Gist ID
     localStorage.setItem('github_gist_id', result.id);
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
-    // 更新同步配置状态
     setSyncConfig(prev => ({
       ...prev,
       gistId: result.id,
       lastSync: new Date().toISOString()
     }));
     
-    alert('同步成功！数据已备份到云端。');
+    alert(`同步成功！\n\n已同步数据：\n• 任务: ${Object.keys(tasksByDate).length}天\n• 模板: ${templates.length}个\n• 成绩: ${grades.length}条\n• 复盘: ${Object.keys(dailyReflections).length}天\n• 计时: ${timerRecords.length}条`);
     
   } catch (error) {
     console.error('同步失败:', error);
@@ -8644,7 +8664,12 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates,  categories]);
+}, [tasksByDate, templates, categories, dailyReflections, dailyMoods, dailyRatings]);
+
+
+
+
+
 
 // 在现有的 useCallback 函数后面添加这个：
 
@@ -8837,6 +8862,69 @@ window.testWeekDays = () => {
     selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
   ).filter(Boolean));
 };
+
+
+
+// 添加调试函数来检查所有同步数据
+useEffect(() => {
+  window.debugAllData = async () => {
+    const grades = await loadMainData('grades') || [];
+    
+    console.log('📊 所有数据统计:', {
+      任务: {
+        天数: Object.keys(tasksByDate).length,
+        总任务数: Object.values(tasksByDate).flat().length
+      },
+      模板: {
+        数量: templates.length
+      },
+      成绩: {
+        记录数: grades.length,
+        最近3条: grades.slice(0, 3).map(g => ({
+          日期: g.date,
+          科目: g.subject,
+          内容: g.testContent,
+          得分: `${g.score}/${g.fullScore}`
+        }))
+      },
+      复盘: {
+        天数: Object.keys(dailyReflections).length,
+        今日复盘: dailyReflections[selectedDate]
+      },
+      心情: {
+        天数: Object.keys(dailyMoods).length
+      },
+      评分: {
+        天数: Object.keys(dailyRatings).length
+      }
+    });
+  };
+  
+  window.debugSyncData = () => {
+    // 模拟同步数据，查看所有数据是否被包含
+    (async () => {
+      const grades = await loadMainData('grades') || [];
+      const syncData = {
+        tasksByDate,
+        templates,
+        categories,
+        grades,
+        dailyReflections,
+        dailyMoods,
+        dailyRatings,
+        syncTime: new Date().toISOString()
+      };
+      console.log('☁️ 同步数据预览:', {
+        数据大小: JSON.stringify(syncData).length,
+        任务天数: Object.keys(tasksByDate).length,
+        模板数: templates.length,
+        成绩数: grades.length,
+        复盘天数: Object.keys(dailyReflections).length,
+        示例成绩: grades.slice(0, 2)
+      });
+    })();
+  };
+}, [tasksByDate, templates, categories, dailyReflections, dailyMoods, dailyRatings, selectedDate]);
 
 
 // 添加调试函数来检查重复任务创建
@@ -10960,125 +11048,101 @@ useEffect(() => {
 
 
 
-useEffect(() => {
-  const initializeApp = async () => {
-    // 先迁移旧数据
-    await migrateLegacyData();
-    
-    try {
- 
-
-
-
-// 在 initializeApp 函数开始处添加这个辅助函数
-const loadDataWithFallback = async (key, fallback) => {
+const initializeApp = async () => {
+  // 先迁移旧数据
+  await migrateLegacyData();
+  
   try {
-    const data = await loadMainData(key);
-    return data !== null ? data : fallback;
+    // 加载任务数据
+    const savedTasks = await loadDataWithFallback('tasks', {});
+    if (savedTasks) {
+      setTasksByDate(savedTasks);
+    }
+
+    // 加载模板数据
+    const savedTemplates = await loadDataWithFallback('templates', []);
+    if (savedTemplates) {
+      setTemplates(savedTemplates);
+    }
+
+    // 加载分类数据
+    const savedCategories = await loadDataWithFallback('categories', null);
+    if (savedCategories) {
+      const updatedCategories = savedCategories.map(cat => {
+        let defaultSubCategories = [];
+        switch(cat.name) {
+          case '校内':
+            defaultSubCategories = ["数学", "语文", "英语", "运动"];
+            break;
+          default:
+            defaultSubCategories = [];
+        }
+        return {
+          ...cat,
+          subCategories: cat.subCategories && cat.subCategories.length > 0 
+            ? cat.subCategories 
+            : defaultSubCategories
+        };
+      });
+      setCategories(updatedCategories);
+      await saveMainData('categories', updatedCategories);
+    } else {
+      const categoriesWithSubCategories = baseCategories.map(cat => {
+        let subCategories = [];
+        switch(cat.name) {
+          case '校内':
+            subCategories = ["数学", "语文", "英语", "运动"];
+            break;
+          default:
+            subCategories = [];
+        }
+        return { ...cat, subCategories };
+      });
+      setCategories(categoriesWithSubCategories);
+      await saveMainData('categories', categoriesWithSubCategories);
+    }
+
+    // 加载成绩数据
+    const savedGrades = await loadMainData('grades');
+    if (savedGrades) {
+      console.log('✅ 成绩数据加载成功，记录数:', savedGrades.length);
+      // 注意：grades 状态在 GradeModal 组件内部管理
+      // 这里只是验证数据存在，不需要设置状态
+    }
+
+    // 加载复盘相关数据
+    const savedDailyReflections = await loadMainData('dailyReflections');
+    if (savedDailyReflections) {
+      setDailyReflections(savedDailyReflections);
+      console.log('✅ 复盘数据加载成功，天数:', Object.keys(savedDailyReflections).length);
+    }
+
+    const savedDailyMoods = await loadMainData('dailyMoods');
+    if (savedDailyMoods) {
+      setDailyMoods(savedDailyMoods);
+    }
+
+    const savedDailyRatings = await loadMainData('dailyRatings');
+    if (savedDailyRatings) {
+      setDailyRatings(savedDailyRatings);
+    }
+
+    // 设置定时备份
+    localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
+    setIsInitialized(true);
+
+    // 设置自动备份
+    const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
+    setTimeout(autoBackup, 3000);
+    
+    return () => {
+      clearInterval(backupTimer);
+    };
+
   } catch (error) {
-    console.error(`加载 ${key} 失败:`, error);
-    return fallback;
+    console.error('初始化失败:', error);
   }
 };
-
-// 然后替换现有的数据加载代码：
-
-// 加载任务数据
-const savedTasks = await loadDataWithFallback('tasks', {});
-console.log('✅ 加载的任务数据:', savedTasks);
-if (savedTasks) {
-  setTasksByDate(savedTasks);
-  console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
-} else {
-  console.log('ℹ️ 没有任务数据，使用空对象');
-  setTasksByDate({});
-}
-
-// 加载模板数据
-const savedTemplates = await loadDataWithFallback('templates', []);
-if (savedTemplates) {
-  setTemplates(savedTemplates);
-}
-
-
-
-// 加载分类数据
-const savedCategories = await loadDataWithFallback('categories', null);
-if (savedCategories) {
-  // 如果已有保存的分类，确保每个分类都有子类别
-  const updatedCategories = savedCategories.map(cat => {
-    let defaultSubCategories = [];
-    switch(cat.name) {
-      case '校内':
-        defaultSubCategories = ["数学", "语文", "英语", "运动"];
-        break;
-      default:
-        defaultSubCategories = [];
-    }
-    
-    // 如果保存的分类没有子类别或子类别为空，使用预设值
-    return {
-      ...cat,
-      subCategories: cat.subCategories && cat.subCategories.length > 0 
-        ? cat.subCategories 
-        : defaultSubCategories
-    };
-  });
-  
-  setCategories(updatedCategories);
-  await saveMainData('categories', updatedCategories);
-} else {
-  // 没有保存的分类数据，使用预设值初始化
-  const categoriesWithSubCategories = baseCategories.map(cat => {
-    let subCategories = [];
-    switch(cat.name) {
-      case '校内':
-        subCategories = ["数学", "语文", "英语", "运动"];
-        break;
-      default:
-        subCategories = [];
-    }
-    return { ...cat, subCategories };
-  });
-  
-  setCategories(categoriesWithSubCategories);
-  await saveMainData('categories', categoriesWithSubCategories);
-}
-
-
-
-      // 设置定时备份
-      localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
-      console.log('✅ 初始化状态已保存到存储');
-      setIsInitialized(true);
-      console.log('✅ isInitialized 设置为 true');
-
-
-
-
-
-
-      
-
-    // 设置定时备份 - 添加这3行代码
-    const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
-    console.log('✅ 自动备份已启动，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60 + '分钟');
-    setTimeout(autoBackup, 3000); // 3秒后执行第一次备份
-      
-      // 清理函数
-      return () => {
-        clearInterval(backupTimer);
-      };
-
-    } catch (error) {
-      console.error('初始化失败:', error);
-    }
-  };
-
-  initializeApp();
-}, []);
-//初始化end
-
 
 
 
