@@ -12906,7 +12906,7 @@ if (isInitialized && todayTasks.length === 0) {
         marginTop: "-5px",      // 确保为0
         marginBottom: 10
       }}>
-        你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习计划
+        你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
       </div>
 
       <div style={{
@@ -13712,7 +13712,8 @@ if (isInitialized && todayTasks.length === 0) {
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            textOverflow: 'ellipsis',
+            boxSizing: 'border-box' 
           }}
         >
           {getCurrentDailyReflection() || '...'}
