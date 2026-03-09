@@ -2049,8 +2049,9 @@ const saveMainData = async (key, data) => {
   }
 };
 
+// 加载数据
 const loadMainData = async (key) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
+  const storageKey = `${PAGE_ID}_${key}`;
   try {
     const data = localStorage.getItem(storageKey);
     return data ? JSON.parse(data) : null;
@@ -2060,12 +2061,6 @@ const loadMainData = async (key) => {
   }
 };
 
-
-
-
-
-
- 
 
 
 // 数据迁移函数 - 从旧版本迁移数据
@@ -8362,30 +8357,49 @@ const handlePauseCategoryTimer = (categoryName, subCategoryName = null) => {
 
 
 
-// 🔽 改成这样：🔽
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
 
-    // 数据格式兼容性处理
-    const normalizedData = {
-      tasksByDate: backupData.tasksByDate || backupData.tasks || {},
-      templates: backupData.templates || [],
+    // 深度合并任务数据，确保备注字段被保留
+    const restoredTasks = backupData.tasksByDate || backupData.tasks || {};
+    
+    // 验证每个任务的完整性
+    Object.keys(restoredTasks).forEach(date => {
+      restoredTasks[date] = restoredTasks[date].map(task => ({
+        // 确保所有字段都存在
+        note: task.note || '',
+        reflection: task.reflection || '',
+        subTasks: task.subTasks || [],
+        tags: task.tags || [],
+        timeSpent: task.timeSpent || 0,
+        ...task // 保留原有数据，上面的字段会被覆盖但确保存在
+      }));
+    });
 
+    const normalizedData = {
+      tasksByDate: restoredTasks,
+      templates: backupData.templates || [],
+      customAchievements: backupData.customAchievements || [],
+      unlockedAchievements: backupData.unlockedAchievements || [],
       categories: backupData.categories || baseCategories
     };
 
     // 保存到存储
     await saveMainData('tasks', normalizedData.tasksByDate);
     await saveMainData('templates', normalizedData.templates);
+    await saveMainData('customAchievements', normalizedData.customAchievements);
+    await saveMainData('unlockedAchievements', normalizedData.unlockedAchievements);
     await saveMainData('categories', normalizedData.categories);
 
     // 更新状态
     setTasksByDate(normalizedData.tasksByDate);
     setTemplates(normalizedData.templates);
+    setCustomAchievements(normalizedData.customAchievements);
+    setUnlockedAchievements(normalizedData.unlockedAchievements);
     setCategories(normalizedData.categories);
 
-    console.log('✅ 数据恢复完成');
+    console.log('✅ 数据恢复完成，包含备注字段');
     
     alert('数据恢复成功！页面将重新加载。');
     setTimeout(() => {
