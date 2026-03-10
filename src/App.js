@@ -10077,7 +10077,6 @@ useEffect(() => {
         }
       }
       
-      setDailyMoods(allMoods);
       setDailyRatings(allRatings);
       setDailyReflections(allReflections);
       
@@ -13696,9 +13695,9 @@ if (isInitialized && todayTasks.length === 0) {
 
     {/* 右侧：显示评分，数字用黑色，星星用金色 */}
     <div style={{
-      minWidth: '45px',
+      minWidth: '20px',
       flexShrink: 0,
-      marginLeft: 'auto',
+
       textAlign: 'center'
     }}>
       <span style={{
