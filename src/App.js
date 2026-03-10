@@ -13765,7 +13765,7 @@ if (isInitialized && todayTasks.length === 0) {
         gap: 4
       }}
     >
-      📅 本周任务
+      📅 本周
     </button>
     <button
       onClick={() => setShowMonthTaskModal(true)}
@@ -13782,7 +13782,7 @@ if (isInitialized && todayTasks.length === 0) {
         gap: 4
       }}
     >
-      📆 本月任务
+      📆 本月
     </button>
   </div>
 
