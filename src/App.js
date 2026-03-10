@@ -7399,7 +7399,6 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
-  const [dailyMoods, setDailyMoods] = useState({});
   const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
@@ -7555,9 +7554,6 @@ const [syncConfig, setSyncConfig] = useState({
 
 
 // 获取当前日期的心情和评价
-const getCurrentDailyMood = useCallback(() => {
-  return dailyMoods[selectedDate] || 0;
-}, [dailyMoods, selectedDate]);
 
 const getCurrentDailyRating = useCallback(() => {
   return dailyRatings[selectedDate] || 0;
@@ -7587,13 +7583,7 @@ const handleDeleteImage = (task) => {
 };
 
 
-// 设置当前日期的心情和评价
-const setCurrentDailyMood = (mood) => {
-  setDailyMoods(prev => ({
-    ...prev,
-    [selectedDate]: mood
-  }));
-};
+// 设置当前日期的评价
 
 const setCurrentDailyRating = (rating) => {
   setDailyRatings(prev => ({
@@ -7602,7 +7592,6 @@ const setCurrentDailyRating = (rating) => {
   }));
 };
 
-const dailyMood = getCurrentDailyMood();
 const dailyRating = getCurrentDailyRating();
 // 获取当前选中日期的复盘内容
 const getCurrentDailyReflection = () => {
@@ -7617,21 +7606,10 @@ const setCurrentDailyReflection = (reflection) => {
   }));
 };
 
-// 添加表情选项
-const moodOptions = [
-  { emoji: '', label: '无', value: 0 },
-  { emoji: '😊', label: '开心', value: 1 },
-  { emoji: '😐', label: '平静', value: 2 },
-  { emoji: '😔', label: '疲惫', value: 3 },
-  { emoji: '😤', label: '烦躁', value: 4 },
-  { emoji: '🤩', label: '充满活力', value: 5 },
-  { emoji: '😴', label: '困倦', value: 6 }
-];
 
-// 保存每日数据（包括心情、评分、复盘）
+// 保存每日数据（包括评分、复盘）
 const saveDailyData = useCallback(async (date = selectedDate) => {
   const dailyData = {
-    mood: dailyMoods[date] || 0,
     rating: dailyRatings[date] || 0,
     reflection: dailyReflections[date] || '',
     date: date
@@ -7639,7 +7617,7 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
   
   await saveMainData(`daily_${date}`, dailyData);
   console.log(`💾 已保存 ${date} 的每日数据:`, dailyData);
-}, [dailyMoods, dailyRatings, dailyReflections, selectedDate]);
+}, [dailyRatings, dailyReflections, selectedDate]);
 
 
 
@@ -7663,9 +7641,6 @@ const handleRestoreData = useCallback(async (backupData) => {
     }
     
     // 恢复每日数据
-    if (backupData.dailyMoods) {
-      setDailyMoods(backupData.dailyMoods);
-    }
     
     if (backupData.dailyRatings) {
       setDailyRatings(backupData.dailyRatings);
@@ -7682,7 +7657,6 @@ const handleRestoreData = useCallback(async (backupData) => {
       // 保存每个日期的复盘到 localStorage
       Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
         const dailyData = {
-          mood: backupData.dailyMoods?.[date] || 0,
           rating: backupData.dailyRatings?.[date] || 0,
           reflection: reflection,
           date: date
@@ -7752,7 +7726,6 @@ const syncToGitHub = useCallback(async () => {
       templates,
       
       // 每日数据（确保包含所有复盘）
-      dailyMoods,
       dailyRatings,
       dailyReflections,
       
@@ -7861,7 +7834,7 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   }
-}, [tasksByDate, templates, dailyMoods, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData]);
+}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData]);
 
 // 在现有的 useCallback 函数后面添加这个：
 
@@ -11725,7 +11698,7 @@ const handleExportData = async () => {
 
   
   
-const DailyLogModal = ({ logData, onClose, onCopy, dailyMood, dailyRating, dailyReflection }) => {
+const DailyLogModal = ({ logData, onClose, onCopy,  dailyRating, dailyReflection }) => {
   
   
    const moodOptions = [
@@ -11750,14 +11723,9 @@ const generateMarkdownContent = () => {
   let markdown = `# 学习任务\n\n`;
   
   // 添加心情、评分和复盘内容到最上方
-  if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection) {
+  if (dailyRating > 0 || getCurrentDailyReflection) {
     markdown += "## 💭 今日总结\n\n";
     
-    // 心情显示
-    if (dailyMood > 0) {
-      const selectedMood = moodOptions.find(m => m.value === dailyMood);
-      markdown += `- **心情**: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
-    }
     
     // 评分显示
     if (dailyRating > 0) {
@@ -11923,7 +11891,7 @@ const generateMarkdownContent = () => {
     minHeight: 'auto'
   }}>
     {/* 添加心情总结到最上方 */}
-    {(dailyMood > 0 || dailyRating > 0 || dailyReflection) && (
+    {( dailyRating > 0 || dailyReflection) && (
       <>
         <div style={{ 
           fontWeight: 'bold', 
@@ -11935,16 +11903,8 @@ const generateMarkdownContent = () => {
           === 今日总结 ===
         </div>
         
-        {/* 心情显示 */}
-        {dailyMood > 0 && (
-          <div style={{ marginBottom: 6 }}>
-            <span style={{ fontWeight: 'bold' }}>心情: </span>
-            {(() => {
-              const selectedMood = moodOptions.find(m => m.value === dailyMood);
-              return `${selectedMood?.emoji} ${selectedMood?.label}`;
-            })()}
-          </div>
-        )}
+   
+     
         
         {/* 评分显示 */}
         {dailyRating > 0 && (
@@ -12020,40 +11980,7 @@ const generateMarkdownContent = () => {
  
 
 
- {/* 心情选择 - 第一行 */}
-<div style={{ marginBottom: 12 }}>
-  <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>心情：</label>
-  <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
-    {moodOptions.map((mood) => (
-      <button
-        key={mood.value}
-        onClick={(e) => {
-          e.preventDefault(); // 阻止默认行为
-          e.stopPropagation(); // 阻止事件冒泡
-          setCurrentDailyMood(mood.value);
-        }}
-        style={{
-          flex: 1,
-          padding: '6px 0',
-          border: 'none',
-          borderRadius: 6,
-          backgroundColor: getCurrentDailyMood() === mood.value ? '#ffe066' : '#f1f3f4',
-          fontSize: mood.emoji ? '18px' : '12px',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          boxShadow: getCurrentDailyMood() === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-          minHeight: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        title={mood.label}
-      >
-        {mood.emoji || '无'}
-      </button>
-    ))}
-  </div>
-</div>
+
 
 {/* 评分选择 - 第二行 */}
 <div style={{ marginBottom: 12 }}>
@@ -12644,14 +12571,9 @@ if (isInitialized && todayTasks.length === 0) {
         let content = '';
         
         // 添加心情、评分和复盘内容到最上方
-        if (dailyMood > 0 || dailyRating > 0 || getCurrentDailyReflection()) {
+        if ( dailyRating > 0 || getCurrentDailyReflection()) {
           content += "=== 今日总结 ===\n";
           
-          // 心情显示
-          if (dailyMood > 0) {
-            const selectedMood = moodOptions.find(m => m.value === dailyMood);
-            content += `心情: ${selectedMood?.emoji} ${selectedMood?.label}\n`;
-          }
           
           // 评分显示
           if (dailyRating > 0) {
@@ -12683,7 +12605,6 @@ if (isInitialized && todayTasks.length === 0) {
         alert('复制失败，请手动复制日志内容');
       });
     }}
-    dailyMood={dailyMood}
     dailyRating={dailyRating}
     dailyReflection={getCurrentDailyReflection()} // 这里也要改为使用新函数
   />
@@ -13710,8 +13631,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 {/* 主界面的复盘框 - 只保留学习状态评价 */}
-{/* 主界面的复盘框 - 只保留学习状态评价 */}
-{/* 主界面的复盘框 - 只保留学习状态评价 */}
+{/* 主界面的复盘框 - 只显示评分，不可选择 */}
 <div style={{ marginBottom: 8 }}>
   <div style={{
     backgroundColor: '#fff',
@@ -13774,44 +13694,24 @@ if (isInitialized && todayTasks.length === 0) {
       </div>
     </div>
 
-    {/* 右侧：学习状态评价 - 使用最小宽度而不是固定宽度 */}
-   {/* 右侧：学习状态评价 - 无箭头版本 */}
-<div style={{
-  minWidth: '30px',
-  flexShrink: 0,
-  marginLeft: 'auto'
-}}>
-  <select
-    value={getCurrentDailyRating()}
-    onChange={(e) => setCurrentDailyRating(parseInt(e.target.value))}
-    style={{
-      width: '30px',
-      height: '28px',
-      padding: '0 2px',  // 减小左右内边距
-      border: '1px solid #ddd',
-      borderRadius: '4px',
-      fontSize: '11px',
-      backgroundColor: '#fff',
-      cursor: 'pointer',
-      outline: 'none',
-      color: '#333',
-      boxSizing: 'border-box',
-      textAlign: 'center',
-      textAlignLast: 'center',
-      WebkitAppearance: 'none', // Safari兼容
-      MozAppearance: 'none', // Firefox兼容
-      appearance: 'none' // 完全移除箭头
-    }}
-    title="今日学习状态评分"
-  >
-    <option value="0">0</option>
-    <option value="1">1⭐</option>
-    <option value="2">2⭐</option>
-    <option value="3">3⭐</option>
-    <option value="4">4⭐</option>
-    <option value="5">5⭐</option>
-  </select>
-</div>
+    {/* 右侧：显示评分，数字用黑色，星星用金色 */}
+    <div style={{
+      minWidth: '45px',
+      flexShrink: 0,
+      marginLeft: 'auto',
+      textAlign: 'center'
+    }}>
+      <span style={{
+        fontSize: '12px',
+        fontWeight: 'bold',
+        whiteSpace: 'nowrap'
+      }}>
+        <span style={{ color: '#333' }}>
+          {getCurrentDailyRating() > 0 ? getCurrentDailyRating() : '0'}
+        </span>
+        <span style={{ color: '#FFB800' }}>⭐</span>
+      </span>
+    </div>
   </div>
 </div>
 
@@ -13874,49 +13774,7 @@ if (isInitialized && todayTasks.length === 0) {
         autoFocus
       />
 
-      {/* 心情选择 - 新增在这里 */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ 
-          display: 'block', 
-          marginBottom: '8px', 
-          color: '#555', 
-          fontSize: '13px',
-          fontWeight: 'bold'
-        }}>
-          心情
-        </label>
-        <div style={{ 
-          display: 'flex', 
-          gap: '4px', 
-          justifyContent: 'space-between',
-          flexWrap: 'wrap'
-        }}>
-          {moodOptions.map((mood) => (
-            <button
-              key={mood.value}
-              onClick={(e) => {
-                e.preventDefault();
-                setCurrentDailyMood(mood.value);
-              }}
-              style={{
-                flex: '1 1 auto',
-                minWidth: '40px',
-                padding: '8px 0',
-                border: 'none',
-                borderRadius: 6,
-                backgroundColor: getCurrentDailyMood() === mood.value ? '#ffe066' : '#f1f3f4',
-                fontSize: mood.emoji ? '16px' : '11px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: getCurrentDailyMood() === mood.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-              }}
-              title={mood.label}
-            >
-              {mood.emoji || mood.label}
-            </button>
-          ))}
-        </div>
-      </div>
+     
 
       {/* 评分选择 - 新增在这里 */}
       <div style={{ marginBottom: '16px' }}>
