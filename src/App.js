@@ -6838,48 +6838,76 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
           onChange={() => toggleDone(task)}
           style={{ marginTop: "2px" }}
         />
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEditModal(task);
-          }}
-          style={{
-            wordBreak: "break-word",
-            cursor: "pointer",
-            color: task.done ? "#999" : "#000",
-            fontWeight: task.pinned ? "bold" : "normal",
-            fontSize: "14px",
-            lineHeight: 1.4,
-            flex: 1,
-    maxWidth: "calc(100% - 40px)", // 新增：限制最大宽度
-    overflow: "hidden",
-    whiteSpace: "pre-wrap",  // 改为 pre-wrap
-    wordWrap: "break-word"   // 添加这行
-          }}
-        >
-          {task.text}
-          {task.pinned && " 📌"}
-          {task.isWeekTask && " 🌟"}
-       {/* 添加这行：显示常规任务的目标分类 */}
-  {task.isRegularTask && task.targetCategory && (
-    <span style={{
-      marginLeft: "6px",
-      padding: "2px 8px",
-      marginTop: "-3px",  // 添加这行，向上移动2px
-      backgroundColor: "#FF9800",
-      color: "#fff",
-      borderRadius: "12px",
-      fontSize: "12px",
-      fontWeight: "bold",
-      display: "inline-block",
-      verticalAlign: "middle"
-    }}>
-       {task.targetCategory}
-    </span>
-  )}
-
+        
+        {/* 任务文字和标签容器 */}
+        <div style={{ display: "flex", alignItems: "center", flex: 1, flexWrap: "wrap", gap: "4px" }}>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenEditModal(task);
+            }}
+            style={{
+              wordBreak: "break-word",
+              cursor: "pointer",
+              color: task.done ? "#999" : "#000",
+              fontWeight: task.pinned ? "bold" : "normal",
+              fontSize: "14px",
+              lineHeight: 1.4,
+              whiteSpace: "pre-wrap",
+              wordWrap: "break-word"
+            }}
+          >
+            {task.text}
+            {task.pinned && " 📌"}
+            {task.isWeekTask && " 🌟"}
+          </div>
+          
+          {/* 常规任务标签 - 字体大小与任务文字一致 */}
+        {/* 常规任务标签 - 字体大小与任务文字一致 */}
+{task.isRegularTask && task.targetCategory && (
+  <span style={{
+    color: (() => {
+      // 如果是校内分类且有子分类，使用子分类的颜色逻辑
+      if (task.targetCategory === "校内" && task.targetSubCategory) {
+        // 可以给不同子分类不同颜色
+        const subCategoryColors = {
+          "数学": "#FF9800",
+          "语文": "#F57C00",
+          "英语": "#FFB74D",
+          "运动": "#4CAF50"
+        };
+        return subCategoryColors[task.targetSubCategory] || "#FF9800";
+      }
+      
+      // 其他分类的颜色
+      switch(task.targetCategory) {
+        case "语文": return "#FF9800";
+        case "数学": return "#F57C00";
+        case "英语": return "#FFB74D";
+        case "物理": return "#E65100";
+        case "化学": return "#FF7043";
+        case "历史": return "#FB8C00";
+        case "地理": return "#FFA726";
+        case "生物": return "#FF6B35";
+        case "政治": return "#FF8A65";
+        default: return "#FF9800";
+      }
+    })(),
+    fontSize: "14px",
+    fontWeight: "500",
+    whiteSpace: "nowrap",
+    lineHeight: 1.4
+  }}>
+    #{task.targetCategory === "校内" && task.targetSubCategory 
+      ? `校内/${task.targetSubCategory}` 
+      : task.targetCategory}
+  </span>
+)}
         </div>
       </div>
+
+
+     
 
       {/* 第二行：备注和感想 */}
 {(task.note || task.reflection) && (
@@ -10819,46 +10847,82 @@ const handleAddTask = (template = null) => {
 };
 
 
-// 添加处理常规任务完成的函数
-// 修改 toggleRegularTaskDone 函数，确保状态正确同步
+// 修改 toggleRegularTaskDone 函数
 // 修改 toggleRegularTaskDone 函数
 const toggleRegularTaskDone = (task) => {
   const wasDone = task.done;
   
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
+    const todayStr = selectedDate;
+    const todayTasks = [...(prev[todayStr] || [])];
     
-    // 更新当前日期的任务状态
-    newTasksByDate[selectedDate] = prev[selectedDate].map(t => {
-      if (t.id === task.id) {
-        const updatedTask = { ...t, done: !wasDone };
-        
-        // 如果任务完成（从未完成变为完成）且设置了目标分类
-        if (!wasDone && t.targetCategory) {
-          // 更新分类为目标分类
-          updatedTask.category = t.targetCategory;
-          updatedTask.subCategory = t.targetSubCategory || ''; // 添加子类别
-          updatedTask.isRegularTask = false; // 不再是常规任务
+    if (!wasDone) {
+      // 任务从未完成变为完成
+      
+      // 1. 更新原始常规任务的状态为已完成（保留在原位置）
+      const updatedTodayTasks = todayTasks.map(t => {
+        if (t.id === task.id) {
+          return { ...t, done: true };
         }
+        return t;
+      });
+      
+      // 2. 在目标分类中创建一个新任务（副本）
+      if (task.targetCategory) {
+        const newCompletedTask = {
+          id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          text: task.text,
+          category: task.targetCategory,
+          subCategory: task.targetSubCategory || '',
+          done: true,
+          timeSpent: 0,
+          subTasks: [],
+          note: task.note || "",
+          reflection: task.reflection || "",
+          image: task.image || null,
+          scheduledTime: task.scheduledTime || "",
+          pinned: false,
+          progress: task.progress || {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          tags: task.tags || [],
+          reminderTime: task.reminderTime || null
+        };
         
-        // 如果任务被取消完成（从完成变为未完成），保持为常规任务
-        if (wasDone) {
-          updatedTask.category = "常规任务";
-          updatedTask.subCategory = ''; // 清空子类别
-          updatedTask.isRegularTask = true; // 仍然是常规任务
-        }
-        
-        return updatedTask;
+        updatedTodayTasks.push(newCompletedTask);
       }
-      return t;
-    });
+      
+      newTasksByDate[todayStr] = updatedTodayTasks;
+      
+    } else {
+      // 任务从完成变为未完成
+      
+      // 1. 更新原始常规任务的状态为未完成
+      const updatedTodayTasks = todayTasks.map(t => {
+        if (t.id === task.id) {
+          return { ...t, done: false };
+        }
+        return t;
+      });
+      
+      // 2. 删除目标分类中的对应副本任务
+      // 注意：这里需要根据任务内容来识别对应的副本
+      newTasksByDate[todayStr] = updatedTodayTasks.filter(t => 
+        !(t.category === task.targetCategory && 
+          t.text === task.text && 
+          t.id !== task.id) // 保留原始任务，删除其他日期的副本
+      );
+    }
     
     return newTasksByDate;
   });
 };
 
-// 添加处理常规任务的函数
-// 替换现有的 handleAddRegularTask 函数
+
 // 替换现有的 handleAddRegularTask 函数
 const handleAddRegularTask = () => {
   if (!newRegularTaskText.trim()) {
@@ -10869,48 +10933,44 @@ const handleAddRegularTask = () => {
   const baseTask = {
     text: newRegularTaskText.trim(),
     targetCategory: newRegularTaskCategory,
-    isRegularTask: true
+    targetSubCategory: newTaskSubCategory || '',
+    isRegularTask: true,
+    category: "常规任务",  // 永远属于常规任务分类
+    done: false,
+    timeSpent: 0,
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: null,
+    scheduledTime: "",
+    pinned: false,
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    }
   };
 
   // 为所有现有日期创建常规任务
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
-    
-    // 获取所有现有日期
     const allDates = Object.keys(prev);
     
-    // 如果没有日期，至少为今天创建
     if (allDates.length === 0) {
       if (!newTasksByDate[selectedDate]) {
         newTasksByDate[selectedDate] = [];
       }
       newTasksByDate[selectedDate].push({
         ...baseTask,
-        id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${selectedDate}`,
-        category: "常规任务",
-        done: false,
-        timeSpent: 0,
-        subTasks: [],
-        note: "",
-        reflection: "",
-        image: null,
-        scheduledTime: "",
-        pinned: false,
-        progress: {
-          initial: 0,
-          current: 0,
-          target: 0,
-          unit: "%"
-        }
+        id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${selectedDate}`
       });
     } else {
-      // 为所有现有日期添加任务
       allDates.forEach(date => {
         if (!newTasksByDate[date]) {
           newTasksByDate[date] = [];
         }
         
-        // 检查是否已存在相同文本的任务
         const exists = newTasksByDate[date].some(
           t => t.isRegularTask && t.text === baseTask.text
         );
@@ -10918,22 +10978,7 @@ const handleAddRegularTask = () => {
         if (!exists) {
           newTasksByDate[date].push({
             ...baseTask,
-            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${date}`,
-            category: "常规任务",
-            done: false, // 每个日期都是未完成状态
-            timeSpent: 0,
-            subTasks: [],
-            note: "",
-            reflection: "",
-            image: null,
-            scheduledTime: "",
-            pinned: false,
-            progress: {
-              initial: 0,
-              current: 0,
-              target: 0,
-              unit: "%"
-            }
+            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${date}`
           });
         }
       });
@@ -10944,10 +10989,10 @@ const handleAddRegularTask = () => {
 
   // 重置输入
   setNewRegularTaskText("");
+  setNewTaskSubCategory("");
   setShowRegularInput(false);
   setShowRegularCategorySelect(false);
 };
-
 
 
 // 添加本周任务 - 修改版本
@@ -13909,51 +13954,52 @@ if (isInitialized && todayTasks.length === 0) {
 
 
   {/* 任务列表 - 不折叠时显示 */}
-{/* 任务列表 - 不折叠时显示 */}
 {!collapsedCategories["常规任务"] && (
-  <ul style={{
-    listStyle: "none",
-    padding: 8,
-    margin: 0
-  }}>
-    {(() => {
-      // 获取今天的常规任务
-      const regularTasks = (tasksByDate[selectedDate] || [])
-        .filter(task => task.isRegularTask)
-        .sort((a, b) => {
-          if (a.pinned && !b.pinned) return -1;
-          if (!a.pinned && b.pinned) return 1;
-          return b.id - a.id;
-        });
-      
-      // 如果没有常规任务，不显示任何内容
-      if (regularTasks.length === 0) {
-        return null; // 改为返回 null，不显示任何内容
-      }
+  (() => {
+    // 获取今天的常规任务
+    const regularTasks = (tasksByDate[selectedDate] || [])
+      .filter(task => task.isRegularTask)
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return b.id - a.id;
+      });
+    
+    // 如果没有常规任务，不渲染任何内容
+    if (regularTasks.length === 0) {
+      return null;
+    }
 
-      return regularTasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          onEditTime={editTaskTime}
-          onEditNote={editTaskNote}
-          onEditReflection={editTaskReflection}
-          onOpenEditModal={openTaskEditModal}
-          onShowImageModal={setShowImageModal}
-          onDeleteImage={handleDeleteImage}
-          toggleDone={toggleRegularTaskDone}
-          formatTimeNoSeconds={formatTimeNoSeconds}
-          formatTimeWithSeconds={formatTimeWithSeconds}
-          onMoveTask={moveTask}
-          categories={categories}
-          setShowMoveModal={setShowMoveModal}
-          onUpdateProgress={handleUpdateProgress}
-          onEditSubTask={editSubTask}
-          onToggleSubTask={toggleSubTask}
-        />
-      ));
-    })()}
-  </ul>
+    return (
+      <ul style={{
+        listStyle: "none",
+        padding: 8,
+        margin: 0
+      }}>
+        {regularTasks.map((task) => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            onEditTime={editTaskTime}
+            onEditNote={editTaskNote}
+            onEditReflection={editTaskReflection}
+            onOpenEditModal={openTaskEditModal}
+            onShowImageModal={setShowImageModal}
+            onDeleteImage={handleDeleteImage}
+            toggleDone={toggleRegularTaskDone}
+            formatTimeNoSeconds={formatTimeNoSeconds}
+            formatTimeWithSeconds={formatTimeWithSeconds}
+            onMoveTask={moveTask}
+            categories={categories}
+            setShowMoveModal={setShowMoveModal}
+            onUpdateProgress={handleUpdateProgress}
+            onEditSubTask={editSubTask}
+            onToggleSubTask={toggleSubTask}
+          />
+        ))}
+      </ul>
+    );
+  })()
 )}
 </div>
 
