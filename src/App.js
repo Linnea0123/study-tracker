@@ -6861,9 +6861,7 @@ const TaskItem = ({
   }}
   title="点击修改时间"
 >
-  {isThisTaskRunning
-    ? formatTimeNoSeconds(totalTime + elapsedTime) // 显示累加的时间
-    : formatTimeNoSeconds(totalTime)}
+  {formatTimeNoSeconds(totalTime)} 
 </span>
       </div>
     </div>
@@ -11593,20 +11591,7 @@ const clearAllData = async () => {
   if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
     setTasksByDate({});
     setTemplates([]);
-    setExchangeItems([]);
-    setPointHistory([{
-      date: new Date().toISOString(),
-      change: 0,
-      reason: '系统初始化',
-      totalAfterChange: 0
-    }]);
-    setActiveTimer(null);
-    setElapsedTime(0);
 
-     // 修复：清空成就数据
-    setUnlockedAchievements([]);
-    setNewAchievements([]);
-    setCustomAchievements([]);
     
     
     // 清空所有存储
@@ -11658,8 +11643,6 @@ const handleExportData = async () => {
     const allData = {
       tasks: await loadDataWithFallback('tasks', {}),
       templates: await loadDataWithFallback('templates', []),
-      customAchievements: await loadDataWithFallback('customAchievements', []),
-      unlockedAchievements: await loadDataWithFallback('unlockedAchievements', []),
       categories: await loadDataWithFallback('categories', baseCategories),
       exportDate: new Date().toISOString(),
       version: '1.1'
@@ -14580,10 +14563,6 @@ reader.onload = async (event) => {
       // 更新状态
       setTasksByDate(importedData.tasks || {});
       setTemplates(importedData.templates || []);
-      setExchangeItems(importedData.exchange || []);
-   
-      setCustomAchievements(importedData.customAchievements || []);
-      setUnlockedAchievements(importedData.unlockedAchievements || []);
       setCategories(importedData.categories || baseCategories);
       
       console.log('✅ 所有数据导入完成');
