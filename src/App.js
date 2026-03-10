@@ -6860,7 +6860,24 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
           {task.text}
           {task.pinned && " 📌"}
           {task.isWeekTask && " 🌟"}
-       
+       {/* 添加这行：显示常规任务的目标分类 */}
+  {task.isRegularTask && task.targetCategory && (
+    <span style={{
+      marginLeft: "6px",
+      padding: "2px 8px",
+      marginTop: "-3px",  // 添加这行，向上移动2px
+      backgroundColor: "#FF9800",
+      color: "#fff",
+      borderRadius: "12px",
+      fontSize: "12px",
+      fontWeight: "bold",
+      display: "inline-block",
+      verticalAlign: "middle"
+    }}>
+       {task.targetCategory}
+    </span>
+  )}
+
         </div>
       </div>
 
@@ -8918,26 +8935,18 @@ const handleCrossDateTask = (task, targetDates) => {
 
 
 // 修改 toggleDone 函数，支持跨日期任务同步
+// 修改 toggleDone 函数中处理本周任务的部分
 const toggleDone = (task) => {
   const wasDone = task.done;
 
-  console.log('=== 开始切换任务状态 ===');
-  console.log('任务:', task.text, '当前状态:', wasDone, '跨日期ID:', task.crossDateId);
-
   // 如果是跨日期任务，同步所有日期的状态
   if (task.isCrossDate && task.crossDateId) {
-    console.log('检测到跨日期任务，开始同步');
-    
     setTasksByDate(prevTasksByDate => {
       const newTasksByDate = { ...prevTasksByDate };
-      let updatedCount = 0;
 
-      // 遍历所有日期
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t => {
           if (t.crossDateId === task.crossDateId) {
-            updatedCount++;
-            console.log(`✅ 更新日期 ${date} 的任务: "${t.text}", 新状态: ${!wasDone}`);
             return {
               ...t,
               done: !wasDone,
@@ -8947,24 +8956,11 @@ const toggleDone = (task) => {
           return t;
         });
       });
-
-      console.log(`🎯 总共同步了 ${updatedCount} 个任务`);
-      
-      // 立即检查存储
-      setTimeout(() => {
-        const stored = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks'));
-        const fridayTask = stored?.['2025-10-25']?.find(t => t.crossDateId === task.crossDateId);
-        const saturdayTask = stored?.['2025-10-26']?.find(t => t.crossDateId === task.crossDateId);
-        console.log('存储后检查:');
-        console.log('  周五任务状态:', fridayTask?.done);
-        console.log('  周六任务状态:', saturdayTask?.done);
-      }, 100);
       
       return newTasksByDate;
     });
 
   } else {
-    // 原有逻辑（普通任务和本周任务）
     const updateTaskWithDone = (t, doneState) => {
       const currentSubTasks = t.subTasks || [];
       const newSubTasks = doneState 
@@ -8979,13 +8975,19 @@ const toggleDone = (task) => {
     };
 
     if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? updateTaskWithDone(t, !wasDone) : t
-        );
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].map(t =>
+            t.isWeekTask && 
+            t.text === task.text && 
+            t.weekStart === task.weekStart // 只更新同一周的任务
+              ? updateTaskWithDone(t, !wasDone) 
+              : t
+          );
+        });
+        return newTasksByDate;
       });
-      setTasksByDate(updatedTasksByDate);
     } else {
       setTasksByDate(prev => ({
         ...prev,
@@ -8995,10 +8997,7 @@ const toggleDone = (task) => {
       }));
     }
   }
-
-  
 };
-
 
 
 
@@ -10505,41 +10504,35 @@ useEffect(() => {
   };
 }, []);
   // 获取本周任务
-  const getWeekTasks = () => {
-    const allTasks = Object.values(tasksByDate).flat();
-    const weekTasks = allTasks.filter(task => task.category === "本周任务");
+  // 获取本周任务
+const getWeekTasks = () => {
+  const allTasks = Object.values(tasksByDate).flat();
+  const currentWeekStart = currentMonday.toISOString();
+  
+  // 只获取属于当前周的任务
+  const weekTasks = allTasks.filter(task => 
+    task.category === "本周任务" && 
+    task.weekStart === currentWeekStart // 只显示当前周的任务
+  );
 
-    const uniqueTasks = [];
-    const seenTexts = new Set();
+  // 去重（同一个任务可能出现在多天）
+  const uniqueTasks = [];
+  const seenTexts = new Set();
 
-    weekTasks.forEach(task => {
-      if (!seenTexts.has(task.text)) {
-        seenTexts.add(task.text);
-        uniqueTasks.push(task);
-      }
-    });
+  weekTasks.forEach(task => {
+    if (!seenTexts.has(task.text)) {
+      seenTexts.add(task.text);
+      uniqueTasks.push(task);
+    }
+  });
 
-    return uniqueTasks;
-  };
+  return uniqueTasks;
+};
 
   const weekTasks = getWeekTasks();
   const pinnedTasks = todayTasks.filter(task => task.pinned);
   const weekDates = getWeekDates(currentMonday);
 
-  // 详细调试：检查每个日期的任务
-  console.log('=== 时间表详细调试 ===');
-  weekDates.forEach(day => {
-    const dayTasks = tasksByDate[day.date] || [];
-    console.log(`日期 ${day.date} (${day.label}):`, {
-      任务数量: dayTasks.length,
-      任务列表: dayTasks.map(t => ({
-        文本: t.text,
-        timeSegments: t.timeSegments,
-        scheduledTime: t.scheduledTime
-      }))
-    });
-  });
-  console.log('=== 调试结束 ===');
 
   
 // 计算今日统计数据（包含常规任务）
@@ -10957,60 +10950,66 @@ const handleAddRegularTask = () => {
 
 
 
+// 添加本周任务 - 修改版本
 // 添加本周任务
 const handleAddWeekTask = (text) => {
-    if (!text.trim()) return;
+  if (!text.trim()) return;
+
+  const weekDates = getWeekDates(currentMonday);
+  const taskId = Date.now().toString();
+  const weekStart = currentMonday.toISOString(); // 获取当前周的周一
   
-    const weekDates = getWeekDates(currentMonday); // 这里使用 currentMonday
-    const taskId = Date.now().toString();
-  
-    
   const newTask = {
-  id: taskId,
-  text: text.trim(),
-  category: "本周任务",
-  done: false,
-  timeSpent: 0,
-  note: "",
-  image: null,
-  scheduledTime: "",
-  pinned: false,
-  isWeekTask: true,
-  reflection: "",
-  // ✅ 添加这6行代码
-  reminderTime: reminderTimeData ? {
-    year: parseInt(reminderTimeData.reminderYear),
-    month: parseInt(reminderTimeData.reminderMonth),
-    day: parseInt(reminderTimeData.reminderDay),
-    hour: parseInt(reminderTimeData.reminderHour) || 0,
-    minute: parseInt(reminderTimeData.reminderMinute) || 0
-  } : null,
-  // ✅ 同时添加临时字段用于编辑界面
-  reminderYear: reminderTimeData?.reminderYear || '',
-  reminderMonth: reminderTimeData?.reminderMonth || '',
-  reminderDay: reminderTimeData?.reminderDay || '',
-  reminderHour: reminderTimeData?.reminderHour || '',
-  reminderMinute: reminderTimeData?.reminderMinute || ''
-};
-    const newTasksByDate = { ...tasksByDate };
-  
+    id: taskId,
+    text: text.trim(),
+    category: "本周任务",
+    done: false,
+    timeSpent: 0,
+    note: "",
+    image: null,
+    scheduledTime: "",
+    pinned: false,
+    isWeekTask: true,
+    reflection: "",
+    subTasks: [],
+    tags: [],
+    weekStart: weekStart, // 记录这是哪一周的任务
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    reminderTime: null
+  };
+
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+
+    // 只为本周的每一天添加任务
     weekDates.forEach(dateObj => {
       if (!newTasksByDate[dateObj.date]) {
         newTasksByDate[dateObj.date] = [];
       }
-  
+
+      // 检查该日期是否已有相同文本的任务（只检查当前周）
       const existingTask = newTasksByDate[dateObj.date].find(
-        task => task.isWeekTask && task.text === text.trim()
+        task => task.isWeekTask && 
+               task.text === text.trim() && 
+               task.weekStart === weekStart // 只检查当前周
       );
-  
+
       if (!existingTask) {
-        newTasksByDate[dateObj.date] = [...newTasksByDate[dateObj.date], { ...newTask }];
+        newTasksByDate[dateObj.date].push({ 
+          ...newTask, 
+          id: `${taskId}_${dateObj.date}` // 为不同日期创建不同ID
+        });
       }
     });
-  
-    setTasksByDate(newTasksByDate);
-  };
 
+    return newTasksByDate;
+  });
+};
 
   
 
@@ -11213,30 +11212,35 @@ const toggleSubTask = (task, subTaskIndex) => {
   
 
 // 编辑任务时间 - 只支持分钟
+// 编辑任务时间
 const editTaskTime = (task) => {
   const currentTotal = task.timeSpent || 0;
   const currentMinutes = Math.floor(currentTotal / 60);
   
-  // 显示当前时间为 分钟 格式
   const newTimeStr = window.prompt(
     "设置任务总时间（单位：分钟，例如 5 表示5分钟）", 
     currentMinutes.toString()
   );
 
   if (newTimeStr !== null) {
-    // 解析输入的数字
     const minutes = parseInt(newTimeStr) || 0;
-    const newSeconds = minutes * 60; // 转换为秒存储
+    const newSeconds = minutes * 60;
     
     if (newSeconds >= 0) {
       if (task.isWeekTask) {
-        const updatedTasksByDate = { ...tasksByDate };
-        Object.keys(updatedTasksByDate).forEach(date => {
-          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-            t.isWeekTask && t.text === task.text ? { ...t, timeSpent: newSeconds } : t
-          );
+        setTasksByDate(prev => {
+          const newTasksByDate = { ...prev };
+          Object.keys(newTasksByDate).forEach(date => {
+            newTasksByDate[date] = newTasksByDate[date].map(t =>
+              t.isWeekTask && 
+              t.text === task.text && 
+              t.weekStart === task.weekStart // 只更新同一周的任务
+                ? { ...t, timeSpent: newSeconds } 
+                : t
+            );
+          });
+          return newTasksByDate;
         });
-        setTasksByDate(updatedTasksByDate);
       } else {
         setTasksByDate(prev => ({
           ...prev,
@@ -11252,165 +11256,81 @@ const editTaskTime = (task) => {
   
 
   // 修复置顶功能
-  const togglePinned = (task) => {
-    if (task.isWeekTask) {
-      const updatedTasksByDate = { ...tasksByDate };
-
-      Object.keys(updatedTasksByDate).forEach(date => {
-        updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? { ...t, pinned: !t.pinned } : t
+  // 置顶/取消置顶任务
+const togglePinned = (task) => {
+  if (task.isWeekTask) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && 
+          t.text === task.text && 
+          t.weekStart === task.weekStart // 只更新同一周的任务
+            ? { ...t, pinned: !t.pinned } 
+            : t
         );
       });
-
-      setTasksByDate(updatedTasksByDate);
-    } else {
-      setTasksByDate(prev => {
-        const currentTasks = prev[selectedDate] || [];
-        const updatedTasks = currentTasks.map(t =>
-          t.id === task.id ? { ...t, pinned: !t.pinned } : t
-        );
-
-        return {
-          ...prev,
-          [selectedDate]: updatedTasks
-        };
-      });
-    }
-  };
+      return newTasksByDate;
+    });
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { ...t, pinned: !t.pinned } : t
+      )
+    }));
+  }
+};
 
 // 删除任务 - 调试版
+// 删除任务
 const deleteTask = (task, deleteOption = 'today') => {
-  console.log('========== 删除任务 ==========');
-  console.log('要删除的任务:', {
-    id: task.id,
-    text: task.text,
-    category: task.category,
-    isWeekTask: task.isWeekTask,
-    crossDateId: task.crossDateId
-  });
-  console.log('删除选项:', deleteOption);
-  console.log('当前选中日期:', selectedDate);
-  
-  // 复制当前数据
   const updatedTasksByDate = { ...tasksByDate };
   
   if (deleteOption === 'future') {
-    console.log('执行删除今日及以后');
-    
-    // 获取所有日期并排序
     const allDates = Object.keys(updatedTasksByDate).sort();
-    console.log('所有日期:', allDates);
-    
-    // 找出从选中日期开始的所有日期
     const futureDates = allDates.filter(date => date >= selectedDate);
-    console.log('要处理的未来日期:', futureDates);
-    
-    let totalDeleted = 0;
     
     futureDates.forEach(date => {
-      const beforeCount = updatedTasksByDate[date]?.length || 0;
-      
-      // 过滤任务
       updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
-        // 判断是否是同一个任务
-        let isSameTask = false;
-        
         if (task.isWeekTask) {
-          isSameTask = t.isWeekTask && t.text === task.text;
+          // 只删除同一周的任务
+          return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
         } else if (task.crossDateId) {
-          isSameTask = t.crossDateId === task.crossDateId;
+          return t.crossDateId !== task.crossDateId;
         } else {
-          // 对于普通任务，用多个条件匹配
-          isSameTask = t.text === task.text && t.category === task.category;
-          // 也可以用 id，但注意不同日期的任务可能有不同id
-          // isSameTask = t.id === task.id;
+          return t.id !== task.id;
         }
-        
-        if (isSameTask) {
-          console.log(`🗑️ 从 ${date} 删除任务:`, {
-            文本: t.text,
-            类别: t.category,
-            id: t.id
-          });
-          totalDeleted++;
-          return false; // 删除
-        }
-        return true; // 保留
       });
-      
-      const afterCount = updatedTasksByDate[date]?.length || 0;
-      if (beforeCount !== afterCount) {
-        console.log(`✅ ${date}: ${beforeCount} -> ${afterCount} 个任务`);
-      }
     });
-    
-    console.log(`总共删除了 ${totalDeleted} 个任务`);
     
   } else if (deleteOption === 'all') {
-    console.log('执行删除所有日期');
-    
-    let totalDeleted = 0;
-    
     Object.keys(updatedTasksByDate).forEach(date => {
-      const beforeCount = updatedTasksByDate[date]?.length || 0;
-      
       updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
-        let isSameTask = false;
-        
         if (task.isWeekTask) {
-          isSameTask = t.isWeekTask && t.text === task.text;
+          // 只删除同一周的任务
+          return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
         } else if (task.crossDateId) {
-          isSameTask = t.crossDateId === task.crossDateId;
+          return t.crossDateId !== task.crossDateId;
         } else {
-          isSameTask = t.text === task.text && t.category === task.category;
+          return t.id !== task.id;
         }
-        
-        if (isSameTask) {
-          console.log(`🗑️ 从 ${date} 删除任务: "${t.text}"`);
-          totalDeleted++;
-          return false;
-        }
-        return true;
       });
-      
-      const afterCount = updatedTasksByDate[date]?.length || 0;
-      if (beforeCount !== afterCount) {
-        console.log(`✅ ${date}: ${beforeCount} -> ${afterCount} 个任务`);
-      }
     });
-    
-    console.log(`总共删除了 ${totalDeleted} 个任务`);
     
   } else {
-    console.log('执行仅删除今日');
-    
-    const beforeCount = updatedTasksByDate[selectedDate]?.length || 0;
-    
     updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => {
-      let isSameTask = false;
-      
       if (task.isWeekTask) {
-        isSameTask = t.isWeekTask && t.text === task.text;
+        return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
       } else if (task.crossDateId) {
-        isSameTask = t.crossDateId === task.crossDateId;
+        return t.crossDateId !== task.crossDateId;
       } else {
-        isSameTask = t.text === task.text && t.category === task.category;
+        return t.id !== task.id;
       }
-      
-      if (isSameTask) {
-        console.log(`🗑️ 从 ${selectedDate} 删除任务: "${t.text}"`);
-        return false;
-      }
-      return true;
     });
-    
-    const afterCount = updatedTasksByDate[selectedDate]?.length || 0;
-    console.log(`${selectedDate}: ${beforeCount} -> ${afterCount} 个任务`);
   }
   
-  // 更新状态
   setTasksByDate(updatedTasksByDate);
-  console.log('========== 删除完成 ==========');
 };
   
 
@@ -11889,7 +11809,7 @@ const getTasksBySubCategory = (catName) => {
 
 
 
-  // 切换到上一周
+// 切换到上一周
 const prevWeek = () => {
   const monday = new Date(currentMonday);
   monday.setDate(monday.getDate() - 7);
@@ -11940,7 +11860,6 @@ const nextWeek = () => {
     console.error('切换下一周时出错:', error);
   }
 };
-
 
 
 // 在 handleDateSelect 函数中修复
