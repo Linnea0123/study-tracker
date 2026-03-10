@@ -13753,7 +13753,7 @@ if (isInitialized && todayTasks.length === 0) {
     <button
       onClick={() => setShowWeekTaskModal(true)}
       style={{
-        padding: "4px 12px",
+        padding: "4px 6px",
         backgroundColor: "#87CEEB",
         color: "#fff",
         border: "none",
@@ -13765,12 +13765,12 @@ if (isInitialized && todayTasks.length === 0) {
         gap: 4
       }}
     >
-      📅 本周
+      本周
     </button>
     <button
       onClick={() => setShowMonthTaskModal(true)}
       style={{
-        padding: "4px 12px",
+        padding: "4px 6px",
         backgroundColor: "#FF9800",
         color: "#fff",
         border: "none",
@@ -13782,7 +13782,7 @@ if (isInitialized && todayTasks.length === 0) {
         gap: 4
       }}
     >
-      📆 本月
+      本月
     </button>
   </div>
 
