@@ -73,16 +73,14 @@ const GradeModal = ({ onClose, isVisible }) => {
   };
 
   // 获取分数显示格式
-  const getScoreDisplay = (grade) => {
-    const scoreType = grade.scoreType || '100分制';
-    const score = parseInt(grade.score || 0);
-    const fullScore = parseInt(grade.fullScore || 100);
-    
-    if (scoreType.includes('星制')) {
-      return `${score}⭐/${fullScore}⭐`;
-    }
-    return `${score}/${fullScore}`;
-  };
+// 获取分数显示格式 - 只显示分数，不显示单位
+const getScoreDisplay = (grade) => {
+  const score = parseInt(grade.score || 0);
+  const fullScore = parseInt(grade.fullScore || 100);
+  
+  // 只显示分数，不显示满分和单位
+  return `${score}`;
+};
 
   // 获取百分比分数
   const getPercentageScore = (grade) => {
@@ -1004,34 +1002,34 @@ const handleDeleteSubCategory = (subject, subCat) => {
               gap: '10px'
             }}>
               {subCategoryStats.map(stat => (
-                <div key={stat.name} style={{
-                  padding: '12px',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1a73e8' }}>
-                    {stat.name}
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    测试次数: {stat.count}
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    平均分: <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>{stat.average}%</span>
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    最高分: {stat.maxScore}%
-                  </div>
-                  <div style={{ fontSize: '12px' }}>
-                    最低分: {stat.minScore}%
-                  </div>
-                  {stat.fullMarks > 0 && (
-                    <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
-                      ⭐ 满分 {stat.fullMarks} 次
-                    </div>
-                  )}
-                </div>
-              ))}
+  <div key={stat.name} style={{
+    padding: '12px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '6px',
+    border: '1px solid #e0e0e0'
+  }}>
+    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1a73e8' }}>
+      {stat.name}
+    </div>
+    <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+      测试次数: {stat.count}
+    </div>
+    <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+      平均分: <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>{stat.average}</span>
+    </div>
+    <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+      最高分: {stat.maxScore}
+    </div>
+    <div style={{ fontSize: '12px' }}>
+      最低分: {stat.minScore}
+    </div>
+    {stat.fullMarks > 0 && (
+      <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+        ⭐ 满分 {stat.fullMarks} 次
+      </div>
+    )}
+  </div>
+))}
             </div>
           </div>
         )}
@@ -1129,17 +1127,17 @@ const handleDeleteSubCategory = (subject, subCat) => {
                       }}>
                         {/* 分数标签 */}
                         <div style={{
-                          position: 'absolute',
-                          top: '-20px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          fontSize: '10px',
-                          color: '#333',
-                          fontWeight: 'bold',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {item.score}%
-                        </div>
+  position: 'absolute',
+  top: '-20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  fontSize: '10px',
+  color: '#333',
+  fontWeight: 'bold',
+  whiteSpace: 'nowrap'
+}}>
+  {item.score} {/* 只显示分数，不加% */}
+</div>
                       </div>
                       
                       {/* 日期标签 */}
@@ -1432,12 +1430,12 @@ const handleDeleteSubCategory = (subject, subCat) => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ 
-                        fontSize: '18px', 
-                        fontWeight: 'bold', 
-                        color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
-                      }}>
-                        {getScoreDisplay(grade)}
-                      </span>
+  fontSize: '18px', 
+  fontWeight: 'bold', 
+  color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
+}}>
+  {getScoreDisplay(grade)} {/* 现在只显示分数，如 98 */}
+</span>
                       {grade.isFullMark && (
                         <span style={{ 
                           backgroundColor: '#4caf50', 
@@ -9401,6 +9399,7 @@ function App() {
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
+  const hasAttemptedRestore = useRef(false);  // 添加这一行
   // 在现有状态定义区域添加
   const [showRegularModal, setShowRegularModal] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
@@ -10095,19 +10094,18 @@ useEffect(() => {
 
 // 在现有的初始化 useEffect 后面添加：
 
-// 监听初始化状态，自动恢复数据
 useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length === 0) {
+  if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
     console.log('🔄 初始化完成，检查是否需要恢复数据');
+    hasAttemptedRestore.current = true;  // 标记已尝试恢复
+    
     const timer = setTimeout(() => {
       autoRestoreLatestData();
     }, 3000);
     
     return () => clearTimeout(timer);
   }
-}, [isInitialized, tasksByDate, autoRestoreLatestData]);
-
-
+}, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
 
 
 
