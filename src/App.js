@@ -8644,18 +8644,45 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
   };
 
   return (
-    <li
-      className="task-item"
-      style={{
-        position: "relative",
-        background: task.pinned ? "#fff9e6" : "#fff",
-        borderRadius: 6,
-        minHeight: "24px",
-        marginBottom: 4,
-        padding: "8px",
-        border: "0.5px solid #e0e0e0",
-      }}
-    >
+    // 在 TaskItem 组件中找到任务项的外层 li 样式部分
+// 替换原有的 style 部分
+
+<li
+  className="task-item"
+  style={{
+    position: "relative",
+    background: (() => {
+      // 如果有标签，使用第一个标签的浅色版本
+      if (task.tags && task.tags.length > 0) {
+        const tagColor = task.tags[0].color;
+        // 将颜色转换为半透明版本 (20% 透明度)
+        // 如果是 hex 格式 (#ff4444)，转换为 rgba
+        const hexToRgba = (hex, alpha) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        
+        // 检查是否是 hex 颜色格式
+        if (tagColor && tagColor.startsWith('#')) {
+          return hexToRgba(tagColor, 0.10); // 15% 透明度，非常浅
+        }
+        // 如果是其他格式，直接使用带透明度的颜色
+        return tagColor ? tagColor.replace(')', ', 0.15)').replace('rgb', 'rgba') : (task.pinned ? "#fff9e6" : "#fff");
+      }
+      // 如果没有标签，使用原来的背景色
+      return task.pinned ? "#fff9e6" : "#fff";
+    })(),
+    borderRadius: 6,
+    minHeight: "24px",
+    marginBottom: 4,
+    padding: "8px",
+    border: task.tags && task.tags.length > 0 
+      ? `1px solid ${task.tags[0].color}`  // 边框使用标签原色
+      : "0.5px solid #e0e0e0",
+  }}
+>
       {/* 第一行：任务内容 + 复选框 */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
         <input
@@ -15289,11 +15316,11 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
       {(() => {
-        const validatedMonday = getMonday(new Date(selectedDate));
-        if (validatedMonday.getTime() !== currentMonday.getTime()) {
-          setCurrentMonday(validatedMonday);
-        }
-        return null;
+         const validatedMonday = getMonday(new Date(selectedDate));
+  if (validatedMonday.getTime() !== currentMonday.getTime()) {
+    setCurrentMonday(validatedMonday);
+  }
+  return null;
       })()}
 
 
