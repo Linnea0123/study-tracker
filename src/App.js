@@ -2645,15 +2645,23 @@ const getWeekNumber = (date) => {
 
 
 // 统一的存储函数
+// 统一的存储函数
 const saveMainData = async (key, data) => {
   const storageKey = `${STORAGE_KEY}_${key}`;
   try {
-    localStorage.setItem(storageKey, JSON.stringify(data));
-    console.log(`数据保存成功: ${key}`, data);
+    // 将数据转换为JSON字符串
+    const jsonData = JSON.stringify(data);
+    localStorage.setItem(storageKey, jsonData);
+    console.log(`数据保存成功: ${key}`, data ? '有数据' : '无数据');
   } catch (error) {
     console.error(`数据保存失败: ${key}`, error);
+    // 如果是因为数据太大导致保存失败，给出提示
+    if (error.name === 'QuotaExceededError') {
+      alert('图片太大，无法保存。请使用较小的图片（建议小于1MB）');
+    }
   }
 };
+
 
 const loadMainData = async (key) => {
   const storageKey = `${STORAGE_KEY}_${key}`;
@@ -13821,22 +13829,56 @@ const deleteTask = (task, deleteOption = 'today') => {
     }
   };
 
-  // 上传任务图片
-  const handleImageUpload = (e, task) => {
-    const file = e.target.files[0];
-    if (!file) return;
+ // 上传任务图片
+const handleImageUpload = (e, task) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? { ...t, image: event.target.result } : t
-        )
-      }));
-    };
-    reader.readAsDataURL(file);
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    if (task.isWeekTask) {
+      // 本周任务需要更新所有日期
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].map(t =>
+            t.isWeekTask && t.text === task.text ? { ...t, image: event.target.result } : t
+          );
+        });
+        return newTasksByDate;
+      });
+    } else if (task.isCrossDate && task.crossDateId) {
+      // 跨日期任务需要更新所有关联日期
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].map(t =>
+            t.crossDateId === task.crossDateId ? { ...t, image: event.target.result } : t
+          );
+        });
+        return newTasksByDate;
+      });
+    } else {
+      // 普通任务只更新当前日期
+      setTasksByDate(prev => {
+        const updatedTasks = {
+          ...prev,
+          [selectedDate]: prev[selectedDate].map(t =>
+            t.id === task.id ? { ...t, image: event.target.result } : t
+          )
+        };
+        
+        // 立即保存到localStorage
+        setTimeout(() => {
+          saveMainData('tasks', updatedTasks);
+        }, 0);
+        
+        return updatedTasks;
+      });
+    }
   };
+  reader.readAsDataURL(file);
+};
 
 // 修改分类总时间 - 只支持分钟
 const editCategoryTime = (catName) => {
