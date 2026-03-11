@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useRef, useCallback} from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './App.css';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 
 
 
@@ -1065,129 +1065,96 @@ const handleDeleteSubCategory = (subject, subCat) => {
           ))}
         </div>
 
-        {/* 子分类成绩曲线图 */}
-        {chartData.length > 0 ? (
-          <div style={{
-            marginBottom: '30px',
-            padding: '20px',
-            backgroundColor: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb'
-          }}>
-            <h3 style={{ marginBottom: '20px', fontSize: '16px', textAlign: 'center' }}>
-              各子分类成绩趋势 - {
-                chartView === 'month' ? '本月' : 
-                chartView === 'quarter' ? '本季度' : '本年'
-              }
-            </h3>
-            
-            {/* 为每个子分类绘制图表 */}
-            {Object.entries(chartDataBySubCat).map(([subCat, data]) => (
-              <div key={subCat} style={{ marginBottom: '30px' }}>
-                <h4 style={{ 
-                  marginBottom: '10px', 
-                  fontSize: '14px', 
-                  color: '#666',
-                  borderLeft: '3px solid #1a73e8',
-                  paddingLeft: '8px'
-                }}>
-                  {subCat}
-                </h4>
-                
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-end',
-                  height: '150px',
-                  gap: '4px',
-                  padding: '10px 0'
-                }}>
-                  {data.sort((a, b) => a.date.localeCompare(b.date)).map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      title={`${item.testContent}\n${item.date}\n得分: ${item.score}%`}
-                    >
-                      {/* 柱子 */}
-                      <div style={{
-                        width: '100%',
-                        height: `${item.score}%`,
-                        minHeight: '4px',
-                        backgroundColor: item.isFullMark ? '#4caf50' : '#1a73e8',
-                        borderRadius: '4px 4px 0 0',
-                        transition: 'height 0.3s ease',
-                        position: 'relative',
-                        opacity: 0.8
-                      }}>
-                        {/* 分数标签 */}
-                        <div style={{
-  position: 'absolute',
-  top: '-20px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  fontSize: '10px',
-  color: '#333',
-  fontWeight: 'bold',
-  whiteSpace: 'nowrap'
-}}>
-  {item.score} {/* 只显示分数，不加% */}
-</div>
-                      </div>
-                      
-                      {/* 日期标签 */}
-                      <div style={{
-                        fontSize: '9px',
-                        color: '#666',
-                        transform: 'rotate(-45deg)',
-                        marginTop: '10px',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {item.date.slice(5)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+      {/* 子分类成绩柱状图 */}
+{chartData.length > 0 ? (
+  <div style={{
+    marginBottom: '30px',
+    padding: '20px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
+  }}>
+    <h3 style={{ marginBottom: '20px', fontSize: '16px', textAlign: 'center' }}>
+      各子分类成绩对比 - {
+        chartView === 'month' ? '本月' : 
+        chartView === 'quarter' ? '本季度' : '本年'
+      }
+    </h3>
+    
+    {/* 使用 Recharts 柱状图 */}
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart
+        data={chartData}
+        margin={{ top: 30, right: 30, left: 0, bottom: 30 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="label" 
+          angle={-45} 
+          textAnchor="end" 
+          height={60}
+          interval={0}
+          tick={{ fontSize: 10 }}
+        />
+        <YAxis 
+          domain={[0, 100]} 
+          tick={{ fontSize: 10 }}
+          label={{ value: '分数', angle: -90, position: 'insideLeft', fontSize: 10 }}
+        />
+        <Bar 
+          dataKey="score" 
+          fill="#1a73e8"
+          radius={[4, 4, 0, 0]}
+          label={{ 
+            position: 'top', 
+            fontSize: 9,
+            formatter: (value) => `${value}`
+          }}
+        >
+          {/* 根据是否满分设置不同颜色 */}
+          {chartData.map((entry, index) => (
+            <Cell 
+              key={`cell-${index}`} 
+              fill={entry.isFullMark ? '#4caf50' : '#1a73e8'} 
+              fillOpacity={0.8}
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
 
-            {/* 图例 */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '20px',
-              marginTop: '20px',
-              padding: '10px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '6px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '16px', height: '16px', backgroundColor: '#1a73e8', borderRadius: '4px' }}></div>
-                <span style={{ fontSize: '12px' }}>普通成绩</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '16px', height: '16px', backgroundColor: '#4caf50', borderRadius: '4px' }}></div>
-                <span style={{ fontSize: '12px' }}>满分成绩</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            marginBottom: '30px',
-            padding: '40px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            暂无成绩数据，点击上方"添加新成绩"按钮开始记录
-          </div>
-        )}
+    {/* 图例 */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '20px',
+      marginTop: '20px',
+      padding: '10px',
+      backgroundColor: '#f8f9fa',
+      borderRadius: '6px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ width: '16px', height: '16px', backgroundColor: '#1a73e8', borderRadius: '4px' }}></div>
+        <span style={{ fontSize: '12px' }}>普通成绩</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ width: '16px', height: '16px', backgroundColor: '#4caf50', borderRadius: '4px' }}></div>
+        <span style={{ fontSize: '12px' }}>满分成绩</span>
+      </div>
+    </div>
+  </div>
+) : (
+  <div style={{
+    marginBottom: '30px',
+    padding: '40px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    textAlign: 'center',
+    color: '#666'
+  }}>
+    暂无成绩数据，点击上方"添加新成绩"按钮开始记录
+  </div>
+)}
 
         {/* 成绩记录列表 */}
         <div>
