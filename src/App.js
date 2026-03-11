@@ -1435,7 +1435,7 @@ return (
         <div style={{ 
           marginBottom: '10px',
           fontSize: '14px',
-          color: '#c0bfbf',
+          color: '#919090',
           paddingLeft: '4px'
         }}>
            {grade.testContent}
@@ -1460,93 +1460,12 @@ return (
     ))}
   </div>
 )}
-            <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-              {filteredGrades.sort((a, b) => b.date.localeCompare(a.date)).map(grade => (
-                <div
-                  key={grade.id}
-                  style={{
-                    padding: '15px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '8px',
-                    marginBottom: '10px',
-                    backgroundColor: grade.isFullMark ? '#e8f5e8' : '#fff'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div>
-                      <span style={{ fontWeight: 'bold' }}>
-                        {grade.date} {grade.subject}
-                      </span>
-                      {grade.subCategory && (
-                        <span style={{ 
-                          marginLeft: '8px',
-                          padding: '2px 6px',
-                          backgroundColor: '#f0f0f0',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          color: '#666'
-                        }}>
-                          {grade.subCategory}
-                        </span>
-                      )}
-                      <span style={{ marginLeft: '8px', color: '#666' }}>
-                        - {grade.testContent}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ 
-  fontSize: '18px', 
-  fontWeight: 'bold', 
-  color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
-}}>
-  {getScoreDisplay(grade)} {/* 现在只显示分数，如 98 */}
-</span>
-                      {grade.isFullMark && (
-                        <span style={{ 
-                          backgroundColor: '#4caf50', 
-                          color: 'white', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          fontSize: '12px'
-                        }}>
-                          满分
-                        </span>
-                      )}
-                      <button
-                        onClick={() => handleDeleteGrade(grade.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#f44336',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {grade.wrongQuestions && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>错题分析:</div>
-                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.wrongQuestions}</div>
-                    </div>
-                  )}
-                  
-                  {grade.analysis && (
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>总结改进:</div>
-                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.analysis}</div>
-                    </div>
-                  )}
-                </div>
+           
 
 
 
-
-              ))}
-            </div>
+            
+         
         </div>
       </div>
     </div>
