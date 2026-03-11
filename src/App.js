@@ -73,13 +73,18 @@ const GradeModal = ({ onClose, isVisible }) => {
   };
 
   // 获取分数显示格式
-// 获取分数显示格式 - 只显示分数，不显示单位
+// 获取分数显示格式
 const getScoreDisplay = (grade) => {
   const score = parseInt(grade.score || 0);
   const fullScore = parseInt(grade.fullScore || 100);
   
-  // 只显示分数，不显示满分和单位
-  return `${score}`;
+  // 根据分数类型显示不同格式
+  if (grade.scoreType && grade.scoreType.includes('星制')) {
+    return `${score}星`; // 星制显示如 "5星"
+  }
+  
+  // 默认显示 98/100 格式
+  return `${score}/${fullScore}`;
 };
 
   // 获取百分比分数
