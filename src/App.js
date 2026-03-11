@@ -118,34 +118,37 @@ const getScoreDisplay = (grade) => {
     await saveMainData('grades', updatedGrades);
   };
 
-  // 添加新成绩记录 - 手机版优化
-  const handleAddGrade = () => {
-    if (!newGrade.testContent || !newGrade.score) {
-      alert('请填写测试内容和得分');
-      return;
-    }
+ // 添加新成绩记录 - 手机版优化
+const handleAddGrade = () => {
+  if (!newGrade.testContent || !newGrade.score) {
+    alert('请填写测试内容和得分');
+    return;
+  }
 
-    const updatedGrades = [...grades, {
-      id: Date.now().toString(),
-      ...newGrade,
-      subCategory: newGrade.subCategory || '未分类',
-      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-    }];
-    
-    saveGrades(updatedGrades);
-    setNewGrade({
-      date: new Date().toISOString().split('T')[0],
-      subject: '语文',
-      subCategory: '',
-      testContent: '',
-      score: '',
-      scoreType: '100分制',
-      fullScore: '100',
-      wrongQuestions: '',
-      analysis: ''
-    });
-    setShowAddForm(false);
-  };
+  // 生成更唯一的ID：时间戳 + 随机数
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const updatedGrades = [...grades, {
+    id: uniqueId,  // 使用更唯一的ID
+    ...newGrade,
+    subCategory: newGrade.subCategory || '未分类',
+    isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+  }];
+  
+  saveGrades(updatedGrades);
+  setNewGrade({
+    date: new Date().toISOString().split('T')[0],
+    subject: '语文',
+    subCategory: '',
+    testContent: '',
+    score: '',
+    scoreType: '100分制',
+    fullScore: '100',
+    wrongQuestions: '',
+    analysis: ''
+  });
+  setShowAddForm(false);
+};
 
   // 删除成绩记录
   const handleDeleteGrade = (id) => {
@@ -379,68 +382,69 @@ const handleDeleteSubCategory = (subject, subCat) => {
     return acc;
   }, {});
 
-  if (!isVisible) return null;
+ if (!isVisible) return null;
 
-  return (
+return (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#f5faff',  // 改成和主界面一样的背景色
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    padding: 0,
+  }}>
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
+      backgroundColor: '#f5faff',  // 和主界面一样的背景色
+      padding: '15px',
+      borderRadius: 0,
+      width: '100%',
+      maxWidth: '600px',  // 和主界面一样的最大宽度
+      height: '100%',
+      maxHeight: '100%',
+      overflow: 'auto',
+      boxShadow: 'none',
+      position: 'relative',
+      WebkitOverflowScrolling: 'touch',
+      margin: '0 auto',  // 居中显示
     }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '16px',
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '600px',    // 👈 从1200px改为600px（和主界面一样）
-        maxHeight: '90vh',     // 👈 从95vh改为90vh
-        overflow: 'auto',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        position: 'relative',
-        WebkitOverflowScrolling: 'touch' // 优化移动端滚动
-      }}>
-        {/* 关闭按钮 */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: 'transparent',
-            border: 'none',
-            fontSize: '24px',
-            cursor: 'pointer',
-            color: '#666',
-            zIndex: 10,
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.9)'
-          }}
-        >
-          ×
-        </button>
+      {/* 关闭按钮 - 调整样式使其更融入 */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '15px',
+          right: '15px',
+          background: 'transparent',
+          border: 'none',
+          fontSize: '24px',
+          cursor: 'pointer',
+          color: '#666',
+          zIndex: 10,
+          width: '36px',
+          height: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        ×
+      </button>
 
-        <h2 style={{ 
-          textAlign: 'center', 
-          marginBottom: '16px', 
-          color: '#1a73e8',
-          fontSize: '18px',
-          padding: '0 32px' // 为关闭按钮留出空间
-        }}>
-          成绩记录
-        </h2>
+      <h2 style={{ 
+        textAlign: 'center', 
+        marginBottom: '20px', 
+        color: '#1a73e8',
+        fontSize: '20px',
+        padding: '0 40px',
+        marginTop: '10px'
+      }}>
+        成绩记录
+      </h2>
 
         {/* 顶部按钮区域 - 手机版优化 */}
         <div style={{
@@ -1431,7 +1435,7 @@ const handleDeleteSubCategory = (subject, subCat) => {
         <div style={{ 
           marginBottom: '10px',
           fontSize: '14px',
-          color: '#333',
+          color: '#c0bfbf',
           paddingLeft: '4px'
         }}>
            {grade.testContent}
@@ -1543,7 +1547,6 @@ const handleDeleteSubCategory = (subject, subCat) => {
 
               ))}
             </div>
-          )}
         </div>
       </div>
     </div>
