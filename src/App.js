@@ -157,34 +157,99 @@ const GradeModal = ({ onClose, isVisible }) => {
     }
   };
 
-  // 添加子分类
-  const handleAddSubCategory = () => {
-    if (!editingSubject) return;
+
+
+
+  // 编辑子分类
+const handleEditSubCategory = (subject, oldSubCat) => {
+  const newSubCat = window.prompt(`编辑子分类 "${oldSubCat}" 的新名称:`, oldSubCat);
+  if (newSubCat && newSubCat.trim() && newSubCat.trim() !== oldSubCat) {
+    const trimmedNew = newSubCat.trim();
     
-    const newSubCat = window.prompt(`为 ${editingSubject} 添加新子分类名称:`);
-    if (newSubCat && newSubCat.trim()) {
-      setSubjectSubCategories(prev => ({
+    // 检查新名称是否已存在
+    if (subjectSubCategories[subject].includes(trimmedNew)) {
+      alert('该子分类名称已存在！');
+      return;
+    }
+    
+    // 更新子分类列表
+    setSubjectSubCategories(prev => {
+      const updated = {
+        ...prev,
+        [subject]: prev[subject].map(sub => 
+          sub === oldSubCat ? trimmedNew : sub
+        )
+      };
+      
+      // 立即保存到 localStorage
+      localStorage.setItem('grade_subcategories', JSON.stringify(updated));
+      
+      return updated;
+    });
+    
+    // 同时更新该子分类下的所有成绩记录
+    const updatedGrades = grades.map(grade => {
+      if (grade.subject === subject && grade.subCategory === oldSubCat) {
+        return { ...grade, subCategory: trimmedNew };
+      }
+      return grade;
+    });
+    saveGrades(updatedGrades);
+  }
+};
+
+  // 添加子分类
+  // 找到 handleAddSubCategory 函数，替换为：
+
+const handleAddSubCategory = () => {
+  if (!editingSubject) {
+    alert('请先选择一个科目');
+    return;
+  }
+  
+  const newSubCat = window.prompt(`为 ${editingSubject} 添加新子分类名称:`);
+  if (newSubCat && newSubCat.trim()) {
+    // 更新状态
+    setSubjectSubCategories(prev => {
+      const updated = {
         ...prev,
         [editingSubject]: [...(prev[editingSubject] || []), newSubCat.trim()]
-      }));
-    }
-  };
+      };
+      
+      // 立即保存到 localStorage
+      localStorage.setItem('grade_subcategories', JSON.stringify(updated));
+      
+      return updated;
+    });
+  }
+};
 
-  // 删除子分类
-  const handleDeleteSubCategory = (subject, subCat) => {
-    if (window.confirm(`确定要删除子分类 "${subCat}" 吗？`)) {
-      setSubjectSubCategories(prev => ({
+// 找到 handleDeleteSubCategory 函数，替换为：
+
+const handleDeleteSubCategory = (subject, subCat) => {
+  if (window.confirm(`确定要删除子分类 "${subCat}" 吗？`)) {
+    // 更新状态
+    setSubjectSubCategories(prev => {
+      const updated = {
         ...prev,
         [subject]: prev[subject].filter(s => s !== subCat)
-      }));
+      };
       
-      // 同时删除该子分类下的所有成绩记录
-      const updatedGrades = grades.filter(g => 
-        !(g.subject === subject && g.subCategory === subCat)
-      );
-      saveGrades(updatedGrades);
-    }
-  };
+      // 立即保存到 localStorage
+      localStorage.setItem('grade_subcategories', JSON.stringify(updated));
+      
+      return updated;
+    });
+    
+    // 同时删除该子分类下的所有成绩记录
+    const updatedGrades = grades.filter(g => 
+      !(g.subject === subject && g.subCategory === subCat)
+    );
+    saveGrades(updatedGrades);
+  }
+};
+
+  
 
   // 筛选后的成绩记录
   const filteredGrades = grades.filter(grade => {
@@ -337,8 +402,8 @@ const GradeModal = ({ onClose, isVisible }) => {
         padding: '16px',
         borderRadius: '16px',
         width: '100%',
-        maxWidth: '1200px',
-        maxHeight: '95vh',
+        maxWidth: '600px',    // 👈 从1200px改为600px（和主界面一样）
+        maxHeight: '90vh',     // 👈 从95vh改为90vh
         overflow: 'auto',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
         position: 'relative',
@@ -1128,6 +1193,203 @@ const GradeModal = ({ onClose, isVisible }) => {
 
         {/* 成绩记录列表 */}
         <div>
+
+          {/* 子分类管理弹窗 */}
+{showSubCategoryManager && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1200,
+    padding: '10px'
+  }} onClick={() => setShowSubCategoryManager(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      padding: '20px 16px',
+      borderRadius: '16px',
+      width: '100%',
+      maxWidth: '400px',
+      maxHeight: '80vh',
+      overflow: 'auto',
+      position: 'relative'
+    }} onClick={e => e.stopPropagation()}>
+      
+      {/* 弹窗关闭按钮 */}
+      <button
+        onClick={() => setShowSubCategoryManager(false)}
+        style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          background: 'transparent',
+          border: 'none',
+          fontSize: '24px',
+          cursor: 'pointer',
+          color: '#666',
+          width: '32px',
+          height: '32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          zIndex: 10
+        }}
+      >
+        ×
+      </button>
+
+      <h3 style={{ 
+        textAlign: 'center', 
+        marginBottom: '20px', 
+        color: '#9C27B0',
+        fontSize: '18px'
+      }}>
+        管理子分类
+      </h3>
+
+      {/* 科目选择 */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '8px', 
+          fontSize: '14px', 
+          fontWeight: '500' 
+        }}>
+          选择科目
+        </label>
+        <select
+          value={editingSubject || ''}
+          onChange={(e) => setEditingSubject(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            fontSize: '14px',
+            backgroundColor: 'white'
+          }}
+        >
+          <option value="">请选择科目</option>
+          {subjects.filter(s => s !== '全部').map(subject => (
+            <option key={subject} value={subject}>{subject}</option>
+          ))}
+        </select>
+      </div>
+
+      {editingSubject && (
+        <>
+          {/* 添加新子分类 */}
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              onClick={handleAddSubCategory}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              + 添加新子分类
+            </button>
+          </div>
+
+       {/* 子分类列表 */}
+<div>
+  <div style={{ 
+    marginBottom: '10px', 
+    fontSize: '14px', 
+    fontWeight: '500',
+    color: '#666'
+  }}>
+    现有子分类 ({subjectSubCategories[editingSubject]?.length || 0})
+  </div>
+  
+  <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+    {(subjectSubCategories[editingSubject] || []).length === 0 ? (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '30px', 
+        color: '#999',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px'
+      }}>
+        暂无子分类，点击上方按钮添加
+      </div>
+    ) : (
+      // 👇 这就是你要找的地方 - 子分类列表的循环
+      (subjectSubCategories[editingSubject] || []).map(subCat => (
+        <div
+          key={subCat}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            marginBottom: '8px',
+            backgroundColor: '#fff'
+          }}
+        >
+          <span style={{ fontSize: '14px' }}>{subCat}</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {/* 编辑按钮 */}
+            <button
+              onClick={() => handleEditSubCategory(editingSubject, subCat)}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#FFC107',
+                color: '#333',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '500'
+              }}
+            >
+              编辑
+            </button>
+            {/* 删除按钮 */}
+            <button
+              onClick={() => handleDeleteSubCategory(editingSubject, subCat)}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              删除
+            </button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</div>
+
+
+
+        </>
+      )}
+    </div>
+  </div>
+)}
           <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
           
           {filteredGrades.length === 0 ? (
@@ -1216,6 +1478,10 @@ const GradeModal = ({ onClose, isVisible }) => {
                     </div>
                   )}
                 </div>
+
+
+
+
               ))}
             </div>
           )}
@@ -1224,6 +1490,8 @@ const GradeModal = ({ onClose, isVisible }) => {
     </div>
   );
 };
+
+
 
 
 
@@ -1521,6 +1789,12 @@ const BackupManagerModal = ({ onClose }) => {
           • 恢复备份会覆盖当前所有数据<br/>
           • 建议重要操作前手动备份
         </div>
+
+
+
+
+
+
 
         {/* 恢复确认模态框 */}
         {showRestoreConfirm && (
@@ -4414,6 +4688,8 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
                   <option value="页">页</option>
                   <option value="章">章</option>
                   <option value="题">题</option>
+                  <option value="本">本</option>
+                  <option value="篇">篇</option>
                   <option value="单元">单元</option>
                 </select>
               </div>
@@ -5263,6 +5539,9 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       <option value="页">页</option>
       <option value="章">章</option>
       <option value="题">题</option>
+      <option value="本">本</option>
+      <option value="篇">篇</option>
+      <option value="单元">单元</option>
     </select>
   </div>
 </div>
@@ -5495,9 +5774,12 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
                     }}
                   >
                     <option value="%">%</option>
-                    <option value="页">页</option>
-                    <option value="章">章</option>
-                    <option value="题">题</option>
+      <option value="页">页</option>
+      <option value="章">章</option>
+      <option value="题">题</option>
+      <option value="本">本</option>
+      <option value="篇">篇</option>
+      <option value="单元">单元</option>
                   </select>
                 </div>
               </div>
@@ -5559,141 +5841,144 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
               </h3>
               
               {categoryTasks.map(task => (
-                <div
-                  key={task.id}
-                  style={{
-                    padding: '12px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    backgroundColor: task.important ? '#fff9e6' : '#fff',
-                    position: 'relative'
-                  }}
-                >
-                  {/* 任务头部 */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    marginBottom: '8px',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                      {task.text}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                      {task.deadline && (
-                        <div style={{ fontSize: '11px', color: '#666' }}>
-                          {task.deadline}
-                        </div>
-                      )}
-                      <button
-                        onClick={() => startEditTask(task)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#FF9800',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          padding: '0 4px'
-                        }}
-                        title="编辑任务"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(task)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#f44336',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          padding: '0 4px'
-                        }}
-                        title="删除任务"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
+  <div
+    key={task.id}
+    style={{
+      padding: '12px',
+      border: '1px solid #e0e0e0',
+      borderRadius: '8px',
+      marginBottom: '8px',
+      backgroundColor: task.important ? '#fff9e6' : '#fff',
+      position: 'relative'
+    }}
+  >
+    {/* 任务头部 */}
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      marginBottom: '8px',
+      alignItems: 'center'
+    }}>
+      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+        {task.text}
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        {task.deadline && (
+          <div style={{ fontSize: '11px', color: '#666' }}>
+            {task.deadline}
+          </div>
+        )}
+        <button
+          onClick={() => startEditTask(task)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#FF9800',
+            cursor: 'pointer',
+            fontSize: '14px',
+            padding: '0 4px'
+          }}
+          title="编辑任务"
+        >
+          ✏️
+        </button>
+        <button
+          onClick={() => handleDelete(task)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#f44336',
+            cursor: 'pointer',
+            fontSize: '14px',
+            padding: '0 4px'
+          }}
+          title="删除任务"
+        >
+          🗑️
+        </button>
+      </div>
+    </div>
 
-                  {/* 任务进度条 */}
-                  <div style={{ marginBottom: '8px' }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '11px',
-                      marginBottom: '2px'
-                    }}>
-                      <span>进度</span>
-                      <span>{task.progress}/{task.target} {task.unit}</span>
-                    </div>
-                    <div style={{
-                      width: '100%',
-                      height: '6px',
-                      backgroundColor: '#f0f0f0',
-                      borderRadius: '3px',
-                      overflow: 'hidden'
-                    }}>
-                      <div style={{
-                        width: `${(task.progress / task.target) * 100}%`,
-                        height: '100%',
-                        backgroundColor: task.progress >= task.target ? '#4CAF50' : '#2196F3',
-                        transition: 'width 0.3s ease'
-                      }} />
-                    </div>
-                  </div>
+    {/* 任务进度条 - 在这里添加百分比显示 */}
+    <div style={{ marginBottom: '8px' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '11px',
+        marginBottom: '2px'
+      }}>
+        <span>进度</span>
+        <span>
+          {/* 👇 在这里显示百分比 */}
+          {Math.round((task.progress / task.target) * 100)}% | {task.progress}/{task.target} {task.unit}
+        </span>
+      </div>
+      <div style={{
+        width: '100%',
+        height: '6px',
+        backgroundColor: '#f0f0f0',
+        borderRadius: '3px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          width: `${(task.progress / task.target) * 100}%`,
+          height: '100%',
+          backgroundColor: task.progress >= task.target ? '#4CAF50' : '#2196F3',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
 
-                  {/* 进度控制按钮 - 手机版优化 */}
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '4px'
-                  }}>
-                    <button
-                      onClick={() => onUpdateProgress(task.id, Math.max(0, task.progress - 1))}
-                      style={{
-                        padding: '8px 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        backgroundColor: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '13px'
-                      }}
-                    >
-                      -1
-                    </button>
-                    <button
-                      onClick={() => onUpdateProgress(task.id, Math.min(task.target, task.progress + 1))}
-                      style={{
-                        padding: '8px 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        backgroundColor: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '13px'
-                      }}
-                    >
-                      +1
-                    </button>
-                    <button
-                      onClick={() => onUpdateProgress(task.id, task.target)}
-                      style={{
-                        padding: '8px 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        backgroundColor: '#e8f5e8',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        color: '#4CAF50',
-                        fontWeight: '500'
-                      }}
-                    >
-                      完成
-                    </button>
-                  </div>
-                </div>
-              ))}
+    {/* 进度控制按钮 */}
+    <div style={{ 
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '4px'
+    }}>
+      <button
+        onClick={() => onUpdateProgress(task.id, Math.max(0, task.progress - 1))}
+        style={{
+          padding: '8px 4px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          fontSize: '13px'
+        }}
+      >
+        -1
+      </button>
+      <button
+        onClick={() => onUpdateProgress(task.id, Math.min(task.target, task.progress + 1))}
+        style={{
+          padding: '8px 4px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          fontSize: '13px'
+        }}
+      >
+        +1
+      </button>
+      <button
+        onClick={() => onUpdateProgress(task.id, task.target)}
+        style={{
+          padding: '8px 4px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          backgroundColor: '#e8f5e8',
+          cursor: 'pointer',
+          fontSize: '13px',
+          color: '#4CAF50',
+          fontWeight: '500'
+        }}
+      >
+        完成
+      </button>
+    </div>
+  </div>
+))}
             </div>
           ))}
         </div>
@@ -8123,10 +8408,12 @@ const [editData, setEditData] = useState({
         }}
       >
         <option value="%">%</option>
-        <option value="页">页</option>
-        <option value="章">章</option>
-        <option value="题">题</option>
-        <option value="单元">单元</option>
+      <option value="页">页</option>
+      <option value="章">章</option>
+      <option value="题">题</option>
+      <option value="本">本</option>
+      <option value="篇">篇</option>
+      <option value="单元">单元</option>
       </select>
     </div>
   </div>
@@ -9906,28 +10193,48 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
     setLocalCategories(newCategories);
   };
 
-  // 编辑子类别 - 只有校内类别可以编辑
-  const handleEditSubCategory = (categoryIndex, subCategoryIndex, newName) => {
-    if (!newName.trim()) return;
-    
-    const newCategories = [...localCategories];
-    const category = newCategories[categoryIndex];
-    
-    if (category.name !== '校内') {
-      alert('只有"校内"类别可以管理子类别！');
-      return;
-    }
+
+
+  // 编辑子分类
+const handleEditSubCategory = (subject, oldSubCat) => {
+  const newSubCat = window.prompt(`编辑子分类 "${oldSubCat}" 的新名称:`, oldSubCat);
+  if (newSubCat && newSubCat.trim() && newSubCat.trim() !== oldSubCat) {
+    const trimmedNew = newSubCat.trim();
     
     // 检查新名称是否已存在
-    if (category.subCategories.some((sub, index) => index !== subCategoryIndex && sub === newName.trim())) {
-      alert('该子类别名称已存在！');
+    if (subjectSubCategories[subject].includes(trimmedNew)) {
+      alert('该子分类名称已存在！');
       return;
     }
     
-    category.subCategories[subCategoryIndex] = newName.trim();
-    setLocalCategories(newCategories);
-    setEditingSubCategory(null);
-  };
+    // 更新子分类列表
+    setSubjectSubCategories(prev => {
+      const updated = {
+        ...prev,
+        [subject]: prev[subject].map(sub => 
+          sub === oldSubCat ? trimmedNew : sub
+        )
+      };
+      
+      // 立即保存到 localStorage
+      localStorage.setItem('grade_subcategories', JSON.stringify(updated));
+      
+      return updated;
+    });
+    
+    // 同时更新该子分类下的所有成绩记录
+    const updatedGrades = grades.map(grade => {
+      if (grade.subject === subject && grade.subCategory === oldSubCat) {
+        return { ...grade, subCategory: trimmedNew };
+      }
+      return grade;
+    });
+    saveGrades(updatedGrades);
+  }
+};
+
+
+
 
   return (
     <div style={{
@@ -14550,6 +14857,7 @@ if (isInitialized && todayTasks.length === 0) {
     onClose={() => setEditingCategory(null)}
   />
 )}
+
 
 
 
