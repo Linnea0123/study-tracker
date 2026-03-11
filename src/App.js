@@ -8819,102 +8819,135 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
     )}
 
     {/* 时间信息行 - 计划时间、提醒时间、计时器 */}
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginTop: 4,
-      gap: 8,
-      flexWrap: "wrap"
-    }}>
-      {/* 左侧：计划时间和提醒时间 */}
+    {/* 时间信息行 - 计划时间、提醒时间、计时器、标签 */}
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: 4,
+  gap: 8,
+  flexWrap: "wrap"
+}}>
+  {/* 左侧：计划时间、提醒时间、标签 */}
+  <div style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+    minWidth: 0,
+    flexWrap: "wrap"
+  }}>
+    {/* 计划时间 */}
+    {task.scheduledTime && (
+      <span
+        style={{
+          fontSize: 11,
+          color: "#666",
+          backgroundColor: "#f0f0f0",
+          padding: "2px 6px",
+          borderRadius: 4,
+          border: "1px solid #e0e0e0",
+          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          gap: 2
+        }}
+        title="计划时间"
+      >
+        ⏰ {task.scheduledTime}
+      </span>
+    )}
+
+    {/* 提醒时间 */}
+    {task.reminderTime && (
+      <span
+        style={{
+          fontSize: 11,
+          color: "#666",
+          backgroundColor: "#fff0f0",
+          padding: "2px 6px",
+          borderRadius: 4,
+          border: "1px solid #ffcccc",
+          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          gap: 2
+        }}
+        title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+      >
+        🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+      </span>
+    )}
+
+    {/* 标签 - 移动到时间行 */}
+    {task.tags && task.tags.length > 0 && (
       <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        flex: 1,
-        minWidth: 0
+        display: 'flex',
+        gap: 3,
+        flexWrap: 'wrap',
+        alignItems: 'center'
       }}>
-        {/* 计划时间 */}
-        {task.scheduledTime && (
+        {task.tags.map((tag, index) => (
           <span
+            key={index}
             style={{
-              fontSize: 11,
-              color: "#666",
-              backgroundColor: "#f0f0f0",
-              padding: "2px 6px",
-              borderRadius: 4,
-              border: "1px solid #e0e0e0",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: 2
+              fontSize: 9,
+              padding: '2px 6px',
+              backgroundColor: tag.color,
+              color: '#fff',
+              borderRadius: 10,
+              border: 'none',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: '1.2'
             }}
-            title="计划时间"
+            title={tag.name}
           >
-            ⏰ {task.scheduledTime}
+            {tag.name}
           </span>
-        )}
-
-        {/* 提醒时间 */}
-        {task.reminderTime && (
-          <span
-            style={{
-              fontSize: 11,
-              color: "#666",
-              backgroundColor: "#fff0f0",
-              padding: "2px 6px",
-              borderRadius: 4,
-              border: "1px solid #ffcccc",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: 2
-            }}
-            title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
-          >
-            🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
-          </span>
-        )}
+        ))}
       </div>
+    )}
+  </div>
 
-      {/* 右侧：计时器区域 */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 4
-      }}>
-        {/* 循环图标 */}
-        {task.isRepeating && (
-          <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-        )}
+  {/* 右侧：计时器区域 */}
+  <div style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0
+  }}>
+    {/* 循环图标 */}
+    {task.isRepeating && (
+      <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+    )}
 
-      
-
-<span
-  onClick={(e) => {
-    e.stopPropagation();
-    onEditTime?.(task);
-  }}
-  style={{
-    fontSize: 12,
-    color: "#333",
-    border: "1px solid #e0e0e0",
-    borderRadius: 4,
-    backgroundColor: "#f5f5f5",
-    padding: "2px 6px",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    minWidth: "45px",
-    fontFamily: 'Calibri, "微软雅黑", sans-serif',  // 添加这行
-    textAlign: "center"
-  }}
-  title="点击修改时间"
->
- {formatTimeNoSeconds(task.timeSpent || 0)}  {/* 修复这里 */}
-</span>
-      </div>
-    </div>
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        onEditTime?.(task);
+      }}
+      style={{
+        fontSize: 12,
+        color: "#333",
+        border: "1px solid #e0e0e0",
+        borderRadius: 4,
+        backgroundColor: "#f5f5f5",
+        padding: "2px 6px",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        minWidth: "45px",
+        fontFamily: 'Calibri, "微软雅黑", sans-serif',
+        textAlign: "center"
+      }}
+      title="点击修改时间"
+    >
+      {formatTimeNoSeconds(task.timeSpent || 0)}
+    </span>
+  </div>
+</div>
   </div>
 )}
 
@@ -9018,41 +9051,7 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
   </div>
 )}
 
-{/* 标签显示 */}
-{task.tags && task.tags.length > 0 && (
-  <div style={{
-    display: 'flex',
-    gap: 3,
-    flexWrap: 'wrap',
-    marginLeft: "20px",
-    marginTop: 4,
-    marginBottom: 4
-  }}>
-    {task.tags.map((tag, index) => (
-      <span
-        key={index}
-        style={{
-          fontSize: 9,
-          padding: '1px 4px',
-          backgroundColor: tag.color,
-          color: '#fff',
-          borderRadius: 6,
-          border: 'none',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          maxWidth: '40px'
-        }}
-        title={tag.name}
-      >
-        {tag.name}
-      </span>
-    ))}
-  </div>
-)}
+
 
 {/* 进度条和其他内容 */}
 {task.progress && task.progress.target > 0 && (
