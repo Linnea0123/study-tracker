@@ -13119,7 +13119,7 @@ const handleAddWeekTask = (text) => {
 
 
 
-  const handleImportTasks = () => {
+ const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 - 详细调试 ===');
   
   // 1. 检查输入内容
@@ -13162,16 +13162,28 @@ const handleAddWeekTask = (text) => {
   console.log('✅ 任务行:', taskLines);
   
   const newTasks = taskLines.map((line, index) => {
-    const [taskText, note] = line.split("|").map(s => s.trim());
+    // 处理任务文本：先按 | 分割，然后清理任务文本中的 "@所有家长"
+    const parts = line.split("|").map(s => s.trim());
+    let taskText = parts[0] || `导入任务${index + 1}`;
+    const note = parts[1] || "";
+    
+    // 自动删除任务文本中的 "@所有家长"（包括各种可能的形式）
+    // 使用正则表达式匹配 "@所有家长" 及其变体（可能有空格、标点等）
+    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
+    
+    // 如果清理后任务文本为空，使用默认名称
+    if (!taskText) {
+      taskText = `导入任务${index + 1}`;
+    }
     
     return {
       id: `import_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`,
-      text: taskText || `导入任务${index + 1}`,
+      text: taskText,
       category: category,
       subCategory: subCategory,
       done: false,
       timeSpent: 0,
-      note: note || "",
+      note: note,
       image: null,
       scheduledTime: "",
       pinned: false,
@@ -13259,8 +13271,6 @@ const handleAddWeekTask = (text) => {
     console.log('选中日期任务:', tasksByDate[selectedDate]);
     window.debugImport && window.debugImport();
   }, 500);
-  
-  
 };
 
 
