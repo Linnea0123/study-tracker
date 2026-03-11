@@ -8423,6 +8423,7 @@ const TaskItem = ({
   setShowMoveModal,
   onToggleSubTask,
   onUpdateProgress,
+  onDeleteTask, 
   onDeleteImage, // 添加这行
   onEditSubTask = () => {}
 }) => {
@@ -8756,6 +8757,29 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
       : task.targetCategory}
   </span>
 )}
+
+{/* 极简版小叉叉 - 无悬浮效果 */}
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
+      onDeleteTask(task, 'today');
+    }
+  }}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    color: '#ccc',
+    cursor: 'pointer',
+    fontSize: '18px',
+    padding: '0 4px',
+    marginLeft: 'auto',
+    lineHeight: 1
+  }}
+  title="删除任务"
+>
+  ×
+</button>
         </div>
       </div>
 
@@ -15498,6 +15522,7 @@ if (isInitialized && todayTasks.length === 0) {
       task={task}
       onEditTime={editTaskTime}
       onEditNote={editTaskNote}
+      onDeleteTask={deleteTask}  
       onEditReflection={editTaskReflection}
       onOpenEditModal={openTaskEditModal}
       onShowImageModal={setShowImageModal}
@@ -15704,6 +15729,7 @@ if (isInitialized && todayTasks.length === 0) {
           <TaskItem
             key={task.id}
             task={task}
+            onDeleteTask={deleteTask}  
             onEditTime={editTaskTime}
             onEditNote={editTaskNote}
             onEditReflection={editTaskReflection}
@@ -16037,6 +16063,7 @@ if (isInitialized && todayTasks.length === 0) {
           <TaskItem
             key={task.id}
             task={task}
+            onDeleteTask={deleteTask}  
             onEditTime={editTaskTime}
             onEditNote={editTaskNote}
             onEditReflection={editTaskReflection}
@@ -16287,7 +16314,7 @@ if (isInitialized && todayTasks.length === 0) {
                       <TaskItem
                         key={task.id}
                         task={task}
-                    
+                        onDeleteTask={deleteTask}  
                         onEditTime={editTaskTime}
                         onDeleteImage={handleDeleteImage} 
                         onEditNote={editTaskNote}
@@ -16332,7 +16359,7 @@ if (isInitialized && todayTasks.length === 0) {
             <TaskItem
               key={task.id}
               task={task}
-              
+              onDeleteTask={deleteTask}  
               onEditTime={editTaskTime}
               onDeleteImage={handleDeleteImage} 
               onEditNote={editTaskNote}
