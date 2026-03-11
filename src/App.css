@@ -1,24 +1,4 @@
-.task-li-swiped {
-  transform: translateX(-80px);
-  transition: transform 0.18s ease;
-}
-
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .task-li-swiped {
-    transform: translateX(-60px);
-  }
-  
-  /* 在小屏幕上调整统计方块的大小 */
-  .stats-container {
-    flex-direction: column;
-  }
-  
-  .stats-box {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-}
+/* App.css - 学习跟踪器完整样式 */
 
 /* 基础样式重置 */
 * {
@@ -30,15 +10,97 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   background-color: #f5faff;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 滚动条样式 */
+/* ===== 按钮样式重置 - 完全禁用悬停效果 ===== */
+button, 
+[role="button"], 
+[type="button"], 
+[type="submit"], 
+.btn,
+.action-button {
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 禁用所有悬停效果 */
+button:hover, 
+[role="button"]:hover, 
+[type="button"]:hover, 
+[type="submit"]:hover, 
+.btn:hover,
+.action-button:hover,
+button:active:hover,
+button:focus:hover {
+  opacity: 1 !important;
+  transform: none !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+/* 禁用焦点和激活状态 */
+button:active,
+button:focus,
+button:visited,
+button:focus-visible {
+  background-color: transparent !important;
+  color: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* 特别针对箭头按钮 */
+button[style*="marginLeft"],
+button[style*="marginLeft"]:hover,
+button[style*="marginLeft"]:active,
+button[style*="marginLeft"]:focus,
+button[style*="marginRight"],
+button[style*="marginRight"]:hover,
+button[style*="marginRight"]:active,
+button[style*="marginRight"]:focus {
+  background-color: transparent !important;
+  color: inherit !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* 特别针对添加任务按钮 */
+.action-button:active,
+.action-button:focus,
+.action-button:hover,
+.action-button:active:hover,
+.action-button:focus:hover {
+  background-color: #1a73e8 !important;  /* 保持原始蓝色背景 */
+  color: #ffffff !important;              /* 保持白色文字 */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+/* ===== 任务列表样式 ===== */
+.task-li-swiped {
+  transform: translateX(-80px);
+  transition: transform 0.18s ease;
+}
+
+/* ===== 滚动条样式 ===== */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -50,7 +112,16 @@ body {
   background: #a8a8a8;
 }
 
-/* 树状图样式 */
+/* ===== 输入框样式 ===== */
+input:focus, 
+textarea:focus, 
+select:focus {
+  outline: none;
+  border-color: #1a73e8 !important;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
+}
+
+/* ===== 树状图样式 ===== */
 .recharts-treemap {
   font-size: 12px;
 }
@@ -60,7 +131,7 @@ body {
   stroke-width: 2px;
 }
 
-/* 弹窗动画 */
+/* ===== 弹窗动画 ===== */
 .modal-enter {
   opacity: 0;
   transform: scale(0.9);
@@ -82,39 +153,44 @@ body {
   transition: opacity 300ms, transform 300ms;
 }
 
-/* 按钮悬停效果 */
-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
-}
-
-/* 输入框焦点效果 */
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-}
-
-/* 移动端优化 */
+/* ===== 响应式设计 - 移动端 ===== */
 @media (max-width: 768px) {
   body {
     font-size: 14px;
   }
   
-  /* 调整统计弹窗大小 */
   .stats-modal {
     width: 95% !important;
     margin: 10px !important;
   }
   
-  /* 调整树状图大小 */
   .recharts-wrapper {
     width: 100% !important;
   }
+  
+  .recharts-legend-wrapper {
+    display: none !important;
+  }
+  
+  .recharts-surface {
+    overflow: visible !important;
+  }
 }
-/* 移动端适配 */
-@media screen and (max-width: 480px) {
+
+@media (max-width: 480px) {
+  .task-li-swiped {
+    transform: translateX(-60px);
+  }
+  
+  .stats-container {
+    flex-direction: column;
+  }
+  
+  .stats-box {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
   .stats-modal {
     width: 95% !important;
     padding: 10px !important;
@@ -128,53 +204,157 @@ input:focus, textarea:focus, select:focus {
     font-size: 1rem !important;
     margin-bottom: 5px !important;
   }
-  
-  .recharts-surface {
-    overflow: visible !important;
-  }
-  
-  .recharts-legend-wrapper {
-    display: none !important;
-  }
 }
-/* 禁用所有元素的悬停效果 */
-button, [role="button"], label, [type="button"], [type="submit"], .btn {
+
+/* ===== 工具类 ===== */
+.text-center {
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ===== 卡片样式 ===== */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== 日期选择器样式 ===== */
+.date-picker-day {
   transition: none !important;
 }
 
-button:hover, [role="button"]:hover, label:hover, 
-[type="button"]:hover, [type="submit"]:hover, .btn:hover {
+.date-picker-day:hover,
+.date-picker-day:active,
+.date-picker-day:focus {
+  background-color: initial !important;
+  transform: none !important;
+}
+
+/* ===== 分类标题样式 ===== */
+.category-header {
+  transition: none !important;
+}
+
+.category-header:hover {
   opacity: 1 !important;
   transform: none !important;
-  background-color: initial !important;
-  color: initial !important;
-  filter: none !important;
 }
 
-/* 强制覆盖所有按钮的点击状态 */
-button:active, 
-button:focus, 
-button:hover,
-button:active:hover,
-button:focus:hover {
-  background-color: #1a73e8 !important;
-  color: #ffffff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
+/* ===== 修复 Firefox 按钮样式 ===== */
+button::-moz-focus-inner {
+  border: 0 !important;
+  padding: 0 !important;
 }
 
-/* 特别针对添加任务按钮 */
-.action-button:active,
-.action-button:focus,
-.action-button:hover,
-.action-button:active:hover,
-.action-button:focus:hover {
-  background-color: #1a73e8 !important;
-  color: #ffffff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
+/* ===== 禁用文本选择 ===== */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+/* ===== 成绩记录模态框样式 ===== */
+.grade-modal {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .grade-modal {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+/* ===== 统计卡片样式 ===== */
+.stats-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== 图表容器样式 ===== */
+.chart-container {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== 标签样式 ===== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ===== 进度条样式 ===== */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #1a73e8;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ===== 子任务列表样式 ===== */
+.subtask-list {
+  margin-left: 20px;
+  border-left: 2px solid #e0e0e0;
+  padding-left: 8px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  font-size: 12px;
+  min-height: 20px;
+}
+
+/* ===== 图片预览样式 ===== */
+.image-preview {
+  max-width: 100%;
+  max-height: 100px;
+  border-radius: 4px;
+  cursor: zoom-in;
+}
+
+.image-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #ff4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
