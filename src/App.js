@@ -8716,39 +8716,49 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
             {task.isWeekTask && " 🌟"}
           </div>
           
-          {/* 常规任务标签 - 字体大小与任务文字一致 */}
-        {/* 常规任务标签 - 字体大小与任务文字一致 */}
+        {/* 常规任务标签  */}
 {task.isRegularTask && task.targetCategory && (
   <span style={{
     color: (() => {
       // 如果是校内分类且有子分类，使用子分类的颜色逻辑
       if (task.targetCategory === "校内" && task.targetSubCategory) {
-        // 可以给不同子分类不同颜色
+        // 给不同子分类分配纯正的颜色
         const subCategoryColors = {
-          "数学": "#FF9800",
-          "语文": "#F57C00",
-          "英语": "#FFB74D",
-          "运动": "#4CAF50"
+          "数学": "#0000FF", // 正蓝
+          "语文": "#FF0000", // 正红
+          "英语": "#008000", // 正绿
+          "运动": "#FFA500", // 正橙
+          "科学": "#800080", // 正紫
+          "艺术": "#FFC0CB", // 粉红
+          "音乐": "#FFFF00", // 正黄
+          "编程": "#00FFFF"  // 正青
         };
-        return subCategoryColors[task.targetSubCategory] || "#FF9800";
+        return subCategoryColors[task.targetSubCategory] || "#000000"; // 默认黑色
       }
       
-      // 其他分类的颜色
-      switch(task.targetCategory) {
-        case "语文": return "#FF9800";
-        case "数学": return "#F57C00";
-        case "英语": return "#FFB74D";
-        case "物理": return "#E65100";
-        case "化学": return "#FF7043";
-        case "历史": return "#FB8C00";
-        case "地理": return "#FFA726";
-        case "生物": return "#FF6B35";
-        case "政治": return "#FF8A65";
-        default: return "#FF9800";
-      }
+      // 主要分类的纯正配色
+      const categoryColors = {
+        "语文": "#FF0000",   // 正红
+        "数学": "#0000FF",   // 正蓝
+        "英语": "#008000",   // 正绿
+        "物理": "#800080",   // 正紫
+        "化学": "#FFA500",   // 正橙
+        "生物": "#00FFFF",   // 正青
+        "历史": "#800000",   // 深红
+        "地理": "#FFFF00",   // 正黄
+        "政治": "#FF00FF",   // 正品红
+        "体育": "#FF4500",   // 橙红
+        "美术": "#FF69B4",   // 粉红
+        "音乐": "#FFD700",   // 金色
+        "科学": "#008080",   // 深青
+        "技术": "#000080",   // 深蓝
+        "其他": "#808080"    // 灰色
+      };
+      
+      return categoryColors[task.targetCategory] || "#FF0000"; // 默认红色
     })(),
     fontSize: "12px",
-    fontWeight: "500",
+    fontWeight: "600",
     whiteSpace: "nowrap",
     lineHeight: 1.4
   }}>
@@ -8769,9 +8779,9 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
   style={{
     background: 'transparent',
     border: 'none',
-    color: '#ccc',
+    color: '#f5f5f5' ,
     cursor: 'pointer',
-    fontSize: '18px',
+    fontSize: '16px',
     padding: '0 4px',
     marginLeft: 'auto',
     lineHeight: 1
@@ -16040,13 +16050,40 @@ if (isInitialized && todayTasks.length === 0) {
 {!collapsedCategories["常规任务"] && (
   (() => {
     // 获取今天的常规任务
-    const regularTasks = (tasksByDate[selectedDate] || [])
-      .filter(task => task.isRegularTask)
-      .sort((a, b) => {
-        if (a.pinned && !b.pinned) return -1;
-        if (!a.pinned && b.pinned) return 1;
-        return b.id - a.id;
-      });
+    // 定义分类优先级顺序
+const categoryPriority = {
+  "校内": 1,
+  "语文": 2,
+  "数学": 3,
+  "英语": 4,
+  "运动": 5,
+  // 其他分类默认优先级为 999（排在最后）
+};
+
+// 获取今天的常规任务
+const regularTasks = (tasksByDate[selectedDate] || [])
+  .filter(task => task.isRegularTask)
+  .sort((a, b) => {
+    // 1. 置顶的任务优先
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    
+    // 2. 按目标分类优先级排序（语文、数学、英语、运动）
+    const priorityA = categoryPriority[a.targetCategory] || 999;
+    const priorityB = categoryPriority[b.targetCategory] || 999;
+    
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    // 3. 如果分类相同，未完成的在前
+    if (a.done !== b.done) {
+      return a.done ? 1 : -1;
+    }
+    
+    // 4. 最后按创建时间排序（新创建的在前）
+    return b.id - a.id;
+  });
     
     // 如果没有常规任务，不渲染任何内容
     if (regularTasks.length === 0) {
