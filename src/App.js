@@ -1357,11 +1357,105 @@ const handleDeleteSubCategory = (subject, subCat) => {
 )}
           <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
           
-          {filteredGrades.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-              暂无成绩记录
-            </div>
-          ) : (
+         {filteredGrades.length === 0 ? (
+  <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+    暂无成绩记录
+  </div>
+) : (
+  <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+    {filteredGrades.sort((a, b) => b.date.localeCompare(a.date)).map(grade => (
+      <div
+        key={grade.id}
+        style={{
+          padding: '15px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          marginBottom: '10px',
+          backgroundColor: grade.isFullMark ? '#e8f5e8' : '#fff'
+        }}
+      >
+        {/* 第一行：日期、科目、子分类、分数、删除按钮 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+          <div>
+            <span style={{ fontWeight: 'bold' }}>
+              {grade.date} {grade.subject}
+            </span>
+            {grade.subCategory && (
+              <span style={{ 
+                marginLeft: '8px',
+                padding: '2px 6px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '4px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                {grade.subCategory}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ 
+              fontSize: '18px', 
+              fontWeight: 'bold', 
+              color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
+            }}>
+              {getScoreDisplay(grade)}
+            </span>
+            {grade.isFullMark && (
+              <span style={{ 
+                backgroundColor: '#4caf50', 
+                color: 'white', 
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                fontSize: '12px'
+              }}>
+                满分
+              </span>
+            )}
+            <button
+              onClick={() => handleDeleteGrade(grade.id)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#f44336',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* 第二行：测试内容 */}
+        <div style={{ 
+          marginBottom: '10px',
+          fontSize: '14px',
+          color: '#333',
+          paddingLeft: '4px'
+        }}>
+           {grade.testContent}
+        </div>
+
+        {/* 错题分析 */}
+        {grade.wrongQuestions && (
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>错题分析:</div>
+            <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.wrongQuestions}</div>
+          </div>
+        )}
+        
+        {/* 总结改进 */}
+        {grade.analysis && (
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>总结改进:</div>
+            <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.analysis}</div>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
             <div style={{ maxHeight: '300px', overflow: 'auto' }}>
               {filteredGrades.sort((a, b) => b.date.localeCompare(a.date)).map(grade => (
                 <div
