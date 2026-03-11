@@ -17203,314 +17203,441 @@ marginTop: 10
    
 
 
+{/* 底部按钮区域 - 修改后，完全禁用悬停效果 */}
+<div style={{
+  display: "flex",
+  justifyContent: "center",
+  gap: 10,
+  marginTop: 20,
+  marginBottom: 20,
+  flexWrap: "wrap"
+}}>
+  <button
+    onClick={() => generateDailyLog()}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    每日日志
+  </button>
+  
+  <button
+    onClick={handleExportData}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    导出数据
+  </button>
+  
+  <button
+    onClick={() => {
+      document.getElementById('import-file').click();
+    }}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    导入数据
+  </button>
+  
+  <input
+    id="import-file"
+    type="file"
+    accept=".json"
+    onChange={async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-
-
-
-
-      {/* 底部按钮区域 */}
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 10,
-        marginTop: 20,
-        marginBottom: 20,
-        flexWrap: "wrap"
-      }}>
-        <button
-          onClick={() => generateDailyLog()}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          每日日志
-        </button>
-        <button
-          onClick={handleExportData}
-
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          导出数据
-        </button>
-       
-        <button
-          onClick={() => {
-            document.getElementById('import-file').click();
-          }}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontSize: 12,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          导入数据
-        </button>
-        
-       
-
-        
-<input
-  id="import-file"
-  type="file"
-  accept=".json"
-  onChange={async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    // 在导入数据的部分，找到这个函数并修复
-reader.onload = async (event) => {
-  try {
-    const importedData = JSON.parse(event.target.result);
-
-    // ✅ 修复：增强数据验证
-    if (!importedData.tasks || !importedData.version) {
-      throw new Error('无效的数据文件格式');
-    }
-
-    // 显示导入预览
-    const importStats = {
-      任务天数: Object.keys(importedData.tasks || {}).length,
-      模板数量: (importedData.templates || []).length,
-      成就数量: (importedData.customAchievements || []).length,
-      版本: importedData.version || '未知'
-    };
-    
-    const confirmMessage = `确定要导入以下数据吗？\n` +
-      `• 任务天数: ${importStats.任务天数}\n` +
-      `• 模板数量: ${importStats.模板数量}\n` +
-      `• 成就数量: ${importStats.成就数量}\n` +
-      `• 数据版本: ${importStats.版本}\n\n` +
-      `这将覆盖当前所有数据！`;
-
-    if (window.confirm(confirmMessage)) {
-      console.log('🔄 开始导入数据...', importStats);
-      
-      // 直接保存导入的数据，不需要调用 loadDataWithFallback
-      await saveMainData('tasks', importedData.tasks || {});
-      await saveMainData('templates', importedData.templates || []);
-   
-      
-      // ✅ 修复：导入所有关键数据
-      await saveMainData('customAchievements', importedData.customAchievements || []);
-      await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
-      await saveMainData('categories', importedData.categories || baseCategories);
-      
-      // 更新状态
-      setTasksByDate(importedData.tasks || {});
-      setTemplates(importedData.templates || []);
-      setCategories(importedData.categories || baseCategories);
-      
-      console.log('✅ 所有数据导入完成');
-      
-      // 添加延迟确保状态更新完成
-      setTimeout(() => {
-        alert('数据导入成功！页面将重新加载以应用更改。');
-        window.location.reload();
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('导入失败:', error);
-    alert(`导入失败：${error.message || '文件格式不正确'}`);
-  }
-};
-
-    reader.onerror = () => {
-      alert('文件读取失败，请重试');
-    };
-
-    reader.readAsText(file);
-    e.target.value = '';
-  }}
-  style={{ display: "none" }}
-/>
-
-
-
-
-
-        <button
-          onClick={clearAllData}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontSize: 12,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          清空数据
-        </button>
-        {/* 测试按钮 - 临时添加用于调试 */}
-
-
-
-<button
-          onClick={() => setShowBackupModal(true)}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#1a73e8",
-            color: "#fff",
-            border: "none",
-            fontSize: 12,
-            borderRadius: 6,
-            width: "70px",
-            height: "30px",
-            cursor: "pointer"
-          }}
-        >
-          备份管理
-        </button>
-       
-
-<button
-  onClick={() => setShowGitHubSyncModal(true)}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
->
-  同步设置
-</button>
-
-<button
-  onClick={syncToGitHub}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
->
-  立即同步
-</button>
-
-<button
-  onClick={() => {
-    // 直接调用恢复函数，不检查本地数据
-    const token = localStorage.getItem('github_token');
-    if (!token) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
-    }
-    
-    if (window.confirm('确定要从云端恢复最新数据吗？这将覆盖当前所有本地数据！')) {
-      // 创建一个不检查本地数据的恢复函数
-      const forceRestoreFromCloud = async () => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
         try {
-          const token = localStorage.getItem('github_token');
-          const gistId = localStorage.getItem('github_gist_id');
-          
-          let targetGistId = gistId;
-          if (!targetGistId) {
-            const latestGist = await getLatestStudyTrackerGist(token);
-            if (latestGist) {
-              targetGistId = latestGist.id;
-              localStorage.setItem('github_gist_id', targetGistId);
-            } else {
-              throw new Error('未找到云端备份数据');
-            }
+          const importedData = JSON.parse(event.target.result);
+
+          if (!importedData.tasks || !importedData.version) {
+            throw new Error('无效的数据文件格式');
           }
 
-          const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) throw new Error(`获取失败: ${response.status}`);
-
-          const gist = await response.json();
-          const content = gist.files['study-tracker-data.json']?.content;
-          const backupData = JSON.parse(content);
-
-          await handleRestoreData(backupData);
+          const importStats = {
+            任务天数: Object.keys(importedData.tasks || {}).length,
+            模板数量: (importedData.templates || []).length,
+            成就数量: (importedData.customAchievements || []).length,
+            版本: importedData.version || '未知'
+          };
           
+          const confirmMessage = `确定要导入以下数据吗？\n` +
+            `• 任务天数: ${importStats.任务天数}\n` +
+            `• 模板数量: ${importStats.模板数量}\n` +
+            `• 成就数量: ${importStats.成就数量}\n` +
+            `• 数据版本: ${importStats.版本}\n\n` +
+            `这将覆盖当前所有数据！`;
+
+          if (window.confirm(confirmMessage)) {
+            console.log('🔄 开始导入数据...', importStats);
+            
+            await saveMainData('tasks', importedData.tasks || {});
+            await saveMainData('templates', importedData.templates || []);
+            await saveMainData('customAchievements', importedData.customAchievements || []);
+            await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
+            await saveMainData('categories', importedData.categories || baseCategories);
+            
+            setTasksByDate(importedData.tasks || {});
+            setTemplates(importedData.templates || []);
+            setCategories(importedData.categories || baseCategories);
+            
+            console.log('✅ 所有数据导入完成');
+            
+            setTimeout(() => {
+              alert('数据导入成功！页面将重新加载以应用更改。');
+              window.location.reload();
+            }, 1000);
+          }
         } catch (error) {
-          console.error('强制恢复失败:', error);
-          alert('恢复失败: ' + error.message);
+          console.error('导入失败:', error);
+          alert(`导入失败：${error.message || '文件格式不正确'}`);
         }
       };
+
+      reader.onerror = () => {
+        alert('文件读取失败，请重试');
+      };
+
+      reader.readAsText(file);
+      e.target.value = '';
+    }}
+    style={{ display: "none" }}
+  />
+
+  <button
+    onClick={clearAllData}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    清空数据
+  </button>
+
+  <button
+    onClick={() => setShowBackupModal(true)}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    备份管理
+  </button>
+
+  <button
+    onClick={() => setShowGitHubSyncModal(true)}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    同步设置
+  </button>
+
+  <button
+    onClick={syncToGitHub}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    立即同步
+  </button>
+
+  <button
+    onClick={() => {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        alert('请先设置 GitHub Token');
+        setShowGitHubSyncModal(true);
+        return;
+      }
       
-      forceRestoreFromCloud();
-    }
-  }}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
-  title="强制从云端恢复数据（覆盖本地）"
->
-  恢复云端
-</button>
+      if (window.confirm('确定要从云端恢复最新数据吗？这将覆盖当前所有本地数据！')) {
+        const forceRestoreFromCloud = async () => {
+          try {
+            const token = localStorage.getItem('github_token');
+            const gistId = localStorage.getItem('github_gist_id');
+            
+            let targetGistId = gistId;
+            if (!targetGistId) {
+              const latestGist = await getLatestStudyTrackerGist(token);
+              if (latestGist) {
+                targetGistId = latestGist.id;
+                localStorage.setItem('github_gist_id', targetGistId);
+              } else {
+                throw new Error('未找到云端备份数据');
+              }
+            }
 
+            const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
 
-<button
-  onClick={() => setShowCategoryManager(true)}
-  style={{
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer"
-  }}
->
-  管理类别
-</button>
-      </div>
+            if (!response.ok) throw new Error(`获取失败: ${response.status}`);
+
+            const gist = await response.json();
+            const content = gist.files['study-tracker-data.json']?.content;
+            const backupData = JSON.parse(content);
+
+            await handleRestoreData(backupData);
+            
+          } catch (error) {
+            console.error('强制恢复失败:', error);
+            alert('恢复失败: ' + error.message);
+          }
+        };
+        
+        forceRestoreFromCloud();
+      }
+    }}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    title="强制从云端恢复数据（覆盖本地）"
+  >
+    恢复云端
+  </button>
+
+  <button
+    onClick={() => setShowCategoryManager(true)}
+    style={{
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      border: "none",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      outline: "none",
+      transition: "none",
+      WebkitTapHighlightColor: "transparent",
+      boxShadow: "none"
+    }}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseUp={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = "#1a73e8";
+      e.target.style.color = "#fff";
+    }}
+  >
+    管理类别
+  </button>
+</div>
+
+     
     </div>
   );
 }
