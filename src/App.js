@@ -8730,7 +8730,6 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
           "运动": "#FFA500", // 正橙
           "科学": "#800080", // 正紫
           "艺术": "#FFC0CB", // 粉红
-          "音乐": "#FFFF00", // 正黄
           "编程": "#00FFFF"  // 正青
         };
         return subCategoryColors[task.targetSubCategory] || "#000000"; // 默认黑色
@@ -8741,7 +8740,7 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
         "语文": "#FF0000",   // 正红
         "数学": "#0000FF",   // 正蓝
         "英语": "#008000",   // 正绿
-        "物理": "#800080",   // 正紫
+        "运动": "#FFA500",   // 正橙
         "化学": "#FFA500",   // 正橙
         "生物": "#00FFFF",   // 正青
         "历史": "#800000",   // 深红
