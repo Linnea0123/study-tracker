@@ -8747,7 +8747,7 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
         default: return "#FF9800";
       }
     })(),
-    fontSize: "14px",
+    fontSize: "12px",
     fontWeight: "500",
     whiteSpace: "nowrap",
     lineHeight: 1.4
