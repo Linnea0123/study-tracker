@@ -12863,62 +12863,73 @@ const toggleRegularTaskDone = (task) => {
     if (!wasDone) {
       // 任务从未完成变为完成
       
-      // 1. 更新原始常规任务的状态为已完成（保留在原位置）
-      const updatedTodayTasks = todayTasks.map(t => {
-        if (t.id === task.id) {
-          return { ...t, done: true };
-        }
-        return t;
-      });
+      // 1. 创建目标分类中的新任务
+      const newCompletedTask = {
+        id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        text: task.text,
+        category: task.targetCategory,
+        subCategory: task.targetSubCategory || '',
+        done: true,
+        timeSpent: 0,
+        subTasks: [],
+        note: task.note || "",
+        reflection: task.reflection || "",
+        image: task.image || null,
+        scheduledTime: task.scheduledTime || "",
+        pinned: false,
+        progress: task.progress || {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        tags: task.tags || [],
+        reminderTime: task.reminderTime || null
+      };
       
-      // 2. 在目标分类中创建一个新任务（副本）
-      if (task.targetCategory) {
-        const newCompletedTask = {
-          id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-          text: task.text,
-          category: task.targetCategory,
-          subCategory: task.targetSubCategory || '',
-          done: true,
-          timeSpent: 0,
-          subTasks: [],
-          note: task.note || "",
-          reflection: task.reflection || "",
-          image: task.image || null,
-          scheduledTime: task.scheduledTime || "",
-          pinned: false,
-          progress: task.progress || {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          },
-          tags: task.tags || [],
-          reminderTime: task.reminderTime || null
-        };
-        
-        updatedTodayTasks.push(newCompletedTask);
-      }
+      // 2. 过滤掉原来的常规任务（删除原始任务）
+      const updatedTodayTasks = todayTasks
+        .filter(t => t.id !== task.id) // 删除原始任务
+        .concat(newCompletedTask); // 添加新任务
       
       newTasksByDate[todayStr] = updatedTodayTasks;
       
     } else {
       // 任务从完成变为未完成
       
-      // 1. 更新原始常规任务的状态为未完成
-      const updatedTodayTasks = todayTasks.map(t => {
-        if (t.id === task.id) {
-          return { ...t, done: false };
-        }
-        return t;
-      });
-      
-      // 2. 删除目标分类中的对应副本任务
-      // 注意：这里需要根据任务内容来识别对应的副本
-      newTasksByDate[todayStr] = updatedTodayTasks.filter(t => 
-        !(t.category === task.targetCategory && 
-          t.text === task.text && 
-          t.id !== task.id) // 保留原始任务，删除其他日期的副本
+      // 1. 删除目标分类中的副本任务
+      const updatedTodayTasks = todayTasks.filter(t => 
+        !(t.category === task.targetCategory && t.text === task.text)
       );
+      
+      // 2. 重新创建常规任务（未完成状态）
+      const restoredRegularTask = {
+        id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        text: task.text,
+        targetCategory: task.targetCategory,
+        targetSubCategory: task.targetSubCategory || '',
+        category: "常规任务",
+        done: false,
+        timeSpent: 0,
+        subTasks: task.subTasks || [],
+        note: task.note || "",
+        reflection: task.reflection || "",
+        image: task.image || null,
+        scheduledTime: task.scheduledTime || "",
+        pinned: false,
+        progress: task.progress || {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        tags: task.tags || [],
+        reminderTime: task.reminderTime || null,
+        isRegularTask: true
+      };
+      
+      updatedTodayTasks.push(restoredRegularTask);
+      newTasksByDate[todayStr] = updatedTodayTasks;
     }
     
     return newTasksByDate;
@@ -15274,26 +15285,27 @@ if (isInitialized && todayTasks.length === 0) {
     </span>
 
     <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        nextWeek();
-      }}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        marginLeft: 6,
-        padding: "8px",
-        fontSize: "16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }}
-      title="下一周"
-    >
-      ➡️
-    </button>
+  className="no-hover-effect"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    nextWeek();
+  }}
+  style={{
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    marginLeft: 6,
+    padding: "8px",
+    fontSize: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+  title="下一周"
+>
+  ➡️
+</button>
 
     <button
       onClick={() => setShowDatePickerModal(true)}
