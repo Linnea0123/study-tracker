@@ -2674,10 +2674,7 @@ const saveMainData = async (key, data) => {
     console.log(`数据保存成功: ${key}`, data ? '有数据' : '无数据');
   } catch (error) {
     console.error(`数据保存失败: ${key}`, error);
-    // 如果是因为数据太大导致保存失败，给出提示
-    if (error.name === 'QuotaExceededError') {
-      alert('图片太大，无法保存。请使用较小的图片（建议小于1MB）');
-    }
+    
   }
 };
 
