@@ -9536,8 +9536,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
-  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
-  const [newAchievements, setNewAchievements] = useState([]);
+  
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
   const [repeatConfig, setRepeatConfig] = useState({
   frequency: "", // 改为空字符串，默认不重复
@@ -13409,47 +13408,108 @@ const togglePinned = (task) => {
 const deleteTask = (task, deleteOption = 'today') => {
   const updatedTasksByDate = { ...tasksByDate };
   
-  if (deleteOption === 'future') {
+  if (task.isRepeating && task.repeatId) {
+    // 处理循环任务
     const allDates = Object.keys(updatedTasksByDate).sort();
-    const futureDates = allDates.filter(date => date >= selectedDate);
+    const today = new Date(selectedDate);
+    today.setHours(0, 0, 0, 0);
     
-    futureDates.forEach(date => {
-      updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
-        if (task.isWeekTask) {
-          // 只删除同一周的任务
-          return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
-        } else if (task.crossDateId) {
-          return t.crossDateId !== task.crossDateId;
-        } else {
-          return t.id !== task.id;
-        }
-      });
-    });
-    
-  } else if (deleteOption === 'all') {
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => {
-        if (task.isWeekTask) {
-          // 只删除同一周的任务
-          return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
-        } else if (task.crossDateId) {
-          return t.crossDateId !== task.crossDateId;
-        } else {
-          return t.id !== task.id;
-        }
-      });
-    });
-    
-  } else {
-    updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => {
-      if (task.isWeekTask) {
-        return !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart);
-      } else if (task.crossDateId) {
-        return t.crossDateId !== task.crossDateId;
-      } else {
-        return t.id !== task.id;
+    if (deleteOption === 'today') {
+      // 仅删除今天
+      if (updatedTasksByDate[selectedDate]) {
+        updatedTasksByDate[selectedDate] = updatedTasksByDate[selectedDate].filter(t => 
+          !(t.repeatId === task.repeatId && t.id === task.id)
+        );
       }
-    });
+    } else if (deleteOption === 'future') {
+      // 删除今天及以后的所有该循环任务
+      allDates.forEach(date => {
+        const currentDate = new Date(date);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        if (currentDate >= today) {
+          updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+            !(t.repeatId === task.repeatId)
+          );
+        }
+      });
+    } else if (deleteOption === 'all') {
+      // 删除所有日期的该循环任务
+      allDates.forEach(date => {
+        updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+          !(t.repeatId === task.repeatId)
+        );
+      });
+    }
+  } else if (task.isWeekTask) {
+    // 处理本周任务
+    if (deleteOption === 'today') {
+      updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => 
+        !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
+      );
+    } else if (deleteOption === 'future') {
+      const allDates = Object.keys(updatedTasksByDate).sort();
+      const today = new Date(selectedDate);
+      today.setHours(0, 0, 0, 0);
+      
+      allDates.forEach(date => {
+        const currentDate = new Date(date);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        if (currentDate >= today) {
+          updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+            !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
+          );
+        }
+      });
+    } else if (deleteOption === 'all') {
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+          !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
+        );
+      });
+    }
+  } else if (task.crossDateId) {
+    // 处理跨日期任务
+    if (deleteOption === 'today') {
+      updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => 
+        t.crossDateId !== task.crossDateId || t.id === task.id
+      );
+    } else {
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+          t.crossDateId !== task.crossDateId
+        );
+      });
+    }
+  } else {
+    // 处理普通任务
+    if (deleteOption === 'today') {
+      updatedTasksByDate[selectedDate] = (updatedTasksByDate[selectedDate] || []).filter(t => 
+        t.id !== task.id
+      );
+    } else if (deleteOption === 'future') {
+      const allDates = Object.keys(updatedTasksByDate).sort();
+      const today = new Date(selectedDate);
+      today.setHours(0, 0, 0, 0);
+      
+      allDates.forEach(date => {
+        const currentDate = new Date(date);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        if (currentDate >= today) {
+          updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+            t.id !== task.id
+          );
+        }
+      });
+    } else if (deleteOption === 'all') {
+      Object.keys(updatedTasksByDate).forEach(date => {
+        updatedTasksByDate[date] = (updatedTasksByDate[date] || []).filter(t => 
+          t.id !== task.id
+        );
+      });
+    }
   }
   
   setTasksByDate(updatedTasksByDate);
