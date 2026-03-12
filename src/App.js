@@ -8849,24 +8849,31 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
   }}>
     {/* 备注 */}
     {task.note && (
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenEditModal(task);
-        }}
-        style={{
-          fontSize: 12,
-          color: "#666",
-          cursor: "pointer",
-          backgroundColor: 'transparent',
-          lineHeight: "1.3",
-          whiteSpace: "pre-wrap",
-          marginBottom: task.reflection ? "2px" : "0",
-        }}
-      >
-        {task.note}
-      </div>
-    )}
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      onOpenEditModal(task);
+    }}
+    style={{
+      fontSize: 12,
+      color: "#666",
+      cursor: "pointer",
+      backgroundColor: 'transparent',
+      lineHeight: "1.3",
+      whiteSpace: "pre-wrap",
+      marginBottom: task.reflection ? "2px" : "0",
+    }}
+  >
+    {task.note.split('**[图片]**').map((part, index, array) => (
+      <span key={index}>
+        {part}
+        {index < array.length - 1 && (
+          <span style={{ color: '#ff4444' }}>[图片]</span>
+        )}
+      </span>
+    ))}
+  </div>
+)}
     
     {/* 感想 */}
     {task.reflection && (
@@ -13141,8 +13148,7 @@ const handleAddWeekTask = (text) => {
   
 
 
-
- const handleImportTasks = () => {
+const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 - 详细调试 ===');
   
   // 1. 检查输入内容
@@ -13180,49 +13186,69 @@ const handleAddWeekTask = (text) => {
 
   console.log('📝 最终分类:', { category, subCategory });
 
-  // 4. 生成任务对象
-  const taskLines = lines.length > 1 ? lines.slice(1) : lines;
-  console.log('✅ 任务行:', taskLines);
-  
-  const newTasks = taskLines.map((line, index) => {
-    // 处理任务文本：先按 | 分割，然后清理任务文本中的 "@所有家长"
-    const parts = line.split("|").map(s => s.trim());
-    let taskText = parts[0] || `导入任务${index + 1}`;
-    const note = parts[1] || "";
-    
-    // 自动删除任务文本中的 "@所有家长"（包括各种可能的形式）
-    // 使用正则表达式匹配 "@所有家长" 及其变体（可能有空格、标点等）
-    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
-    
-    // 如果清理后任务文本为空，使用默认名称
-    if (!taskText) {
-      taskText = `导入任务${index + 1}`;
-    }
-    
-    return {
-      id: `import_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`,
-      text: taskText,
-      category: category,
-      subCategory: subCategory,
-      done: false,
-      timeSpent: 0,
-      note: note,
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      reflection: "",
-      tags: [...(bulkTags || [])],
-      subTasks: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      }
-    };
-  });
+  // 4. 处理任务行，将[图片]行合并到上一个任务
+  const processedTasks = [];
+  let currentTask = null;
+  let currentNote = '';
 
-  console.log('🎁 生成的新任务:', newTasks);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // 检查是否是图片行（只包含[图片]或主要是[图片]）
+    const isImageLine = line.includes('[图片]') && line.trim().length <= 10;
+    
+    if (isImageLine) {
+      // 如果是图片行，且有当前任务，将图片标记添加到任务中
+      if (currentTask) {
+        if (!currentTask.imageMarker) {
+          currentTask.imageMarker = true;
+          // 在备注中添加红色[图片]标记
+          currentTask.note = (currentTask.note ? currentTask.note + '\n' : '') + '**[图片]**';
+        }
+      }
+    } else {
+      // 处理任务文本：先按 | 分割，然后清理任务文本中的 "@所有家长"
+      const parts = line.split("|").map(s => s.trim());
+      let taskText = parts[0] || `导入任务${processedTasks.length + 1}`;
+      const note = parts[1] || "";
+      
+      // 自动删除任务文本中的 "@所有家长"（包括各种可能的形式）
+      taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
+      
+      // 如果清理后任务文本为空，使用默认名称
+      if (!taskText) {
+        taskText = `导入任务${processedTasks.length + 1}`;
+      }
+      
+      // 创建新任务
+      currentTask = {
+        id: `import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+        text: taskText,
+        category: category,
+        subCategory: subCategory,
+        done: false,
+        timeSpent: 0,
+        note: note,
+        image: null,
+        scheduledTime: "",
+        pinned: false,
+        reflection: "",
+        tags: [...(bulkTags || [])],
+        subTasks: [],
+        progress: {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        imageMarker: false // 标记是否有图片
+      };
+      
+      processedTasks.push(currentTask);
+    }
+  }
+
+  console.log('🎁 处理后的任务:', processedTasks);
 
   // 5. 更新状态 - 使用函数式更新确保正确性
   setTasksByDate(prevTasksByDate => {
@@ -13242,7 +13268,7 @@ const handleAddWeekTask = (text) => {
 
     // 添加新任务（避免重复）
     let addedCount = 0;
-    newTasks.forEach(newTask => {
+    processedTasks.forEach(newTask => {
       const exists = updatedTasksByDate[selectedDate].some(
         existingTask => existingTask.text === newTask.text && existingTask.category === newTask.category
       );
@@ -13250,7 +13276,7 @@ const handleAddWeekTask = (text) => {
       if (!exists) {
         updatedTasksByDate[selectedDate].push(newTask);
         addedCount++;
-        console.log('✅ 添加任务:', newTask.text);
+        console.log('✅ 添加任务:', newTask.text, '有图片:', newTask.imageMarker ? '是' : '否');
       } else {
         console.log('⚠️ 跳过重复任务:', newTask.text);
       }
