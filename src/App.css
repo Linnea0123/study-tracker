@@ -358,3 +358,87 @@ button::-moz-focus-inner {
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
+
+
+/* 移除所有按钮的点击效果 */
+button, 
+.action-button,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  transition: none !important;
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+}
+
+/* 移除按钮点击时的白色闪烁 */
+button:active,
+.action-button:active,
+[role="button"]:active,
+input[type="button"]:active,
+input[type="submit"]:active {
+  background-color: inherit !important;
+  color: inherit !important;
+  opacity: 1 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 移除按钮聚焦时的效果 */
+button:focus,
+.action-button:focus,
+[role="button"]:focus,
+input[type="button"]:focus,
+input[type="submit"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 移除按钮悬停效果（如果需要的话） */
+button:hover,
+.action-button:hover,
+[role="button"]:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover {
+  background-color: inherit !important;
+  opacity: 1 !important;
+}
+
+/* 特别针对蓝色按钮 */
+button[style*="background-color: #1a73e8"]:active,
+button[style*="background: #1a73e8"]:active,
+button[style*="background-color: #1a73e8"]:hover,
+button[style*="background: #1a73e8"]:hover {
+  background-color: #1a73e8 !important;
+  color: white !important;
+}
+
+/* 针对成绩管理中的紫色按钮 */
+button[style*="background-color: #9C27B0"]:active,
+button[style*="background: #9C27B0"]:active,
+button[style*="background-color: #9C27B0"]:hover,
+button[style*="background: #9C27B0"]:hover {
+  background-color: #9C27B0 !important;
+  color: white !important;
+}
+
+/* 针对删除按钮（红色） */
+button[style*="background-color: #f44336"]:active,
+button[style*="background: #f44336"]:active,
+button[style*="background-color: #f44336"]:hover,
+button[style*="background: #f44336"]:hover {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+/* 针对编辑按钮（黄色） */
+button[style*="background-color: #FFC107"]:active,
+button[style*="background: #FFC107"]:active,
+button[style*="background-color: #FFC107"]:hover,
+button[style*="background: #FFC107"]:hover {
+  background-color: #FFC107 !important;
+  color: #333 !important;
+}
