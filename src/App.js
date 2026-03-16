@@ -8964,6 +8964,9 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
       </span>
     )}
 
+
+
+
     {/* 标签 - 移动到时间行 */}
     {task.tags && task.tags.length > 0 && (
       <div style={{
@@ -13169,18 +13172,26 @@ const handleImportTasks = () => {
     return;
   }
 
-  // 3. 确定分类和子分类
+  // 3. 确定分类和子分类 - 从第一行识别关键词
   const category = "校内"; // 固定分类
   let subCategory = "未分类";
   
-  // 尝试从第一行提取子分类
+  // 从第一行识别子分类关键词
   if (lines.length > 0) {
     const firstLine = lines[0];
-    const subCategoryKeywords = ["数学", "语文", "英语", "运动"];
-    const matched = subCategoryKeywords.find(k => firstLine.includes(k));
-    if (matched) {
-      subCategory = matched;
-      console.log('✅ 检测到子分类:', subCategory);
+    // 识别各种学科关键词
+    if (firstLine.includes('语文')) {
+      subCategory = '语文';
+      console.log('✅ 检测到语文作业');
+    } else if (firstLine.includes('数学')) {
+      subCategory = '数学';
+      console.log('✅ 检测到数学作业');
+    } else if (firstLine.includes('英语')) {
+      subCategory = '英语';
+      console.log('✅ 检测到英语作业');
+    } else if (firstLine.includes('运动')) {
+      subCategory = '运动';
+      console.log('✅ 检测到运动');
     }
   }
 
@@ -13221,7 +13232,7 @@ const handleImportTasks = () => {
       
       // 创建新任务
       currentTask = {
-        id: `import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+        id: `import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
         text: taskText,
         category: category,
         subCategory: subCategory,
@@ -13249,78 +13260,37 @@ const handleImportTasks = () => {
 
   console.log('🎁 处理后的任务:', processedTasks);
 
-  // 5. 更新状态 - 使用函数式更新确保正确性
+  // 5. 更新状态
   setTasksByDate(prevTasksByDate => {
-    console.log('🔄 开始更新 tasksByDate 状态');
-    console.log('更新前的状态:', prevTasksByDate);
-    
-    // 创建新的对象
     const updatedTasksByDate = { ...prevTasksByDate };
     
-    // 确保选中日期的数组存在
     if (!updatedTasksByDate[selectedDate]) {
       updatedTasksByDate[selectedDate] = [];
-      console.log('📅 创建新的日期数组:', selectedDate);
     }
-    
-    console.log('更新前该日期的任务:', updatedTasksByDate[selectedDate]);
 
-    // 添加新任务（避免重复）
     let addedCount = 0;
     processedTasks.forEach(newTask => {
       const exists = updatedTasksByDate[selectedDate].some(
-        existingTask => existingTask.text === newTask.text && existingTask.category === newTask.category
+        existingTask => existingTask.text === newTask.text
       );
       
       if (!exists) {
         updatedTasksByDate[selectedDate].push(newTask);
         addedCount++;
-        console.log('✅ 添加任务:', newTask.text, '有图片:', newTask.imageMarker ? '是' : '否');
-      } else {
-        console.log('⚠️ 跳过重复任务:', newTask.text);
       }
     });
 
     console.log(`📊 成功添加 ${addedCount} 个任务`);
-    console.log('更新后的状态:', updatedTasksByDate);
-    console.log('更新后该日期的任务:', updatedTasksByDate[selectedDate]);
-    
     return updatedTasksByDate;
   });
 
-  // 6. 更新分类结构
-  setCategories(prevCategories => {
-    const categoryIndex = prevCategories.findIndex(c => c.name === category);
-    if (categoryIndex >= 0) {
-      const updatedCategories = [...prevCategories];
-      const currentSubs = updatedCategories[categoryIndex].subCategories || [];
-      
-      if (!currentSubs.includes(subCategory)) {
-        console.log('🏷️ 添加新子类别到分类:', subCategory);
-        updatedCategories[categoryIndex].subCategories = [...currentSubs, subCategory];
-      }
-      
-      return updatedCategories;
-    }
-    return prevCategories;
-  });
-
-  // 7. 清理和反馈
+  // 6. 清理和反馈
   setBulkText("");
   setBulkTags([]);
   setShowBulkInput(false);
   
   console.log('🎉 批量导入流程完成');
-  
-  // 8. 延迟检查结果
-  setTimeout(() => {
-    console.log('⏰ 延迟检查导入结果:');
-    console.log('当前 tasksByDate:', tasksByDate);
-    console.log('选中日期任务:', tasksByDate[selectedDate]);
-    window.debugImport && window.debugImport();
-  }, 500);
 };
-
 
 
 // 修复 toggleSubTask 函数
@@ -17121,218 +17091,7 @@ marginTop: 10
       onClick={(e) => e.stopPropagation()}
     />
 
-    {/* 标签选择区域 */}
-    <div style={{ margin: "8px 0" }}>
-      <div style={{ marginBottom: 5, fontWeight: "bold", fontSize: 14 }}>选择标签:</div>
 
-     {/* 标签显示 + 添加标签 */}
-<div
-  style={{
-    display: "flex",
-    alignItems: "stretch",   // 两边高度一致
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 8,
-    width: "100%"
-  }}
->
-  
-{/* 标签显示 + 添加标签 */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    gap: 8,
-    marginBottom: 8
-  }}
->
-  {/* 已选标签显示 */}
-  <div
-    style={{
-      flex: "0 0 50%",
-      width: "50%",
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      padding: "4px 8px",
-      border: "1px solid #ddd",
-      borderRadius: 6,
-      backgroundColor: "#fafafa",
-      height: 36,                // ✅ 固定高度
-      boxSizing: "border-box",
-      overflowX: "auto",         // ✅ 横向滚动
-      whiteSpace: "nowrap",      // ✅ 不换行
-      scrollbarWidth: "thin"     // 🔹 Firefox 细滚动条
-    }}
-  >
-    {bulkTags?.length > 0 ? (
-      bulkTags.map((tag, index) => (
-        <span
-          key={index}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 3,
-            fontSize: 11,            // ✅ 更小
-            padding: "2px 6px",      // ✅ 紧凑
-            backgroundColor: tag.color || "#e0e0e0",
-            color: "#333",
-            borderRadius: 10,
-            border: "1px solid #ccc",
-            height: 20,
-            lineHeight: "1",
-            flexShrink: 0            // ✅ 防止被压缩
-          }}
-        >
-          {tag.name}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              const newTags = [...bulkTags];
-              newTags.splice(index, 1);
-              setBulkTags(newTags);
-            }}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 11,
-              padding: 0,
-              width: 14,
-              height: 14,
-              lineHeight: "1",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            ×
-          </button>
-        </span>
-      ))
-    ) : (
-      <span style={{ fontSize: 11, color: "#999" }}>暂无标签，可在右侧添加</span>
-    )}
-  </div>
-
-  {/* 添加新标签 */}
-  <div
-    style={{
-      flex: "0 0 50%",
-      width: "50%",
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      boxSizing: "border-box",
-      height: 36                 // ✅ 与左侧等高
-    }}
-  >
-    <input
-      type="text"
-      placeholder="标签名"
-      value={bulkNewTagName}
-      onChange={(e) => setBulkNewTagName(e.target.value)}
-      style={{
-        flex: 1,
-        height: "100%",
-        padding: "6px 8px",
-        border: "1px solid #ddd",
-        borderRadius: 6,
-        fontSize: 12,
-        boxSizing: "border-box"
-      }}
-    />
-    <input
-      type="color"
-      value={bulkNewTagColor}
-      onChange={(e) => setBulkNewTagColor(e.target.value)}
-      style={{
-        width: 34,
-        height: "100%",
-        border: "1px solid #ddd",
-        borderRadius: 6,
-        padding: 0,
-        cursor: "pointer"
-      }}
-    />
-    <button
-      type="button"
-      onClick={() => {
-        if (bulkNewTagName?.trim()) {
-          const newTag = {
-            name: bulkNewTagName.trim(),
-            color: bulkNewTagColor || "#e0e0e0"
-          };
-          const updatedTags = [...(bulkTags || []), newTag];
-          setBulkTags(updatedTags);
-          setBulkNewTagName("");
-          setBulkNewTagColor("#e0e0e0");
-        }
-      }}
-      style={{
-        height: "100%",
-        padding: "0 12px",
-        backgroundColor: "#1a73e8",
-        color: "#fff",
-        border: "none",
-        borderRadius: 6,
-        cursor: "pointer",
-        fontSize: 12,
-        whiteSpace: "nowrap"
-      }}
-    >
-      添加
-    </button>
-  </div>
-</div>
-</div>
-
-
-
-     
-      {/* 常用标签 */}
-      <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>常用标签:</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {[
-            { name: "重要", color: "#ff4444" },
-            { name: "紧急", color: "#ff9800" },
-            { name: "复习", color: "#4caf50" },
-            { name: "预习", color: "#2196f3" },
-            { name: "作业", color: "#9c27b0" },
-            { name: "考试", color: "#e91e63" },
-            { name: "背诵", color: "#795548" },
-            { name: "练习", color: "#607d8b" }
-          ].map((tag, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => {
-                const existingTags = bulkTags || [];
-                const isAlreadyAdded = existingTags.some((t) => t.name === tag.name);
-                if (!isAlreadyAdded) {
-                  setBulkTags([...existingTags, tag]);
-                }
-              }}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: tag.color,
-                color: "#fff",
-                border: "none",
-                borderRadius: 12,
-                cursor: "pointer",
-                fontSize: 11
-              }}
-            >
-              {tag.name}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
 
     {/* 导入任务按钮 */}
 <button
