@@ -13189,7 +13189,6 @@ const handleImportTasks = () => {
   // 4. 处理任务行，将[图片]行合并到上一个任务
   const processedTasks = [];
   let currentTask = null;
-  let currentNote = '';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
