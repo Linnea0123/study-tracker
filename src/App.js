@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
 
 
 
+
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
   const [filterSubject, setFilterSubject] = useState('全部');
@@ -9579,6 +9580,16 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
 });
 
 
+// 在 App 组件中添加状态
+const [reminderText, setReminderText] = useState(() => {
+  return localStorage.getItem('daily_reminder') || '';
+});
+
+// 添加保存提醒文本的函数
+const handleReminderChange = (text) => {
+  setReminderText(text);
+  localStorage.setItem('daily_reminder', text);
+};
 
 
 // 添加编辑和删除函数
@@ -15614,6 +15625,74 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
+
+{/* 在星期显示区域之后，任务列表之前添加这个跑马灯提醒区域 */}
+<div style={{
+  marginBottom: 10,
+  padding: '0 12px',
+  backgroundColor: '#ffebee', // 浅红色背景
+  borderRadius: 8,
+  height: '28px',
+  display: 'flex',
+  alignItems: 'center',
+  position: 'relative',
+  overflow: 'hidden',
+  boxShadow: '0 2px 4px rgba(244, 67, 54, 0.1)',
+  cursor: 'pointer'
+}} onClick={() => {
+  const newText = window.prompt('编辑提醒内容：', reminderText);
+  if (newText !== null) {
+    handleReminderChange(newText);
+  }
+}}>
+  {/* 跑马灯文字容器 */}
+  <div style={{
+    flex: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    height: '100%'
+  }}>
+    {reminderText ? (
+      <div
+        style={{
+          position: 'absolute',
+          whiteSpace: 'nowrap',
+          fontSize: '14px',
+          color: '#c62828',
+          fontWeight: '500',
+          lineHeight: '28px',
+          animation: 'rightToLeft 30s linear infinite'
+        }}
+      >
+        {reminderText}
+      </div>
+    ) : (
+      <div style={{
+        fontSize: '14px',
+        color: '#ef5350',
+        fontStyle: 'italic',
+        lineHeight: '28px',
+        textAlign: 'center'
+      }}>
+        点击添加每日提醒...
+      </div>
+    )}
+  </div>
+</div>
+
+{/* 添加动画样式 */}
+<style>{`
+  @keyframes rightToLeft {
+    0% {
+      left: 100%;
+      transform: translateX(0);
+    }
+    100% {
+      left: 0%;
+      transform: translateX(-100%);
+    }
+  }
+`}</style>
 
 
 {/* 置顶任务区域 */}
