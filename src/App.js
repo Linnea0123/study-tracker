@@ -5,74 +5,103 @@ import './App.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 
 
-// 在 App.js 顶部，import 语句之后，其他代码之前添加
+// 在 App.js 顶部，import 语句之后添加
 const style = document.createElement('style');
 style.textContent = `
-  /* 强制覆盖所有按钮样式 */
+  /* 强制所有按钮在任何状态下都保持原样 */
   button, 
   button:active, 
   button:focus, 
   button:hover,
   button:focus-visible,
   button:focus-within,
+  button:visited,
+  button:link,
   [type="button"],
   [type="submit"],
-  [role="button"] {
+  [role="button"],
+  .action-button,
+  button[style*="background-color"]:active,
+  button[style*="background"]:active {
+    /* 完全禁用所有状态变化 */
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     user-select: none !important;
     -webkit-appearance: none !important;
     appearance: none !important;
-    outline: 0 !important;
+    outline: none !important;
     box-shadow: none !important;
-    text-decoration: none !important;
+    text-shadow: none !important;
     background-image: none !important;
-  }
-
-  /* 禁用所有伪类效果 */
-  button:active::after,
-  button:active::before,
-  button:focus::after,
-  button:focus::before,
-  button:hover::after,
-  button:hover::before {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* 针对移动端的触摸高亮 */
-  * {
-    -webkit-tap-highlight-color: transparent !important;
-    tap-highlight-color: transparent !important;
-  }
-
-  /* 特别覆盖 React 内联样式 */
-  button[style*="background-color"]:active,
-  button[style*="background"]:active {
+    transition: none !important;
+    transform: none !important;
+    
+    /* 关键：让 active 状态完全继承原始样式 */
     background-color: inherit !important;
     color: inherit !important;
+    border-color: inherit !important;
+    border-style: inherit !important;
+    border-width: inherit !important;
+    opacity: 1 !important;
   }
 
-  /* 保持特定按钮颜色 */
-  button[style*="background-color: #1a73e8"]:active {
+  /* 针对不同颜色的按钮，强制保持原色 */
+  button[style*="background-color: #1a73e8"]:active,
+  button[style*="background: #1a73e8"]:active {
     background-color: #1a73e8 !important;
     color: #ffffff !important;
   }
 
-  button[style*="background-color: #9C27B0"]:active {
+  button[style*="background-color: #9C27B0"]:active,
+  button[style*="background: #9C27B0"]:active {
     background-color: #9C27B0 !important;
     color: #ffffff !important;
   }
 
-  button[style*="background-color: #f44336"]:active {
+  button[style*="background-color: #f44336"]:active,
+  button[style*="background: #f44336"]:active {
     background-color: #f44336 !important;
     color: #ffffff !important;
   }
 
-  button[style*="background-color: #FFC107"]:active {
+  button[style*="background-color: #FFC107"]:active,
+  button[style*="background: #FFC107"]:active {
     background-color: #FFC107 !important;
     color: #333333 !important;
+  }
+
+  button[style*="background-color: #4CAF50"]:active,
+  button[style*="background: #4CAF50"]:active {
+    background-color: #4CAF50 !important;
+    color: #ffffff !important;
+  }
+
+  /* 针对透明背景的按钮 */
+  button[style*="background: transparent"]:active,
+  button[style*="background-color: transparent"]:active {
+    background: transparent !important;
+    color: inherit !important;
+  }
+
+  /* 禁用所有伪元素 */
+  button::before,
+  button::after,
+  button:active::before,
+  button:active::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* 确保没有任何透明度变化 */
+  button:active {
+    opacity: 1 !important;
+  }
+
+  /* 全局禁用触摸高亮 */
+  * {
+    -webkit-tap-highlight-color: transparent !important;
+    tap-highlight-color: transparent !important;
   }
 `;
 document.head.appendChild(style);
