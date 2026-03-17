@@ -5,56 +5,77 @@ import './App.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 
 
-
-<style>{`
-  /* 移除所有按钮的点击高亮效果 */
+// 在 App.js 顶部，import 语句之后，其他代码之前添加
+const style = document.createElement('style');
+style.textContent = `
+  /* 强制覆盖所有按钮样式 */
   button, 
+  button:active, 
   button:focus, 
-  button:active,
   button:hover,
-  .action-button,
-  .action-button:focus,
-  .action-button:active,
-  .action-button:hover,
-  [role="button"],
+  button:focus-visible,
+  button:focus-within,
   [type="button"],
   [type="submit"],
-  [type="reset"] {
-    outline: none !important;
+  [role="button"] {
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     user-select: none !important;
     -webkit-appearance: none !important;
     appearance: none !important;
-  }
-  
-  /* 强制移除所有可能的焦点样式 */
-  button:focus-visible,
-  button:focus-within,
-  button:focus {
-    outline: none !important;
+    outline: 0 !important;
     box-shadow: none !important;
+    text-decoration: none !important;
+    background-image: none !important;
+  }
+
+  /* 禁用所有伪类效果 */
+  button:active::after,
+  button:active::before,
+  button:focus::after,
+  button:focus::before,
+  button:hover::after,
+  button:hover::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* 针对移动端的触摸高亮 */
+  * {
     -webkit-tap-highlight-color: transparent !important;
+    tap-highlight-color: transparent !important;
   }
-  
-  /* 确保所有按钮在点击后颜色不变 */
-  button:not(:disabled):active,
-  button:not(:disabled):hover,
-  button:not(:disabled):focus {
-    background-color: inherit !important;
-    color: inherit !important;
-    opacity: 1 !important;
-    transition: none !important;
-    transform: none !important;
-  }
-  
-  /* 特别处理带背景色的按钮 */
+
+  /* 特别覆盖 React 内联样式 */
   button[style*="background-color"]:active,
   button[style*="background"]:active {
     background-color: inherit !important;
+    color: inherit !important;
   }
-`}</style>
+
+  /* 保持特定按钮颜色 */
+  button[style*="background-color: #1a73e8"]:active {
+    background-color: #1a73e8 !important;
+    color: #ffffff !important;
+  }
+
+  button[style*="background-color: #9C27B0"]:active {
+    background-color: #9C27B0 !important;
+    color: #ffffff !important;
+  }
+
+  button[style*="background-color: #f44336"]:active {
+    background-color: #f44336 !important;
+    color: #ffffff !important;
+  }
+
+  button[style*="background-color: #FFC107"]:active {
+    background-color: #FFC107 !important;
+    color: #333333 !important;
+  }
+`;
+document.head.appendChild(style);
 
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
