@@ -442,3 +442,107 @@ button[style*="background: #FFC107"]:hover {
   background-color: #FFC107 !important;
   color: #333 !important;
 }
+
+/* ===== 终极按钮样式覆盖 ===== */
+/* 强制所有按钮及其伪类 */
+button,
+button:active,
+button:focus,
+button:hover,
+button:focus-visible,
+button:focus-within,
+button:visited,
+button:link,
+[class*="button"]:active,
+[class*="button"]:focus,
+[class*="button"]:hover,
+[role="button"]:active,
+[role="button"]:focus,
+[role="button"]:hover {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  border-style: solid !important;
+  transition: none !important;
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  animation: none !important;
+  -webkit-animation: none !important;
+  -moz-animation: none !important;
+  -o-animation: none !important;
+  transform: none !important;
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -o-transform: none !important;
+  -ms-transform: none !important;
+}
+
+/* 禁用所有伪元素 */
+button::before,
+button::after,
+button:active::before,
+button:active::after,
+button:focus::before,
+button:focus::after,
+button:hover::before,
+button:hover::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  opacity: 0 !important;
+}
+
+/* 特别针对白色闪烁 */
+button:active {
+  background-color: inherit !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+/* 保持特定背景色的按钮颜色 */
+button[style*="background-color: #1a73e8"]:active,
+button[style*="background: #1a73e8"]:active {
+  background-color: #1a73e8 !important;
+  color: #ffffff !important;
+}
+
+button[style*="background-color: #9C27B0"]:active,
+button[style*="background: #9C27B0"]:active {
+  background-color: #9C27B0 !important;
+  color: #ffffff !important;
+}
+
+button[style*="background-color: #f44336"]:active,
+button[style*="background: #f44336"]:active {
+  background-color: #f44336 !important;
+  color: #ffffff !important;
+}
+
+button[style*="background-color: #FFC107"]:active,
+button[style*="background: #FFC107"]:active {
+  background-color: #FFC107 !important;
+  color: #333333 !important;
+}
+
+/* 针对透明背景的按钮 */
+button[style*="background: transparent"]:active,
+button[style*="background-color: transparent"]:active {
+  background: transparent !important;
+  color: inherit !important;
+}
