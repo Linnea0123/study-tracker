@@ -1531,8 +1531,48 @@ const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 const BackupManagerModal = ({ onClose }) => {
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const loadBackups = () => {
+    setIsLoading(true);
+    try {
+      const backupList = getBackupList();
+      console.log('加载的备份列表:', backupList);
+      setBackups(backupList);
+    } catch (error) {
+      console.error('加载备份失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    loadBackups();
+  }, []);
+
+  const handleManualBackup = async () => {
+    setIsLoading(true);
+    try {
+      await autoBackup();
+      // 延迟一点再加载，确保数据已写入
+      setTimeout(() => {
+        loadBackups();
+        alert('手动备份已创建！');
+      }, 500);
+    } catch (error) {
+      console.error('备份失败:', error);
+      alert('备份失败: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteBackup = (backupKey) => {
+    if (window.confirm('确定要删除这个备份吗？')) {
+      localStorage.removeItem(backupKey);
+      loadBackups(); // 立即刷新列表
+    }
+  };
 
 
 
@@ -1549,19 +1589,9 @@ const BackupManagerModal = ({ onClose }) => {
     onClose();
   };
 
-  const handleManualBackup = async () => {
-    await autoBackup();
-    setBackups(getBackupList()); // 刷新列表
-    alert('手动备份已创建！');
-  };
+ 
 
-  const handleDeleteBackup = (backupKey) => {
-    if (window.confirm('确定要删除这个备份吗？')) {
-      localStorage.removeItem(backupKey);
-      setBackups(getBackupList()); // 刷新列表
-      alert('备份已删除！');
-    }
-  };
+
 
   return (
     <div style={{
@@ -6030,6 +6060,7 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
   };
 
   // 日期圆点组件 - 修改后版本（文字颜色跟随圆点变化）
+// 日期圆点组件 - 修改后只显示完成的任务（排除常规任务）
 const DateDot = ({ date, tasksByDate }) => {
   if (!tasksByDate) {
     return null;
@@ -6037,9 +6068,17 @@ const DateDot = ({ date, tasksByDate }) => {
 
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dayTasks = tasksByDate[dateStr] || [];
-  const filteredTasks = dayTasks.filter(task => task.category !== "本周任务");
+  
+  // 只筛选已完成的且不是常规任务的任务
+  const completedNonRegularTasks = dayTasks.filter(task => {
+    // 排除常规任务
+    if (task.isRegularTask) return false;
+    // 只保留已完成的非常规任务
+    return task.done === true;
+  });
 
-  if (filteredTasks.length === 0) return null;
+  // 如果没有已完成的任务，不显示任何内容
+  if (completedNonRegularTasks.length === 0) return null;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -6047,22 +6086,11 @@ const DateDot = ({ date, tasksByDate }) => {
   taskDate.setHours(0, 0, 0, 0);
   
   const isFuture = taskDate > today;
-  const allDone = filteredTasks.every(task => task.done);
-  const totalCount = filteredTasks.length;
   
-  let dotColor = '';
-  let textColor = '';
-  
-  if (isFuture) {
-    dotColor = softColors.dotFuture;
-    textColor = '#F39C12'; // 未来任务 - 橙色文字
-  } else if (allDone) {
-    dotColor = softColors.dotComplete;
-    textColor = '#2ECC71'; // 全部完成 - 绿色文字
-  } else {
-    dotColor = softColors.dotIncomplete;
-    textColor = '#E74C3C'; // 未完成 - 红色文字
-  }
+  // 未来日期 - 橙色
+  // 有完成任务的过去日期 - 绿色
+  const dotColor = isFuture ? softColors.dotFuture : softColors.dotComplete;
+  const textColor = isFuture ? '#F39C12' : '#2ECC71';
   
   return (
     <div style={{
@@ -6081,13 +6109,13 @@ const DateDot = ({ date, tasksByDate }) => {
         boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
       }} />
       
-      {/* 任务总数 - 文字颜色跟随圆点状态 */}
+      {/* 完成任务数 - 只显示已完成的非常规任务数量 */}
       <span style={{
         fontSize: '9px',
         fontWeight: 'bold',
-        color: textColor // 使用动态颜色
+        color: textColor
       }}>
-        {totalCount}
+        {completedNonRegularTasks.length}
       </span>
     </div>
   );
@@ -9483,6 +9511,8 @@ function App() {
   const [showGradeModal, setShowGradeModal] = useState(false);
   const hasAttemptedRestore = useRef(false);  // 添加这一行
   // 在现有状态定义区域添加
+  // 在现有的状态定义区域添加
+const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showRegularModal, setShowRegularModal] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -15387,7 +15417,7 @@ if (isInitialized && todayTasks.length === 0) {
         你已经打卡 {Object.keys(tasksByDate).length} 天，已累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
       </div>
 
-      {/* 日期行上方的新布局 */}
+{/* 日期行上方的新布局 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -15400,7 +15430,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowWeekTaskModal(true)}
       style={{
         padding: "4px 6px",
-        backgroundColor: "#87CEEB",
+        backgroundColor: "#1a73e8",  // 改为统一的蓝色
         color: "#fff",
         border: "none",
         borderRadius: 4,
@@ -15417,7 +15447,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowMonthTaskModal(true)}
       style={{
         padding: "4px 6px",
-        backgroundColor: "#FF9800",
+        backgroundColor: "#1a73e8",  // 改为统一的蓝色
         color: "#fff",
         border: "none",
         borderRadius: 4,
@@ -17269,7 +17299,7 @@ marginTop: 10
    
 
 
-{/* 底部按钮区域 - 修改后，完全禁用悬停效果 */}
+{/* 底部按钮区域 - 只保留四个主按钮 */}
 <div style={{
   display: "flex",
   justifyContent: "center",
@@ -17278,6 +17308,7 @@ marginTop: 10
   marginBottom: 20,
   flexWrap: "wrap"
 }}>
+  {/* 每日日志按钮 */}
   <button
     onClick={() => generateDailyLog()}
     style={{
@@ -17295,262 +17326,11 @@ marginTop: 10
       WebkitTapHighlightColor: "transparent",
       boxShadow: "none"
     }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
   >
     每日日志
   </button>
   
-  <button
-    onClick={handleExportData}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-  >
-    导出数据
-  </button>
-  
-  <button
-    onClick={() => {
-      document.getElementById('import-file').click();
-    }}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-  >
-    导入数据
-  </button>
-  
-  <input
-    id="import-file"
-    type="file"
-    accept=".json"
-    onChange={async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const importedData = JSON.parse(event.target.result);
-
-          if (!importedData.tasks || !importedData.version) {
-            throw new Error('无效的数据文件格式');
-          }
-
-          const importStats = {
-            任务天数: Object.keys(importedData.tasks || {}).length,
-            模板数量: (importedData.templates || []).length,
-            成就数量: (importedData.customAchievements || []).length,
-            版本: importedData.version || '未知'
-          };
-          
-          const confirmMessage = `确定要导入以下数据吗？\n` +
-            `• 任务天数: ${importStats.任务天数}\n` +
-            `• 模板数量: ${importStats.模板数量}\n` +
-            `• 成就数量: ${importStats.成就数量}\n` +
-            `• 数据版本: ${importStats.版本}\n\n` +
-            `这将覆盖当前所有数据！`;
-
-          if (window.confirm(confirmMessage)) {
-            console.log('🔄 开始导入数据...', importStats);
-            
-            await saveMainData('tasks', importedData.tasks || {});
-            await saveMainData('templates', importedData.templates || []);
-            await saveMainData('customAchievements', importedData.customAchievements || []);
-            await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
-            await saveMainData('categories', importedData.categories || baseCategories);
-            
-            setTasksByDate(importedData.tasks || {});
-            setTemplates(importedData.templates || []);
-            setCategories(importedData.categories || baseCategories);
-            
-            console.log('✅ 所有数据导入完成');
-            
-            setTimeout(() => {
-              alert('数据导入成功！页面将重新加载以应用更改。');
-              window.location.reload();
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('导入失败:', error);
-          alert(`导入失败：${error.message || '文件格式不正确'}`);
-        }
-      };
-
-      reader.onerror = () => {
-        alert('文件读取失败，请重试');
-      };
-
-      reader.readAsText(file);
-      e.target.value = '';
-    }}
-    style={{ display: "none" }}
-  />
-
-  <button
-    onClick={clearAllData}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-  >
-    清空数据
-  </button>
-
-  <button
-    onClick={() => setShowBackupModal(true)}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-  >
-    备份管理
-  </button>
-
-  <button
-    onClick={() => setShowGitHubSyncModal(true)}
-    style={{
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      border: "none",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
-    }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-  >
-    同步设置
-  </button>
-
+  {/* 立即同步按钮 */}
   <button
     onClick={syncToGitHub}
     style={{
@@ -17568,23 +17348,11 @@ marginTop: 10
       WebkitTapHighlightColor: "transparent",
       boxShadow: "none"
     }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
   >
     立即同步
   </button>
-
+  
+  {/* 恢复云端按钮 */}
   <button
     onClick={() => {
       const token = localStorage.getItem('github_token');
@@ -17650,26 +17418,14 @@ marginTop: 10
       WebkitTapHighlightColor: "transparent",
       boxShadow: "none"
     }}
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
     title="强制从云端恢复数据（覆盖本地）"
   >
     恢复云端
   </button>
-
+  
+  {/* 其他设置按钮 */}
   <button
-    onClick={() => setShowCategoryManager(true)}
+    onClick={() => setShowSettingsMenu(!showSettingsMenu)}
     style={{
       padding: "6px 10px",
       backgroundColor: "#1a73e8",
@@ -17685,24 +17441,270 @@ marginTop: 10
       WebkitTapHighlightColor: "transparent",
       boxShadow: "none"
     }}
-    
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseUp={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.backgroundColor = "#1a73e8";
-      e.target.style.color = "#fff";
-    }}
   >
-    管理类别
+    其他设置
   </button>
 </div>
+
+{/* 其他设置下拉菜单 */}
+{showSettingsMenu && (
+  <div style={{
+    position: 'relative',
+    width: '100%',
+    marginTop: -10,
+    marginBottom: 10,
+    zIndex: 100
+  }}>
+    <div style={{
+      backgroundColor: 'white',
+      border: '1px solid #e0e0e0',
+      borderRadius: 8,
+      padding: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '8px'
+    }}>
+      {/* 导出数据 */}
+      <button
+        onClick={() => {
+          handleExportData();
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📤</span>
+        <span>导出数据</span>
+      </button>
+
+      {/* 导入数据 */}
+      <button
+        onClick={() => {
+          document.getElementById('import-file').click();
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📥</span>
+        <span>导入数据</span>
+      </button>
+
+      {/* 备份管理 */}
+      <button
+        onClick={() => {
+          setShowBackupModal(true);
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📦</span>
+        <span>备份管理</span>
+      </button>
+
+      {/* 同步设置 */}
+      <button
+        onClick={() => {
+          setShowGitHubSyncModal(true);
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>⚙️</span>
+        <span>同步设置</span>
+      </button>
+
+      {/* 管理类别 */}
+      <button
+        onClick={() => {
+          setShowCategoryManager(true);
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📁</span>
+        <span>管理类别</span>
+      </button>
+
+      {/* 清空数据 */}
+      <button
+        onClick={() => {
+          if (window.confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+            clearAllData();
+          }
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#d32f2f",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>🗑️</span>
+        <span>清空数据</span>
+      </button>
+
+      {/* 成绩记录 */}
+      <button
+        onClick={() => {
+          setShowGradeModal(true);
+          setShowSettingsMenu(false);
+        }}
+        style={{
+          padding: "10px 4px",
+          backgroundColor: "#f8f9fa",
+          color: "#333",
+          border: "1px solid #e0e0e0",
+          fontSize: 11,
+          borderRadius: 6,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📊</span>
+        <span>成绩记录</span>
+      </button>
+    </div>
+  </div>
+)}
+
+{/* 隐藏的文件导入input */}
+<input
+  id="import-file"
+  type="file"
+  accept=".json"
+  onChange={async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+
+        if (!importedData.tasks || !importedData.version) {
+          throw new Error('无效的数据文件格式');
+        }
+
+        const importStats = {
+          任务天数: Object.keys(importedData.tasks || {}).length,
+          模板数量: (importedData.templates || []).length,
+          成就数量: (importedData.customAchievements || []).length,
+          版本: importedData.version || '未知'
+        };
+        
+        const confirmMessage = `确定要导入以下数据吗？\n` +
+          `• 任务天数: ${importStats.任务天数}\n` +
+          `• 模板数量: ${importStats.模板数量}\n` +
+          `• 成就数量: ${importStats.成就数量}\n` +
+          `• 数据版本: ${importStats.版本}\n\n` +
+          `这将覆盖当前所有数据！`;
+
+        if (window.confirm(confirmMessage)) {
+          console.log('🔄 开始导入数据...', importStats);
+          
+          await saveMainData('tasks', importedData.tasks || {});
+          await saveMainData('templates', importedData.templates || []);
+          await saveMainData('customAchievements', importedData.customAchievements || []);
+          await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
+          await saveMainData('categories', importedData.categories || baseCategories);
+          
+          setTasksByDate(importedData.tasks || {});
+          setTemplates(importedData.templates || []);
+          setCategories(importedData.categories || baseCategories);
+          
+          console.log('✅ 所有数据导入完成');
+          
+          setTimeout(() => {
+            alert('数据导入成功！页面将重新加载以应用更改。');
+            window.location.reload();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        alert(`导入失败：${error.message || '文件格式不正确'}`);
+      }
+    };
+
+    reader.onerror = () => {
+      alert('文件读取失败，请重试');
+    };
+
+    reader.readAsText(file);
+    e.target.value = '';
+  }}
+  style={{ display: "none" }}
+/>
 
      
     </div>
