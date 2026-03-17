@@ -6,7 +6,35 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
 
 
 
-
+// 在文件顶部，import 语句之后添加
+<style>{`
+  /* 移除所有按钮的焦点和活动状态 */
+  button, 
+  button:focus, 
+  button:active,
+  button:hover,
+  .action-button,
+  .action-button:focus,
+  .action-button:active,
+  .action-button:hover {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* 强制移除所有可能的焦点样式 */
+  button:focus-visible {
+    outline: none !important;
+  }
+  
+  /* 确保所有按钮在点击后颜色不变 */
+  button:not(:disabled) {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+`}</style>
 
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
@@ -17265,8 +17293,12 @@ marginTop: 10
   flexWrap: "wrap"
 }}>
   {/* 每日日志按钮 */}
-  <button
-    onClick={() => generateDailyLog()}
+ <button
+  onClick={(e) => {
+    e.preventDefault();
+    e.currentTarget.blur(); // 添加这行，点击后立即移除焦点
+    generateDailyLog();
+  }}
     style={{
       padding: "6px 10px",
       backgroundColor: "#1a73e8",
