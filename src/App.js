@@ -6,9 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
 
 
 
-// 在文件顶部，import 语句之后添加
 <style>{`
-  /* 移除所有按钮的焦点和活动状态 */
+  /* 移除所有按钮的点击高亮效果 */
   button, 
   button:focus, 
   button:active,
@@ -16,23 +15,44 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
   .action-button,
   .action-button:focus,
   .action-button:active,
-  .action-button:hover {
+  .action-button:hover,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"] {
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     user-select: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
   }
   
   /* 强制移除所有可能的焦点样式 */
-  button:focus-visible {
+  button:focus-visible,
+  button:focus-within,
+  button:focus {
     outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   
   /* 确保所有按钮在点击后颜色不变 */
-  button:not(:disabled) {
+  button:not(:disabled):active,
+  button:not(:disabled):hover,
+  button:not(:disabled):focus {
+    background-color: inherit !important;
+    color: inherit !important;
     opacity: 1 !important;
     transition: none !important;
+    transform: none !important;
+  }
+  
+  /* 特别处理带背景色的按钮 */
+  button[style*="background-color"]:active,
+  button[style*="background"]:active {
+    background-color: inherit !important;
   }
 `}</style>
 
@@ -17331,9 +17351,10 @@ marginTop: 10
       width: "70px",
       height: "30px",
       cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
+       WebkitTapHighlightColor: 'transparent',
+  transition: 'none',
+  transform: 'none',
+  outline: 'none',
       boxShadow: "none"
     }}
   >
