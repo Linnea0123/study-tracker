@@ -9029,41 +9029,19 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
     )}
   </div>
 
-  {/* 右侧：计时器区域 */}
-  <div style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    flexShrink: 0
-  }}>
-    {/* 循环图标 */}
-    {task.isRepeating && (
-      <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-    )}
-
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        onEditTime?.(task);
-      }}
-      style={{
-        fontSize: 12,
-        color: "#333",
-        border: "1px solid #e0e0e0",
-        borderRadius: 4,
-        backgroundColor: "#f5f5f5",
-        padding: "2px 6px",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        minWidth: "45px",
-        fontFamily: 'Calibri, "微软雅黑", sans-serif',
-        textAlign: "center"
-      }}
-      title="点击修改时间"
-    >
-      {formatTimeNoSeconds(task.timeSpent || 0)}
-    </span>
-  </div>
+ {/* 右侧：只保留循环图标，删除时间显示 */}
+<div style={{
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  flexShrink: 0
+}}>
+  {/* 循环图标 */}
+  {task.isRepeating && (
+    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+  )}
+  {/* 时间显示已删除 */}
+</div>
 </div>
   </div>
 )}
@@ -9131,40 +9109,18 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
     </div>
 
     {/* 右侧：计时器区域 */}
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 4
-    }}>
-      {/* 循环图标 */}
-      {task.isRepeating && (
-        <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-      )}
-
-    
-
-      <span
-  onClick={(e) => {
-    e.stopPropagation();
-    onEditTime?.(task);
-  }}
-  style={{
-    fontSize: 12,
-    color: "#333",
-    border: "1px solid #e0e0e0",
-    borderRadius: 4,
-    backgroundColor: "#f5f5f5",
-    padding: "2px 6px",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    minWidth: "45px",
-    textAlign: "center"
-  }}
-  title="点击修改时间"
->
-  {formatTimeNoSeconds(task.timeSpent || 0)}
-</span>
-    </div>
+    {/* 右侧：只保留循环图标，删除时间显示 */}
+<div style={{
+  display: "flex",
+  alignItems: "center",
+  gap: 4
+}}>
+  {/* 循环图标 */}
+  {task.isRepeating && (
+    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+  )}
+  {/* 时间显示已删除 */}
+</div>
   </div>
 )}
 
