@@ -443,22 +443,19 @@ button[style*="background: #FFC107"]:hover {
   color: #333 !important;
 }
 
-/* ===== 终极按钮样式覆盖 ===== */
-/* 强制所有按钮及其伪类 */
-button,
-button:active,
-button:focus,
+/* ===== 彻底禁用按钮点击效果 ===== */
+button, 
+button:active, 
+button:focus, 
 button:hover,
 button:focus-visible,
 button:focus-within,
 button:visited,
 button:link,
-[class*="button"]:active,
-[class*="button"]:focus,
-[class*="button"]:hover,
-[role="button"]:active,
-[role="button"]:focus,
-[role="button"]:hover {
+[type="button"],
+[type="submit"],
+[role="button"],
+.action-button {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
@@ -469,15 +466,13 @@ button:link,
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
-  outline: none !important;
+  outline: 0 !important;
   outline-width: 0 !important;
   outline-style: none !important;
   outline-color: transparent !important;
   box-shadow: none !important;
   text-shadow: none !important;
   background-image: none !important;
-  border-color: transparent !important;
-  border-style: solid !important;
   transition: none !important;
   -webkit-transition: none !important;
   -moz-transition: none !important;
@@ -491,31 +486,33 @@ button:link,
   -moz-transform: none !important;
   -o-transform: none !important;
   -ms-transform: none !important;
-}
-
-/* 禁用所有伪元素 */
-button::before,
-button::after,
-button:active::before,
-button:active::after,
-button:focus::before,
-button:focus::after,
-button:hover::before,
-button:hover::after {
-  display: none !important;
-  content: none !important;
-  background: none !important;
-  opacity: 0 !important;
-}
-
-/* 特别针对白色闪烁 */
-button:active {
-  background-color: inherit !important;
-  color: inherit !important;
+  border-style: solid !important;
   opacity: 1 !important;
 }
 
+/* 关键：让 active 状态完全继承原始样式 */
+button:active,
+button:focus,
+button:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+  border-style: inherit !important;
+  border-width: inherit !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  -moz-filter: none !important;
+  -o-filter: none !important;
+  -ms-filter: none !important;
+}
+
 /* 保持特定背景色的按钮颜色 */
+button[style*="background-color"]:active,
+button[style*="background"]:active {
+  background-color: inherit !important;
+}
+
 button[style*="background-color: #1a73e8"]:active,
 button[style*="background: #1a73e8"]:active {
   background-color: #1a73e8 !important;
@@ -540,9 +537,59 @@ button[style*="background: #FFC107"]:active {
   color: #333333 !important;
 }
 
+button[style*="background-color: #4CAF50"]:active,
+button[style*="background: #4CAF50"]:active {
+  background-color: #4CAF50 !important;
+  color: #ffffff !important;
+}
+
+button[style*="background-color: #28a745"]:active,
+button[style*="background: #28a745"]:active {
+  background-color: #28a745 !important;
+  color: #ffffff !important;
+}
+
+button[style*="background-color: #17a2b8"]:active,
+button[style*="background: #17a2b8"]:active {
+  background-color: #17a2b8 !important;
+  color: #ffffff !important;
+}
+
 /* 针对透明背景的按钮 */
 button[style*="background: transparent"]:active,
 button[style*="background-color: transparent"]:active {
   background: transparent !important;
   color: inherit !important;
+}
+
+/* 禁用所有伪元素 */
+button::before,
+button::after,
+button:active::before,
+button:active::after,
+button:focus::before,
+button:focus::after,
+button:hover::before,
+button:hover::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  opacity: 0 !important;
+}
+
+/* 确保没有任何透明度或颜色变化 */
+button:active {
+  filter: none !important;
+  -webkit-filter: none !important;
+  -moz-filter: none !important;
+  -o-filter: none !important;
+  -ms-filter: none !important;
+  background-blend-mode: normal !important;
+  mix-blend-mode: normal !important;
+}
+
+/* 全局禁用触摸高亮 */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
 }
