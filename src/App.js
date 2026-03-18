@@ -13147,6 +13147,9 @@ const handleAddWeekTask = (text) => {
   
 
 
+
+
+
 const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 - 详细调试 ===');
   
@@ -13162,42 +13165,40 @@ const handleImportTasks = () => {
   const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
   console.log('✅ 解析后的行数:', lines.length, '内容:', lines);
   
-  if (lines.length < 1) {
-    console.log('❌ 没有有效内容');
-    alert('请输入任务内容');
+  if (lines.length < 2) {  // 至少需要1行分类 + 1行任务
+    console.log('❌ 内容太少');
+    alert('请至少输入一行分类和一行任务内容');
     return;
   }
 
-  // 3. 确定分类和子分类 - 从第一行识别关键词
+  // 3. 从第一行识别子分类 - 只检测现有的校内子类别
+  const firstLine = lines[0];
   const category = "校内"; // 固定分类
   let subCategory = "未分类";
   
-  // 从第一行识别子分类关键词
-  if (lines.length > 0) {
-    const firstLine = lines[0];
-    // 识别各种学科关键词
-    if (firstLine.includes('语文')) {
-      subCategory = '语文';
-      console.log('✅ 检测到语文作业');
-    } else if (firstLine.includes('数学')) {
-      subCategory = '数学';
-      console.log('✅ 检测到数学作业');
-    } else if (firstLine.includes('英语')) {
-      subCategory = '英语';
-      console.log('✅ 检测到英语作业');
-    } else if (firstLine.includes('运动')) {
-      subCategory = '运动';
-      console.log('✅ 检测到运动');
+  // 获取现有的校内子类别
+  const schoolSubCategories = categories
+    .find(c => c.name === '校内')
+    ?.subCategories || ['语文', '数学', '英语', '运动']; // 如果没有获取到，使用默认值
+  
+  console.log('📚 现有的校内子类别:', schoolSubCategories);
+  
+  // 遍历所有校内子类别，检查第一行是否包含该子类别名称
+  for (const subCat of schoolSubCategories) {
+    if (firstLine.includes(subCat)) {
+      subCategory = subCat;
+      console.log(`✅ 检测到子类别: ${subCat}`);
+      break;
     }
   }
 
   console.log('📝 最终分类:', { category, subCategory });
 
-  // 4. 处理任务行，将[图片]行合并到上一个任务
+  // 4. 处理任务行（从第二行开始），将[图片]行合并到上一个任务
   const processedTasks = [];
   let currentTask = null;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = 1; i < lines.length; i++) {  // 从索引1开始（第二行）
     const line = lines[i];
     
     // 检查是否是图片行（只包含[图片]或主要是[图片]）
@@ -13255,6 +13256,7 @@ const handleImportTasks = () => {
   }
 
   console.log('🎁 处理后的任务:', processedTasks);
+  console.log(`📊 分类 "${subCategory}" 下共导入 ${processedTasks.length} 个任务`);
 
   // 5. 更新状态
   setTasksByDate(prevTasksByDate => {
@@ -13280,7 +13282,7 @@ const handleImportTasks = () => {
     return updatedTasksByDate;
   });
 
-  // 6. 清理和反馈
+  // 6. 清理
   setBulkText("");
   setBulkTags([]);
   setShowBulkInput(false);
