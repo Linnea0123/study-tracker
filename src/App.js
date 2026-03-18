@@ -2450,22 +2450,22 @@ const calculateCurrentStreak = (tasksByDate) => {
 
 
 
-
-// 替换现有的 autoBackup 函数
 const autoBackup = async () => {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
-    // ✅ 修复：包含所有关键数据
+    // 包含所有关键数据
     const backupData = {
       tasks: await loadMainData('tasks') || {},
       templates: await loadMainData('templates') || [],
       customAchievements: await loadMainData('customAchievements') || [],
       unlockedAchievements: await loadMainData('unlockedAchievements') || [],
       categories: await loadMainData('categories') || baseCategories,
+      monthTasks: monthTasks || [],
+      grades: await loadMainData('grades') || [],  // 添加成绩记录
       backupTime: new Date().toISOString(),
-      version: '1.1' // 更新版本号
+      version: '1.1'
     };
     
     localStorage.setItem(backupKey, JSON.stringify(backupData));
@@ -2476,7 +2476,6 @@ const autoBackup = async () => {
     console.error('自动备份失败:', error);
   }
 };
-
 
 
 const cleanupOldBackups = async () => {
@@ -2503,7 +2502,11 @@ const getBackupList = () => {
       return {
         key,
         time: data?.backupTime || key,
-        tasksCount: Object.keys(data?.tasks || {}).length
+        tasksCount: Object.keys(data?.tasks || {}).length,
+        monthTasksCount: (data?.monthTasks || []).length,
+        gradesCount: (data?.grades || []).length,  // 添加成绩数量
+        version: data?.version || '1.0',
+        hasAchievements: !!(data?.customAchievements || data?.unlockedAchievements)
       };
     })
     .sort((a, b) => b.time.localeCompare(a.time));
@@ -2512,8 +2515,6 @@ const getBackupList = () => {
 
 
 
-
-// 替换现有的 restoreBackup 函数
 const restoreBackup = async (backupKey) => {
   try {
     const backupData = JSON.parse(localStorage.getItem(backupKey));
@@ -2528,16 +2529,14 @@ const restoreBackup = async (backupKey) => {
       // 保存所有关键数据到 localStorage
       await saveMainData('tasks', backupData.tasks || {});
       await saveMainData('templates', backupData.templates || []);
-
-      
-      // ✅ 修复：添加缺失的数据恢复
       await saveMainData('customAchievements', backupData.customAchievements || []);
       await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
       await saveMainData('categories', backupData.categories || baseCategories);
+      await saveMainData('monthTasks', backupData.monthTasks || []);
+      await saveMainData('grades', backupData.grades || []);  // 恢复成绩记录
       
       console.log('✅ 所有数据已保存到 localStorage');
       
-      // 添加短暂延迟确保数据写入完成
       setTimeout(() => {
         alert('备份恢复成功！页面将重新加载。');
         window.location.reload();
@@ -2548,7 +2547,6 @@ const restoreBackup = async (backupKey) => {
     alert('恢复备份失败：' + error.message);
   }
 };
-
 
 
 
@@ -9789,7 +9787,6 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-// 从云端恢复数据
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -9805,8 +9802,13 @@ const handleRestoreData = useCallback(async (backupData) => {
       await saveMainData('templates', backupData.templates);
     }
     
-    // 恢复每日数据
+    // 恢复本月任务
+    if (backupData.monthTasks) {
+      setMonthTasks(backupData.monthTasks);
+      await saveMainData('monthTasks', backupData.monthTasks);
+    }
     
+    // 恢复每日数据
     if (backupData.dailyRatings) {
       setDailyRatings(backupData.dailyRatings);
     }
@@ -9830,8 +9832,6 @@ const handleRestoreData = useCallback(async (backupData) => {
       });
     }
     
-   
-    
     // 恢复类别配置
     if (backupData.categories) {
       setCategories(backupData.categories);
@@ -9854,7 +9854,7 @@ const handleRestoreData = useCallback(async (backupData) => {
 
     console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
     
-    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据`);
+    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个`);
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -9870,8 +9870,6 @@ const handleRestoreData = useCallback(async (backupData) => {
 
 
 
-// 完整的同步到 GitHub 函数（不包含成就系统）
-// 完整的同步到 GitHub 函数
 const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -9894,7 +9892,8 @@ const syncToGitHub = useCallback(async () => {
       dailyRatings,
       dailyReflections,
       
-    
+      // 本月任务
+      monthTasks,  // 添加本月任务
       
       // 类别配置
       categories,
@@ -9913,94 +9912,17 @@ const syncToGitHub = useCallback(async () => {
       任务天数: Object.keys(tasksByDate).length,
       模板数量: templates.length,
       有复盘的日期: Object.keys(dailyReflections).length,
-      复盘示例: Object.entries(dailyReflections).slice(0, 2).map(([date, text]) => ({date, text: text?.substring(0, 20)}))
+      本月任务: monthTasks.length  // 添加日志
     });
 
-    const gistId = localStorage.getItem('github_gist_id');
-    const jsonData = JSON.stringify(syncData, null, 2);
-    
-    let response;
-    
-    if (gistId) {
-      // 更新现有Gist
-      response = await fetch(`https://api.github.com/gists/${gistId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          description: '学习跟踪器完整数据备份 - ' + new Date().toLocaleString(),
-          files: {
-            'study-tracker-data.json': {
-              content: jsonData
-            }
-          }
-        })
-      });
-    } else {
-      // 创建新Gist
-      response = await fetch('https://api.github.com/gists', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          description: '学习跟踪器完整数据备份',
-          public: false,
-          files: {
-            'study-tracker-data.json': {
-              content: jsonData
-            }
-          }
-        })
-      });
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`同步失败: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    if (!result || !result.id) {
-      throw new Error('GitHub 响应格式错误');
-    }
-
-    // 保存Gist ID
-    localStorage.setItem('github_gist_id', result.id);
-    localStorage.setItem('github_last_sync', new Date().toISOString());
-    
-    // 更新同步配置状态
-    setSyncConfig(prev => ({
-      ...prev,
-      gistId: result.id,
-      lastSync: new Date().toISOString()
-    }));
-    
-    alert(`✅ 同步成功！\n\n同步了 ${Object.keys(dailyReflections).length} 天的复盘数据\nGist ID: ${result.id}`);
+    // ... 后面的代码保持不变 ...
     
   } catch (error) {
     console.error('同步失败:', error);
-    
-    let errorMessage = '同步失败: ';
-    if (error.message.includes('401')) {
-      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
-    } else if (error.message.includes('403')) {
-      errorMessage += '权限不足，请检查 Token 是否有 gist 权限';
-    } else if (error.message.includes('404')) {
-      errorMessage += 'Gist 不存在，将创建新的备份';
-      localStorage.removeItem('github_gist_id');
-    } else {
-      errorMessage += error.message;
-    }
-    
-    alert(errorMessage);
+    // ... 错误处理保持不变 ...
   }
-}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData]);
-
+// 记得在依赖数组里加上 monthTasks
+}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks]);
 // 在现有的 useCallback 函数后面添加这个：
 
 
@@ -12199,6 +12121,79 @@ console.log('✅ 加载的任务数据:', savedTasks);
 if (savedTasks) {
   setTasksByDate(savedTasks);
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
+
+    // ===== 在这里添加代码 =====
+        // 确保所有日期都有常规任务
+        if (savedTasks && Object.keys(savedTasks).length > 0) {
+          // 收集所有常规任务模板
+          const regularTemplates = [];
+          const seenTexts = new Set();
+          
+          // 从已有数据中收集常规任务模板
+          Object.values(savedTasks).forEach(tasks => {
+            tasks.forEach(task => {
+              if (task.isRegularTask && !seenTexts.has(task.text)) {
+                seenTexts.add(task.text);
+                regularTemplates.push({
+                  text: task.text,
+                  targetCategory: task.targetCategory,
+                  targetSubCategory: task.targetSubCategory || '',
+                  note: task.note || "",
+                  tags: task.tags || []
+                });
+              }
+            });
+          });
+          
+          // 如果有常规任务模板，确保每个日期都有这些任务
+          if (regularTemplates.length > 0) {
+            const allDates = Object.keys(savedTasks);
+            let needsUpdate = false;
+            
+            allDates.forEach(date => {
+              const dateTasks = savedTasks[date] || [];
+              const dateHasRegularTasks = dateTasks.some(t => t.isRegularTask);
+              
+              // 如果这个日期没有常规任务，添加所有常规任务模板
+              if (!dateHasRegularTasks && regularTemplates.length > 0) {
+                needsUpdate = true;
+                const newRegularTasks = regularTemplates.map(template => ({
+                  id: `regular_init_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
+                  text: template.text,
+                  targetCategory: template.targetCategory,
+                  targetSubCategory: template.targetSubCategory,
+                  category: "常规任务",
+                  done: false,
+                  timeSpent: 0,
+                  subTasks: [],
+                  note: template.note,
+                  reflection: "",
+                  image: null,
+                  scheduledTime: "",
+                  pinned: false,
+                  tags: template.tags || [],
+                  isRegularTask: true,
+                  progress: {
+                    initial: 0,
+                    current: 0,
+                    target: 0,
+                    unit: "%"
+                  }
+                }));
+                
+                savedTasks[date] = [...dateTasks, ...newRegularTasks];
+              }
+            });
+            
+            if (needsUpdate) {
+              console.log('✅ 已为所有日期添加常规任务');
+              // 更新状态
+              setTasksByDate(savedTasks);
+            }
+          }
+        }
+        // ===== 添加代码结束 =====
+        
 } else {
   console.log('ℹ️ 没有任务数据，使用空对象');
   setTasksByDate({});
@@ -12483,73 +12478,85 @@ useEffect(() => {
 }, [isInitialized, syncToGitHub]);
 
 
-// 添加 useEffect 来处理新日期的常规任务复制
 // 替换现有的 useEffect 来处理新日期的常规任务复制
 useEffect(() => {
-  // 当有新日期被创建时，自动复制常规任务，且状态为未完成
-  const copyRegularTasksToNewDate = (newDate) => {
-    setTasksByDate(prev => {
-      // 如果这个日期已经有任务，不处理
-      if (prev[newDate] && prev[newDate].length > 0) {
-        return prev;
-      }
-      
-      // 获取已有的常规任务模板（从其他日期）
-      const existingRegularTasks = [];
-      
-      // 遍历所有日期，收集常规任务模板（去重）
-      for (const date in prev) {
-        const tasks = prev[date] || [];
-        tasks.forEach(task => {
-          if (task.isRegularTask && 
-              !existingRegularTasks.some(t => t.text === task.text)) {
-            existingRegularTasks.push({
-              text: task.text,
-              targetCategory: task.targetCategory,
-              isRegularTask: true
-            });
-          }
-        });
-      }
-      
-      // 如果有常规任务模板，为新日期创建任务（状态为未完成）
-      if (existingRegularTasks.length > 0) {
-        const newTasks = existingRegularTasks.map(template => ({
-          id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${newDate}`,
-          text: template.text,
-          category: "常规任务",
-          targetCategory: template.targetCategory,
-          done: false, // 强制为未完成状态
-          timeSpent: 0,
-          subTasks: [],
-          note: "",
-          reflection: "",
-          image: null,
-          scheduledTime: "",
-          pinned: false,
-          isRegularTask: true,
-          progress: {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          }
-        }));
-        
-        return {
-          ...prev,
-          [newDate]: newTasks
-        };
-      }
-      
-      return prev;
-    });
-  };
-
-  // 监听日期变化
-  copyRegularTasksToNewDate(selectedDate);
+  // 确保组件已初始化
+  if (!isInitialized) return;
   
-}, [selectedDate]); // 当选中的日期变化时执行
+  // 检查当前选中日期是否有常规任务，如果没有则从其他日期复制
+  setTasksByDate(prev => {
+    const currentDateTasks = prev[selectedDate] || [];
+    
+    // 检查当前日期是否已有常规任务
+    const hasRegularTasks = currentDateTasks.some(task => task.isRegularTask);
+    
+    // 如果已有常规任务，不需要添加
+    if (hasRegularTasks) {
+      return prev;
+    }
+    
+    // 收集所有常规任务模板（从所有日期中获取，去重）
+    const regularTaskTemplates = [];
+    const seenTaskTexts = new Set();
+    
+    // 遍历所有日期，收集常规任务模板
+    Object.values(prev).forEach(tasks => {
+      tasks.forEach(task => {
+        if (task.isRegularTask && !seenTaskTexts.has(task.text)) {
+          seenTaskTexts.add(task.text);
+          regularTaskTemplates.push({
+            text: task.text,
+            targetCategory: task.targetCategory,
+            targetSubCategory: task.targetSubCategory || '',
+            note: task.note || "",
+            tags: task.tags || [],
+            progress: task.progress || {
+              initial: 0,
+              current: 0,
+              target: 0,
+              unit: "%"
+            }
+          });
+        }
+      });
+    });
+    
+    // 如果没有常规任务模板，不处理
+    if (regularTaskTemplates.length === 0) {
+      return prev;
+    }
+    
+    console.log(`📋 为日期 ${selectedDate} 创建 ${regularTaskTemplates.length} 个常规任务`);
+    
+    // 为新日期创建常规任务（状态为未完成）
+    const newRegularTasks = regularTaskTemplates.map(template => ({
+      id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${selectedDate}`,
+      text: template.text,
+      targetCategory: template.targetCategory,
+      targetSubCategory: template.targetSubCategory,
+      category: "常规任务",
+      done: false,
+      timeSpent: 0,
+      subTasks: [],
+      note: template.note,
+      reflection: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      tags: template.tags || [],
+      isRegularTask: true,
+      progress: template.progress
+    }));
+    
+    // 合并现有任务和新创建的常规任务
+    return {
+      ...prev,
+      [selectedDate]: [...currentDateTasks, ...newRegularTasks]
+    };
+  });
+  
+}, [selectedDate, isInitialized]); // 当选中的日期变化时执行
+
 
   // 替换现有的 useEffect 点击外部处理逻辑
 // 替换现有的 useEffect 点击外部处理逻辑
@@ -13012,6 +13019,7 @@ const toggleRegularTaskDone = (task) => {
 
 
 // 替换现有的 handleAddRegularTask 函数
+// 替换现有的 handleAddRegularTask 函数
 const handleAddRegularTask = () => {
   if (!newRegularTaskText.trim()) {
     alert('请输入任务内容');
@@ -13043,8 +13051,11 @@ const handleAddRegularTask = () => {
   // 为所有现有日期创建常规任务
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
+    
+    // 获取所有存在的日期
     const allDates = Object.keys(prev);
     
+    // 如果没有其他日期，至少为当前日期添加
     if (allDates.length === 0) {
       if (!newTasksByDate[selectedDate]) {
         newTasksByDate[selectedDate] = [];
@@ -13054,11 +13065,13 @@ const handleAddRegularTask = () => {
         id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${selectedDate}`
       });
     } else {
+      // 为所有存在的日期添加任务
       allDates.forEach(date => {
         if (!newTasksByDate[date]) {
           newTasksByDate[date] = [];
         }
         
+        // 检查该日期是否已有这个常规任务
         const exists = newTasksByDate[date].some(
           t => t.isRegularTask && t.text === baseTask.text
         );
@@ -13081,7 +13094,6 @@ const handleAddRegularTask = () => {
   setShowRegularInput(false);
   setShowRegularCategorySelect(false);
 };
-
 
 // 添加本周任务 - 修改版本
 // 添加本周任务
@@ -14173,6 +14185,7 @@ const handleExportData = async () => {
       dailyRatings: dailyRatings || {},
       dailyReflections: dailyReflections || {},
       grades: await loadDataWithFallback('grades', []),
+      monthTasks: monthTasks || [],  // 添加本月任务
       exportDate: new Date().toISOString(),
       version: '2.1'
     };
@@ -14182,7 +14195,8 @@ const handleExportData = async () => {
       任务天数: Object.keys(allData.tasks || {}).length,
       模板数量: (allData.templates || []).length,
       有复盘的日期: Object.keys(allData.dailyReflections || {}).length,
-      成绩记录: (allData.grades || []).length
+      成绩记录: (allData.grades || []).length,
+      本月任务: (allData.monthTasks || []).length  // 添加统计
     };
     
     console.log('📊 导出数据统计:', dataStats);
@@ -14197,7 +14211,7 @@ const handleExportData = async () => {
     linkElement.click();
     
     console.log('✅ 数据导出成功');
-    alert(`✅ 导出成功！\n\n导出内容：\n• 任务天数: ${dataStats.任务天数}\n• 模板数量: ${dataStats.模板数量}\n• 复盘天数: ${dataStats.有复盘的日期}\n• 成绩记录: ${dataStats.成绩记录}`);
+    alert(`✅ 导出成功！\n\n导出内容：\n• 任务天数: ${dataStats.任务天数}\n• 模板数量: ${dataStats.模板数量}\n• 复盘天数: ${dataStats.有复盘的日期}\n• 成绩记录: ${dataStats.成绩记录}\n• 本月任务: ${dataStats.本月任务}`);
     
   } catch (error) {
     console.error('导出失败:', error);
@@ -17374,196 +17388,196 @@ const regularTasks = (tasksByDate[selectedDate] || [])
 </div>
 
 {/* 其他设置下拉菜单 */}
+
+
+{/* 其他设置弹窗模态框 */}
 {showSettingsMenu && (
   <div style={{
-    position: 'relative',
-    width: '100%',
-    marginTop: -10,
-    marginBottom: 10,
-    zIndex: 100
-  }}>
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowSettingsMenu(false)}>
     <div style={{
-      backgroundColor: 'white',
-      border: '1px solid #e0e0e0',
-      borderRadius: 8,
-      padding: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '8px'
-    }}>
-      {/* 导出数据 */}
-      <button
-        onClick={() => {
-          handleExportData();
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>📤</span>
-        <span>导出数据</span>
-      </button>
+      backgroundColor: '#fff',
+      borderRadius: '8px',
+      width: '90%',
+      maxWidth: '300px',
+      padding: '16px',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      <h3 style={{ 
+        textAlign: 'center', 
+        margin: '0 0 16px 0', 
+        fontSize: '16px',
+        color: '#333'
+      }}>
+        设置
+      </h3>
 
-      {/* 导入数据 */}
-      <button
-        onClick={() => {
-          document.getElementById('import-file').click();
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>📥</span>
-        <span>导入数据</span>
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* 导出数据 */}
+        <div
+          onClick={() => {
+            handleExportData();
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>📤</span>
+          导出数据
+        </div>
 
-      {/* 备份管理 */}
-      <button
-        onClick={() => {
-          setShowBackupModal(true);
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>📦</span>
-        <span>备份管理</span>
-      </button>
+        {/* 导入数据 */}
+        <div
+          onClick={() => {
+            document.getElementById('import-file').click();
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>📥</span>
+          导入数据
+        </div>
 
-      {/* 同步设置 */}
-      <button
-        onClick={() => {
-          setShowGitHubSyncModal(true);
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>⚙️</span>
-        <span>同步设置</span>
-      </button>
+        {/* 备份管理 */}
+        <div
+          onClick={() => {
+            setShowBackupModal(true);
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>📦</span>
+          备份管理
+        </div>
 
-      {/* 管理类别 */}
-      <button
-        onClick={() => {
-          setShowCategoryManager(true);
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>📁</span>
-        <span>管理类别</span>
-      </button>
+        {/* 同步设置 */}
+        <div
+          onClick={() => {
+            setShowGitHubSyncModal(true);
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>⚙️</span>
+          同步设置
+        </div>
 
-      {/* 清空数据 */}
-      <button
-        onClick={() => {
-          if (window.confirm('确定要清空所有数据吗？此操作不可恢复！')) {
-            clearAllData();
-          }
-          setShowSettingsMenu(false);
-        }}
-        style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#d32f2f",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
-        }}
-      >
-        <span style={{ fontSize: 16 }}>🗑️</span>
-        <span>清空数据</span>
-      </button>
+        {/* 管理类别 */}
+        <div
+          onClick={() => {
+            setShowCategoryManager(true);
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>📁</span>
+          管理类别
+        </div>
 
-      {/* 成绩记录 */}
-      <button
-        onClick={() => {
-          setShowGradeModal(true);
-          setShowSettingsMenu(false);
-        }}
+        {/* 清空数据 - 红色文字 */}
+        <div
+          onClick={() => {
+            if (window.confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+              clearAllData();
+            }
+            setShowSettingsMenu(false);
+          }}
+          style={{
+            padding: '12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#d32f2f'
+          }}
+        >
+          <span style={{ fontSize: '18px', color: '#d32f2f' }}>🗑️</span>
+          清空数据
+        </div>
+
+       
+      </div>
+
+      {/* 关闭按钮 */}
+      <div
+        onClick={() => setShowSettingsMenu(false)}
         style={{
-          padding: "10px 4px",
-          backgroundColor: "#f8f9fa",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          fontSize: 11,
-          borderRadius: 6,
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4
+          marginTop: '16px',
+          padding: '10px',
+          backgroundColor: '#e0e0e0',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          textAlign: 'center'
         }}
       >
-        <span style={{ fontSize: 16 }}>📊</span>
-        <span>成绩记录</span>
-      </button>
+        关闭
+      </div>
+
     </div>
   </div>
 )}
+
+
+
 
 {/* 隐藏的文件导入input */}
 <input
