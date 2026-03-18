@@ -17161,7 +17161,6 @@ marginTop: 10
 
     {/* 导入任务按钮 */}
 <button
- className="no-effect-button"
   onClick={(e) => {
     console.log('🎯 === 批量导入按钮被点击 ===');
     console.log('批量文本内容:', bulkText);
@@ -17267,61 +17266,30 @@ marginTop: 10
   flexWrap: "wrap"
 }}>
   {/* 每日日志按钮 */}
- {/* 每日日志按钮 */}
-<button
+{/* 每日日志按钮 - 用div模拟 */}
+<div
   onClick={(e) => {
     e.preventDefault();
-    e.currentTarget.blur();
     generateDailyLog();
   }}
-  onMouseEnter={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onMouseLeave={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onMouseDown={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onMouseUp={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onFocus={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onBlur={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
   style={{
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "6px 10px",
     backgroundColor: "#1a73e8",
     color: "#fff",
-    border: "none",
     fontSize: 12,
     borderRadius: 6,
     width: "70px",
     height: "30px",
     cursor: "pointer",
-    outline: "none",
-    transition: "none",
-    WebkitTapHighlightColor: "transparent",
-    boxShadow: "none"
+    userSelect: "none",
+    boxSizing: "border-box"
   }}
 >
   每日日志
-</button>
+</div>
   
   {/* 立即同步按钮 */}
   <button
@@ -17700,42 +17668,7 @@ marginTop: 10
   style={{ display: "none" }}
 />
 
-    <style>{`
-  /* 强制所有按钮保持蓝色 */
-  button, 
-  button:hover, 
-  button:active, 
-  button:focus, 
-  button:visited,
-  button:focus-within,
-  button:focus-visible {
-    background-color: #1a73e8 !important;
-    color: white !important;
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: transparent !important;
-    opacity: 1 !important;
-    filter: none !important;
-    -webkit-filter: none !important;
-    transform: none !important;
-    transition: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-
-  /* 特别针对您应用中的按钮 */
-  .action-button,
-  [class*="button"],
-  button[style*="background-color"] {
-    background-color: #1a73e8 !important;
-    color: white !important;
-  }
-
-  /* 禁用所有伪类效果 */
-  button::after,
-  button::before {
-    display: none !important;
-  }
-`}</style> 
+     
     </div>
   );
 }
