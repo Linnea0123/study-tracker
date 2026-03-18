@@ -15374,7 +15374,8 @@ if (isInitialized && todayTasks.length === 0) {
         宝贝已打卡 {Object.keys(tasksByDate).length} 天，累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
       </div>
 
-{/* 日期行上方的新布局 */}
+
+{/* 日期行上方的新布局 - 本周和本月按钮 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -15383,40 +15384,46 @@ if (isInitialized && todayTasks.length === 0) {
 }}>
   {/* 左侧按钮组 - 本周任务和本月任务 */}
   <div style={{ display: "flex", gap: 8 }}>
-    <button
-      onClick={() => setShowWeekTaskModal(true)}
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        setShowWeekTaskModal(true);
+      }}
       style={{
         padding: "4px 6px",
-        backgroundColor: "#1a73e8",  // 改为统一的蓝色
+        backgroundColor: "#1a73e8",
         color: "#fff",
-        border: "none",
         borderRadius: 4,
         fontSize: 12,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 4
+        gap: 4,
+        userSelect: "none"
       }}
     >
       本周
-    </button>
-    <button
-      onClick={() => setShowMonthTaskModal(true)}
+    </div>
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        setShowMonthTaskModal(true);
+      }}
       style={{
         padding: "4px 6px",
-        backgroundColor: "#1a73e8",  // 改为统一的蓝色
+        backgroundColor: "#1a73e8",
         color: "#fff",
-        border: "none",
         borderRadius: 4,
         fontSize: 12,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 4
+        gap: 4,
+        userSelect: "none"
       }}
     >
       本月
-    </button>
+    </div>
   </div>
 
   {/* 中间的周次显示 - 原来的内容 */}
@@ -16877,266 +16884,219 @@ const regularTasks = (tasksByDate[selectedDate] || [])
 
 
 
+{/* 添加任务和批量导入按钮 */}
 <div style={{
-display: "flex",
-gap: 10,
-marginTop: 10
+  display: "flex",
+  gap: 10,
+  marginTop: 10,
+  fontSize: "12px"
 }}>
-<button
-  className="action-button"
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowAddInput(!showAddInput);
-    setShowBulkInput(false);
-  }}
-  style={{
-    flex: 1,
-    padding: 8,
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    outline: "none",
-    boxShadow: "none",
-    transform: "none",
-    transition: "none"
-  }}
-  onMouseDown={(e) => {
-    e.preventDefault();
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onMouseUp={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onFocus={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
-  onBlur={(e) => {
-    e.target.style.backgroundColor = "#1a73e8";
-    e.target.style.color = "#fff";
-  }}
->
-  {showAddInput ? "取消添加" : "添加任务"}
-</button>
-<button
-  className="action-button"
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowBulkInput(!showBulkInput);
-    setShowAddInput(false);
-  }}
-  style={{
-    flex: 1,
-    padding: 8,
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer"
-  }}
->
-  {showBulkInput ? "取消批量" : "批量导入"}
-</button>
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();  // 阻止事件冒泡
+      console.log('点击添加任务，当前状态:', showAddInput);  // 添加调试
+      setShowAddInput(!showAddInput);
+      setShowBulkInput(false);
+    }}
+    style={{
+      flex: 1,
+      padding: 8,
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      borderRadius: 6,
+      cursor: "pointer",
+      textAlign: "center",
+      userSelect: "none"
+    }}
+  >
+    {showAddInput ? "取消添加" : "添加任务"}
+  </div>
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();  // 阻止事件冒泡
+      console.log('点击批量导入，当前状态:', showBulkInput);  // 添加调试
+      setShowBulkInput(!showBulkInput);
+      setShowAddInput(false);
+    }}
+    style={{
+      flex: 1,
+      padding: 8,
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      borderRadius: 6,
+      cursor: "pointer",
+      textAlign: "center",
+      userSelect: "none"
+    }}
+  >
+    {showBulkInput ? "取消批量" : "批量导入"}
+  </div>
 </div>
+
+{/* 添加任务输入框（展开时显示） - 确保这行代码在按钮之后且没有被条件包裹 */}
+{showAddInput && (
+  <div ref={addInputRef} style={{ marginTop: 8 }}>
+    {/* 输入框内容... */}
+  </div>
+)}
+
+{/* 批量导入输入框（展开时显示） */}
+{showBulkInput && (
+  <div ref={bulkInputRef} style={{ marginTop: 8 }}>
+    {/* 批量导入内容... */}
+  </div>
+)}
 
 
   
 
       {/* 添加任务输入框（展开时显示） */}
-      {showAddInput && (
-        <div ref={addInputRef} style={{ marginTop: 8 }}>
-          <div style={{
-            display: "flex",
-            gap: 6,
-            marginBottom: 8
-          }}>
-            <input
-              type="text"
-              value={newTaskText}
-              onChange={(e) => setNewTaskText(e.target.value)}
-              placeholder="输入任务"
-              style={{
-                flex: 1,
-                padding: 6,
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                fontSize: "14px"
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <select
-              value={newTaskCategory}
-              onChange={(e) => setNewTaskCategory(e.target.value)}
-              style={{ padding: 6 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {categories.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddTask();
-              }}
-              style={{
-                padding: "6px 10px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              确认
-            </button>
-          </div>
-
-
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowRepeatModal(true);
-              }}
-              style={{
-                padding: "6px 10px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              重复
-            </button>
-
-            {/* 在这里添加计划时间按钮 */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowTimeModal(true);
-              }}
-              style={{
-                padding: "6px 10px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              计划时间
-            </button>
-
-            {/* 在这里添加提醒按钮 */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowReminderModal(true);
-              }}
-              style={{
-                padding: "6px 10px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              提醒
-            </button>
-
-
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowTemplateModal(true);
-              }}
-              style={{
-                padding: "6px 10px",
-                backgroundColor: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer"
-              }}
-            >
-              模板
-            </button>
-
-            {templates.map((template, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUseTemplate(template);
-                }}
-                style={{
-                  padding: "6px 10px",
-                  backgroundColor: "#6c757d",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: "12px"
-                }}
-                title={`${template.name}: ${template.content}`}
-              >
-                {template.name}
-              </button>
-            ))}
-          </div>
-
-
-
-
-
-{/* 子类别选择 - 仅校内类别显示 */}
-{newTaskCategory === '校内' && categories.find(c => c.name === '校内')?.subCategories?.length > 0 && (
-  <div style={{ marginBottom: 8 }}>
-    <label style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: '600',
-      color: '#333',
-      fontSize: 14
+     {/* 添加任务输入框内的功能按钮 */}
+{showAddInput && (
+  <div ref={addInputRef} style={{ marginTop: 8 }}>
+    <div style={{
+      display: "flex",
+      gap: 6,
+      marginBottom: 8
+      
     }}>
-      子类别
-    </label>
-    <select
-      value={newTaskSubCategory || ''}
-      onChange={(e) => setNewTaskSubCategory(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        border: '2px solid #e0e0e0',
-        borderRadius: 6,
-        fontSize: 14,
-        backgroundColor: '#fafafa',
-        cursor: 'pointer'
-      }}
-    >
-      <option value="">选择子类别（可选）</option>
-      {categories.find(c => c.name === '校内')?.subCategories?.map(subCat => (
-        <option key={subCat} value={subCat}>{subCat}</option>
+      <input
+        type="text"
+        value={newTaskText}
+        onChange={(e) => setNewTaskText(e.target.value)}
+        placeholder="输入任务"
+        style={{
+          flex: 1,
+          padding: 6,
+          borderRadius: 6,
+          border: "1px solid #ccc",
+          fontSize: "14px"
+        }}
+      />
+      <select
+        value={newTaskCategory}
+        onChange={(e) => setNewTaskCategory(e.target.value)}
+        style={{ padding: 6 }}
+      >
+        {categories.map((c) => (
+          <option key={c.name} value={c.name}>{c.name}</option>
+        ))}
+      </select>
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddTask();
+        }}
+        style={{
+          padding: "6px 10px",
+          backgroundColor: "#1a73e8",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+       
+          userSelect: "none"
+          
+        }}
+      >
+        确认
+      </div>
+    </div>
+
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: "12px" }}>
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          setShowRepeatModal(true);
+        }}
+        style={{
+          padding: "6px 10px",
+          backgroundColor: "#1a73e8",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none"
+        }}
+      >
+        重复
+      </div>
+
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          setShowTimeModal(true);
+        }}
+        style={{
+          padding: "6px 10px",
+          backgroundColor: "#1a73e8",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none"
+        }}
+      >
+        计划时间
+      </div>
+
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          setShowReminderModal(true);
+        }}
+        style={{
+          padding: "6px 10px",
+          backgroundColor: "#1a73e8",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none"
+        }}
+      >
+        提醒
+      </div>
+
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          setShowTemplateModal(true);
+        }}
+        style={{
+          padding: "6px 10px",
+          backgroundColor: "#1a73e8",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none"
+        }}
+      >
+        模板
+      </div>
+
+      {templates.map((template, index) => (
+        <div
+          key={index}
+          onClick={(e) => {
+            e.preventDefault();
+            handleUseTemplate(template);
+          }}
+          style={{
+            padding: "6px 10px",
+            backgroundColor: "#6c757d",
+            color: "#fff",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontSize: "12px",
+            userSelect: "none"
+          }}
+          title={`${template.name}: ${template.content}`}
+        >
+          {template.name}
+        </div>
       ))}
-    </select>
+    </div>
   </div>
 )}
-
-
-        </div>
-      )}
 
      
      {showBulkInput && (
@@ -17257,6 +17217,7 @@ marginTop: 10
 
 
 {/* 底部按钮区域 - 只保留四个主按钮 */}
+{/* 底部按钮区域 - 全部用div模拟 */}
 <div style={{
   display: "flex",
   justifyContent: "center",
@@ -17266,57 +17227,59 @@ marginTop: 10
   flexWrap: "wrap"
 }}>
   {/* 每日日志按钮 */}
-{/* 每日日志按钮 - 用div模拟 */}
-<div
-  onClick={(e) => {
-    e.preventDefault();
-    generateDailyLog();
-  }}
-  style={{
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "6px 10px",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer",
-    userSelect: "none",
-    boxSizing: "border-box"
-  }}
->
-  每日日志
-</div>
-  
-  {/* 立即同步按钮 */}
-  <button
-    onClick={syncToGitHub}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      generateDailyLog();
+    }}
     style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
       padding: "6px 10px",
       backgroundColor: "#1a73e8",
       color: "#fff",
-      border: "none",
       fontSize: 12,
       borderRadius: 6,
       width: "70px",
       height: "30px",
       cursor: "pointer",
-       WebkitTapHighlightColor: 'transparent',
-  transition: 'none',
-  transform: 'none',
-  outline: 'none',
-      boxShadow: "none"
+      userSelect: "none",
+      boxSizing: "border-box"
+    }}
+  >
+    每日日志
+  </div>
+  
+  {/* 立即同步按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      syncToGitHub();
+    }}
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "6px 10px",
+      backgroundColor: "#1a73e8",
+      color: "#fff",
+      fontSize: 12,
+      borderRadius: 6,
+      width: "70px",
+      height: "30px",
+      cursor: "pointer",
+      userSelect: "none",
+      boxSizing: "border-box"
     }}
   >
     立即同步
-  </button>
+  </div>
   
   {/* 恢复云端按钮 */}
-  <button
-    onClick={() => {
+  <div
+    onClick={(e) => {
+      e.preventDefault();
       const token = localStorage.getItem('github_token');
       if (!token) {
         alert('请先设置 GitHub Token');
@@ -17366,46 +17329,48 @@ marginTop: 10
       }
     }}
     style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
       padding: "6px 10px",
       backgroundColor: "#1a73e8",
       color: "#fff",
-      border: "none",
       fontSize: 12,
       borderRadius: 6,
       width: "70px",
       height: "30px",
       cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
+      userSelect: "none",
+      boxSizing: "border-box"
     }}
-    title="强制从云端恢复数据（覆盖本地）"
   >
     恢复云端
-  </button>
+  </div>
   
   {/* 其他设置按钮 */}
-  <button
-    onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      setShowSettingsMenu(!showSettingsMenu);
+    }}
     style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
       padding: "6px 10px",
       backgroundColor: "#1a73e8",
       color: "#fff",
-      border: "none",
       fontSize: 12,
       borderRadius: 6,
       width: "70px",
       height: "30px",
       cursor: "pointer",
-      outline: "none",
-      transition: "none",
-      WebkitTapHighlightColor: "transparent",
-      boxShadow: "none"
+      userSelect: "none",
+      boxSizing: "border-box"
     }}
   >
     其他设置
-  </button>
+  </div>
 </div>
 
 {/* 其他设置下拉菜单 */}
