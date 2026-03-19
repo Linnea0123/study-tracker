@@ -8,6 +8,30 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
 
 
 const GradeModal = ({ onClose, isVisible }) => {
+
+   const STORAGE_KEY = 'study-tracker-PAGE_A-v2';
+  
+  const saveMainData = async (key, data) => {
+    const storageKey = `${STORAGE_KEY}_${key}`;
+    try {
+      const jsonData = JSON.stringify(data);
+      localStorage.setItem(storageKey, jsonData);
+      console.log(`成绩数据保存成功: ${key}`);
+    } catch (error) {
+      console.error(`成绩数据保存失败: ${key}`, error);
+    }
+  };
+
+  const loadMainData = async (key) => {
+    const storageKey = `${STORAGE_KEY}_${key}`;
+    try {
+      const data = localStorage.getItem(storageKey);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error(`成绩数据加载失败: ${key}`, error);
+      return null;
+    }
+  };
   const [grades, setGrades] = useState([]);
   const [filterSubject, setFilterSubject] = useState('全部');
   const [filterSubCategory, setFilterSubCategory] = useState('全部');
@@ -10571,6 +10595,27 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
     setLocalCategories(newCategories);
   };
 
+  // 编辑子类别
+  const handleEditSubCategory = (categoryIndex, subCategoryIndex, newName) => {
+    if (!newName || !newName.trim()) return;
+    
+    const trimmedNew = newName.trim();
+    const newCategories = [...localCategories];
+    const category = newCategories[categoryIndex];
+    const oldName = category.subCategories[subCategoryIndex];
+    
+    // 检查新名称是否已存在
+    if (category.subCategories.includes(trimmedNew) && trimmedNew !== oldName) {
+      alert('该子类别名称已存在！');
+      return;
+    }
+    
+    // 更新子类别列表
+    category.subCategories[subCategoryIndex] = trimmedNew;
+    setLocalCategories(newCategories);
+    setEditingSubCategory(null);
+  };
+
   // 删除子类别 - 只有校内类别可以删除
   const handleDeleteSubCategory = (categoryIndex, subCategoryIndex) => {
     const newCategories = [...localCategories];
@@ -10581,52 +10626,11 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
       return;
     }
     
-    newCategories[categoryIndex].subCategories.splice(subCategoryIndex, 1);
-    setLocalCategories(newCategories);
-  };
-
-
-
-  // 编辑子分类
-const handleEditSubCategory = (subject, oldSubCat) => {
-  const newSubCat = window.prompt(`编辑子分类 "${oldSubCat}" 的新名称:`, oldSubCat);
-  if (newSubCat && newSubCat.trim() && newSubCat.trim() !== oldSubCat) {
-    const trimmedNew = newSubCat.trim();
-    
-    // 检查新名称是否已存在
-    if (subjectSubCategories[subject].includes(trimmedNew)) {
-      alert('该子分类名称已存在！');
-      return;
+    if (window.confirm(`确定要删除子类别 "${category.subCategories[subCategoryIndex]}" 吗？`)) {
+      category.subCategories.splice(subCategoryIndex, 1);
+      setLocalCategories(newCategories);
     }
-    
-    // 更新子分类列表
-    setSubjectSubCategories(prev => {
-      const updated = {
-        ...prev,
-        [subject]: prev[subject].map(sub => 
-          sub === oldSubCat ? trimmedNew : sub
-        )
-      };
-      
-      // 立即保存到 localStorage
-      localStorage.setItem('grade_subcategories', JSON.stringify(updated));
-      
-      return updated;
-    });
-    
-    // 同时更新该子分类下的所有成绩记录
-    const updatedGrades = grades.map(grade => {
-      if (grade.subject === subject && grade.subCategory === oldSubCat) {
-        return { ...grade, subCategory: trimmedNew };
-      }
-      return grade;
-    });
-    saveGrades(updatedGrades);
-  }
-};
-
-
-
+  };
 
   return (
     <div style={{
@@ -10654,220 +10658,203 @@ const handleEditSubCategory = (subject, oldSubCat) => {
           管理类别和子类别
         </h3>
 
-        
-
-
-{/* 添加新类别 */}
-<div style={{ marginBottom: 20, padding: 15, border: '1px solid #e0e0e0', borderRadius: 8 }}>
-  <h4 style={{ marginBottom: 10 }}>添加新类别</h4>
-  <div style={{ 
-    display: 'flex', 
-    gap: 8, 
-    alignItems: 'center', 
-    marginBottom: 10,
-    flexWrap: 'nowrap' // 确保不换行
-  }}>
-    <input
-      type="text"
-      placeholder="类别名称"
-      value={newCategoryName}
-      onChange={(e) => setNewCategoryName(e.target.value)}
-      style={{
-        flex: 1,
-        padding: '8px 12px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        minWidth: 0 // 防止在移动端溢出
-      }}
-    />
-    <input
-      type="color"
-      value={newCategoryColor}
-      onChange={(e) => setNewCategoryColor(e.target.value)}
-      style={{
-        width: '40px', // 固定宽度
-        height: '40px', // 固定高度，确保正方形
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        cursor: 'pointer',
-        padding: 0, // 移除内边距
-        flexShrink: 0 // 防止被压缩
-      }}
-    />
-    <button
-      onClick={handleAddCategory}
-      style={{
-        width: '40px', // 固定宽度
-        height: '40px', // 固定高度，与颜色选择框一致
-        padding: 0, // 移除内边距
-        backgroundColor: '#1a73e8',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 6,
-        cursor: 'pointer',
-        fontSize: '16px', // 调整字体大小
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0 // 防止被压缩
-      }}
-    >
-      添加
-    </button>
-  </div>
-</div>
+        {/* 添加新类别 */}
+        <div style={{ marginBottom: 20, padding: 15, border: '1px solid #e0e0e0', borderRadius: 8 }}>
+          <h4 style={{ marginBottom: 10 }}>添加新类别</h4>
+          <div style={{ 
+            display: 'flex', 
+            gap: 8, 
+            alignItems: 'center', 
+            marginBottom: 10,
+            flexWrap: 'nowrap'
+          }}>
+            <input
+              type="text"
+              placeholder="类别名称"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 14,
+                minWidth: 0
+              }}
+            />
+            <input
+              type="color"
+              value={newCategoryColor}
+              onChange={(e) => setNewCategoryColor(e.target.value)}
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                cursor: 'pointer',
+                padding: 0,
+                flexShrink: 0
+              }}
+            />
+            <button
+              onClick={handleAddCategory}
+              style={{
+                width: '40px',
+                height: '40px',
+                padding: 0,
+                backgroundColor: '#1a73e8',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              添加
+            </button>
+          </div>
+        </div>
 
         {/* 类别列表 */}
         <div style={{ marginBottom: 20 }}>
           <h4 style={{ marginBottom: 10 }}>现有类别 ({localCategories.length})</h4>
           
+          {localCategories.map((category, index) => (
+            <div
+              key={category.name}
+              style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 6,
+                marginBottom: 12,
+                backgroundColor: '#fff',
+                overflow: 'hidden'
+              }}
+            >
+              {/* 类别头部 */}
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                backgroundColor: '#fff',
+                color: '#333',
+                borderBottom: '1px solid #f0f0f0',
+                gap: '8px'
+              }}>
+                {/* 左侧：颜色圆点 + 类别名称 */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 6,
+                  flex: 1,
+                  minWidth: 0
+                }}>
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      backgroundColor: category.color,
+                      border: '1px solid #ccc',
+                      flexShrink: 0
+                    }}
+                  />
+                  
+                  <input
+                    type="text"
+                    value={category.name}
+                    onChange={(e) => {
+                      const newCategories = [...localCategories];
+                      newCategories[index].name = e.target.value;
+                      setLocalCategories(newCategories);
+                    }}
+                    disabled={category.name === '校内'}
+                    style={{
+                      border: category.name === '校内' ? 'none' : '1px solid #ccc',
+                      borderRadius: '4px',
+                      padding: '6px 8px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      backgroundColor: category.name === '校内' ? 'transparent' : '#fff',
+                      color: '#333',
+                      cursor: category.name === '校内' ? 'default' : 'text',
+                      flex: 1,
+                      minWidth: '150px',
+                      boxSizing: 'border-box'
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value.trim()) {
+                        const newCategories = [...localCategories];
+                        newCategories[index].name = category.name;
+                        setLocalCategories(newCategories);
+                        alert('类别名称不能为空');
+                        return;
+                      }
+                      
+                      const isDuplicate = localCategories.some((cat, i) => 
+                        i !== index && cat.name === e.target.value.trim()
+                      );
+                      
+                      if (isDuplicate) {
+                        const newCategories = [...localCategories];
+                        newCategories[index].name = category.name;
+                        setLocalCategories(newCategories);
+                        alert('类别名称已存在，请使用其他名称');
+                      }
+                    }}
+                  />
+                </div>
 
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 6,
+                  flexShrink: 0
+                }}>
+                  <input
+                    type="color"
+                    value={category.color}
+                    onChange={(e) => handleColorChange(index, e.target.value)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      border: '1px solid #ccc',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      padding: 0,
+                      flexShrink: 0
+                    }}
+                  />
 
-{localCategories.map((category, index) => (
-  <div
-    key={category.name}
-    style={{
-      border: '1px solid #e0e0e0',
-      borderRadius: 6,
-      marginBottom: 12,
-      backgroundColor: '#fff',
-      overflow: 'hidden'
-    }}
-  >
-    {/* 类别头部 - 调整布局 */}
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap', // ✅ 允许自动换行
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '8px 12px',
-      backgroundColor: '#fff',
-      color: '#333',
-      borderBottom: '1px solid #f0f0f0',
-      gap: '8px'
-    }}>
-      
-      {/* 左侧：颜色圆点 + 类别名称输入框 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 6,
-        flex: 1,
-        minWidth: 0
-      }}>
-        {/* 颜色圆点 */}
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: '50%',
-            backgroundColor: category.color,
-            border: '1px solid #ccc',
-            flexShrink: 0
-          }}
-        />
-        
-        {/* 类别名称输入框 - 缩短宽度 */}
-        <input
-          type="text"
-          value={category.name}
-          onChange={(e) => {
-            const newCategories = [...localCategories];
-            newCategories[index].name = e.target.value;
-            setLocalCategories(newCategories);
-          }}
-          disabled={category.name === '校内'}
-          style={{
-             border: category.name === '校内' ? 'none' : '1px solid #ccc',
-    borderRadius: '4px',
-    padding: '6px 8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    backgroundColor: category.name === '校内' ? 'transparent' : '#fff',
-    color: '#333',
-    cursor: category.name === '校内' ? 'default' : 'text',
-    // 移除宽度限制，让输入框自适应
-    flex: 1,
-    minWidth: '150px', // 设置一个合适的最小宽度
-    boxSizing: 'border-box'
-          }}
-          onBlur={(e) => {
-            if (!e.target.value.trim()) {
-              const newCategories = [...localCategories];
-              newCategories[index].name = category.name;
-              setLocalCategories(newCategories);
-              alert('类别名称不能为空');
-              return;
-            }
-            
-            const isDuplicate = localCategories.some((cat, i) => 
-              i !== index && cat.name === e.target.value.trim()
-            );
-            
-            if (isDuplicate) {
-              const newCategories = [...localCategories];
-              newCategories[index].name = category.name;
-              setLocalCategories(newCategories);
-              alert('类别名称已存在，请使用其他名称');
-            }
-          }}
-        />
-        
-        
-      </div>
-      
-
-
-
-<div style={{ 
-  display: 'flex', 
-  alignItems: 'center', 
-  gap: 6,
-  flexShrink: 0
-}}>
-  <input
-    type="color"
-    value={category.color}
-    onChange={(e) => handleColorChange(index, e.target.value)}
-    style={{
-      width: '32px', // 固定宽度
-      height: '32px', // 固定高度
-      border: '1px solid #ccc',
-      borderRadius: 4,
-      cursor: 'pointer',
-      padding: 0, // 移除内边距
-      flexShrink: 0
-    }}
-  />
-
-  {category.name !== '校内' && (
-    <button
-      onClick={() => handleDeleteCategory(index)}
-      style={{
-        width: '32px', // 固定宽度
-        height: '32px', // 固定高度
-        padding: 0, // 移除内边距
-        backgroundColor: '#dc3545',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 4,
-        cursor: 'pointer',
-        fontSize: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-    >
-      删除
-    </button>
-  )}
-</div>
-
-    </div>
-
-
+                  {category.name !== '校内' && (
+                    <button
+                      onClick={() => handleDeleteCategory(index)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        padding: 0,
+                        backgroundColor: '#dc3545',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* 子类别管理 - 只有校内类别显示 */}
               {category.name === '校内' && (
@@ -10927,7 +10914,9 @@ const handleEditSubCategory = (subject, oldSubCat) => {
                             <input
                               type="text"
                               defaultValue={subCat}
-                              onBlur={(e) => handleEditSubCategory(index, subIndex, e.target.value)}
+                              onBlur={(e) => {
+                                handleEditSubCategory(index, subIndex, e.target.value);
+                              }}
                               onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
                                   handleEditSubCategory(index, subIndex, e.target.value);
@@ -12601,10 +12590,13 @@ if (savedTemplates) {
   setTemplates(savedTemplates);
 }
 
-// 加载本月任务数据
-const savedMonthTasks = await loadMainData('monthTasks');
+const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
 if (savedMonthTasks) {
   setMonthTasks(savedMonthTasks);
+  console.log('✅ 加载本月任务数据:', savedMonthTasks.length);
+} else {
+  console.log('ℹ️ 本月任务数据为空，使用空数组');
+  setMonthTasks([]);
 }
 
 // 加载分类数据
