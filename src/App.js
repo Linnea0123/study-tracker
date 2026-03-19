@@ -5793,103 +5793,57 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
             </div>
 
            {/* 截止日期、目标值、单位 - 优化布局 */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: window.innerWidth <= 480 ? '1fr' : '2fr 1fr 1fr',
-  gap: '12px',
-  marginBottom: '12px'
-}}>
-  {/* 截止日期 - 调整宽度比例 */}
-  <div style={{ 
-    flex: window.innerWidth <= 480 ? '1' : '2'  // 在非手机端时占2份宽度
+<div style={{ flex: 1 }}>
+  <label style={{
+    display: 'block',
+    marginBottom: '4px',
+    fontSize: '13px',
+    fontWeight: '500'
   }}>
-    <label style={{ 
-      display: 'block', 
-      marginBottom: '4px', 
-      fontSize: '13px', 
-      fontWeight: '500' 
-    }}>
-      截止日期
-    </label>
-    <input
-      type="date"
-      value={deadline}
-      onChange={(e) => setDeadline(e.target.value)}
-      style={{
-        width: '100%',
-        height: '40px',
-        padding: '0 10px',
-        borderRadius: '6px',
-        border: '1px solid #ccc',
-        fontSize: '14px',
-        boxSizing: 'border-box',
-        minWidth: '100%',
-        maxWidth: '100%'
-      }}
-    />
-  </div>
+    截止日期
+  </label>
+  <input
+    type="date"
+    value={deadline}
+    onChange={(e) => setDeadline(e.target.value)}
+    style={{
+      width: '100%',
+      height: '40px',
+      padding: '0 10px',
+      borderRadius: '6px',
+      border: '1px solid #ccc',
+      fontSize: '14px',
+      boxSizing: 'border-box'
+    }}
+  />
+</div>
 
-  {/* 目标值 - 占1份宽度 */}
-  <div style={{ flex: '1' }}>
-    <label style={{ 
-      display: 'block', 
-      marginBottom: '4px', 
-      fontSize: '13px', 
-      fontWeight: '500' 
-    }}>
-      目标值
-    </label>
-    <input
-      type="number"
-      placeholder="目标"
-      value={target}
-      onChange={(e) => setTarget(Number(e.target.value))}
-      min="1"
-      style={{
-        width: '100%',
-        height: '40px',
-        padding: '0 10px',
-        borderRadius: '6px',
-        border: '1px solid #ccc',
-        fontSize: '14px',
-        boxSizing: 'border-box'
-      }}
-    />
-  </div>
 
-  {/* 单位 - 占1份宽度 */}
-  <div style={{ flex: '1' }}>
-    <label style={{ 
-      display: 'block', 
-      marginBottom: '4px', 
-      fontSize: '13px', 
-      fontWeight: '500' 
-    }}>
-      单位
-    </label>
-    <select
-      value={unit}
-      onChange={(e) => setUnit(e.target.value)}
-      style={{
-        width: '100%',
-        height: '40px',
-        padding: '0 10px',
-        borderRadius: '6px',
-        border: '1px solid #ccc',
-        fontSize: '14px',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box'
-      }}
-    >
-      <option value="%">%</option>
-      <option value="页">页</option>
-      <option value="章">章</option>
-      <option value="题">题</option>
-      <option value="本">本</option>
-      <option value="篇">篇</option>
-      <option value="单元">单元</option>
-    </select>
-  </div>
+<div style={{ flex: 1 }}>
+  <label style={{
+    display: 'block',
+    marginBottom: '4px',
+    fontSize: '13px',
+    fontWeight: '500'
+  }}>
+    目标值
+  </label>
+  <input
+    type="number"
+    placeholder="目标"
+    value={target}
+    onChange={(e) => setTarget(Number(e.target.value))}
+    min="1"
+    style={{
+      width: '100%',
+      height: '40px',
+      padding: '0 10px',
+      borderRadius: '6px',
+      border: '1px solid #ccc',
+      fontSize: '14px',
+      boxSizing: 'border-box'
+    }}
+  />
 </div>
 
             <button
