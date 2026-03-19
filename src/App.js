@@ -1167,142 +1167,208 @@ const GradeModal = ({ onClose, isVisible }) => {
 
         {/* 成绩记录列表 */}
         <div>
-          <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
-          
-          {filteredGrades.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-              暂无成绩记录
-            </div>
-          ) : (
-            <div style={{ 
-              maxHeight: '400px', 
-              overflow: 'auto',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-              {filteredGrades.sort((a, b) => b.date.localeCompare(a.date)).map(grade => (
-                <div
-                  key={grade.id}
+  <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
+
+  {filteredGrades.length === 0 ? (
+    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+      暂无成绩记录
+    </div>
+  ) : (
+    <div
+      style={{
+        maxHeight: '400px',
+        overflow: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}
+    >
+      {[...filteredGrades]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map((grade) => (
+          <div
+            key={grade.id}
+            style={{
+              padding: '15px',
+              border: '1px solid #e0e0e0',
+              borderRadius: '10px',
+              marginBottom: '12px',
+              backgroundColor: grade.isFullMark ? '#f6fbf6' : '#fff'
+            }}
+          >
+            {/* 第一行：日期 + 科目 + 分数 */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px'
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <span style={{ fontWeight: 'bold' }}>
+                  {grade.date} {grade.subject}
+                </span>
+                {grade.subCategory && (
+                  <span
+                    style={{
+                      marginLeft: '8px',
+                      padding: '2px 6px',
+                      backgroundColor: '#f0f0f0',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: '#666'
+                    }}
+                  >
+                    {grade.subCategory}
+                  </span>
+                )}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  flexShrink: 0
+                }}
+              >
+                <span
                   style={{
-                    padding: '15px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '8px',
-                    marginBottom: '10px',
-                    backgroundColor: grade.isFullMark ? '#e8f5e8' : '#fff'
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: grade.isFullMark ? '#4caf50' : '#1a73e8'
                   }}
                 >
-                  {/* 第一行：日期、科目、子分类、分数、操作按钮 */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'flex-start', 
-                    marginBottom: '8px' 
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: 'bold' }}>
-                        {grade.date} {grade.subject}
-                      </span>
-                      {grade.subCategory && (
-                        <span style={{ 
-                          marginLeft: '8px',
-                          padding: '2px 6px',
-                          backgroundColor: '#f0f0f0',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          color: '#666'
-                        }}>
-                          {grade.subCategory}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '10px',
-                      flexShrink: 0
-                    }}>
-                      <span style={{ 
-                        fontSize: '18px', 
-                        fontWeight: 'bold', 
-                        color: grade.isFullMark ? '#4caf50' : '#1a73e8' 
-                      }}>
-                        {getScoreDisplay(grade)}
-                      </span>
-                      {grade.isFullMark && (
-                        <span style={{ 
-                          backgroundColor: '#4caf50', 
-                          color: 'white', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          fontSize: '12px'
-                        }}>
-                          满分
-                        </span>
-                      )}
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {/* 编辑按钮 */}
-                        <button
-                          onClick={() => handleEditGrade(grade)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#1a73e8',
-                            cursor: 'pointer',
-                            fontSize: '16px',
-                            padding: '0 4px'
-                          }}
-                          title="编辑"
-                        >
-                          ✏️
-                        </button>
-                        {/* 删除按钮 */}
-                        <button
-                          onClick={() => handleDeleteGrade(grade.id)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#f44336',
-                            cursor: 'pointer',
-                            fontSize: '16px',
-                            padding: '0 4px'
-                          }}
-                          title="删除"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  {getScoreDisplay(grade)}
+                </span>
 
-                  {/* 第二行：测试内容 */}
-                  <div style={{ 
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    color: '#919090',
-                    paddingLeft: '4px'
-                  }}>
-                    {grade.testContent}
-                  </div>
-
-                  {/* 错题分析 */}
-                  {grade.wrongQuestions && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>错题分析:</div>
-                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.wrongQuestions}</div>
-                    </div>
-                  )}
-                  
-                  {/* 总结改进 */}
-                  {grade.analysis && (
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>总结改进:</div>
-                      <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{grade.analysis}</div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                {grade.isFullMark && (
+                  <span
+                    style={{
+                      backgroundColor: '#4caf50',
+                      color: 'white',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}
+                  >
+                    满分
+                  </span>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* 第二行：测试内容 + 操作按钮 */}
+            <div
+              style={{
+                marginBottom: '10px',
+                fontSize: '14px',
+                color: '#666',
+                paddingLeft: '4px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              {/* 左侧：测试内容 */}
+              <div
+                style={{
+                  flex: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {grade.testContent}
+              </div>
+
+              {/* 右侧：操作按钮 */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginLeft: '12px'
+                }}
+              >
+                {/* 编辑 */}
+                <button
+                  onClick={() => handleEditGrade(grade)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#999',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    padding: '0',
+                    lineHeight: '1'
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = '#333')}
+                  onMouseLeave={(e) => (e.target.style.color = '#999')}
+                  title="编辑"
+                >
+                  ✎
+                </button>
+
+                {/* 删除 */}
+                <button
+                  onClick={() => handleDeleteGrade(grade.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#bbb',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    padding: '0',
+                    lineHeight: '1'
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = '#e53935')}
+                  onMouseLeave={(e) => (e.target.style.color = '#bbb')}
+                  title="删除"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* 错题分析 */}
+            {grade.wrongQuestions && (
+              <div style={{ marginBottom: '10px' }}>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    marginBottom: '5px'
+                  }}
+                >
+                  错题分析:
+                </div>
+                <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+                  {grade.wrongQuestions}
+                </div>
+              </div>
+            )}
+
+            {/* 总结改进 */}
+            {grade.analysis && (
+              <div>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    marginBottom: '5px'
+                  }}
+                >
+                  总结改进:
+                </div>
+                <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+                  {grade.analysis}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+    </div>
+  )}
+</div>
 
         {/* 子分类管理弹窗 */}
         {showSubCategoryManager && (
