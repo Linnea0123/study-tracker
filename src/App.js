@@ -9893,7 +9893,7 @@ const syncToGitHub = useCallback(async () => {
       dailyReflections,
       
       // 本月任务
-      monthTasks,  // 添加本月任务
+      monthTasks,
       
       // 类别配置
       categories,
@@ -9912,19 +9912,81 @@ const syncToGitHub = useCallback(async () => {
       任务天数: Object.keys(tasksByDate).length,
       模板数量: templates.length,
       有复盘的日期: Object.keys(dailyReflections).length,
-      本月任务: monthTasks.length  // 添加日志
+      本月任务: monthTasks.length
     });
 
-    // ... 后面的代码保持不变 ...
+    // 获取或创建 Gist
+    let gistId = localStorage.getItem('github_gist_id');
+    let method = 'POST';
+    let url = 'https://api.github.com/gists';
     
+    if (gistId) {
+      method = 'PATCH';
+      url = `https://api.github.com/gists/${gistId}`;
+    }
+
+    const gistData = {
+      description: 'Study Tracker Backup - 学习跟踪器备份',
+      public: false,
+      files: {
+        'study-tracker-data.json': {
+          content: JSON.stringify(syncData, null, 2)
+        }
+      }
+    };
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(gistData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`同步失败: ${response.status} - ${errorData.message || '未知错误'}`);
+    }
+
+    const result = await response.json();
+    
+    // 保存 Gist ID
+    if (!gistId && result.id) {
+      localStorage.setItem('github_gist_id', result.id);
+      console.log('✅ 新 Gist ID 已保存:', result.id);
+    }
+
+    // 更新最后同步时间
+    localStorage.setItem('github_last_sync', new Date().toISOString());
+    
+    // ✅ 添加成功提示
+    const syncTime = new Date().toLocaleString();
+    const taskCount = Object.keys(tasksByDate).length;
+    const reflectionCount = Object.keys(dailyReflections).length;
+    
+    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n\n数据已保存到 GitHub Gist`);
+
   } catch (error) {
     console.error('同步失败:', error);
-    // ... 错误处理保持不变 ...
+    
+    // ❌ 添加失败提示
+    let errorMessage = '同步失败：';
+    if (error.message.includes('401')) {
+      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
+    } else if (error.message.includes('403')) {
+      errorMessage += '权限不足，请确保 Token 有 gist 权限';
+    } else if (error.message.includes('404')) {
+      errorMessage += 'Gist 不存在，将自动创建新的备份';
+      // 清除无效的 Gist ID
+      localStorage.removeItem('github_gist_id');
+    } else {
+      errorMessage += error.message;
+    }
+    
+    alert(errorMessage);
   }
-// 记得在依赖数组里加上 monthTasks
 }, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks]);
-// 在现有的 useCallback 函数后面添加这个：
-
 
 
 
