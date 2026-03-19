@@ -1522,7 +1522,199 @@ const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
 
 
+// 常规任务添加模态框
+const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
+  const [taskText, setTaskText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]?.name || '语文');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
 
+  const handleSave = () => {
+    if (!taskText.trim()) {
+      alert('请输入任务内容');
+      return;
+    }
+    onSave(taskText.trim(), selectedCategory, selectedSubCategory);
+    setTaskText('');
+    setSelectedCategory(categories[0]?.name || '语文');
+    setSelectedSubCategory('');
+    onClose();
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: '10px'
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '10px',
+        width: '90%',
+        maxWidth: '350px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }} onClick={e => e.stopPropagation()}>
+        <h3 style={{
+          textAlign: 'center',
+          marginBottom: '20px',
+          color: '#FF9800',
+          fontSize: '18px'
+        }}>
+          ➕ 添加常规任务
+        </h3>
+
+        {/* 任务内容输入 */}
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '5px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            color: '#333'
+          }}>
+            任务内容
+          </label>
+          <input
+            type="text"
+            value={taskText}
+            onChange={(e) => setTaskText(e.target.value)}
+            placeholder="输入任务内容..."
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ccc',
+              borderRadius: '6px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+          />
+        </div>
+
+        {/* 分类选择 */}
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '5px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            color: '#333'
+          }}>
+            完成后的分类
+          </label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setSelectedSubCategory(''); // 切换分类时清空子类别
+            }}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ccc',
+              borderRadius: '6px',
+              fontSize: '14px',
+              backgroundColor: '#fff',
+              cursor: 'pointer'
+            }}
+          >
+            {categories
+              .filter(c => c.name !== "常规任务" && c.name !== "本周任务")
+              .map(c => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {/* 子类别选择 - 仅校内分类显示 */}
+        {selectedCategory === '校内' && (
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '5px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              color: '#333'
+            }}>
+              子类别（可选）
+            </label>
+            <select
+              value={selectedSubCategory}
+              onChange={(e) => setSelectedSubCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: '#fff',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">无子类别</option>
+              {categories.find(c => c.name === '校内')?.subCategories?.map(subCat => (
+                <option key={subCat} value={subCat}>
+                  {subCat}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* 按钮区域 */}
+        <div style={{
+          display: 'flex',
+          gap: '10px'
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#FF9800',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            添加
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -6834,7 +7026,12 @@ const [editData, setEditData] = useState({
   repeatDays: task.repeatDays || [false, false, false, false, false, false, false],
   subTasks: task.subTasks || [],
   
-  // 🔴 修复这里：正确初始化计划时间字段
+  // 🔴 修复这里：确保常规任务的目标分类和子类别被正确初始化
+  targetCategory: task.targetCategory || '',
+  targetSubCategory: task.targetSubCategory || '',
+  isRegularTask: task.isRegularTask || false,
+  
+  // 计划时间字段
   startHour: task.scheduledTime ? 
     (() => {
       const startPart = task.scheduledTime.split('-')[0];
@@ -7455,8 +7652,13 @@ const [editData, setEditData] = useState({
 
 
 {/* 子类别选择 - 仅校内类别显示 */}
-{editData.category === '校内' && (
-  <div>
+{/* 子类别选择 - 仅校内类别显示 */}
+{/* 对于常规任务，使用 targetCategory，否则使用 category */}
+
+{/* 子类别选择 - 仅校内类别显示 */}
+{/* 对于常规任务，使用 targetCategory，否则使用 category */}
+{(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
+  <div style={{ marginBottom: 16 }}>
     <label style={{
       display: 'block',
       marginBottom: 8,
@@ -7467,30 +7669,49 @@ const [editData, setEditData] = useState({
       子类别
     </label>
 
-    <select
-      value={editData.subCategory || ''}
-      onChange={(e) => setEditData({ ...editData, subCategory: e.target.value })}
-      style={{
-        width: '100%',
-        height: 36,
-        padding: '0 10px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        backgroundColor: '#fff',
-        cursor: 'pointer',
-        boxSizing: 'border-box',
-      }}
-    >
-      <option value="">选择子类别（可选）</option>
-      {categories
-        .find((c) => c.name === '校内')
-        ?.subCategories?.map((subCat) => (
+    <div style={{ position: 'relative', zIndex: 10 }}>
+      <select
+        value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
+        onChange={(e) => {
+          e.stopPropagation();
+          console.log('选择了子类别:', e.target.value);
+          if (editData.isRegularTask) {
+            setEditData({ ...editData, targetSubCategory: e.target.value });
+          } else {
+            setEditData({ ...editData, subCategory: e.target.value });
+          }
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('点击了select');
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        style={{
+          width: '100%',
+          height: 40,
+          padding: '0 12px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 8,
+          fontSize: 14,
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
+          outline: 'none',
+          WebkitAppearance: 'menulist',
+          MozAppearance: 'menulist',
+          appearance: 'menulist'
+        }}
+      >
+        <option value="">选择子类别（可选）</option>
+        {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
           <option key={subCat} value={subCat}>
             {subCat}
           </option>
         ))}
-    </select>
+      </select>
+    </div>
   </div>
 )}
 
@@ -9508,6 +9729,7 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
 
 
 function App() {
+  // 在现有状态定义区域添加
   const [tasksByDate, setTasksByDate] = useState({});
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -9520,12 +9742,7 @@ const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
-  // 在 App 组件中找到状态定义区域，添加新的状态
-  const [showRegularInput, setShowRegularInput] = useState(false); // 控制常规任务输入框
-  const [newRegularTaskText, setNewRegularTaskText] = useState(""); // 常规任务文本
-  const [newRegularTaskCategory, setNewRegularTaskCategory] = useState(baseCategories[0].name); // 常规任务分类
-  const [showRegularCategorySelect, setShowRegularCategorySelect] = useState(false); // 控制分类选择显示
-  const regularInputRef = useRef(null);
+ 
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
@@ -12740,15 +12957,14 @@ useEffect(() => {
 
   // 替换现有的 useEffect 点击外部处理逻辑
 // 替换现有的 useEffect 点击外部处理逻辑
+
+// 替换现有的 useEffect 点击外部处理逻辑
 useEffect(() => {
   const handleClickOutside = (event) => {
     // 检查是否点击了重复设置或计划时间的按钮
     const isRepeatButton = event.target.closest('button')?.textContent?.includes('重复');
     const isTimeButton = event.target.closest('button')?.textContent?.includes('计划时间');
     const isTemplateButton = event.target.closest('button')?.textContent?.includes('模板');
-    
-    // 检查是否点击了常规任务输入框内的元素
-    const isRegularInputElement = regularInputRef.current && regularInputRef.current.contains(event.target);
     
     // 检查是否点击了分类选择按钮
     const isCategorySelectButton = event.target.closest('button')?.textContent?.includes('分类');
@@ -12762,14 +12978,7 @@ useEffect(() => {
       return;
     }
 
-    // 检查常规任务输入框的点击
-    if (regularInputRef.current && !isRegularInputElement) {
-      // 只有当确实点击了外部且不是分类选择按钮时才关闭
-      if (!isCategorySelectButton) {
-        setShowRegularInput(false);
-        setShowRegularCategorySelect(false);
-      }
-    }
+    // 删除所有关于 regularInputRef 的代码
 
     if (addInputRef.current && !addInputRef.current.contains(event.target)) {
       const isModalClick = event.target.closest('[style*="position: fixed"]') ||
@@ -12795,6 +13004,9 @@ useEffect(() => {
     document.removeEventListener('click', handleClickOutside);
   };
 }, []);
+
+
+
   // 获取本周任务
   // 获取本周任务
 const getWeekTasks = () => {
@@ -13198,82 +13410,6 @@ const toggleRegularTaskDone = (task) => {
 };
 
 
-// 替换现有的 handleAddRegularTask 函数
-// 替换现有的 handleAddRegularTask 函数
-const handleAddRegularTask = () => {
-  if (!newRegularTaskText.trim()) {
-    alert('请输入任务内容');
-    return;
-  }
-
-  const baseTask = {
-    text: newRegularTaskText.trim(),
-    targetCategory: newRegularTaskCategory,
-    targetSubCategory: newTaskSubCategory || '',
-    isRegularTask: true,
-    category: "常规任务",  // 永远属于常规任务分类
-    done: false,
-    timeSpent: 0,
-    subTasks: [],
-    note: "",
-    reflection: "",
-    image: null,
-    scheduledTime: "",
-    pinned: false,
-    progress: {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    }
-  };
-
-  // 为所有现有日期创建常规任务
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    
-    // 获取所有存在的日期
-    const allDates = Object.keys(prev);
-    
-    // 如果没有其他日期，至少为当前日期添加
-    if (allDates.length === 0) {
-      if (!newTasksByDate[selectedDate]) {
-        newTasksByDate[selectedDate] = [];
-      }
-      newTasksByDate[selectedDate].push({
-        ...baseTask,
-        id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${selectedDate}`
-      });
-    } else {
-      // 为所有存在的日期添加任务
-      allDates.forEach(date => {
-        if (!newTasksByDate[date]) {
-          newTasksByDate[date] = [];
-        }
-        
-        // 检查该日期是否已有这个常规任务
-        const exists = newTasksByDate[date].some(
-          t => t.isRegularTask && t.text === baseTask.text
-        );
-        
-        if (!exists) {
-          newTasksByDate[date].push({
-            ...baseTask,
-            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${date}`
-          });
-        }
-      });
-    }
-    
-    return newTasksByDate;
-  });
-
-  // 重置输入
-  setNewRegularTaskText("");
-  setNewTaskSubCategory("");
-  setShowRegularInput(false);
-  setShowRegularCategorySelect(false);
-};
 
 // 添加本周任务 - 修改版本
 // 添加本周任务
@@ -16174,11 +16310,12 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 {/* 常规任务区域 - 橙色背景 */}
+{/* 常规任务区域 - 橙色背景 */}
 <div style={{
   marginBottom: 8,
   borderRadius: 10,
   overflow: "hidden",
-  border: "2px solid #FF9800", // 橙色边框
+  border: "2px solid #FF9800",
   backgroundColor: "#fff"
 }}>
   <div
@@ -16187,7 +16324,7 @@ if (isInitialized && todayTasks.length === 0) {
       "常规任务": !prev["常规任务"]
     }))}
     style={{
-      backgroundColor: "#FF9800", // 橙色背景
+      backgroundColor: "#FF9800",
       color: "#fff",
       padding: "3px 8px",
       fontWeight: "bold",
@@ -16195,15 +16332,13 @@ if (isInitialized && todayTasks.length === 0) {
       justifyContent: "space-between",
       alignItems: "center",
       cursor: "pointer",
-      transition: "all 0.3s ease",
       fontSize: "13px",
       minHeight: "24px"
     }}
   >
-       <span>
+    <span>
       常规任务 (
       {(() => {
-        // 获取今天的常规任务数量统计
         const regularTasks = (tasksByDate[selectedDate] || [])
           .filter(task => task.isRegularTask);
         const completedCount = regularTasks.filter(task => task.done).length;
@@ -16215,17 +16350,13 @@ if (isInitialized && todayTasks.length === 0) {
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button
         onClick={(e) => {
-          e.stopPropagation();
-          setShowRegularInput(!showRegularInput);
-          setShowRegularCategorySelect(false);
+          e.stopPropagation(); // 阻止事件冒泡
+          setShowRegularModal(true); // 打开模态框
         }}
         style={{
           background: "transparent",
           border: "none",
           color: "#fff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           cursor: "pointer",
           fontSize: 16,
           padding: 0,
@@ -16237,301 +16368,198 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
   </div>
 
-  {/* 添加任务输入框 */}
- {/* 添加任务输入框 */}
-{showRegularInput && (
-  <div ref={regularInputRef} style={{ 
-    padding: "8px", 
-    borderBottom: "1px solid #f0f0f0",
-    position: "relative" 
-  }}>
-    {/* 添加关闭按钮 */}
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowRegularInput(false);
-        setShowRegularCategorySelect(false);
-      }}
-      style={{
-        position: "absolute",
-        top: "2px",
-        right: "2px",
-        background: "transparent",
-        border: "none",
-        fontSize: "16px",
-        cursor: "pointer",
-        color: "#666",
-        width: "24px",
-        height: "24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: "50%",
-        zIndex: 10
-      }}
-      title="关闭"
-    >
-      ×
-    </button>
 
-    <div style={{
-      display: "flex",
-      gap: 6,
-      marginBottom: 8,
-      paddingRight: "24px" // 为关闭按钮留出空间
-    }}>
-      <input
-        type="text"
-        value={newRegularTaskText}
-        onChange={(e) => setNewRegularTaskText(e.target.value)}
-        placeholder="输入常规任务"
-        style={{
-          flex: 1,
-          padding: 6,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-          fontSize: "14px"
-        }}
-        onClick={(e) => e.stopPropagation()}
-      />
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          // 点击分类按钮时切换显示状态
-          setShowRegularCategorySelect(!showRegularCategorySelect);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#FF9800",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-          transition: "none",
-          outline: "none"
-        }}
-      >
-        分类
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleAddRegularTask();
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#FF9800",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-          transition: "none",
-          outline: "none"
-        }}
-      >
-        确认
-      </button>
-    </div>
 
-    {/* 分类选择 - 始终显示，不再根据 showRegularCategorySelect 控制 */}
-    <div 
-      style={{
-        padding: "8px",
-        backgroundColor: "#f5f5f5",
-        borderRadius: 6,
-        marginTop: 4,
-        transform: "translateZ(0)",
-        backfaceVisibility: "hidden",
-        willChange: "transform"
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div style={{ marginBottom: 4, fontSize: 12, color: "#666" }}>
-        选择任务完成后的分类:
-      </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {categories.filter(c => c.name !== "常规任务" && c.name !== "本周任务").map((c) => (
-          <button
-            key={c.name}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setNewRegularTaskCategory(prevCategory => {
-                if (prevCategory === c.name) {
-                  return prevCategory;
-                }
-                return c.name;
-              });
-            }}
-            style={{
-              padding: "4px 8px",
-              backgroundColor: newRegularTaskCategory === c.name ? c.color : "#f0f0f0",
-              color: newRegularTaskCategory === c.name ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 12,
-              transition: "none",
-              outline: "none",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitTapHighlightColor: "transparent"
-            }}
-          >
-            {c.name}
-          </button>
-        ))}
-      </div>
-      
-      {/* 如果选中了校内分类，显示子类别选择 */}
-      {newRegularTaskCategory === '校内' && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ 
-            marginBottom: 6, 
-            fontSize: 12, 
-            color: "#666",
-            borderTop: "1px solid #ddd",
-            paddingTop: 8
-          }}>
-            选择子类别（可选）:
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {/* 先显示"无子类别"选项 */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setNewTaskSubCategory('');
-              }}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: !newTaskSubCategory ? '#1a73e8' : '#f0f0f0',
-                color: !newTaskSubCategory ? '#fff' : '#000',
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 11,
-                transition: "none",
-                outline: "none"
-              }}
-            >
-              无子类别
-            </button>
+{/* 在所有模态框的末尾添加 */}
+{showRegularModal && (
+  <RegularTaskModal
+    visible={showRegularModal}
+    onClose={() => setShowRegularModal(false)}
+    onSave={(text, category, subCategory) => {
+      // 调用添加常规任务的函数
+      const baseTask = {
+        text: text,
+        targetCategory: category,
+        targetSubCategory: subCategory || '',
+        isRegularTask: true,
+        category: "常规任务",
+        done: false,
+        timeSpent: 0,
+        subTasks: [],
+        note: "",
+        reflection: "",
+        image: null,
+        scheduledTime: "",
+        pinned: false,
+        progress: {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        }
+      };
+
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
+        const allDates = Object.keys(prev);
+        
+        if (allDates.length === 0) {
+          if (!newTasksByDate[selectedDate]) {
+            newTasksByDate[selectedDate] = [];
+          }
+          newTasksByDate[selectedDate].push({
+            ...baseTask,
+            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${selectedDate}`
+          });
+        } else {
+          allDates.forEach(date => {
+            if (!newTasksByDate[date]) {
+              newTasksByDate[date] = [];
+            }
             
-            {/* 显示所有子类别 */}
-            {categories.find(c => c.name === '校内')?.subCategories?.map(subCat => (
-              <button
-                key={subCat}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setNewTaskSubCategory(prev => 
-                    prev === subCat ? '' : subCat
-                  );
-                }}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: newTaskSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
-                  color: newTaskSubCategory === subCat ? '#fff' : '#000',
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  fontSize: 11,
-                  transition: "none",
-                  outline: "none"
-                }}
-              >
-                {subCat}
-              </button>
+            const exists = newTasksByDate[date].some(
+              t => t.isRegularTask && t.text === baseTask.text
+            );
+            
+            if (!exists) {
+              newTasksByDate[date].push({
+                ...baseTask,
+                id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${date}`
+              });
+            }
+          });
+        }
+        
+        return newTasksByDate;
+      });
+    }}
+    categories={categories}
+  />
+)}
+
+
+
+  {/* 👇 修改这里：任务列表 - 改成两列布局 */}
+  {!collapsedCategories["常规任务"] && (
+    (() => {
+      // 获取今天的常规任务
+      const categoryPriority = {
+        "校内": 1,
+        "语文": 2,
+        "数学": 3,
+        "英语": 4,
+        "运动": 5,
+        // 其他分类默认优先级为 999（排在最后）
+      };
+
+      // 获取今天的常规任务
+      const regularTasks = (tasksByDate[selectedDate] || [])
+        .filter(task => task.isRegularTask)
+        .sort((a, b) => {
+          // 1. 置顶的任务优先
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          
+          // 2. 按目标分类优先级排序（语文、数学、英语、运动）
+          const priorityA = categoryPriority[a.targetCategory] || 999;
+          const priorityB = categoryPriority[b.targetCategory] || 999;
+          
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+          
+          // 3. 如果分类相同，未完成的在前
+          if (a.done !== b.done) {
+            return a.done ? 1 : -1;
+          }
+          
+          // 4. 最后按创建时间排序（新创建的在前）
+          return b.id - a.id;
+        });
+      
+      // 如果没有常规任务，不渲染任何内容
+      if (regularTasks.length === 0) {
+        return null;
+      }
+
+      // 👇 新增：计算两列布局
+      const tasksPerColumn = Math.ceil(regularTasks.length / 2);
+      const firstColumnTasks = regularTasks.slice(0, tasksPerColumn);
+      const secondColumnTasks = regularTasks.slice(tasksPerColumn);
+
+      return (
+        <div style={{
+          display: "flex",
+          gap: "8px",
+          padding: "8px"
+        }}>
+          {/* 左列 */}
+          <ul style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            flex: 1,
+            width: "50%"
+          }}>
+            {firstColumnTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDeleteTask={deleteTask}  
+                onEditTime={editTaskTime}
+                onEditNote={editTaskNote}
+                onEditReflection={editTaskReflection}
+                onOpenEditModal={openTaskEditModal}
+                onShowImageModal={setShowImageModal}
+                onDeleteImage={handleDeleteImage}
+                toggleDone={toggleRegularTaskDone}
+                formatTimeNoSeconds={formatTimeNoSeconds}
+                formatTimeWithSeconds={formatTimeWithSeconds}
+                onMoveTask={moveTask}
+                categories={categories}
+                setShowMoveModal={setShowMoveModal}
+                onUpdateProgress={handleUpdateProgress}
+                onEditSubTask={editSubTask}
+                onToggleSubTask={toggleSubTask}
+              />
             ))}
-          </div>
+          </ul>
+
+          {/* 右列 */}
+          <ul style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            flex: 1,
+            width: "50%"
+          }}>
+            {secondColumnTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDeleteTask={deleteTask}  
+                onEditTime={editTaskTime}
+                onEditNote={editTaskNote}
+                onEditReflection={editTaskReflection}
+                onOpenEditModal={openTaskEditModal}
+                onShowImageModal={setShowImageModal}
+                onDeleteImage={handleDeleteImage}
+                toggleDone={toggleRegularTaskDone}
+                formatTimeNoSeconds={formatTimeNoSeconds}
+                formatTimeWithSeconds={formatTimeWithSeconds}
+                onMoveTask={moveTask}
+                categories={categories}
+                setShowMoveModal={setShowMoveModal}
+                onUpdateProgress={handleUpdateProgress}
+                onEditSubTask={editSubTask}
+                onToggleSubTask={toggleSubTask}
+              />
+            ))}
+          </ul>
         </div>
-      )}
-    </div>
-  </div>
-)}
-
-
-
-
-  {/* 任务列表 - 不折叠时显示 */}
-{!collapsedCategories["常规任务"] && (
-  (() => {
-    // 获取今天的常规任务
-    // 定义分类优先级顺序
-const categoryPriority = {
-  "校内": 1,
-  "语文": 2,
-  "数学": 3,
-  "英语": 4,
-  "运动": 5,
-  // 其他分类默认优先级为 999（排在最后）
-};
-
-// 获取今天的常规任务
-const regularTasks = (tasksByDate[selectedDate] || [])
-  .filter(task => task.isRegularTask)
-  .sort((a, b) => {
-    // 1. 置顶的任务优先
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    
-    // 2. 按目标分类优先级排序（语文、数学、英语、运动）
-    const priorityA = categoryPriority[a.targetCategory] || 999;
-    const priorityB = categoryPriority[b.targetCategory] || 999;
-    
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB;
-    }
-    
-    // 3. 如果分类相同，未完成的在前
-    if (a.done !== b.done) {
-      return a.done ? 1 : -1;
-    }
-    
-    // 4. 最后按创建时间排序（新创建的在前）
-    return b.id - a.id;
-  });
-    
-    // 如果没有常规任务，不渲染任何内容
-    if (regularTasks.length === 0) {
-      return null;
-    }
-
-    return (
-      <ul style={{
-        listStyle: "none",
-        padding: 8,
-        margin: 0
-      }}>
-        {regularTasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onDeleteTask={deleteTask}  
-            onEditTime={editTaskTime}
-            onEditNote={editTaskNote}
-            onEditReflection={editTaskReflection}
-            onOpenEditModal={openTaskEditModal}
-            onShowImageModal={setShowImageModal}
-            onDeleteImage={handleDeleteImage}
-            toggleDone={toggleRegularTaskDone}
-            formatTimeNoSeconds={formatTimeNoSeconds}
-            formatTimeWithSeconds={formatTimeWithSeconds}
-            onMoveTask={moveTask}
-            categories={categories}
-            setShowMoveModal={setShowMoveModal}
-            onUpdateProgress={handleUpdateProgress}
-            onEditSubTask={editSubTask}
-            onToggleSubTask={toggleSubTask}
-          />
-        ))}
-      </ul>
-    );
-  })()
-)}
+      );
+    })()
+  )}
 </div>
 
 
