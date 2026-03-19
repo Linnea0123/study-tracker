@@ -9594,6 +9594,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [dailyRatings, setDailyRatings] = useState({});
   const [dailyReflections, setDailyReflections] = useState({});
   
@@ -9928,6 +9929,12 @@ const syncToGitHub = useCallback(async () => {
     return;
   }
 
+  // 👇 添加这行 - 显示准备同步中提示
+  setIsSyncing(true);
+  
+  // 👇 添加这行 - 添加一个短暂的延迟，让用户能看到提示
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   try {
     // 先保存当前日期的数据
     await saveDailyData(selectedDate);
@@ -10035,9 +10042,11 @@ const syncToGitHub = useCallback(async () => {
     }
     
     alert(errorMessage);
+  } finally {
+    // 👇 添加这行 - 无论成功失败都要关闭同步状态
+    setIsSyncing(false);
   }
 }, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks]);
-
 
 
 
@@ -17436,30 +17445,35 @@ const regularTasks = (tasksByDate[selectedDate] || [])
     每日日志
   </div>
   
-  {/* 立即同步按钮 */}
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      syncToGitHub();
-    }}
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "6px 10px",
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      fontSize: 12,
-      borderRadius: 6,
-      width: "70px",
-      height: "30px",
-      cursor: "pointer",
-      userSelect: "none",
-      boxSizing: "border-box"
-    }}
-  >
-    立即同步
-  </div>
+{/* 立即同步按钮 */}
+<div
+  onClick={(e) => {
+    e.preventDefault();
+    if (isSyncing) {
+      alert('正在同步中，请稍候...');
+      return;
+    }
+    syncToGitHub();
+  }}
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "6px 10px",
+    backgroundColor: isSyncing ? "#ccc" : "#1a73e8",
+    color: "#fff",
+    fontSize: 12,
+    borderRadius: 6,
+    width: "70px",
+    height: "30px",
+    cursor: isSyncing ? "not-allowed" : "pointer",
+    userSelect: "none",
+    boxSizing: "border-box",
+    opacity: isSyncing ? 0.7 : 1
+  }}
+>
+  {isSyncing ? "同步中..." : "立即同步"}
+</div>
   
   {/* 恢复云端按钮 */}
   <div
