@@ -1548,23 +1548,27 @@ const BackupManagerModal = ({ onClose }) => {
   useEffect(() => {
     loadBackups();
   }, []);
-
-  const handleManualBackup = async () => {
-    setIsLoading(true);
-    try {
-      await autoBackup();
-      // 延迟一点再加载，确保数据已写入
-      setTimeout(() => {
-        loadBackups();
-        alert('手动备份已创建！');
-      }, 500);
-    } catch (error) {
-      console.error('备份失败:', error);
-      alert('备份失败: ' + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const handleManualBackup = async () => {
+  setIsLoading(true);
+  try {
+    // 设置标记，让 autoBackup 知道这是手动备份
+    window.__manualBackup = true;
+    await autoBackup();
+    window.__manualBackup = false;
+    
+    // 延迟加载，确保数据已写入
+    setTimeout(() => {
+      loadBackups();
+      alert('✅ 手动备份已创建！');
+    }, 500);
+  } catch (error) {
+    console.error('备份失败:', error);
+    alert('❌ 备份失败: ' + error.message);
+    window.__manualBackup = false;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleDeleteBackup = (backupKey) => {
     if (window.confirm('确定要删除这个备份吗？')) {
@@ -1733,41 +1737,32 @@ const BackupManagerModal = ({ onClose }) => {
   ) : (
     <div style={{ maxHeight: 300, overflow: 'auto' }}>
       {backups.map((backup, index) => {
-        // 确保备份时间正确显示
-        let displayTime;
-        try {
-          displayTime = new Date(backup.time).toLocaleString();
-        } catch (e) {
-          // 如果时间格式有问题，使用备份key中的时间
-          const timeMatch = backup.key.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
-          displayTime = timeMatch ? timeMatch[1].replace(/T/, ' ').replace(/-/g, ':') : '未知时间';
-        }
-
-        return (
-          <div
-            key={backup.key}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px',
-              border: '1px solid #e0e0e0',
-              borderRadius: 6,
-              marginBottom: 8,
-              backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
-                {displayTime}
-                {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
-              </div>
-              <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
-                任务天数: {backup.tasksCount || 0} | 版本: {backup.version || '1.0'}
-              </div>
-              <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
-                {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
-              </div>
+  return (
+    <div
+      key={backup.key}
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px',
+        border: '1px solid #e0e0e0',
+        borderRadius: 6,
+        marginBottom: 8,
+        backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+          {backup.displayTime || new Date(backup.time).toLocaleString()}
+          {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
+        </div>
+        <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
+          任务天数: {backup.tasksCount || 0} | 版本: {backup.version || '1.0'}
+        </div>
+        <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
+          {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
+        </div>
+      
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -2455,43 +2450,99 @@ const autoBackup = async () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupKey = `${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}${timestamp}`;
     
-    // 包含所有关键数据
+    console.log('💾 开始创建备份，当前时间:', new Date().toLocaleString());
+    
+    // 直接从 localStorage 读取最新数据
+    // 注意：这里不能直接使用 tasksByDate，因为它是在 App 组件内部的状态变量
+    const currentTasks = await loadMainData('tasks') || {};
+    const currentTemplates = await loadMainData('templates') || [];
+    const currentCategories = await loadMainData('categories') || baseCategories;
+    const currentMonthTasks = await loadMainData('monthTasks') || [];
+    const currentGrades = await loadMainData('grades') || [];
+    
+    // 获取每日数据
+    const allDailyRatings = {};
+    const allDailyReflections = {};
+    const allKeys = Object.keys(localStorage);
+    const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
+    
+    dailyKeys.forEach(key => {
+      try {
+        const dataStr = localStorage.getItem(key);
+        if (dataStr) {
+          const data = JSON.parse(dataStr);
+          if (data && data.date) {
+            allDailyRatings[data.date] = data.rating || 0;
+            allDailyReflections[data.date] = data.reflection || '';
+          }
+        }
+      } catch (e) {
+        console.error('解析每日数据失败:', key, e);
+      }
+    });
+    
+    console.log('📊 备份数据统计:', {
+      任务天数: Object.keys(currentTasks).length,
+      模板数量: currentTemplates.length,
+      本月任务: currentMonthTasks.length,
+      复盘天数: Object.keys(allDailyReflections).length
+    });
+    
     const backupData = {
-      tasks: await loadMainData('tasks') || {},
-      templates: await loadMainData('templates') || [],
-      customAchievements: await loadMainData('customAchievements') || [],
-      unlockedAchievements: await loadMainData('unlockedAchievements') || [],
-      categories: await loadMainData('categories') || baseCategories,
-      monthTasks: monthTasks || [],
-      grades: await loadMainData('grades') || [],  // 添加成绩记录
+      tasks: currentTasks,
+      templates: currentTemplates,
+      categories: currentCategories,
+      monthTasks: currentMonthTasks,
+      grades: currentGrades,
+      dailyRatings: allDailyRatings,
+      dailyReflections: allDailyReflections,
       backupTime: new Date().toISOString(),
-      version: '1.1'
+      version: '2.0'
     };
     
+    // 保存到 localStorage
     localStorage.setItem(backupKey, JSON.stringify(backupData));
-    console.log('💾 完整备份创建成功:', backupKey);
+    console.log('✅ 备份创建成功:', backupKey);
+    console.log('📅 备份时间:', new Date().toLocaleString());
+    
+    // 清理旧备份
     await cleanupOldBackups();
     
+    // 可选：显示成功提示
+    if (window.__manualBackup) {
+      alert(`✅ 备份成功！\n时间：${new Date().toLocaleString()}\n包含：${Object.keys(currentTasks).length}天任务数据`);
+    }
+    
   } catch (error) {
-    console.error('自动备份失败:', error);
+    console.error('❌ 自动备份失败:', error);
+    if (window.__manualBackup) {
+      alert('备份失败: ' + error.message);
+    }
   }
 };
-
 
 const cleanupOldBackups = async () => {
   const allKeys = Object.keys(localStorage);
   const backupKeys = allKeys
     .filter(key => key.startsWith(`${STORAGE_KEY}_${AUTO_BACKUP_CONFIG.backupPrefix}`))
-    .sort((a, b) => b.localeCompare(a));
+    .sort((a, b) => {
+      // 按时间倒序排序（最新的在前）
+      return b.localeCompare(a);
+    });
+  
+  console.log('当前备份数量:', backupKeys.length);
   
   if (backupKeys.length > AUTO_BACKUP_CONFIG.maxBackups) {
     const keysToDelete = backupKeys.slice(AUTO_BACKUP_CONFIG.maxBackups);
+    console.log('删除旧备份:', keysToDelete);
+    
     keysToDelete.forEach(key => {
       localStorage.removeItem(key);
       console.log(`🗑️ 删除旧备份: ${key}`);
     });
   }
 };
+
 
 const getBackupList = () => {
   const allKeys = Object.keys(localStorage);
@@ -2502,17 +2553,16 @@ const getBackupList = () => {
       return {
         key,
         time: data?.backupTime || key,
+        displayTime: data?.backupTime ? new Date(data.backupTime).toLocaleString() : '未知时间',
         tasksCount: Object.keys(data?.tasks || {}).length,
         monthTasksCount: (data?.monthTasks || []).length,
-        gradesCount: (data?.grades || []).length,  // 添加成绩数量
+        gradesCount: (data?.grades || []).length,
         version: data?.version || '1.0',
         hasAchievements: !!(data?.customAchievements || data?.unlockedAchievements)
       };
     })
     .sort((a, b) => b.time.localeCompare(a.time));
 };
-
-
 
 
 const restoreBackup = async (backupKey) => {
@@ -10128,6 +10178,44 @@ window.testWeekDays = () => {
 
 
 
+
+// 在 App 组件中添加调试函数
+useEffect(() => {
+  // 调试函数：查看所有备份
+  window.checkBackups = () => {
+    console.log('=== 备份检查 ===');
+    const allKeys = Object.keys(localStorage);
+    const backupKeys = allKeys.filter(key => key.includes(AUTO_BACKUP_CONFIG.backupPrefix));
+    
+    if (backupKeys.length === 0) {
+      console.log('❌ 没有找到任何备份文件');
+      return;
+    }
+    
+    console.log(`找到 ${backupKeys.length} 个备份文件:`);
+    backupKeys.sort().reverse().forEach((key, index) => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        console.log(`${index + 1}. ${key}`);
+        console.log(`   备份时间: ${data?.backupTime ? new Date(data.backupTime).toLocaleString() : '未知'}`);
+        console.log(`   任务天数: ${Object.keys(data?.tasks || {}).length}`);
+        console.log(`   模板数量: ${data?.templates?.length || 0}`);
+        console.log(`   复盘天数: ${Object.keys(data?.dailyReflections || {}).length}`);
+      } catch (e) {
+        console.log(`   ${key}: ❌ 损坏的备份`);
+      }
+    });
+  };
+  
+  // 手动触发备份
+  window.forceBackup = () => {
+    console.log('手动触发备份...');
+    window.__manualBackup = true;
+    autoBackup();
+  };
+}, [tasksByDate, templates, categories, monthTasks, dailyRatings, dailyReflections]);
+
+
 // 添加调试函数来检查重复任务创建
 useEffect(() => {
   window.debugRepeatTasks = () => {
@@ -12328,19 +12416,6 @@ if (savedCategories) {
 
 
 
-
-      
-
-    // 设置定时备份 - 添加这3行代码
-    const backupTimer = setInterval(autoBackup, AUTO_BACKUP_CONFIG.backupInterval);
-    console.log('✅ 自动备份已启动，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60 + '分钟');
-    setTimeout(autoBackup, 3000); // 3秒后执行第一次备份
-      
-      // 清理函数
-      return () => {
-        clearInterval(backupTimer);
-      };
-
     } catch (error) {
       console.error('初始化失败:', error);
     }
@@ -12348,6 +12423,40 @@ if (savedCategories) {
 
   initializeApp();
 }, []);
+
+// ===== 修复：将备份定时器移出 initializeApp =====
+useEffect(() => {
+  let backupTimer;
+  
+  if (isInitialized) {
+    console.log('⏰ 初始化完成，启动自动备份...');
+    
+    // 设置定时备份
+    backupTimer = setInterval(() => {
+      console.log('⏰ 执行自动备份...', new Date().toLocaleString());
+      autoBackup();
+    }, AUTO_BACKUP_CONFIG.backupInterval);
+    
+    console.log('✅ 自动备份已启动，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60 + '分钟');
+    
+    // 立即执行第一次备份（延迟5秒确保数据完全加载）
+    setTimeout(() => {
+      console.log('💾 执行首次自动备份...');
+      autoBackup();
+    }, 5000);
+  }
+  
+  // 清理函数
+  return () => {
+    if (backupTimer) {
+      clearInterval(backupTimer);
+      console.log('🛑 自动备份已停止');
+    }
+  };
+}, [isInitialized]); // 只在 isInitialized 变化时执行
+      
+
+ 
 //初始化end
 
 
