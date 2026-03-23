@@ -8269,6 +8269,13 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
   );
 };
 
+
+
+
+
+
+
+
 // 任务项组件
 const TaskItem = ({
   task,
@@ -8286,182 +8293,24 @@ const TaskItem = ({
   onToggleSubTask,
   onUpdateProgress,
   onDeleteTask, 
-  onDeleteImage, // 添加这行
+  onDeleteImage,
   onEditSubTask = () => {}
 }) => {
-  // 调试：显示任务的时间信息
-   console.log('TaskItem 渲染:', { 
-    任务: task?.text, 
-    有onDeleteTask: typeof onDeleteTask === 'function',
-    onDeleteTask类型: typeof onDeleteTask
-  });
-
-
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
   const [showProgressControls, setShowProgressControls] = useState(false);
   const [editingSubTaskNoteIndex, setEditingSubTaskNoteIndex] = useState(null);
 
-
-
-
-
-  
-// 常规任务添加模态框
-const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
-  const [taskText, setTaskText] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]?.name || '语文');
-
-  const handleSave = () => {
-    if (!taskText.trim()) {
-      alert('请输入任务内容');
-      return;
+  // 处理进度调整
+  const handleProgressAdjust = (increment) => {
+    const currentValue = Number(task.progress?.current) || 0;
+    const targetValue = Number(task.progress?.target) || 100;
+    const newCurrent = Math.min(Math.max(0, currentValue + increment), targetValue);
+    
+    if (onUpdateProgress) {
+      onUpdateProgress(task, newCurrent);
     }
-    onSave(taskText.trim(), selectedCategory);
-    setTaskText('');
-    setSelectedCategory(categories[0]?.name || '语文');
-    onClose();
   };
-
-  if (!visible) return null;
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
-    }} onClick={onClose}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '10px',
-        width: '90%',
-        maxWidth: '350px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
-        <h3 style={{
-          textAlign: 'center',
-          marginBottom: '20px',
-          color: '#FF9800',
-          fontSize: '18px'
-        }}>
-          ➕ 添加常规任务
-        </h3>
-
-        {/* 任务内容输入 */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '5px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            任务内容
-          </label>
-          <input
-            type="text"
-            value={taskText}
-            onChange={(e) => setTaskText(e.target.value)}
-            placeholder="输入任务内容..."
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box'
-            }}
-            autoFocus
-          />
-        </div>
-
-        {/* 分类选择 */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '5px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            完成后的分类
-          </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            {categories
-              .filter(c => c.name !== "常规任务" && c.name !== "本周任务")
-              .map(c => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
-        </div>
-
-        {/* 按钮区域 */}
-        <div style={{
-          display: 'flex',
-          gap: '10px'
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            取消
-          </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#FF9800',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            添加
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -8469,14 +8318,11 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
     setEditSubTaskText(currentText);
   };
 
-  // 修改保存子任务函数
+  // 保存子任务
   const saveEditSubTask = () => {
     if (editSubTaskText.trim() && editingSubTaskIndex !== null) {
-      // 获取当前子任务的备注
       const currentSubTask = task.subTasks[editingSubTaskIndex];
       const currentNote = currentSubTask?.note || '';
-      
-      // 保存文本和备注
       onEditSubTask(task, editingSubTaskIndex, editSubTaskText.trim(), currentNote);
     }
     setEditingSubTaskIndex(null);
@@ -8498,57 +8344,36 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
     }
   };
 
-  // 处理进度调整 - 修复版本
-const handleProgressAdjust = (increment) => {
-  const currentValue = Number(task.progress?.current) || 0;
-  const targetValue = Number(task.progress?.target) || 100;
-  const newCurrent = Math.min(Math.max(0, currentValue + increment), targetValue);
-  
-  if (onUpdateProgress) {
-    onUpdateProgress(task, newCurrent);
-  }
-};
-
   return (
-    // 在 TaskItem 组件中找到任务项的外层 li 样式部分
-// 替换原有的 style 部分
-
-<li
-  className="task-item"
-  style={{
-    position: "relative",
-    background: (() => {
-      // 如果有标签，使用第一个标签的浅色版本
-      if (task.tags && task.tags.length > 0) {
-        const tagColor = task.tags[0].color;
-        // 将颜色转换为半透明版本 (20% 透明度)
-        // 如果是 hex 格式 (#ff4444)，转换为 rgba
-        const hexToRgba = (hex, alpha) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        };
-        
-        // 检查是否是 hex 颜色格式
-        if (tagColor && tagColor.startsWith('#')) {
-          return hexToRgba(tagColor, 0.10); // 15% 透明度，非常浅
-        }
-        // 如果是其他格式，直接使用带透明度的颜色
-        return tagColor ? tagColor.replace(')', ', 0.15)').replace('rgb', 'rgba') : (task.pinned ? "#fff9e6" : "#fff");
-      }
-      // 如果没有标签，使用原来的背景色
-      return task.pinned ? "#fff9e6" : "#fff";
-    })(),
-    borderRadius: 6,
-    minHeight: "24px",
-    marginBottom: 4,
-    padding: "8px",
-    border: task.tags && task.tags.length > 0 
-      ? `1px solid ${task.tags[0].color}`  // 边框使用标签原色
-      : "0.5px solid #e0e0e0",
-  }}
->
+    <li
+      className="task-item"
+      style={{
+        position: "relative",
+        background: (() => {
+          if (task.tags && task.tags.length > 0) {
+            const tagColor = task.tags[0].color;
+            const hexToRgba = (hex, alpha) => {
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            };
+            if (tagColor && tagColor.startsWith('#')) {
+              return hexToRgba(tagColor, 0.10);
+            }
+            return tagColor ? tagColor.replace(')', ', 0.15)').replace('rgb', 'rgba') : (task.pinned ? "#fff9e6" : "#fff");
+          }
+          return task.pinned ? "#fff9e6" : "#fff";
+        })(),
+        borderRadius: 6,
+        minHeight: "24px",
+        marginBottom: 4,
+        padding: "8px",
+        border: task.tags && task.tags.length > 0 
+          ? `1px solid ${task.tags[0].color}`
+          : "0.5px solid #e0e0e0",
+      }}
+    >
       {/* 第一行：任务内容 + 复选框 */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
         <input
@@ -8558,7 +8383,7 @@ const handleProgressAdjust = (increment) => {
           style={{ marginTop: "2px" }}
         />
         
-        {/* 任务文字和标签容器 */}
+        {/* 任务文字 */}
         <div style={{ display: "flex", alignItems: "center", flex: 1, flexWrap: "wrap", gap: "4px" }}>
           <div
             onClick={(e) => {
@@ -8581,681 +8406,684 @@ const handleProgressAdjust = (increment) => {
             {task.isWeekTask && " 🌟"}
           </div>
           
-        {/* 常规任务标签  */}
-{task.isRegularTask && task.targetCategory && (
-  <span style={{
-    color: (() => {
-      // 如果是校内分类且有子分类，使用子分类的颜色逻辑
-      if (task.targetCategory === "校内" && task.targetSubCategory) {
-        // 给不同子分类分配纯正的颜色
-        const subCategoryColors = {
-          "数学": "#0000FF", // 正蓝
-          "语文": "#FF0000", // 正红
-          "英语": "#008000", // 正绿
-          "运动": "#FFA500", // 正橙
-          "科学": "#800080", // 正紫
-          "艺术": "#FFC0CB", // 粉红
-          "编程": "#00FFFF"  // 正青
-        };
-        return subCategoryColors[task.targetSubCategory] || "#000000"; // 默认黑色
-      }
-      
-      // 主要分类的纯正配色
-      const categoryColors = {
-        "语文": "#FF0000",   // 正红
-        "数学": "#0000FF",   // 正蓝
-        "英语": "#008000",   // 正绿
-        "运动": "#FFA500",   // 正橙
-        "化学": "#FFA500",   // 正橙
-        "生物": "#00FFFF",   // 正青
-        "历史": "#800000",   // 深红
-        "地理": "#FFFF00",   // 正黄
-        "政治": "#FF00FF",   // 正品红
-        "体育": "#FF4500",   // 橙红
-        "美术": "#FF69B4",   // 粉红
-        "音乐": "#FFD700",   // 金色
-        "科学": "#008080",   // 深青
-        "技术": "#000080",   // 深蓝
-        "其他": "#808080"    // 灰色
-      };
-      
-      return categoryColors[task.targetCategory] || "#FF0000"; // 默认红色
-    })(),
-    fontSize: "12px",
-    fontWeight: "600",
-    whiteSpace: "nowrap",
-    lineHeight: 1.4
-  }}>
-    #{task.targetCategory === "校内" && task.targetSubCategory 
-      ? `校内/${task.targetSubCategory}` 
-      : task.targetCategory}
-  </span>
-)}
+          {/* 常规任务标签 */}
+          {task.isRegularTask && task.targetCategory && (
+            <span style={{
+              color: (() => {
+                if (task.targetCategory === "校内" && task.targetSubCategory) {
+                  const subCategoryColors = {
+                    "数学": "#0000FF",
+                    "语文": "#FF0000",
+                    "英语": "#008000",
+                    "运动": "#FFA500",
+                    "科学": "#800080",
+                    "艺术": "#FFC0CB",
+                    "编程": "#00FFFF"
+                  };
+                  return subCategoryColors[task.targetSubCategory] || "#000000";
+                }
+                const categoryColors = {
+                  "语文": "#FF0000",
+                  "数学": "#0000FF",
+                  "英语": "#008000",
+                  "运动": "#FFA500",
+                  "化学": "#FFA500",
+                  "生物": "#00FFFF",
+                  "历史": "#800000",
+                  "地理": "#FFFF00",
+                  "政治": "#FF00FF",
+                  "体育": "#FF4500",
+                  "美术": "#FF69B4",
+                  "音乐": "#FFD700",
+                  "科学": "#008080",
+                  "技术": "#000080",
+                  "其他": "#808080"
+                };
+                return categoryColors[task.targetCategory] || "#FF0000";
+              })(),
+              fontSize: "12px",
+              fontWeight: "600",
+              whiteSpace: "nowrap",
+              lineHeight: 1.4
+            }}>
+              #{task.targetCategory === "校内" && task.targetSubCategory 
+                ? `校内/${task.targetSubCategory}` 
+                : task.targetCategory}
+            </span>
+          )}
 
-{/* 极简版小叉叉 - 修复删除功能 */}
-
-
-
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
-      console.log('删除按钮被点击，任务:', task);
-      // 添加安全检查
-      if (typeof onDeleteTask === 'function') {
-        onDeleteTask(task, 'today');
-      } else {
-        console.error('onDeleteTask 不是函数！', onDeleteTask);
-        alert('删除功能暂时不可用，请刷新页面重试');
-      }
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    color: '#f5f5f5',
-    cursor: 'pointer',
-    fontSize: '16px',
-    padding: '0 4px',
-    marginLeft: 'auto',
-    lineHeight: 1
-  }}
-  title="删除任务"
->
-  ×
-</button>
-
+          {/* 删除按钮 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
+                if (typeof onDeleteTask === 'function') {
+                  onDeleteTask(task, 'today');
+                } else {
+                  console.error('onDeleteTask 不是函数！', onDeleteTask);
+                  alert('删除功能暂时不可用，请刷新页面重试');
+                }
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#f5f5f5',
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: '0 4px',
+              marginLeft: 'auto',
+              lineHeight: 1
+            }}
+            title="删除任务"
+          >
+            ×
+          </button>
         </div>
       </div>
-
-
-     
 
       {/* 第二行：备注和感想 */}
-{(task.note || task.reflection) && (
-  <div style={{ 
-    marginLeft: "20px", 
-    marginBottom: 4,
-    position: "relative"
-  }}>
-    {/* 备注 */}
-    {task.note && (
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      onOpenEditModal(task);
-    }}
-    style={{
-      fontSize: 12,
-      color: "#666",
-      cursor: "pointer",
-      backgroundColor: 'transparent',
-      lineHeight: "1.3",
-      whiteSpace: "pre-wrap",
-      marginBottom: task.reflection ? "2px" : "0",
-    }}
-  >
-    {task.note.split('**[图片]**').map((part, index, array) => (
-      <span key={index}>
-        {part}
-        {index < array.length - 1 && (
-          <span style={{ color: '#ff4444' }}>[图片]</span>
-        )}
-      </span>
-    ))}
-  </div>
-)}
-    
-    {/* 感想 */}
-    {task.reflection && (
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenEditModal(task);
-          const newReflection = window.prompt("编辑感想", task.reflection);
-          if (newReflection !== null) {
-            onEditReflection(task, newReflection);
-          }
-        }}
-        style={{
-          fontSize: 12,
-          color: "#000",
-          cursor: "pointer",
-          backgroundColor: '#fff9c4',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          lineHeight: "1.3",
-          whiteSpace: "pre-wrap",
-          border: '1px solid #ffd54f',
-          marginBottom: "4px",
-        }}
-      >
-        💭 {task.reflection}
-      </div>
-    )}
-
-    {/* 时间信息行 - 计划时间、提醒时间、计时器 */}
-    {/* 时间信息行 - 计划时间、提醒时间、计时器、标签 */}
-<div style={{
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginTop: 4,
-  gap: 8,
-  flexWrap: "wrap"
-}}>
-  {/* 左侧：计划时间、提醒时间、标签 */}
-  <div style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    flex: 1,
-    minWidth: 0,
-    flexWrap: "wrap"
-  }}>
-    {/* 计划时间 */}
-    {task.scheduledTime && (
-      <span
-        style={{
-          fontSize: 11,
-          color: "#666",
-          backgroundColor: "#f0f0f0",
-          padding: "2px 6px",
-          borderRadius: 4,
-          border: "1px solid #e0e0e0",
-          whiteSpace: "nowrap",
-          display: "flex",
-          alignItems: "center",
-          gap: 2
-        }}
-        title="计划时间"
-      >
-        ⏰ {task.scheduledTime}
-      </span>
-    )}
-
-    {/* 提醒时间 */}
-    {task.reminderTime && (
-      <span
-        style={{
-          fontSize: 11,
-          color: "#666",
-          backgroundColor: "#fff0f0",
-          padding: "2px 6px",
-          borderRadius: 4,
-          border: "1px solid #ffcccc",
-          whiteSpace: "nowrap",
-          display: "flex",
-          alignItems: "center",
-          gap: 2
-        }}
-        title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
-      >
-        🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
-      </span>
-    )}
-
-
-
-
-    {/* 标签 - 移动到时间行 */}
-    {task.tags && task.tags.length > 0 && (
-      <div style={{
-        display: 'flex',
-        gap: 3,
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
-        {task.tags.map((tag, index) => (
-          <span
-            key={index}
-            style={{
-              fontSize: 9,
-              padding: '2px 6px',
-              backgroundColor: tag.color,
-              color: '#fff',
-              borderRadius: 10,
-              border: 'none',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: '1.2'
-            }}
-            title={tag.name}
-          >
-            {tag.name}
-          </span>
-        ))}
-      </div>
-    )}
-  </div>
-
- {/* 右侧：只保留循环图标，删除时间显示 */}
-<div style={{
-  display: "flex",
-  alignItems: "center",
-  gap: 4,
-  flexShrink: 0
-}}>
-  {/* 循环图标 */}
-  {task.isRepeating && (
-    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-  )}
-  {/* 时间显示已删除 */}
-</div>
-</div>
-  </div>
-)}
-
-{/* 如果没有备注和感想，时间信息单独一行显示 */}
-{!task.note && !task.reflection && (
-  <div style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-    marginLeft: "20px",
-    gap: 8,
-    flexWrap: "wrap"
-  }}>
-    {/* 左侧：计划时间和提醒时间 */}
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      flex: 1,
-      minWidth: 0
-    }}>
-      {/* 计划时间 */}
-      {task.scheduledTime && (
-        <span
-          style={{
-            fontSize: 11,
-            color: "#666",
-            backgroundColor: "#f0f0f0",
-            padding: "2px 6px",
-            borderRadius: 4,
-            border: "1px solid #e0e0e0",
-            whiteSpace: "nowrap",
-            display: "flex",
-            alignItems: "center",
-            gap: 2
-          }}
-          title="计划时间"
-        >
-          ⏰ {task.scheduledTime}
-        </span>
-      )}
-
-      {/* 提醒时间 */}
-      {task.reminderTime && (
-        <span
-          style={{
-            fontSize: 11,
-            color: "#666",
-            backgroundColor: "#fff0f0",
-            padding: "2px 6px",
-            borderRadius: 4,
-            border: "1px solid #ffcccc",
-            whiteSpace: "nowrap",
-            display: "flex",
-            alignItems: "center",
-            gap: 2
-          }}
-          title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
-        >
-          🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
-        </span>
-      )}
-    </div>
-
-    {/* 右侧：计时器区域 */}
-    {/* 右侧：只保留循环图标，删除时间显示 */}
-<div style={{
-  display: "flex",
-  alignItems: "center",
-  gap: 4
-}}>
-  {/* 循环图标 */}
-  {task.isRepeating && (
-    <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-  )}
-  {/* 时间显示已删除 */}
-</div>
-  </div>
-)}
-
-
-
-{/* 进度条和其他内容 */}
-{task.progress && task.progress.target > 0 && (
-  <div style={{ marginTop: 6 }}>
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowProgressControls(!showProgressControls);
-      }}
-      style={{ cursor: 'pointer' }}
-    >
-      <div style={{
-        width: '100%',
-        height: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 5,
-        overflow: 'hidden',
-        marginBottom: 6
-      }}>
-        <div style={{
-          width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
-          height: '100%',
-          backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
-          borderRadius: 5,
-          transition: 'width 0.3s ease'
-        }} />
-      </div>
-    </div>
-
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 0,
-      height: '24px'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        fontSize: 11.5,
-        color: '#666'
-      }}>
-        <span>{(() => {
-          const current = Number(task.progress.current) || 0;
-          const initial = Number(task.progress.initial) || 0;
-          const target = Number(task.progress.target) || 0;
-          const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
-          return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
-        })()}</span>
-        <span>|</span>
-        <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
-      </div>
-
-      {showProgressControls ? (
-        <div style={{
-          display: 'flex',
-          gap: 4,
-          width: '68px',
-          justifyContent: 'flex-end'
-        }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProgressAdjust(-1);
-            }}
-            style={{
-              padding: '1px 6px',
-              fontSize: 10,
-              border: '1px solid #ccc',
-              borderRadius: 3,
-              backgroundColor: '#fff',
-              color: '#333',
-              cursor: 'pointer',
-              minWidth: '26px',
-              height: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            -
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProgressAdjust(1);
-            }}
-            style={{
-              padding: '1px 6px',
-              fontSize: 10,
-              border: '1px solid #ccc',
-              borderRadius: 3,
-              backgroundColor: '#fff',
-              color: '#333',
-              cursor: 'pointer',
-              minWidth: '26px',
-              height: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            +
-          </button>
-        </div>
-      ) : (
-        <div style={{ width: '60px' }} />
-      )}
-    </div>
-  </div>
-)}
-
-{/* 备注、感想和子任务的容器 */}
-<div style={{ marginLeft: "20px" }}>
-  {task.subTasks && task.subTasks.length > 0 && (
-    <div style={{ 
-      marginTop: (task.note || task.reflection) ? 2 : -2,
-      marginBottom: 0,
-      borderLeft: '2px solid #e0e0e0', 
-      paddingLeft: 8
-    }}>
-      {task.subTasks.map((subTask, index) => (
-        <div key={index} style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          gap: 1,
+      {(task.note || task.reflection) && (
+        <div style={{ 
+          marginLeft: "20px", 
           marginBottom: 4,
-          fontSize: 13, 
-          color: task.done ? '#999' : '#666',
-          minHeight: '18px'
+          position: "relative"
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <input
-              type="checkbox"
-              checked={subTask.done}
-              onChange={() => onToggleSubTask(task, index)}
-              style={{ transform: 'scale(0.8)' }}
-            />
-            
-            {editingSubTaskIndex === index ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <input
-                  type="text"
-                  value={editSubTaskText}
-                  onChange={(e) => setEditSubTaskText(e.target.value)}
-                  onBlur={saveEditSubTask}
-                  onKeyDown={handleKeyPress}
-                  autoFocus
-                  style={{
-                    padding: '1px 4px',
-                    border: '1px solid #1a73e8',
-                    borderRadius: '3px',
-                    fontSize: '13px',
-                    outline: 'none',
-                    height: '20px'
-                  }}
-                />
-                {/* 编辑模式下也显示备注 */}
-                {subTask.note && (
-                  <div style={{ 
-                    fontSize: '11px', 
-                    color: '#333',
-                    marginLeft: '0px',
-                    padding: '2px 6px',
-                    backgroundColor: '#fff9c4',
-                    borderRadius: '3px',
-                    border: '1px solid #ffd54f',
-                    lineHeight: '1.3'
-                  }}>
-                    💭 {subTask.note}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span 
-                onClick={() => startEditSubTask(index, subTask.text, subTask.note)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const newNote = window.prompt("添加备注", subTask.note || "");
-                  if (newNote !== null) {
-                    onEditSubTask(task, index, subTask.text, newNote);
-                  }
-                }}
-                style={{ 
-                  textDecoration: "none",
-                  cursor: 'pointer',
-                  flex: 1,
-                  padding: '3px 4px 1px 4px',
-                  borderRadius: '3px',
-                  transition: 'background-color 0.2s',
-                  minHeight: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  lineHeight: '1.5'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                title="左键编辑文本，右键添加备注"
-              >
-                {subTask.text}
-              </span>
-            )}
-          </div>
+          {/* 备注 */}
+          {task.note && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditModal(task);
+              }}
+              style={{
+                fontSize: 12,
+                color: "#666",
+                cursor: "pointer",
+                backgroundColor: 'transparent',
+                lineHeight: "1.3",
+                whiteSpace: "pre-wrap",
+                marginBottom: task.reflection ? "2px" : "0",
+              }}
+            >
+              {task.note.split('**[图片]**').map((part, index, array) => (
+                <span key={index}>
+                  {part}
+                  {index < array.length - 1 && (
+                    <span style={{ color: '#ff4444' }}>[图片]</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
           
-          {/* 非编辑模式下备注显示在子任务下面 - 内联编辑版本 */}
-          {editingSubTaskIndex !== index && subTask.note && (
-            <div style={{ 
-              marginLeft: '20px'
+          {/* 感想 */}
+          {task.reflection && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditModal(task);
+                const newReflection = window.prompt("编辑感想", task.reflection);
+                if (newReflection !== null) {
+                  onEditReflection(task, newReflection);
+                }
+              }}
+              style={{
+                fontSize: 12,
+                color: "#000",
+                cursor: "pointer",
+                backgroundColor: '#fff9c4',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                lineHeight: "1.3",
+                whiteSpace: "pre-wrap",
+                border: '1px solid #ffd54f',
+                marginBottom: "4px",
+              }}
+            >
+              💭 {task.reflection}
+            </div>
+          )}
+
+          {/* 时间信息行 - 计划时间、提醒时间、标签 */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 4,
+            gap: 8,
+            flexWrap: "wrap"
+          }}>
+            {/* 左侧：计划时间、提醒时间、标签 */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              flex: 1,
+              minWidth: 0,
+              flexWrap: "wrap"
             }}>
-              {editingSubTaskNoteIndex === index ? (
-                <input
-                  type="text"
-                  defaultValue={subTask.note}
-                  onBlur={(e) => {
-                    const newNote = e.target.value.trim();
-                    if (newNote !== subTask.note) {
-                      onEditSubTask(task, index, subTask.text, newNote);
-                    }
-                    setEditingSubTaskNoteIndex(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const newNote = e.target.value.trim();
-                      if (newNote !== subTask.note) {
-                        onEditSubTask(task, index, subTask.text, newNote);
-                      }
-                      setEditingSubTaskNoteIndex(null);
-                    } else if (e.key === 'Escape') {
-                      setEditingSubTaskNoteIndex(null);
-                    }
-                  }}
-                  autoFocus
+              {/* 计划时间 */}
+              {task.scheduledTime && (
+                <span
                   style={{
-                    fontSize: '10px',
-                    padding: '2px 6px',
-                    border: '1px solid #1a73e8',
-                    borderRadius: '3px',
-                    outline: 'none',
-                    width: '100%',
-                    backgroundColor: '#fff9c4'
+                    fontSize: 11,
+                    color: "#666",
+                    backgroundColor: "#f0f0f0",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    border: "1px solid #e0e0e0",
+                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2
                   }}
-                />
-              ) : (
-                <div 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingSubTaskNoteIndex(index);
-                  }}
-                  style={{ 
-                    fontSize: '11px', 
-                    color: '#333',
-                    padding: '2px 6px',
-                    backgroundColor: '#fff9c4',
-                    borderRadius: '3px',
-                    border: '1px solid #ffd54f',
-                    lineHeight: '1.3',
-                    cursor: 'pointer'
-                  }}
-                  title="点击编辑备注"
+                  title="计划时间"
                 >
-                  💭 {subTask.note}
+                  ⏰ {task.scheduledTime}
+                </span>
+              )}
+
+              {/* 提醒时间 */}
+              {task.reminderTime && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#666",
+                    backgroundColor: "#fff0f0",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    border: "1px solid #ffcccc",
+                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2
+                  }}
+                  title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+                >
+                  🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+                </span>
+              )}
+
+              {/* 标签 - 显示在时间旁边 */}
+              {task.tags && task.tags.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  gap: 3,
+                  flexWrap: 'wrap',
+                  alignItems: 'center'
+                }}>
+                  {task.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        fontSize: 9,
+                        padding: '2px 6px',
+                        backgroundColor: tag.color,
+                        color: '#fff',
+                        borderRadius: 10,
+                        border: 'none',
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        lineHeight: '1.2'
+                      }}
+                      title={tag.name}
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
-          )}
+
+            {/* 右侧：循环图标 */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              flexShrink: 0
+            }}>
+              {task.isRepeating && (
+                <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+              )}
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
-  )}
-</div>
+      )}
 
-{task.image && (
-  <div style={{ marginTop: 4, marginBottom: 4, position: 'relative', display: 'inline-block' }}>
-    <img
-      src={task.image}
-      alt="任务图片"
-      onClick={(e) => {
-        e.stopPropagation();
-        onShowImageModal(task.image);
-      }}
-      style={{
-        maxWidth: "100%",
-        maxHeight: "100px",
-        borderRadius: 4,
-        cursor: "zoom-in"
-      }}
-    />
-    {/* 添加删除图片按钮 */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        if (window.confirm('确定要删除这张图片吗？')) {
-          // 调用父组件传递的删除函数
-          if (onDeleteImage) {
-            onDeleteImage(task);
-          }
-        }
-      }}
-      style={{
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        background: 'rgba(255,255,255,0.9)',
-        border: 'none',
-        borderRadius: '50%',
-        width: '20px',
-        height: '20px',
-        cursor: 'pointer',
-        fontSize: '12px',
-        color: '#ff4444',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-      }}
-      title="删除图片"
-    >
-      ×
-    </button>
-  </div>
-)}
+      {/* 如果没有备注和感想，时间信息单独一行显示 */}
+      {!task.note && !task.reflection && (
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 4,
+          marginLeft: "20px",
+          gap: 8,
+          flexWrap: "wrap"
+        }}>
+          {/* 左侧：计划时间、提醒时间、标签 */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flex: 1,
+            minWidth: 0
+          }}>
+            {/* 计划时间 */}
+            {task.scheduledTime && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#666",
+                  backgroundColor: "#f0f0f0",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #e0e0e0",
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2
+                }}
+                title="计划时间"
+              >
+                ⏰ {task.scheduledTime}
+              </span>
+            )}
 
+            {/* 提醒时间 */}
+            {task.reminderTime && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#666",
+                  backgroundColor: "#fff0f0",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #ffcccc",
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2
+                }}
+                title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+              >
+                🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+              </span>
+            )}
 
+            {/* 标签 - 显示在时间旁边 */}
+            {task.tags && task.tags.length > 0 && (
+              <div style={{
+                display: 'flex',
+                gap: 3,
+                flexWrap: 'wrap',
+                alignItems: 'center'
+              }}>
+                {task.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      fontSize: 9,
+                      padding: '2px 6px',
+                      backgroundColor: tag.color,
+                      color: '#fff',
+                      borderRadius: 10,
+                      border: 'none',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: '1.2'
+                    }}
+                    title={tag.name}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
-</li>
-);
+          {/* 右侧：循环图标 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {task.isRepeating && (
+              <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 进度条 */}
+      {task.progress && task.progress.target > 0 && (
+        <div style={{ marginTop: 6 }}>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowProgressControls(!showProgressControls);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            <div style={{
+              width: '100%',
+              height: 10,
+              backgroundColor: '#f0f0f0',
+              borderRadius: 5,
+              overflow: 'hidden',
+              marginBottom: 6
+            }}>
+              <div style={{
+                width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
+                height: '100%',
+                backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
+                borderRadius: 5,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 0,
+            height: '24px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 11.5,
+              color: '#666'
+            }}>
+              <span>{(() => {
+                const current = Number(task.progress.current) || 0;
+                const initial = Number(task.progress.initial) || 0;
+                const target = Number(task.progress.target) || 0;
+                const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
+                return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
+              })()}</span>
+              <span>|</span>
+              <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
+            </div>
+
+            {showProgressControls ? (
+              <div style={{
+                display: 'flex',
+                gap: 4,
+                width: '68px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProgressAdjust(-1);
+                  }}
+                  style={{
+                    padding: '1px 6px',
+                    fontSize: 10,
+                    border: '1px solid #ccc',
+                    borderRadius: 3,
+                    backgroundColor: '#fff',
+                    color: '#333',
+                    cursor: 'pointer',
+                    minWidth: '26px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  -
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProgressAdjust(1);
+                  }}
+                  style={{
+                    padding: '1px 6px',
+                    fontSize: 10,
+                    border: '1px solid #ccc',
+                    borderRadius: 3,
+                    backgroundColor: '#fff',
+                    color: '#333',
+                    cursor: 'pointer',
+                    minWidth: '26px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div style={{ width: '60px' }} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 子任务区域 */}
+      <div style={{ marginLeft: "20px" }}>
+        {task.subTasks && task.subTasks.length > 0 && (
+          <div style={{ 
+            marginTop: (task.note || task.reflection) ? 2 : -2,
+            marginBottom: 0,
+            borderLeft: '2px solid #e0e0e0', 
+            paddingLeft: 8
+          }}>
+            {task.subTasks.map((subTask, index) => (
+              <div key={index} style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: 1,
+                marginBottom: 4,
+                fontSize: 13, 
+                color: task.done ? '#999' : '#666',
+                minHeight: '18px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={subTask.done}
+                    onChange={() => onToggleSubTask(task, index)}
+                    style={{ transform: 'scale(0.8)' }}
+                  />
+                  
+                  {editingSubTaskIndex === index ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <input
+                        type="text"
+                        value={editSubTaskText}
+                        onChange={(e) => setEditSubTaskText(e.target.value)}
+                        onBlur={saveEditSubTask}
+                        onKeyDown={handleKeyPress}
+                        autoFocus
+                        style={{
+                          padding: '1px 4px',
+                          border: '1px solid #1a73e8',
+                          borderRadius: '3px',
+                          fontSize: '13px',
+                          outline: 'none',
+                          height: '20px'
+                        }}
+                      />
+                      {subTask.note && (
+                        <div style={{ 
+                          fontSize: '11px', 
+                          color: '#333',
+                          marginLeft: '0px',
+                          padding: '2px 6px',
+                          backgroundColor: '#fff9c4',
+                          borderRadius: '3px',
+                          border: '1px solid #ffd54f',
+                          lineHeight: '1.3'
+                        }}>
+                          💭 {subTask.note}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span 
+                      onClick={() => startEditSubTask(index, subTask.text)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const newNote = window.prompt("添加备注", subTask.note || "");
+                        if (newNote !== null) {
+                          onEditSubTask(task, index, subTask.text, newNote);
+                        }
+                      }}
+                      style={{ 
+                        textDecoration: "none",
+                        cursor: 'pointer',
+                        flex: 1,
+                        padding: '3px 4px 1px 4px',
+                        borderRadius: '3px',
+                        transition: 'background-color 0.2s',
+                        minHeight: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        lineHeight: '1.5'
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                      onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                      title="左键编辑文本，右键添加备注"
+                    >
+                      {subTask.text}
+                    </span>
+                  )}
+                </div>
+                
+                {/* 非编辑模式下备注显示 */}
+                {editingSubTaskIndex !== index && subTask.note && (
+                  <div style={{ marginLeft: '20px' }}>
+                    {editingSubTaskNoteIndex === index ? (
+                      <input
+                        type="text"
+                        defaultValue={subTask.note}
+                        onBlur={(e) => {
+                          const newNote = e.target.value.trim();
+                          if (newNote !== subTask.note) {
+                            onEditSubTask(task, index, subTask.text, newNote);
+                          }
+                          setEditingSubTaskNoteIndex(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const newNote = e.target.value.trim();
+                            if (newNote !== subTask.note) {
+                              onEditSubTask(task, index, subTask.text, newNote);
+                            }
+                            setEditingSubTaskNoteIndex(null);
+                          } else if (e.key === 'Escape') {
+                            setEditingSubTaskNoteIndex(null);
+                          }
+                        }}
+                        autoFocus
+                        style={{
+                          fontSize: '10px',
+                          padding: '2px 6px',
+                          border: '1px solid #1a73e8',
+                          borderRadius: '3px',
+                          outline: 'none',
+                          width: '100%',
+                          backgroundColor: '#fff9c4'
+                        }}
+                      />
+                    ) : (
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSubTaskNoteIndex(index);
+                        }}
+                        style={{ 
+                          fontSize: '11px', 
+                          color: '#333',
+                          padding: '2px 6px',
+                          backgroundColor: '#fff9c4',
+                          borderRadius: '3px',
+                          border: '1px solid #ffd54f',
+                          lineHeight: '1.3',
+                          cursor: 'pointer'
+                        }}
+                        title="点击编辑备注"
+                      >
+                        💭 {subTask.note}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 图片显示 */}
+      {task.image && (
+        <div style={{ marginTop: 4, marginBottom: 4, position: 'relative', display: 'inline-block' }}>
+          <img
+            src={task.image}
+            alt="任务图片"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowImageModal(task.image);
+            }}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100px",
+              borderRadius: 4,
+              cursor: "zoom-in"
+            }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm('确定要删除这张图片吗？')) {
+                if (onDeleteImage) {
+                  onDeleteImage(task);
+                }
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              background: 'rgba(255,255,255,0.9)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '20px',
+              height: '20px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              color: '#ff4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+            }}
+            title="删除图片"
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </li>
+  );
 };
+  
+
+
+
+
+
+
 
 
 
@@ -9341,6 +9169,18 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   subCategories: []
 })));
 
+
+
+// 打开新建模板弹窗
+const handleOpenTemplateModal = () => {
+  setTemplateFormData({
+    text: '',
+    category: '校内',
+    subCategory: ''
+  });
+  setEditingTemplate(null);
+  setShowTemplateModal(true);
+};
 
 
 
