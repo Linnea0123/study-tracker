@@ -1612,199 +1612,6 @@ const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
 
 
-// 常规任务添加模态框
-const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
-  const [taskText, setTaskText] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]?.name || '语文');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('');
-
-  const handleSave = () => {
-    if (!taskText.trim()) {
-      alert('请输入任务内容');
-      return;
-    }
-    onSave(taskText.trim(), selectedCategory, selectedSubCategory);
-    setTaskText('');
-    setSelectedCategory(categories[0]?.name || '语文');
-    setSelectedSubCategory('');
-    onClose();
-  };
-
-  if (!visible) return null;
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
-    }} onClick={onClose}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '10px',
-        width: '90%',
-        maxWidth: '350px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
-        <h3 style={{
-          textAlign: 'center',
-          marginBottom: '20px',
-          color: '#FF9800',
-          fontSize: '18px'
-        }}>
-          ➕ 添加常规任务
-        </h3>
-
-        {/* 任务内容输入 */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '5px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            任务内容
-          </label>
-          <input
-            type="text"
-            value={taskText}
-            onChange={(e) => setTaskText(e.target.value)}
-            placeholder="输入任务内容..."
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box'
-            }}
-            autoFocus
-          />
-        </div>
-
-        {/* 分类选择 */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '5px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            完成后的分类
-          </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setSelectedSubCategory(''); // 切换分类时清空子类别
-            }}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            {categories
-              .filter(c => c.name !== "常规任务" && c.name !== "本周任务")
-              .map(c => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
-        </div>
-
-        {/* 子类别选择 - 仅校内分类显示 */}
-        {selectedCategory === '校内' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '5px',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              color: '#333'
-            }}>
-              子类别（可选）
-            </label>
-            <select
-              value={selectedSubCategory}
-              onChange={(e) => setSelectedSubCategory(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ccc',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="">无子类别</option>
-              {categories.find(c => c.name === '校内')?.subCategories?.map(subCat => (
-                <option key={subCat} value={subCat}>
-                  {subCat}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* 按钮区域 */}
-        <div style={{
-          display: 'flex',
-          gap: '10px'
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            取消
-          </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#FF9800',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            添加
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -2188,13 +1995,32 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync || false);
   const [gistId, setGistId] = useState(config.gistId || '');
 
-  const handleSave = () => {
-    onSave({
-      token: token.trim(),
-      autoSync,
-      gistId: gistId.trim()
-    });
+ const handleSave = () => {
+  if (templateName.trim() === '' || templateContent.trim() === '') {
+    alert('模板名称和任务内容不能为空！');
+    return;
+  }
+
+  const newTemplate = {
+    id: Date.now().toString(),
+    name: templateName.trim(),
+    text: templateContent.trim(),
+    content: templateContent.trim(),
+    category: templateCategory,
+    subCategory: templateSubCategory,
+    tags: templateTags || [],
+    scheduledTime: templateScheduledTime,
+    progress: templateProgress,
+    repeatFrequency: repeatFrequency,
+    repeatDays: repeatDays,
+    image: templateImage,
+    isTemplate: true
   };
+
+  onSave(newTemplate);
+  resetForm();
+  onClose();  // 添加这行，关闭模态框
+};
 
   return (
     <div style={{
@@ -4082,46 +3908,50 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
 
   const fileInputRef = useRef(null);
 
-  const handleSave = () => {
-    if (templateName.trim() === '' || templateContent.trim() === '') {
-      alert('模板名称和任务内容不能为空！');
-      return;
-    }
 
-    const newTemplate = {
-      name: templateName.trim(),
-      category: templateCategory,
-      content: templateContent.trim(),
-      subCategory: templateSubCategory,
-      tags: templateTags || [],
-      scheduledTime: templateScheduledTime,
-      progress: templateProgress,
-      repeatFrequency: repeatFrequency,
-      repeatDays: repeatDays,
-      image: templateImage,
-      // 模板特有的字段
-      isTemplate: true,
-      templateId: Date.now().toString()
-    };
+const resetForm = () => {
+  setTemplateContent('');  // 只清空内容
+  setTemplateTags([]);
+  setTemplateScheduledTime('');
+  setTemplateSubCategory('');
+  setTemplateProgress({
+    initial: 0,
+    current: 0,
+    target: 0,
+    unit: "%"
+  });
+  setRepeatFrequency('');
+  setRepeatDays([false, false, false, false, false, false, false]);
+  setTemplateImage(null);
+};
 
-    onSave(newTemplate);
-    
-    // 重置表单
-    setTemplateName('');
-    setTemplateContent('');
-    setTemplateTags([]);
-    setTemplateScheduledTime('');
-    setTemplateSubCategory('');
-    setTemplateProgress({
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    });
-    setRepeatFrequency('');
-    setRepeatDays([false, false, false, false, false, false, false]);
-    setTemplateImage(null);
+ const handleSave = () => {
+  if (templateName.trim() === '' || templateContent.trim() === '') {
+    alert('模板名称和任务内容不能为空！');
+    return;
+  }
+
+  const newTemplate = {
+    id: Date.now().toString(),
+    name: templateName.trim(),
+    text: templateContent.trim(),  // 添加 text 字段用于快速添加
+    content: templateContent.trim(),
+    category: templateCategory,
+    subCategory: templateSubCategory,
+    tags: templateTags || [],
+    scheduledTime: templateScheduledTime,
+    progress: templateProgress,
+    repeatFrequency: repeatFrequency,
+    repeatDays: repeatDays,
+    image: templateImage,
+    isTemplate: true
   };
+
+  onSave(newTemplate);
+   onClose(); 
+  // 重置表单
+  resetForm();
+};
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -4325,43 +4155,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
             </div>
           )}
 
-          {/* 模板名称 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              📝 模板名称
-            </label>
-            <input
-              type="text"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="请输入模板名称..."
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#1a73e8';
-                e.target.style.backgroundColor = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e0e0e0';
-                e.target.style.backgroundColor = '#fafafa';
-              }}
-            />
-          </div>
+          
 
           {/* 任务内容 */}
           <div>
@@ -5129,12 +4923,12 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
                       marginBottom: '6px'
                     }}>
                       <span style={{
-                        fontWeight: '600',
-                        fontSize: '13px',
-                        color: '#333'
-                      }}>
-                        {template.name}
-                      </span>
+  fontWeight: '600',
+  fontSize: '13px',
+  color: '#333'
+}}>
+  {template.name || template.text}
+</span>
                       <span style={{
                         fontSize: '11px',
                         padding: '2px 6px',
@@ -5659,34 +5453,133 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     return acc;
   }, {});
 
-  const handleAddTask = () => {
-    if (!newTaskText.trim()) {
-      alert('请输入任务内容');
-      return;
-    }
+ 
 
-    onAddTask({
-      id: Date.now().toString(),
-      text: newTaskText.trim(),
-      category: selectedCategory,
-      subCategory: selectedSubCategory,
-      deadline: deadline,
-      progress: 0,
-      target: target,
-      unit: unit,
-      important: false,
-      note: '',
-      createdAt: new Date().toISOString()
-    });
 
-    setNewTaskText('');
-    setSelectedSubCategory('');
-    setDeadline('');
-    setTarget(100);
-    setUnit('%');
-    setShowAddForm(false);
+
+// 使用模板添加任务
+const handleUseRegularTask = (template) => {
+  console.log('使用模板:', template);
+  
+  // 兼容两种数据格式：模板库的格式 和 常规任务面板的格式
+  let taskText = '';
+  let taskCategory = '';
+  let taskSubCategory = '';
+  
+  if (template.name) {
+    // 来自 TemplateModal 的模板
+    taskText = template.text || template.content;
+    taskCategory = template.category;
+    taskSubCategory = template.subCategory || '';
+  } else {
+    // 来自常规任务面板的模板
+    taskText = template.text;
+    taskCategory = template.category;
+    taskSubCategory = template.subCategory || '';
+  }
+  
+  const newTask = {
+    id: Date.now().toString(),
+    text: taskText,
+    category: taskCategory,
+    subCategory: taskSubCategory,
+    done: false,
+    timeSpent: 0,
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: template.image || null,
+    scheduledTime: template.scheduledTime || "",
+    pinned: false,
+    tags: template.tags || [],
+    progress: template.progress || {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    reminderTime: null,
+    repeatFrequency: template.repeatFrequency || '',
+    repeatDays: template.repeatDays || [false, false, false, false, false, false, false],
+    isRepeating: false
   };
 
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    if (!newTasksByDate[selectedDate]) {
+      newTasksByDate[selectedDate] = [];
+    }
+    newTasksByDate[selectedDate].push(newTask);
+    return newTasksByDate;
+  });
+  
+  // 保存到 localStorage
+  saveMainData('tasks', tasksByDate);
+  console.log('✅ 任务已添加:', newTask);
+};
+
+
+// 添加自定义模板
+const handleAddRegularTaskTemplate = () => {
+  const text = window.prompt('输入任务模板名称:', '');
+  if (!text || !text.trim()) return;
+  
+  const category = window.prompt('选择分类 (校内/语文/数学/英语/运动/科学等):', '校内');
+  if (!category) return;
+  
+  let subCategory = '';
+  if (category === '校内') {
+    subCategory = window.prompt('校内子分类 (数学/语文/英语/运动):', '');
+  }
+  
+  const newTemplate = {
+    id: Date.now().toString(),
+    text: text.trim(),
+    category: category,
+    subCategory: subCategory || ''
+  };
+  
+  setRegularTaskTemplates(prev => [...prev, newTemplate]);
+  localStorage.setItem('regular_task_templates', JSON.stringify([...regularTaskTemplates, newTemplate]));
+  alert(`已添加模板: ${text}`);
+};
+
+// 删除模板
+const handleDeleteRegularTaskTemplate = (index) => {
+  if (window.confirm('确定要删除这个模板吗？')) {
+    const newTemplates = [...regularTaskTemplates];
+    newTemplates.splice(index, 1);
+    setRegularTaskTemplates(newTemplates);
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+  }
+};
+
+// 编辑模板
+const handleEditRegularTaskTemplate = (index) => {
+  const template = regularTaskTemplates[index];
+  const newText = window.prompt('编辑模板名称:', template.text);
+  if (newText && newText.trim()) {
+    const newCategory = window.prompt('编辑分类:', template.category);
+    let newSubCategory = template.subCategory;
+    if (newCategory === '校内') {
+      newSubCategory = window.prompt('编辑子分类:', template.subCategory || '');
+    }
+    
+    const newTemplates = [...regularTaskTemplates];
+    newTemplates[index] = {
+      ...template,
+      text: newText.trim(),
+      category: newCategory || template.category,
+      subCategory: newSubCategory || ''
+    };
+    setRegularTaskTemplates(newTemplates);
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+  }
+};
+
+
+
+  
   // 开始编辑任务
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -7227,52 +7120,33 @@ const [editData, setEditData] = useState({
 
   const fileInputRef = useRef(null);
 
-  const handleSave = () => {
-    if (editData.text.trim() === '') {
-      alert('任务内容不能为空！');
-      return;
-    }
+const handleSave = () => {
+  // 只验证任务内容，不再验证模板名称
+  if (templateContent.trim() === '') {
+    alert('任务内容不能为空！');
+    return;
+  }
 
-    console.log('保存的子任务数据:', editData.subTasks);
-
-    
-    // 构建提醒时间对象
-  // 构建提醒时间对象
-  const reminderTime = {};
-  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
-  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
-  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
-  if (editData.reminderHour) reminderTime.hour = parseInt(editData.reminderHour);
-  if (editData.reminderMinute) reminderTime.minute = parseInt(editData.reminderMinute);
-    
-  
-  // 构建计划时间字符串
-    let scheduledTime = '';
-    if (editData.startHour && editData.startMinute && editData.endHour && editData.endMinute) {
-      const formatTime = (hour, minute) => {
-        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      };
-      scheduledTime = `${formatTime(editData.startHour, editData.startMinute)}-${formatTime(editData.endHour, editData.endMinute)}`;
-    }
-
-  const finalEditData = {
-  ...editData,
-  tags: editData.tags || [],
-  subCategory: editData.subCategory || '',
-  subTasks: editData.subTasks || [],
-  reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-  scheduledTime: scheduledTime,
-  // 确保重复设置被保存
-  repeatFrequency: editData.repeatFrequency || '',
-  repeatDays: editData.repeatDays || [false, false, false, false, false, false, false]
-};
-
-    onSave(finalEditData);
-    onClose();
+  const newTemplate = {
+    id: Date.now().toString(),
+    name: templateContent.trim(),  // 使用任务内容作为模板名称
+    text: templateContent.trim(),
+    content: templateContent.trim(),
+    category: templateCategory,
+    subCategory: templateSubCategory,
+    tags: templateTags || [],
+    scheduledTime: templateScheduledTime,
+    progress: templateProgress,
+    repeatFrequency: repeatFrequency,
+    repeatDays: repeatDays,
+    image: templateImage,
+    isTemplate: true
   };
 
-
-
+  onSave(newTemplate);
+  resetForm();
+  onClose();
+};
 
 
   const handleImageClick = () => {
@@ -9900,7 +9774,16 @@ const RegularTaskModal = ({ visible, onClose, onSave, categories }) => {
 
 
 function App() {
-  // 在现有状态定义区域添加
+
+const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
+const [editingTemplate, setEditingTemplate] = useState(null);
+const [templateFormData, setTemplateFormData] = useState({
+  text: '',
+  category: '校内',
+  subCategory: ''
+});
+  const [showRegularTaskPanel, setShowRegularTaskPanel] = useState(false);
+const [regularTaskTemplates, setRegularTaskTemplates] = useState([]); // 空数组，让用户自己添加
   const [tasksByDate, setTasksByDate] = useState({});
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -9968,6 +9851,127 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   ...cat,
   subCategories: []
 })));
+
+
+ const handleAddTask = () => {
+    if (!newTaskText.trim()) {
+      alert('请输入任务内容');
+      return;
+    }
+
+    onAddTask({
+      id: Date.now().toString(),
+      text: newTaskText.trim(),
+      category: selectedCategory,
+      subCategory: selectedSubCategory,
+      deadline: deadline,
+      progress: 0,
+      target: target,
+      unit: unit,
+      important: false,
+      note: '',
+      createdAt: new Date().toISOString()
+    });
+
+    setNewTaskText('');
+    setSelectedSubCategory('');
+    setDeadline('');
+    setTarget(100);
+    setUnit('%');
+    setShowAddForm(false);
+  };
+
+// 在 App 组件中添加这些函数
+
+// 打开新建模板弹窗
+const handleOpenTemplateModal = () => {
+  setTemplateFormData({
+    text: '',
+    category: '校内',
+    subCategory: ''
+  });
+  setEditingTemplate(null);
+  setShowTemplateModal(true);
+};
+
+
+
+
+
+// 打开编辑模板弹窗
+const handleOpenEditTemplateModal = (template, index) => {
+  setTemplateFormData({
+    text: template.text,
+    category: template.category,
+    subCategory: template.subCategory || ''
+  });
+  setEditingTemplate({ ...template, index });
+  setShowTemplateModal(true);
+};
+
+// 保存模板
+const handleSaveTemplate = () => {
+  if (!templateFormData.text.trim()) {
+    alert('请输入模板名称');
+    return;
+  }
+  
+  const newTemplate = {
+    id: editingTemplate?.id || Date.now().toString(),
+    text: templateFormData.text.trim(),
+    category: templateFormData.category,
+    subCategory: templateFormData.subCategory || ''
+  };
+  
+  if (editingTemplate) {
+    const newTemplates = [...regularTaskTemplates];
+    newTemplates[editingTemplate.index] = newTemplate;
+    setRegularTaskTemplates(newTemplates);
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+  } else {
+    setRegularTaskTemplates(prev => [...prev, newTemplate]);
+    localStorage.setItem('regular_task_templates', JSON.stringify([...regularTaskTemplates, newTemplate]));
+  }
+  
+  setShowTemplateModal(false);
+};
+
+// 使用模板添加任务
+const handleUseRegularTask = (template) => {
+  const newTask = {
+    id: Date.now().toString(),
+    text: template.text,
+    category: template.category,
+    subCategory: template.subCategory || '',
+    done: false,
+    timeSpent: 0,
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: null,
+    scheduledTime: "",
+    pinned: false,
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    reminderTime: null,
+    repeatFrequency: '',
+    repeatDays: [false, false, false, false, false, false, false],
+    isRepeating: false
+  };
+
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    if (!newTasksByDate[selectedDate]) {
+      newTasksByDate[selectedDate] = [];
+    }
+    newTasksByDate[selectedDate].push(newTask);
+    return newTasksByDate;
+  });
+};
 
 
 
@@ -12626,7 +12630,15 @@ useEffect(() => {
     try {
  
 
-
+// 加载常规任务模板
+const savedRegularTemplates = localStorage.getItem('regular_task_templates');
+if (savedRegularTemplates) {
+  try {
+    setRegularTaskTemplates(JSON.parse(savedRegularTemplates));
+  } catch (e) {
+    console.error('加载常规任务模板失败:', e);
+  }
+}
 
 // 在 initializeApp 函数开始处添加这个辅助函数
 const loadDataWithFallback = async (key, fallback) => {
@@ -13364,116 +13376,71 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
 
 
         
-
-
-
-
-const handleAddTask = (template = null) => {
-  console.log('=== 开始添加任务 ===');
-  console.log('template:', template);
-  console.log('repeatConfig:', repeatConfig); // 添加这行来调试
+// 添加自定义模板
+const handleAddRegularTaskTemplate = () => {
+  const text = window.prompt('输入任务模板名称:', '');
+  if (!text || !text.trim()) return;
   
-  let text, category;
-
-  if (template) {
-    text = template.content;
-    category = template.category;
-  } else {
-    text = newTaskText.trim();
-    category = newTaskCategory;
-    if (!text) {
-      alert('请输入任务内容');
-      return;
-    }
+  const category = window.prompt('选择分类 (校内/语文/数学/英语/运动/科学等):', '校内');
+  if (!category) return;
+  
+  let subCategory = '';
+  if (category === '校内') {
+    subCategory = window.prompt('校内子分类 (数学/语文/英语/运动):', '');
   }
-
-  // 构建计划时间字符串
-  let scheduledTime = '';
-  if (repeatConfig.startHour && repeatConfig.startMinute && repeatConfig.endHour && repeatConfig.endMinute) {
-    const formatTime = (hour, minute) => {
-      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    };
-    scheduledTime = `${formatTime(repeatConfig.startHour, repeatConfig.startMinute)}-${formatTime(repeatConfig.endHour, repeatConfig.endMinute)}`;
-  }
-
-  // 构建提醒时间对象
-  const reminderTime = {};
-  if (repeatConfig.reminderYear) reminderTime.year = parseInt(repeatConfig.reminderYear);
-  if (repeatConfig.reminderMonth) reminderTime.month = parseInt(repeatConfig.reminderMonth);
-  if (repeatConfig.reminderDay) reminderTime.day = parseInt(repeatConfig.reminderDay);
-  if (repeatConfig.reminderHour) reminderTime.hour = parseInt(repeatConfig.reminderHour);
-  if (repeatConfig.reminderMinute) reminderTime.minute = parseInt(repeatConfig.reminderMinute);
-
-  const baseTask = {
+  
+  const newTemplate = {
     id: Date.now().toString(),
-    text,
-    category,
-    subCategory: newTaskSubCategory,
-    done: false,
-    timeSpent: 0,
-    subTasks: [],
-    note: "",
-    reflection: "",
-    image: null,
-    scheduledTime: scheduledTime, // 添加计划时间
-    pinned: false,
-    progress: {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    // 添加重复设置和提醒时间
-    reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-    repeatFrequency: repeatConfig.frequency || '',
-    repeatDays: repeatConfig.days || [false, false, false, false, false, false, false],
-    isRepeating: !!repeatConfig.frequency
+    text: text.trim(),
+    category: category,
+    subCategory: subCategory || ''
   };
+  
+  setRegularTaskTemplates(prev => [...prev, newTemplate]);
+  // 保存到 localStorage
+  localStorage.setItem('regular_task_templates', JSON.stringify([...regularTaskTemplates, newTemplate]));
+  alert(`已添加模板: ${text}`);
+};
 
-  console.log('✅ 准备添加任务:', baseTask);
-
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    
-    if (!newTasksByDate[selectedDate]) {
-      newTasksByDate[selectedDate] = [];
-    }
-
-    const existingTask = newTasksByDate[selectedDate].find(
-      task => task.text === text && task.category === category
-    );
-
-    if (!existingTask) {
-      newTasksByDate[selectedDate].push(baseTask);
-      console.log(`✅ 任务已添加到 ${selectedDate}`, baseTask);
-    } else {
-      console.log('⚠️ 任务已存在，跳过添加');
-    }
-
-    return newTasksByDate;
-  });
-
-  if (!template) {
-    setNewTaskText("");
-    setShowAddInput(false);
-    setNewTaskSubCategory('');
-    
-    // 重置重复配置
-    setRepeatConfig({
-      frequency: "",
-      days: [false, false, false, false, false, false, false],
-      startHour: "",
-      startMinute: "",
-      endHour: "",
-      endMinute: "",
-      reminderYear: "",
-      reminderMonth: "",
-      reminderDay: "",
-      reminderHour: "",
-      reminderMinute: "",
-    });
+// 删除模板
+const handleDeleteRegularTaskTemplate = (index) => {
+  if (window.confirm('确定要删除这个模板吗？')) {
+    const newTemplates = [...regularTaskTemplates];
+    newTemplates.splice(index, 1);
+    setRegularTaskTemplates(newTemplates);
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
   }
 };
+
+// 编辑模板
+const handleEditRegularTaskTemplate = (index) => {
+  const template = regularTaskTemplates[index];
+  const newText = window.prompt('编辑模板名称:', template.text);
+  if (newText && newText.trim()) {
+    const newCategory = window.prompt('编辑分类:', template.category);
+    let newSubCategory = template.subCategory;
+    if (newCategory === '校内') {
+      newSubCategory = window.prompt('编辑子分类:', template.subCategory || '');
+    }
+    
+    const newTemplates = [...regularTaskTemplates];
+    newTemplates[index] = {
+      ...template,
+      text: newText.trim(),
+      category: newCategory || template.category,
+      subCategory: newSubCategory || ''
+    };
+    setRegularTaskTemplates(newTemplates);
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+  }
+};
+
+// 使用模板添加任务
+
+
+
+
+
 
 
 // 添加本周任务
@@ -15027,20 +14994,46 @@ const generateMarkdownContent = () => {
 
 
 
-
-
-
-
-  // 添加模板
-  const handleAddTemplate = (template) => {
-    setTemplates(prev => [...prev, template]);
+// 在 App 组件中找到这个函数并替换
+const handleAddTemplate = (template) => {
+  console.log('保存模板:', template);
+  
+  // 更新 templates 状态
+  setTemplates(prev => {
+    const newTemplates = [...prev, template];
+    saveMainData('templates', newTemplates);
+    return newTemplates;
+  });
+  
+  // 同时更新常规任务模板状态
+  const newRegularTemplate = {
+    id: template.id,
+    text: template.name || template.text,  // 使用 name 或 text
+    category: template.category,
+    subCategory: template.subCategory || '',
+    tags: template.tags || []
   };
+  
+  setRegularTaskTemplates(prev => {
+    const newTemplates = [...prev, newRegularTemplate];
+    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+    return newTemplates;
+  });
+  
+  console.log('✅ 模板已同步到常规任务面板');
+};
 
-  // 删除模板
-  const handleDeleteTemplate = (index) => {
-    setTemplates(prev => prev.filter((_, i) => i !== index));
-  };
 
+
+
+// 同时修复 handleDeleteTemplate
+const handleDeleteTemplate = (index) => {
+  setTemplates(prev => {
+    const newTemplates = prev.filter((_, i) => i !== index);
+    saveMainData('templates', newTemplates);
+    return newTemplates;
+  });
+};
   // 使用模板
   const handleUseTemplate = (template) => {
     handleAddTask(template);
@@ -16954,22 +16947,21 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-
-
-{/* 添加任务和批量导入按钮 */}
+{/* 添加任务、常规任务、批量导入按钮 */}
 <div style={{
   display: "flex",
   gap: 10,
   marginTop: 10,
   fontSize: "12px"
 }}>
+  {/* 添加任务按钮 */}
   <div
     onClick={(e) => {
       e.preventDefault();
-      e.stopPropagation();  // 阻止事件冒泡
-      console.log('点击添加任务，当前状态:', showAddInput);  // 添加调试
+      e.stopPropagation();
       setShowAddInput(!showAddInput);
       setShowBulkInput(false);
+      setShowRegularTaskPanel(false);
     }}
     style={{
       flex: 1,
@@ -16984,13 +16976,38 @@ if (isInitialized && todayTasks.length === 0) {
   >
     {showAddInput ? "取消添加" : "添加任务"}
   </div>
+  
+  {/* 常规任务按钮 */}
   <div
     onClick={(e) => {
       e.preventDefault();
-      e.stopPropagation();  // 阻止事件冒泡
-      console.log('点击批量导入，当前状态:', showBulkInput);  // 添加调试
+      e.stopPropagation();
+      setShowRegularTaskPanel(!showRegularTaskPanel);
+      setShowAddInput(false);
+      setShowBulkInput(false);
+    }}
+    style={{
+      flex: 1,
+      padding: 8,
+      backgroundColor: "#FF9800",
+      color: "#fff",
+      borderRadius: 6,
+      cursor: "pointer",
+      textAlign: "center",
+      userSelect: "none"
+    }}
+  >
+    {showRegularTaskPanel ? "取消常规" : "常规任务"}
+  </div>
+  
+  {/* 批量导入按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
       setShowBulkInput(!showBulkInput);
       setShowAddInput(false);
+      setShowRegularTaskPanel(false);
     }}
     style={{
       flex: 1,
@@ -17007,12 +17024,148 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
+
+
+
+
 {/* 添加任务输入框（展开时显示） - 确保这行代码在按钮之后且没有被条件包裹 */}
 {showAddInput && (
   <div ref={addInputRef} style={{ marginTop: 8 }}>
     {/* 输入框内容... */}
   </div>
 )}
+
+{/* 常规任务面板 */}
+{/* 常规任务面板 */}
+{showRegularTaskPanel && (
+  <div style={{
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#fff9e6',
+    borderRadius: 8,
+    border: '1px solid #FF9800'
+  }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12
+    }}>
+      <div style={{ fontWeight: 'bold', color: '#FF9800' }}>
+        📋 我的任务模板 ({regularTaskTemplates.length})
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+  onClick={handleOpenTemplateModal}
+  style={{
+    padding: '4px 8px',
+    backgroundColor: '#FF9800',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontSize: 12
+  }}
+>
+  + 新建模板
+</button>
+      </div>
+    </div>
+    
+    {regularTaskTemplates.length === 0 ? (
+      <div style={{
+        textAlign: 'center',
+        padding: '20px',
+        color: '#999',
+        fontSize: 13
+      }}>
+        暂无模板，点击"新建模板"添加
+      </div>
+    ) : (
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 8,
+        maxHeight: '200px',
+        overflow: 'auto'
+      }}>
+        {regularTaskTemplates.map((template, index) => (
+          <div
+            key={template.id || index}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: '#f5f5f5',
+              borderRadius: 6,
+              padding: '4px 8px',
+              border: '1px solid #e0e0e0'
+            }}
+          >
+            <span
+              onClick={() => handleUseRegularTask(template)}
+              style={{
+                cursor: 'pointer',
+                fontSize: 13,
+                padding: '4px 4px',
+                color: '#333'
+              }}
+              title={`点击添加任务 (${template.category}${template.subCategory ? '/' + template.subCategory : ''})`}
+            >
+              {template.text}
+            </span>
+            <button
+  onClick={() => handleOpenEditTemplateModal(template, index)}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: 12,
+    color: '#666',
+    padding: '2px'
+  }}
+  title="编辑模板"
+>
+  ✏️
+</button>
+            <button
+              onClick={() => {
+                if (window.confirm('确定要删除这个模板吗？')) {
+                  const newTemplates = [...regularTaskTemplates];
+                  newTemplates.splice(index, 1);
+                  setRegularTaskTemplates(newTemplates);
+                  localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                color: '#999',
+                padding: '2px'
+              }}
+              title="删除模板"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+    
+    <div style={{
+      fontSize: 11,
+      color: '#999',
+      marginTop: 8,
+      textAlign: 'center'
+    }}>
+      💡 点击模板名称即可添加到今日任务
+    </div>
+  </div>
+)}
+
+
 
 {/* 批量导入输入框（展开时显示） */}
 {showBulkInput && (
@@ -17021,8 +17174,6 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 )}
 
-
-  
 
       {/* 添加任务输入框（展开时显示） */}
      {/* 添加任务输入框内的功能按钮 */}
