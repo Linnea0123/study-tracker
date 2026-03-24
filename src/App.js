@@ -1995,32 +1995,8 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync || false);
   const [gistId, setGistId] = useState(config.gistId || '');
 
- const handleSave = () => {
-  if (templateName.trim() === '' || templateContent.trim() === '') {
-    alert('模板名称和任务内容不能为空！');
-    return;
-  }
 
-  const newTemplate = {
-    id: Date.now().toString(),
-    name: templateName.trim(),
-    text: templateContent.trim(),
-    content: templateContent.trim(),
-    category: templateCategory,
-    subCategory: templateSubCategory,
-    tags: templateTags || [],
-    scheduledTime: templateScheduledTime,
-    progress: templateProgress,
-    repeatFrequency: repeatFrequency,
-    repeatDays: repeatDays,
-    image: templateImage,
-    isTemplate: true
-  };
 
-  onSave(newTemplate);
-  resetForm();
-  onClose();  // 添加这行，关闭模态框
-};
 
   return (
     <div style={{
@@ -3545,9 +3521,7 @@ const RepeatModal = ({ config, onSave, onClose }) => {
   const [frequency, setFrequency] = useState(config.frequency|| '');
   const [days, setDays] = useState(config.days ? [...config.days] : []);
 
-
-
-  // 修复：确保至少选择一天
+ // 修复：确保至少选择一天
   const handleSave = () => {
     if (frequency === 'weekly' && !days.some(day => day)) {
       alert('请至少选择一天！');
@@ -3558,6 +3532,7 @@ const RepeatModal = ({ config, onSave, onClose }) => {
     onClose();
   };
 
+  
   return (
     <div style={{
       position: 'fixed',
@@ -3910,7 +3885,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
 
 
 const resetForm = () => {
-  setTemplateContent('');  // 只清空内容
+  setTemplateContent('');
   setTemplateTags([]);
   setTemplateScheduledTime('');
   setTemplateSubCategory('');
@@ -3923,18 +3898,23 @@ const resetForm = () => {
   setRepeatFrequency('');
   setRepeatDays([false, false, false, false, false, false, false]);
   setTemplateImage(null);
+  // 确保没有 setTemplateName('')
 };
 
- const handleSave = () => {
-  if (templateName.trim() === '' || templateContent.trim() === '') {
-    alert('模板名称和任务内容不能为空！');
+
+const handleSave = () => {
+  console.log('保存模板，内容:', templateContent);
+  
+  // 只检查 templateContent
+  if (!templateContent || templateContent.trim() === '') {
+    alert('任务内容不能为空！');
     return;
   }
 
   const newTemplate = {
     id: Date.now().toString(),
-    name: templateName.trim(),
-    text: templateContent.trim(),  // 添加 text 字段用于快速添加
+    name: templateContent.trim(),
+    text: templateContent.trim(),
     content: templateContent.trim(),
     category: templateCategory,
     subCategory: templateSubCategory,
@@ -3947,11 +3927,12 @@ const resetForm = () => {
     isTemplate: true
   };
 
+  console.log('创建新模板:', newTemplate);
   onSave(newTemplate);
-   onClose(); 
-  // 重置表单
   resetForm();
+  onClose();
 };
+
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -9169,7 +9150,7 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   subCategories: []
 })));
 
-
+const isAddingTask = useRef(false);
 
 // 打开新建模板弹窗
 const handleOpenTemplateModal = () => {
@@ -9223,9 +9204,23 @@ const handleSaveTemplate = () => {
 };
 
 // 使用模板添加任务
+
+// 使用模板添加任务
 const handleUseRegularTask = (template) => {
+  // 防止重复调用
+  if (isAddingTask.current) {
+    console.log('正在添加任务中，跳过重复调用');
+    return;
+  }
+  
+  isAddingTask.current = true;
+  console.log('使用模板添加任务:', template);
+  
+  // 生成更唯一的ID
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
   const newTask = {
-    id: Date.now().toString(),
+    id: uniqueId,
     text: template.text,
     category: template.category,
     subCategory: template.subCategory || '',
@@ -9254,11 +9249,28 @@ const handleUseRegularTask = (template) => {
     if (!newTasksByDate[selectedDate]) {
       newTasksByDate[selectedDate] = [];
     }
-    newTasksByDate[selectedDate].push(newTask);
+    
+    // 检查是否已存在相同内容的任务
+    const exists = newTasksByDate[selectedDate].some(task => 
+      task.text === newTask.text && 
+      task.category === newTask.category
+    );
+    
+    if (!exists) {
+      newTasksByDate[selectedDate].push(newTask);
+      console.log('✅ 任务添加成功');
+    } else {
+      console.log('⚠️ 任务已存在，跳过添加');
+    }
+    
     return newTasksByDate;
   });
+  
+  // 延迟重置标志
+  setTimeout(() => {
+    isAddingTask.current = false;
+  }, 500);
 };
-
 
 
   const [showSchedule, setShowSchedule] = useState(false);
@@ -14495,34 +14507,46 @@ const generateMarkdownContent = () => {
 
 
 // 在 App 组件中找到这个函数并替换
+// 在 App 组件中修改 handleAddTemplate 函数
 const handleAddTemplate = (template) => {
   console.log('保存模板:', template);
   
-  // 更新 templates 状态
+  // 只更新 templates 状态
   setTemplates(prev => {
+    // 检查是否已存在相同内容的模板
+    const exists = prev.some(t => t.text === template.text);
+    if (exists) {
+      console.log('模板已存在，跳过添加');
+      return prev;
+    }
     const newTemplates = [...prev, template];
     saveMainData('templates', newTemplates);
     return newTemplates;
   });
   
-  // 同时更新常规任务模板状态
+  // 同时更新常规任务模板状态，但也要去重
   const newRegularTemplate = {
     id: template.id,
-    text: template.name || template.text,  // 使用 name 或 text
+    text: template.text || template.content,
     category: template.category,
     subCategory: template.subCategory || '',
     tags: template.tags || []
   };
   
   setRegularTaskTemplates(prev => {
+    // 检查是否已存在相同内容的常规任务模板
+    const exists = prev.some(t => t.text === newRegularTemplate.text);
+    if (exists) {
+      console.log('常规任务模板已存在，跳过添加');
+      return prev;
+    }
     const newTemplates = [...prev, newRegularTemplate];
     localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
     return newTemplates;
   });
   
-  console.log('✅ 模板已同步到常规任务面板');
+  console.log('✅ 模板已添加');
 };
-
 
 
 
