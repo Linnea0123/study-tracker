@@ -539,53 +539,53 @@ useEffect(() => {
           成绩记录
         </h2>
 
-        {/* 顶部按钮区域 */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          marginBottom: '16px'
-        }}>
-          <button
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              if (!showAddForm) {
-                resetNewGradeForm();
-                setEditingGrade(null);
-              }
-            }}
-            style={{
-              padding: '12px 16px',
-              backgroundColor: '#1a73e8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              width: '100%'
-            }}
-          >
-            {showAddForm ? '取消添加' : '+ 添加新成绩'}
-          </button>
+      {/* 顶部按钮区域 - 两个按钮放一排 */}
+<div style={{
+  display: 'flex',
+  gap: '10px',
+  marginBottom: '16px'
+}}>
+  <button
+    onClick={() => {
+      setShowAddForm(!showAddForm);
+      if (!showAddForm) {
+        resetNewGradeForm();
+        setEditingGrade(null);
+      }
+    }}
+    style={{
+      flex: 1,
+      padding: '12px 16px',
+      backgroundColor: '#1a73e8',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '500'
+    }}
+  >
+    {showAddForm ? '取消添加' : '+ 添加新成绩'}
+  </button>
 
-          <button
-            onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
-            style={{
-              padding: '12px 16px',
-              backgroundColor: '#9C27B0',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              width: '100%'
-            }}
-          >
-            {showSubCategoryManager ? '关闭管理' : '管理子分类'}
-          </button>
-        </div>
+  <button
+    onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
+    style={{
+      flex: 1,
+      padding: '12px 16px',
+      backgroundColor: '#9C27B0',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '500'
+    }}
+  >
+    {showSubCategoryManager ? '关闭管理' : '管理子分类'}
+  </button>
+</div>
+
 
         {/* 添加/编辑成绩表单弹窗 */}
         {showAddForm && (
@@ -992,58 +992,60 @@ useEffect(() => {
           </div>
         )}
 
-        {/* 筛选和统计信息 */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '15px',
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <select
-              value={filterSubject}
-              onChange={(e) => {
-                setFilterSubject(e.target.value);
-                setFilterSubCategory('全部');
-              }}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: 'white',
-                width: '100%'
-              }}
-            >
-              {subjects.map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
+       
 
-            <select
-              value={filterSubCategory}
-              onChange={(e) => setFilterSubCategory(e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: 'white',
-                width: '100%'
-              }}
-            >
-              {getCurrentSubCategories().map(subCat => (
-                <option key={subCat} value={subCat}>{subCat}</option>
-              ))}
-            </select>
-          </div>
+{/* 筛选和统计信息 */}
+<div style={{
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '15px',
+  marginBottom: '20px',
+  padding: '15px',
+  backgroundColor: '#f8f9fa',
+  borderRadius: '8px'
+}}>
+  <div style={{
+    display: 'flex',
+    gap: '12px'
+  }}>
+    <select
+      value={filterSubject}
+      onChange={(e) => {
+        setFilterSubject(e.target.value);
+        setFilterSubCategory('全部');
+      }}
+      style={{
+        flex: 1,
+        padding: '10px 12px',
+        border: '1px solid #d1d5db',
+        borderRadius: '6px',
+        fontSize: '14px',
+        backgroundColor: 'white'
+      }}
+    >
+      {subjects.map(subject => (
+        <option key={subject} value={subject}>{subject}</option>
+      ))}
+    </select>
+
+    <select
+      value={filterSubCategory}
+      onChange={(e) => setFilterSubCategory(e.target.value)}
+      style={{
+        flex: 1,
+        padding: '10px 12px',
+        border: '1px solid #d1d5db',
+        borderRadius: '6px',
+        fontSize: '14px',
+        backgroundColor: 'white'
+      }}
+    >
+      {getCurrentSubCategories().map(subCat => (
+        <option key={subCat} value={subCat}>{subCat}</option>
+      ))}
+    </select>
+  </div>
+
 
           <div style={{
             display: 'grid',
@@ -1086,57 +1088,58 @@ useEffect(() => {
         </div>
 
         {/* 子分类统计卡片 */}
-        {filterSubject !== '全部' && subCategoryStats.length > 0 && (
-          <div style={{
-            marginBottom: '20px',
-            padding: '15px',
-            backgroundColor: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb'
-          }}>
-            <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>
-              {filterSubject} 子分类统计
-            </h3>
-            
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '10px'
-            }}>
-              {subCategoryStats.map(stat => (
-                <div key={stat.name} style={{
-                  padding: '12px',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1a73e8' }}>
-                    {stat.name}
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    测试次数: {stat.count}
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    平均分: <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>{stat.average}</span>
-                  </div>
-                  <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                    最高分: {stat.maxScore}
-                  </div>
-                  <div style={{ fontSize: '12px' }}>
-                    最低分: {stat.minScore}
-                  </div>
-                  {stat.fullMarks > 0 && (
-                    <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
-                      ⭐ 满分 {stat.fullMarks} 次
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+       {/* 子分类统计卡片 */}
+{filterSubject !== '全部' && subCategoryStats.length > 0 && (
+  <div style={{
+    marginBottom: '20px',
+    padding: '15px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb'
+  }}>
+    <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>
+      {filterSubject} 子分类统计
+    </h3>
+    
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+      maxWidth: '100%',
+      gap: '10px'
+    }}>
+      {subCategoryStats.map(stat => (
+        <div key={stat.name} style={{
+          padding: '12px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '6px',
+          border: '1px solid #e0e0e0'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1a73e8' }}>
+            {stat.name}
           </div>
-        )}
-
-      
+          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+            测试次数: {stat.count}
+          </div>
+          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+            平均分: <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>{stat.average}</span>
+          </div>
+          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+            最高分: {stat.maxScore}
+          </div>
+          <div style={{ fontSize: '12px' }}>
+            最低分: {stat.minScore}
+          </div>
+          {stat.fullMarks > 0 && (
+            <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+              ⭐ 满分 {stat.fullMarks} 次
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+ 
 {/* 在成绩记录列表之前添加图表区域 */}
 {/* 图表视图切换 */}
 <div style={{
@@ -1170,10 +1173,8 @@ useEffect(() => {
   ))}
 </div>
 
-
-{/* 图表区域 */}
 {chartData.length > 0 ? (
-  <div style={{
+  <div style={{ 
     marginBottom: '30px',
     padding: '15px',
     backgroundColor: '#fff',
@@ -1181,7 +1182,7 @@ useEffect(() => {
     border: '1px solid #e5e7eb',
     width: '100%',
     boxSizing: 'border-box',
-    overflowX: 'auto' // 添加横向滚动，防止内容溢出
+    overflowX: 'auto'
   }}>
     <h3 style={{ marginBottom: '15px', fontSize: '15px', textAlign: 'center', color: '#333' }}>
       各子分类成绩对比 - {
@@ -1190,137 +1191,135 @@ useEffect(() => {
       }
     </h3>
     
-   
-{/* 柱状图容器 */}
-<div style={{ 
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'flex-end',
-  gap: '2px',
-  padding: '10px 5px',
-  minWidth: '100%',
-  width: 'max-content'
-}}>
-  {chartData.map((item, index) => {
-    const height = Math.max(item.score * 1.5, 25);
-    const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
-    
-    // 从 label 中分离子分类和日期
-    const labelParts = item.label.split('-');
-    const subCategory = labelParts[0];
-    const dateParts = labelParts.slice(1).join('-').split('-');
-    const month = dateParts[0];  // 月份
-    const day = dateParts[1];    // 日期
-    
-    return (
-      <div
-        key={index}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '15px',
-          flexShrink: 0
-        }}
-      >
-        {/* 柱子容器 - 固定高度，底部对齐 */}
-        <div style={{
-          height: '120px',  // 固定柱子区域高度
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          marginBottom: '0',
-          width: '100%'
-        }}>
-          <div style={{
-            height: `${height}px`,
-            backgroundColor: barColor,
-            borderRadius: '2px 2px 1px 1px',
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            cursor: 'pointer',
-            width: '100%',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-          }}>
-            {/* 分数标签 */}
+    {/* 柱状图容器 */}
+    <div style={{ 
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      gap: '4px',
+      padding: '10px 5px',
+      minWidth: '100%',
+      width: 'max-content'
+    }}>
+      {chartData.map((item, index) => {
+        const maxBarHeight = 100;
+        const minBarHeight = 15;
+        const scoreRatio = item.score / 100;
+        const height = Math.max(minBarHeight, maxBarHeight * scoreRatio);
+        const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
+        
+        const labelParts = item.label.split('-');
+        const subCategory = labelParts[0];
+        const dateParts = labelParts.slice(1).join('-').split('-');
+        const month = dateParts[0];
+        const day = dateParts[1];
+        
+        return (
+          <div
+            key={index}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '18px',
+              flexShrink: 0
+            }}
+          >
             <div style={{
-              position: 'absolute',
-              top: '-18px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              fontSize: '8px',
-              fontWeight: 'bold',
-              color: barColor,
-              whiteSpace: 'nowrap',
-              backgroundColor: 'transparent',
-              padding: '0',
-              borderRadius: '0',
-              boxShadow: 'none'
+              height: `${maxBarHeight}px`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              marginBottom: '4px',
+              width: '100%'
             }}>
-              {item.score}
+              <div style={{
+                height: `${height}px`,
+                backgroundColor: barColor,
+                borderRadius: '3px 3px 2px 2px',
+                transition: 'height 0.3s ease',
+                position: 'relative',
+                cursor: 'pointer',
+                width: '100%',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-18px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '9px',
+                  fontWeight: 'bold',
+                  color: barColor,
+                  whiteSpace: 'nowrap',
+                  backgroundColor: 'transparent'
+                }}>
+                  {item.score}
+                </div>
+              </div>
+            </div>
+            
+            {/* 底部文字区域 - 保持三行：子分类、月份、日期 */}
+            <div style={{
+              height: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              width: '100%',
+              marginTop: '2px'
+            }}>
+              {/* 第一行：子分类 */}
+              <div style={{
+                fontSize: '9px',
+                color: '#555',
+                textAlign: 'center',
+                width: '100%',
+                fontWeight: '500',
+                lineHeight: '1.2',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '2px',
+                padding: '1px 2px',
+                wordBreak: 'break-word'
+              }}>
+                {subCategory}
+              </div>
+              {/* 第二行：月份 */}
+              <div style={{
+                fontSize: '8px',
+                color: '#999',
+                marginTop: '1px',
+                textAlign: 'center',
+                lineHeight: '1.2'
+              }}>
+                {month}
+              </div>
+              {/* 第三行：分隔线 */}
+              <div style={{
+                fontSize: '8px',
+                color: '#999',
+                marginTop: '0px',
+                textAlign: 'center',
+                lineHeight: '1.2'
+              }}>
+                -
+              </div>
+              {/* 第四行：日期 */}
+              <div style={{
+                fontSize: '8px',
+                color: '#999',
+                marginTop: '0px',
+                textAlign: 'center',
+                lineHeight: '1.2'
+              }}>
+                {day}
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* 底部文字区域 - 固定高度，不受文字内容影响 */}
-        <div style={{
-          height: '48px',  // 固定高度，所有柱子底部文字区域高度一致
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          width: '100%',
-          marginTop: '2px'
-        }}>
-          <div style={{
-            fontSize: '8px',
-            color: '#555',
-            textAlign: 'center',
-            width: '100%',
-            fontWeight: '500',
-            lineHeight: '1.2',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '2px',
-            padding: '1px 1px',
-            wordBreak: 'break-word'
-          }}>
-            {subCategory}
-          </div>
-          <div style={{
-            fontSize: '7px',
-            color: '#999',
-            marginTop: '1px',
-            textAlign: 'center',
-            lineHeight: '1.2'
-          }}>
-            {month}
-          </div>
-          <div style={{
-            fontSize: '7px',
-            color: '#999',
-            marginTop: '0px',
-            textAlign: 'center',
-            lineHeight: '1.2'
-          }}>
-            -
-          </div>
-          <div style={{
-            fontSize: '7px',
-            color: '#999',
-            marginTop: '0px',
-            textAlign: 'center',
-            lineHeight: '1.2'
-          }}>
-            {day}
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
-   
+        );
+      })}
+    </div>
     
-    {/* 图例说明 */}
     <div style={{ 
       display: 'flex',
       justifyContent: 'center',
@@ -1362,7 +1361,6 @@ useEffect(() => {
     </div>
   </div>
 )}
-
 
 
         {/* 成绩记录列表 */}
@@ -1934,199 +1932,6 @@ const handleManualBackup = async () => {
           </div>
         </div>
 
-{/* 图表视图切换 */}
-<div style={{
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '10px',
-  marginBottom: '20px'
-}}>
-  {[
-    { value: 'month', label: '按月' },
-    { value: 'quarter', label: '按季度' },
-    { value: 'year', label: '按年' }
-  ].map(view => {
-    const isActive = chartView === view.value;
-    return (
-      <div
-        key={view.value}
-        onClick={() => {
-          setChartView(view.value);
-          setIsChartReady(false);
-          setTimeout(() => setIsChartReady(true), 50);
-        }}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: isActive ? '#1a73e8' : '#f0f0f0',
-          color: isActive ? '#fff' : '#333',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: isActive ? '500' : 'normal',
-          flex: 1,
-          textAlign: 'center',
-          userSelect: 'none'
-        }}
-      >
-        {view.label}
-      </div>
-    );
-  })}
-</div>
-
-{/* 成绩对比图表 - 添加 key 强制刷新 */}
-<div key={`chart-${chartView}-${filterSubject}-${filterSubCategory}-${chartData.length}`}>
-  {chartData.length > 0 ? (
-    <div style={{
-      marginBottom: '30px',
-      padding: '20px 15px',
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      border: '1px solid #e5e7eb'
-    }}>
-      <h3 style={{ 
-        marginBottom: '20px', 
-        fontSize: '16px', 
-        textAlign: 'center', 
-        color: '#333'
-      }}>
-        各子分类成绩对比 - {
-          chartView === 'month' ? '本月' : 
-          chartView === 'quarter' ? '本季度' : '本年'
-        }
-      </h3>
-      
-      {/* 图表容器 */}
-      <div style={{ 
-        overflowX: 'auto',
-        paddingBottom: '10px'
-      }}>
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          gap: '8px',
-          minWidth: Math.max(320, chartData.length * 60)
-        }}>
-          {chartData.map((item, index) => {
-            const scoreNum = Number(item.score) || 0;
-            const barHeight = Math.max(scoreNum * 1.2, 20);
-            const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
-            
-            return (
-              <div
-                key={`${item.id}-${index}`}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  width: '50px',
-                  flexShrink: 0
-                }}
-              >
-                {/* 柱子 */}
-                <div style={{
-                  height: '100px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  marginBottom: '8px',
-                  width: '100%',
-                  position: 'relative'
-                }}>
-                  <div
-                    style={{
-                      height: `${barHeight}px`,
-                      backgroundColor: barColor,
-                      borderRadius: '4px',
-                      width: '100%',
-                      transition: 'height 0.2s',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* 分数标签 */}
-                    <div style={{
-                      position: 'absolute',
-                      top: '-20px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      color: barColor,
-                      whiteSpace: 'nowrap',
-                      backgroundColor: '#fff',
-                      padding: '2px 4px',
-                      borderRadius: '10px',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                    }}>
-                      {scoreNum}%
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 底部文字 */}
-                <div style={{
-                  fontSize: '9px',
-                  color: '#555',
-                  textAlign: 'center',
-                  width: '100%',
-                  lineHeight: '1.3',
-                  wordBreak: 'break-word'
-                }}>
-                  {item.label}
-                </div>
-                <div style={{
-                  fontSize: '8px',
-                  color: '#999',
-                  marginTop: '2px'
-                }}>
-                  {item.date}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      
-      {/* 图例 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '16px',
-        marginTop: '15px',
-        padding: '8px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '6px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '2px' }}></div>
-          <span style={{ fontSize: '10px' }}>普通11成绩</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '2px' }}></div>
-          <span style={{ fontSize: '10px' }}>满分成绩</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontSize: '10px', color: '#666' }}>{chartData.length}条</span>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div style={{
-      marginBottom: '30px',
-      padding: '40px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      textAlign: 'center',
-      color: '#666'
-    }}>
-      暂无成绩问问我数据
-    </div>
-  )}
-</div>
-
-
-
 
         {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
@@ -2369,7 +2174,14 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync || false);
   const [gistId, setGistId] = useState(config.gistId || '');
 
-
+ // 添加这个函数
+  const handleSave = () => {
+    onSave({
+      token,
+      autoSync,
+      gistId
+    });
+  };
 
 
   return (
@@ -11568,15 +11380,6 @@ useEffect(() => {
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-// 方法2：直接禁用这条规则的警告
-useEffect(() => {
-  const todayStr = new Date().toISOString().split("T")[0];
-  if (selectedDate !== todayStr) {
-    setSelectedDate(todayStr);
-    setCurrentMonday(getMonday(new Date()));
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
 
 
 
@@ -12112,37 +11915,7 @@ const handleUpdateProgress = (task, newCurrent) => {
 
 // 添加全局调试函数
 useEffect(() => {
-  // 调试函数：查看所有提醒任务
-  window.debugReminders = () => {
-    const now = new Date();
-    console.log('=== 提醒任务调试 ===');
-    console.log('当前时间:', now.toLocaleString());
-    
-    Object.entries(tasksByDate).forEach(([date, tasks]) => {
-      tasks.forEach(task => {
-        if (task.reminderTime) {
-          const rt = task.reminderTime;
-          const reminderDate = new Date(
-            rt.year || now.getFullYear(),
-            (rt.month || now.getMonth() + 1) - 1,
-            rt.day || now.getDate(),
-            rt.hour || 0,
-            rt.minute || 0
-          );
-          const isToday = reminderDate.toDateString() === now.toDateString();
-          const isPast = reminderDate <= now;
-          
-          console.log(`任务: "${task.text}"`, {
-            提醒时间: `${rt.year || 'undefined'}-${rt.month || 'undefined'}-${rt.day || 'undefined'} ${rt.hour || 0}:${rt.minute || 0}`,
-            是否今天: isToday,
-            是否已过时: isPast,
-            是否置顶: task.pinned,
-            提醒时间对象: rt
-          });
-        }
-      });
-    });
-  };
+  
 
   // 强制修复提醒函数
   window.forceFixReminders = () => {
