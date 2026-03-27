@@ -2,14 +2,15 @@
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useRef, useCallback} from 'react';
 import './App.css';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 
 
 const GradeModal = ({ onClose, isVisible }) => {
 
-   const STORAGE_KEY = 'study-tracker-PAGE_A-v2';
+
+  
+  const STORAGE_KEY = 'study-tracker-PAGE_A-v2';
   
   const saveMainData = async (key, data) => {
     const storageKey = `${STORAGE_KEY}_${key}`;
@@ -32,6 +33,7 @@ const GradeModal = ({ onClose, isVisible }) => {
       return null;
     }
   };
+
   const [grades, setGrades] = useState([]);
   const [filterSubject, setFilterSubject] = useState('全部');
   const [filterSubCategory, setFilterSubCategory] = useState('全部');
@@ -39,7 +41,8 @@ const GradeModal = ({ onClose, isVisible }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSubCategoryManager, setShowSubCategoryManager] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
-  const [editingGrade, setEditingGrade] = useState(null); // 新增：正在编辑的成绩
+  const [editingGrade, setEditingGrade] = useState(null);
+  const [isChartReady, setIsChartReady] = useState(false);
   
   // 子分类管理
   const [subjectSubCategories, setSubjectSubCategories] = useState(() => {
@@ -83,6 +86,22 @@ const GradeModal = ({ onClose, isVisible }) => {
   useEffect(() => {
     localStorage.setItem('grade_subcategories', JSON.stringify(subjectSubCategories));
   }, [subjectSubCategories]);
+
+
+// 在这里添加调试用的 useEffect
+useEffect(() => {
+  console.log('🔍 GradeModal 加载完成，成绩数据:', {
+    gradesCount: grades.length,
+    grades: grades.map(g => ({ 
+      date: g.date, 
+      subject: g.subject, 
+      subCategory: g.subCategory, 
+      score: g.score, 
+      scoreType: g.scoreType,
+      isFullMark: g.isFullMark
+    }))
+  });
+}, [grades]);
 
   // 处理分数类型变化
   const handleScoreTypeChange = (e) => {
@@ -145,31 +164,27 @@ const GradeModal = ({ onClose, isVisible }) => {
     await saveMainData('grades', updatedGrades);
   };
 
+  // 添加新成绩记录
+  const handleAddGrade = () => {
+    if (!newGrade.testContent || !newGrade.score) {
+      alert('请填写测试内容和得分');
+      return;
+    }
 
-// 添加新成绩记录 - 确保 subCategory 被正确保存
-const handleAddGrade = () => {
-  if (!newGrade.testContent || !newGrade.score) {
-    alert('请填写测试内容和得分');
-    return;
-  }
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  const updatedGrades = [...grades, {
-    id: uniqueId,
-    ...newGrade,
-    // 确保 subCategory 有值，如果为空则设为 '未分类'
-    subCategory: newGrade.subCategory || '未分类',
-    isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-  }];
-  
-  saveGrades(updatedGrades);
-  resetNewGradeForm();
-  setShowAddForm(false);
-  setEditingGrade(null);
-};
-
-
+    const updatedGrades = [...grades, {
+      id: uniqueId,
+      ...newGrade,
+      subCategory: newGrade.subCategory || '未分类',
+      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+    }];
+    
+    saveGrades(updatedGrades);
+    resetNewGradeForm();
+    setShowAddForm(false);
+    setEditingGrade(null);
+  };
 
   // 开始编辑成绩
   const handleEditGrade = (grade) => {
@@ -305,34 +320,21 @@ const handleAddGrade = () => {
     }
   };
 
+  // 筛选后的成绩记录
+  const filteredGrades = grades.filter(grade => {
+    if (filterSubject !== '全部' && grade.subject !== filterSubject) return false;
+    if (filterSubCategory !== '全部') {
+      if (!grade.subCategory || grade.subCategory !== filterSubCategory) return false;
+    }
+    return true;
+  });
 
-// 在 GradeModal 组件中，找到 filteredGrades 的定义部分，修改为：
-
-// 筛选后的成绩记录
-const filteredGrades = grades.filter(grade => {
-  // 科目筛选
-  if (filterSubject !== '全部' && grade.subject !== filterSubject) return false;
-  
-  // 子分类筛选 - 修复：当选择了具体子分类时，只显示该子分类的记录
-  // 如果 filterSubCategory 是 '全部'，则不过滤子分类
-  // 如果 filterSubCategory 不是 '全部'，则只显示匹配该子分类的记录
-  if (filterSubCategory !== '全部') {
-    // 确保 grade.subCategory 存在且匹配
-    if (!grade.subCategory || grade.subCategory !== filterSubCategory) return false;
-  }
-  
-  return true;
-});
-
-// 同时修复 getCurrentSubCategories 函数，确保正确返回子分类列表
-const getCurrentSubCategories = () => {
-  if (filterSubject === '全部') return ['全部'];
-  // 获取当前科目的子分类，如果没有则返回空数组
-  const subCats = subjectSubCategories[filterSubject] || [];
-  return ['全部', ...subCats];
-};
-
-
+  // 获取当前科目的子分类列表
+  const getCurrentSubCategories = () => {
+    if (filterSubject === '全部') return ['全部'];
+    const subCats = subjectSubCategories[filterSubject] || [];
+    return ['全部', ...subCats];
+  };
 
   // 按子分类统计成绩
   const getSubCategoryStats = () => {
@@ -377,67 +379,100 @@ const getCurrentSubCategories = () => {
   const subCategoryStats = getSubCategoryStats();
 
   // 生成图表数据
-  const generateChartData = () => {
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch(chartView) {
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        break;
-      case 'quarter':
-        const quarter = Math.floor(now.getMonth() / 3);
-        startDate = new Date(now.getFullYear(), quarter * 3, 1);
-        endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31);
-        break;
-      default:
-        return [];
+// 生成图表数据
+const generateChartData = () => {
+  const now = new Date();
+  let startDate, endDate;
+  
+  switch(chartView) {
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case 'quarter':
+      const quarter = Math.floor(now.getMonth() / 3);
+      startDate = new Date(now.getFullYear(), quarter * 3, 1);
+      endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+      break;
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
+      break;
+    default:
+      return [];
+  }
+
+  // 添加调试日志
+  console.log('📅 图表日期范围:', {
+    chartView,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+    filteredGradesCount: filteredGrades.length
+  });
+
+  const filteredByDate = filteredGrades.filter(grade => {
+    const gradeDate = new Date(grade.date);
+    return gradeDate >= startDate && gradeDate <= endDate;
+  });
+
+  console.log('📊 按日期筛选后的成绩数量:', filteredByDate.length);
+  console.log('📝 筛选后的成绩:', filteredByDate.map(g => ({ date: g.date, subject: g.subject, subCategory: g.subCategory, score: g.score })));
+
+  // 按子分类分组
+  const groupedBySubCat = {};
+  filteredByDate.forEach(grade => {
+    const subCat = grade.subCategory || '未分类';
+    if (!groupedBySubCat[subCat]) {
+      groupedBySubCat[subCat] = [];
     }
+    groupedBySubCat[subCat].push(grade);
+  });
 
-    const filteredByDate = filteredGrades.filter(grade => {
-      const gradeDate = new Date(grade.date);
-      return gradeDate >= startDate && gradeDate <= endDate;
-    });
+  console.log('📁 子分类分组:', Object.keys(groupedBySubCat));
+  Object.entries(groupedBySubCat).forEach(([subCat, grades]) => {
+    console.log(`  ${subCat}: ${grades.length} 条记录`, grades.map(g => ({ date: g.date, score: g.score })));
+  });
 
-    // 按子分类分组
-    const groupedBySubCat = {};
-    filteredByDate.forEach(grade => {
-      const subCat = grade.subCategory || '未分类';
-      if (!groupedBySubCat[subCat]) {
-        groupedBySubCat[subCat] = [];
-      }
-      groupedBySubCat[subCat].push(grade);
-    });
-
-    // 生成每个子分类的趋势数据
-    const chartData = [];
-    Object.entries(groupedBySubCat).forEach(([subCat, subCatGrades]) => {
-      const sorted = subCatGrades.sort((a, b) => a.date.localeCompare(b.date));
-      const recent = sorted.slice(-5);
-      
-      recent.forEach((grade, index) => {
-        chartData.push({
-          id: grade.id,
-          subCategory: subCat,
-          date: grade.date,
-          label: `${subCat}-${grade.date.slice(5)}`,
-          score: getPercentageScore(grade),
-          isFullMark: grade.isFullMark,
-          index: index,
-          testContent: grade.testContent
-        });
+  // 生成每个子分类的趋势数据
+  const chartData = [];
+  Object.entries(groupedBySubCat).forEach(([subCat, subCatGrades]) => {
+    const sorted = subCatGrades.sort((a, b) => a.date.localeCompare(b.date));
+    const recent = sorted.slice(-5);
+    
+    recent.forEach((grade) => {
+      chartData.push({
+        id: grade.id,
+        subCategory: subCat,
+        date: grade.date,
+        label: `${subCat}-${grade.date.slice(5)}`,
+        score: getPercentageScore(grade),
+        isFullMark: grade.isFullMark,
+        testContent: grade.testContent
       });
     });
+  });
 
-    return chartData;
-  };
+  console.log('📈 最终图表数据数量:', chartData.length);
+  console.log('📈 图表数据:', chartData);
+  
+  return chartData;
+};
 
+  
   const chartData = generateChartData();
+
+ // 替换现有的 useEffect
+useEffect(() => {
+  if (chartData.length > 0) {
+    // 延迟设置，确保容器已经渲染完成
+    const timer = setTimeout(() => {
+      setIsChartReady(true);
+    }, 150);
+    return () => clearTimeout(timer);
+  } else {
+    setIsChartReady(false);
+  }
+}, [chartData, filterSubject, filterSubCategory, chartView]);
 
   if (!isVisible) return null;
 
@@ -454,7 +489,7 @@ const getCurrentSubCategories = () => {
       alignItems: 'center',
       zIndex: 1000,
       padding: 0,
-      overflow: 'hidden' // 防止外层滚动
+      overflow: 'hidden'
     }}>
       <div style={{
         backgroundColor: '#f5faff',
@@ -468,7 +503,7 @@ const getCurrentSubCategories = () => {
         WebkitOverflowScrolling: 'touch',
         margin: '0 auto',
         position: 'relative',
-        overscrollBehavior: 'contain' // 改善滑动体验
+        overscrollBehavior: 'contain'
       }}>
         {/* 关闭按钮 */}
         <button
@@ -553,419 +588,409 @@ const getCurrentSubCategories = () => {
         </div>
 
         {/* 添加/编辑成绩表单弹窗 */}
-      
-
-{/* 添加/编辑成绩表单弹窗 - 修改这部分 */}
-{showAddForm && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1100,
-    padding: '10px'
-  }} onClick={(e) => {
-    // 修复：点击背景关闭弹窗
-    if (e.target === e.currentTarget) {
-      setShowAddForm(false);
-      setEditingGrade(null);
-      resetNewGradeForm();
-    }
-  }}>
-    <div style={{
-      backgroundColor: 'white',
-      padding: '20px 16px',
-      borderRadius: '16px',
-      width: '100%',
-      maxWidth: '450px',
-      maxHeight: '90vh',
-      overflow: 'auto',
-      position: 'relative',
-      WebkitOverflowScrolling: 'touch'
-    }} onClick={e => e.stopPropagation()}>
-      
-      {/* 关闭按钮 - 移除悬浮效果 */}
-      <button
-        onClick={() => {
-          setShowAddForm(false);
-          setEditingGrade(null);
-          resetNewGradeForm();
-        }}
-        style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          background: 'transparent',
-          border: 'none',
-          fontSize: '24px',
-          cursor: 'pointer',
-          color: '#666',
-          width: '32px',
-          height: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          zIndex: 10
-        }}
-        // 移除悬浮效果
-      >
-        ×
-      </button>
-
-      <h3 style={{ 
-        textAlign: 'center', 
-        marginBottom: '20px', 
-        color: '#1a73e8',
-        fontSize: '16px',
-        padding: '0 24px'
-      }}>
-        {editingGrade ? '编辑成绩记录' : '添加新成绩记录'}
-      </h3>
-
-      {/* 表单内容 - 移除所有悬浮效果 */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
-        {/* 日期 */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '4px', 
-            fontSize: '13px', 
-            fontWeight: '500' 
-          }}>
-            日期
-          </label>
-          <input
-            type="date"
-            value={newGrade.date}
-            onChange={(e) => setNewGrade({...newGrade, date: e.target.value})}
-            style={{
-              width: '100%',
-              height: '40px',
-              padding: '0 10px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box',
-              backgroundColor: 'white'
-            }}
-          />
-        </div>
-
-        {/* 科目和子分类 */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }}>
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '4px', 
-              fontSize: '13px', 
-              fontWeight: '500' 
-            }}>
-              科目
-            </label>
-            <select
-              value={newGrade.subject}
-              onChange={(e) => {
-                setNewGrade({
-                  ...newGrade,
-                  subject: e.target.value,
-                  subCategory: ''
-                });
-              }}
-              style={{
-                width: '100%',
-                height: '40px',
-                padding: '0 10px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            >
-              {subjects.filter(s => s !== '全部').map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '4px', 
-              fontSize: '13px', 
-              fontWeight: '500' 
-            }}>
-              子分类
-              <span style={{ fontSize: '11px', color: '#999', marginLeft: '4px' }}>
-                (可选)
-              </span>
-            </label>
-            <select
-              value={newGrade.subCategory}
-              onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
-              style={{
-                width: '100%',
-                height: '40px',
-                padding: '0 10px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            >
-              <option value="">选择子分类</option>
-              {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
-                <option key={subCat} value={subCat}>{subCat}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* 测试内容 */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '4px', 
-            fontSize: '13px', 
-            fontWeight: '500' 
-          }}>
-            测试内容
-          </label>
-          <input
-            type="text"
-            value={newGrade.testContent}
-            onChange={(e) => setNewGrade({...newGrade, testContent: e.target.value})}
-            placeholder="如：单元测试、期中考试等"
-            style={{
-              width: '100%',
-              height: '40px',
-              padding: '0 10px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        {/* 分数类型、得分、满分 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '12px'
-        }}>
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '4px', 
-              fontSize: '13px', 
-              fontWeight: '500'
-            }}>
-              分数类型
-            </label>
-            <select
-              value={newGrade.scoreType}
-              onChange={handleScoreTypeChange}
-              style={{
-                width: '100%',
-                height: '40px',
-                padding: '0 8px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: 'white',
-                boxSizing: 'border-box'
-              }}
-            >
-              {scoreTypes.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
-              ))}
-            </select>
-          </div>
-          
+        {showAddForm && (
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1100,
+            padding: '10px'
+          }} onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddForm(false);
+              setEditingGrade(null);
+              resetNewGradeForm();
+            }
           }}>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '4px', 
-                fontSize: '13px', 
-                fontWeight: '500'
-              }}>
-                {newGrade.scoreType.includes('星制') ? '星级' : '得分'}
-              </label>
-              <input
-                type="number"
-                value={newGrade.score}
-                onChange={(e) => setNewGrade({...newGrade, score: e.target.value})}
-                min="0"
-                max={newGrade.fullScore}
-                step="1"
-                placeholder={`0-${newGrade.fullScore}`}
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  padding: '0 8px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px 16px',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '450px',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative',
+              WebkitOverflowScrolling: 'touch'
+            }} onClick={e => e.stopPropagation()}>
+              
+              <button
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingGrade(null);
+                  resetNewGradeForm();
                 }}
-              />
-            </div>
-            
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '4px', 
-                fontSize: '13px', 
-                fontWeight: '500'
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  zIndex: 10
+                }}
+              >
+                ×
+              </button>
+
+              <h3 style={{ 
+                textAlign: 'center', 
+                marginBottom: '20px', 
+                color: '#1a73e8',
+                fontSize: '16px',
+                padding: '0 24px'
               }}>
-                {newGrade.scoreType.includes('星制') ? '总星级' : '满分'}
-              </label>
-              {newGrade.scoreType === '自定义' ? (
-                <input
-                  type="number"
-                  value={newGrade.fullScore}
-                  onChange={(e) => setNewGrade({...newGrade, fullScore: e.target.value})}
-                  placeholder="输入满分值"
+                {editingGrade ? '编辑成绩记录' : '添加新成绩记录'}
+              </h3>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                {/* 日期 */}
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '4px', 
+                    fontSize: '13px', 
+                    fontWeight: '500' 
+                  }}>
+                    日期
+                  </label>
+                  <input
+                    type="date"
+                    value={newGrade.date}
+                    onChange={(e) => setNewGrade({...newGrade, date: e.target.value})}
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      padding: '0 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                </div>
+
+                {/* 科目和子分类 */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '4px', 
+                      fontSize: '13px', 
+                      fontWeight: '500' 
+                    }}>
+                      科目
+                    </label>
+                    <select
+                      value={newGrade.subject}
+                      onChange={(e) => {
+                        setNewGrade({
+                          ...newGrade,
+                          subject: e.target.value,
+                          subCategory: ''
+                        });
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '40px',
+                        padding: '0 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      {subjects.filter(s => s !== '全部').map(subject => (
+                        <option key={subject} value={subject}>{subject}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '4px', 
+                      fontSize: '13px', 
+                      fontWeight: '500' 
+                    }}>
+                      子分类
+                      <span style={{ fontSize: '11px', color: '#999', marginLeft: '4px' }}>
+                        (可选)
+                      </span>
+                    </label>
+                    <select
+                      value={newGrade.subCategory}
+                      onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
+                      style={{
+                        width: '100%',
+                        height: '40px',
+                        padding: '0 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <option value="">选择子分类</option>
+                      {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
+                        <option key={subCat} value={subCat}>{subCat}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 测试内容 */}
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '4px', 
+                    fontSize: '13px', 
+                    fontWeight: '500' 
+                  }}>
+                    测试内容
+                  </label>
+                  <input
+                    type="text"
+                    value={newGrade.testContent}
+                    onChange={(e) => setNewGrade({...newGrade, testContent: e.target.value})}
+                    placeholder="如：单元测试、期中考试等"
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      padding: '0 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* 分数类型、得分、满分 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '4px', 
+                      fontSize: '13px', 
+                      fontWeight: '500'
+                    }}>
+                      分数类型
+                    </label>
+                    <select
+                      value={newGrade.scoreType}
+                      onChange={handleScoreTypeChange}
+                      style={{
+                        width: '100%',
+                        height: '40px',
+                        padding: '0 8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        backgroundColor: 'white',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {scoreTypes.map(type => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px'
+                  }}>
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: '4px', 
+                        fontSize: '13px', 
+                        fontWeight: '500'
+                      }}>
+                        {newGrade.scoreType.includes('星制') ? '星级' : '得分'}
+                      </label>
+                      <input
+                        type="number"
+                        value={newGrade.score}
+                        onChange={(e) => setNewGrade({...newGrade, score: e.target.value})}
+                        min="0"
+                        max={newGrade.fullScore}
+                        step="1"
+                        placeholder={`0-${newGrade.fullScore}`}
+                        style={{
+                          width: '100%',
+                          height: '40px',
+                          padding: '0 8px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: '4px', 
+                        fontSize: '13px', 
+                        fontWeight: '500'
+                      }}>
+                        {newGrade.scoreType.includes('星制') ? '总星级' : '满分'}
+                      </label>
+                      {newGrade.scoreType === '自定义' ? (
+                        <input
+                          type="number"
+                          value={newGrade.fullScore}
+                          onChange={(e) => setNewGrade({...newGrade, fullScore: e.target.value})}
+                          placeholder="输入满分值"
+                          style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 8px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      ) : (
+                        <input
+                          type="number"
+                          value={newGrade.fullScore}
+                          readOnly
+                          style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 8px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            backgroundColor: '#f9fafb',
+                            color: '#6b7280',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 错题分析 */}
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '4px', 
+                    fontSize: '13px', 
+                    fontWeight: '500' 
+                  }}>
+                    错题分析
+                  </label>
+                  <textarea
+                    value={newGrade.wrongQuestions}
+                    onChange={(e) => setNewGrade({...newGrade, wrongQuestions: e.target.value})}
+                    placeholder="记录错题内容和原因分析"
+                    rows="3"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+
+                {/* 总结与改进 */}
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '4px', 
+                    fontSize: '13px', 
+                    fontWeight: '500' 
+                  }}>
+                    总结与改进
+                  </label>
+                  <textarea
+                    value={newGrade.analysis}
+                    onChange={(e) => setNewGrade({...newGrade, analysis: e.target.value})}
+                    placeholder="总结经验教训和改进计划"
+                    rows="3"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+                
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (editingGrade) {
+                      handleSaveEditGrade();
+                    } else {
+                      handleAddGrade();
+                    }
+                  }}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    padding: '0 8px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
+                    padding: '14px',
+                    backgroundColor: '#1a73e8',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    marginTop: '8px'
                   }}
-                />
-              ) : (
-                <input
-                  type="number"
-                  value={newGrade.fullScore}
-                  readOnly
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    padding: '0 8px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    backgroundColor: '#f9fafb',
-                    color: '#6b7280',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              )}
+                >
+                  {editingGrade ? '保存修改' : '添加记录'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* 错题分析 */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '4px', 
-            fontSize: '13px', 
-            fontWeight: '500' 
-          }}>
-            错题分析
-          </label>
-          <textarea
-            value={newGrade.wrongQuestions}
-            onChange={(e) => setNewGrade({...newGrade, wrongQuestions: e.target.value})}
-            placeholder="记录错题内容和原因分析"
-            rows="3"
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit'
-            }}
-          />
-        </div>
-
-        {/* 总结与改进 */}
-        <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '4px', 
-            fontSize: '13px', 
-            fontWeight: '500' 
-          }}>
-            总结与改进
-          </label>
-          <textarea
-            value={newGrade.analysis}
-            onChange={(e) => setNewGrade({...newGrade, analysis: e.target.value})}
-            placeholder="总结经验教训和改进计划"
-            rows="3"
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit'
-            }}
-          />
-        </div>
-        
-        {/* 确认按钮 - 移除悬浮效果，修复点击不灵敏问题 */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (editingGrade) {
-              handleSaveEditGrade();
-            } else {
-              handleAddGrade();
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '14px',
-            backgroundColor: '#1a73e8',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '15px',
-            fontWeight: '500',
-            marginTop: '8px'
-          }}
-          // 移除所有悬浮效果
-        >
-          {editingGrade ? '保存修改' : '添加记录'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+        )}
 
         {/* 筛选和统计信息 */}
         <div style={{
@@ -1111,349 +1136,443 @@ const getCurrentSubCategories = () => {
           </div>
         )}
 
-        {/* 图表视图切换 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '10px',
-          marginBottom: '20px'
-        }}>
-          {[
-            { value: 'month', label: '按月' },
-            { value: 'quarter', label: '按季度' },
-            { value: 'year', label: '按年' }
-          ].map(view => (
-            <button
-              key={view.value}
-              onClick={() => setChartView(view.value)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: chartView === view.value ? '#1a73e8' : '#f0f0f0',
-                color: chartView === view.value ? '#fff' : '#333',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: chartView === view.value ? '500' : 'normal',
-                flex: 1
-              }}
-            >
-              {view.label}
-            </button>
-          ))}
-        </div>
-
-        {/* 子分类成绩柱状图 */}
-        {chartData.length > 0 ? (
-          <div style={{
-            marginBottom: '30px',
-            padding: '20px',
-            backgroundColor: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb'
-          }}>
-            <h3 style={{ marginBottom: '20px', fontSize: '16px', textAlign: 'center' }}>
-              各子分类成绩对比 - {
-                chartView === 'month' ? '本月' : 
-                chartView === 'quarter' ? '本季度' : '本年'
-              }
-            </h3>
-            
-            <div style={{ height: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 30, right: 30, left: 0, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="label" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={80}
-                    interval={0}
-                    tick={{ fontSize: 10 }}
-                  />
-                  <YAxis 
-                    domain={[0, 100]} 
-                    tick={{ fontSize: 10 }}
-                    label={{ value: '分数', angle: -90, position: 'insideLeft', fontSize: 10 }}
-                  />
-                  <Bar 
-                    dataKey="score" 
-                    fill="#1a73e8"
-                    radius={[4, 4, 0, 0]}
-                    label={{ 
-                      position: 'top', 
-                      fontSize: 9,
-                      formatter: (value) => `${value}`
-                    }}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.isFullMark ? '#4caf50' : '#1a73e8'} 
-                        fillOpacity={0.8}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '20px',
-              marginTop: '20px',
-              padding: '10px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '6px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '16px', height: '16px', backgroundColor: '#1a73e8', borderRadius: '4px' }}></div>
-                <span style={{ fontSize: '12px' }}>普通成绩</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '16px', height: '16px', backgroundColor: '#4caf50', borderRadius: '4px' }}></div>
-                <span style={{ fontSize: '12px' }}>满分成绩</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            marginBottom: '30px',
-            padding: '40px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            暂无成绩数据，点击上方"添加新成绩"按钮开始记录
-          </div>
-        )}
-
-        
-{/* 成绩记录列表 - 修改这部分 */}
-<div>
-  <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
-
-  {filteredGrades.length === 0 ? (
-    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-      暂无成绩记录
-    </div>
-  ) : (
-    <div
+      
+{/* 在成绩记录列表之前添加图表区域 */}
+{/* 图表视图切换 */}
+<div style={{
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '10px',
+  marginBottom: '20px'
+}}>
+  {[
+    { value: 'month', label: '按月' },
+    { value: 'quarter', label: '按季度' },
+    { value: 'year', label: '按年' }
+  ].map(view => (
+    <button
+      key={view.value}
+      onClick={() => setChartView(view.value)}
       style={{
-        maxHeight: '400px',
-        overflow: 'auto',
-        WebkitOverflowScrolling: 'touch'
+        padding: '8px 16px',
+        backgroundColor: chartView === view.value ? '#1a73e8' : '#f0f0f0',
+        color: chartView === view.value ? '#fff' : '#333',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: chartView === view.value ? '500' : 'normal',
+        flex: 1
       }}
     >
-      {/* 添加调试信息，显示当前筛选状态 */}
-      <div style={{ 
-        fontSize: '12px', 
-        color: '#666', 
-        padding: '8px', 
-        backgroundColor: '#f5f5f5',
-        borderRadius: '6px',
-        marginBottom: '10px'
-      }}>
-        当前筛选：科目: {filterSubject} | 子分类: {filterSubCategory} | 
-        共 {filteredGrades.length} 条记录
-      </div>
-      
-      {[...filteredGrades]
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .map((grade) => (
-          <div
-            key={grade.id}
-            style={{
-              padding: '15px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '10px',
-              marginBottom: '12px',
-              backgroundColor: grade.isFullMark ? '#f6fbf6' : '#fff'
-            }}
-          >
-
-
-
-            {/* 第一行：日期 + 科目 + 分数 */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px'
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <span style={{ fontWeight: 'bold' }}>
-                  {grade.date} {grade.subject}
-                </span>
-                {grade.subCategory && (
-                  <span
-                    style={{
-                      marginLeft: '8px',
-                      padding: '2px 6px',
-                      backgroundColor: '#f0f0f0',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      color: '#666'
-                    }}
-                  >
-                    {grade.subCategory}
-                  </span>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  flexShrink: 0
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: grade.isFullMark ? '#4caf50' : '#1a73e8'
-                  }}
-                >
-                  {getScoreDisplay(grade)}
-                </span>
-
-                {grade.isFullMark && (
-                  <span
-                    style={{
-                      backgroundColor: '#4caf50',
-                      color: 'white',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}
-                  >
-                    满分
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 第二行：测试内容 + 操作按钮 */}
-            <div
-              style={{
-                marginBottom: '10px',
-                fontSize: '14px',
-                color: '#666',
-                paddingLeft: '4px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              {/* 左侧：测试内容 */}
-              <div
-                style={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {grade.testContent}
-              </div>
-
-              {/* 右侧：操作按钮 */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginLeft: '12px'
-                }}
-              >
-                {/* 编辑 */}
-                <button
-                  onClick={() => handleEditGrade(grade)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#999',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: '0',
-                    lineHeight: '1'
-                  }}
-                  onMouseEnter={(e) => (e.target.style.color = '#333')}
-                  onMouseLeave={(e) => (e.target.style.color = '#999')}
-                  title="编辑"
-                >
-                  ✎
-                </button>
-
-                {/* 删除 */}
-                <button
-                  onClick={() => handleDeleteGrade(grade.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#bbb',
-                    cursor: 'pointer',
-                    fontSize: '18px',
-                    padding: '0',
-                    lineHeight: '1'
-                  }}
-                  onMouseEnter={(e) => (e.target.style.color = '#e53935')}
-                  onMouseLeave={(e) => (e.target.style.color = '#bbb')}
-                  title="删除"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            {/* 错题分析 */}
-            {grade.wrongQuestions && (
-              <div style={{ marginBottom: '10px' }}>
-                <div
-                  style={{
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    marginBottom: '5px'
-                  }}
-                >
-                  错题分析:
-                </div>
-                <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
-                  {grade.wrongQuestions}
-                </div>
-              </div>
-            )}
-
-            {/* 总结改进 */}
-            {grade.analysis && (
-              <div>
-                <div
-                  style={{
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    marginBottom: '5px'
-                  }}
-                >
-                  总结改进:
-                </div>
-                <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
-                  {grade.analysis}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-    </div>
-  )}
+      {view.label}
+    </button>
+  ))}
 </div>
+
+
+{/* 图表区域 */}
+{chartData.length > 0 ? (
+  <div style={{
+    marginBottom: '30px',
+    padding: '15px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    border: '1px solid #e5e7eb',
+    width: '100%',
+    boxSizing: 'border-box',
+    overflowX: 'auto' // 添加横向滚动，防止内容溢出
+  }}>
+    <h3 style={{ marginBottom: '15px', fontSize: '15px', textAlign: 'center', color: '#333' }}>
+      各子分类成绩对比 - {
+        chartView === 'month' ? '本月' : 
+        chartView === 'quarter' ? '本季度' : '本年'
+      }
+    </h3>
+    
+   
+{/* 柱状图容器 */}
+<div style={{ 
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-end',
+  gap: '2px',
+  padding: '10px 5px',
+  minWidth: '100%',
+  width: 'max-content'
+}}>
+  {chartData.map((item, index) => {
+    const height = Math.max(item.score * 1.5, 25);
+    const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
+    
+    // 从 label 中分离子分类和日期
+    const labelParts = item.label.split('-');
+    const subCategory = labelParts[0];
+    const dateParts = labelParts.slice(1).join('-').split('-');
+    const month = dateParts[0];  // 月份
+    const day = dateParts[1];    // 日期
+    
+    return (
+      <div
+        key={index}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '15px',
+          flexShrink: 0
+        }}
+      >
+        {/* 柱子容器 - 固定高度，底部对齐 */}
+        <div style={{
+          height: '120px',  // 固定柱子区域高度
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          marginBottom: '0',
+          width: '100%'
+        }}>
+          <div style={{
+            height: `${height}px`,
+            backgroundColor: barColor,
+            borderRadius: '2px 2px 1px 1px',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            cursor: 'pointer',
+            width: '100%',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}>
+            {/* 分数标签 */}
+            <div style={{
+              position: 'absolute',
+              top: '-18px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: '8px',
+              fontWeight: 'bold',
+              color: barColor,
+              whiteSpace: 'nowrap',
+              backgroundColor: 'transparent',
+              padding: '0',
+              borderRadius: '0',
+              boxShadow: 'none'
+            }}>
+              {item.score}
+            </div>
+          </div>
+        </div>
+        
+        {/* 底部文字区域 - 固定高度，不受文字内容影响 */}
+        <div style={{
+          height: '48px',  // 固定高度，所有柱子底部文字区域高度一致
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          width: '100%',
+          marginTop: '2px'
+        }}>
+          <div style={{
+            fontSize: '8px',
+            color: '#555',
+            textAlign: 'center',
+            width: '100%',
+            fontWeight: '500',
+            lineHeight: '1.2',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '2px',
+            padding: '1px 1px',
+            wordBreak: 'break-word'
+          }}>
+            {subCategory}
+          </div>
+          <div style={{
+            fontSize: '7px',
+            color: '#999',
+            marginTop: '1px',
+            textAlign: 'center',
+            lineHeight: '1.2'
+          }}>
+            {month}
+          </div>
+          <div style={{
+            fontSize: '7px',
+            color: '#999',
+            marginTop: '0px',
+            textAlign: 'center',
+            lineHeight: '1.2'
+          }}>
+            -
+          </div>
+          <div style={{
+            fontSize: '7px',
+            color: '#999',
+            marginTop: '0px',
+            textAlign: 'center',
+            lineHeight: '1.2'
+          }}>
+            {day}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+   
+    
+    {/* 图例说明 */}
+    <div style={{ 
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '16px',
+      marginTop: '12px',
+      padding: '6px',
+      backgroundColor: '#f8f9fa',
+      borderRadius: '8px',
+      fontSize: '10px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '2px' }}></div>
+        <span>普通成绩</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '2px' }}></div>
+        <span>满分成绩</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontWeight: 'bold' }}>{chartData.length}条</span>
+      </div>
+    </div>
+  </div>
+) : (
+  <div style={{
+    marginBottom: '30px',
+    padding: '40px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '12px',
+    textAlign: 'center',
+    color: '#666'
+  }}>
+    📊 暂无成绩数据
+    <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+      {filterSubject !== '全部' ? 
+        `当前筛选条件下（${filterSubject}${filterSubCategory !== '全部' ? ` - ${filterSubCategory}` : ''}）没有找到成绩记录` : 
+        '请先添加成绩记录'
+      }
+    </div>
+  </div>
+)}
+
+
+
+        {/* 成绩记录列表 */}
+        <div>
+          <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>成绩记录列表</h3>
+
+          {filteredGrades.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+              暂无成绩记录
+            </div>
+          ) : (
+            <div
+              style={{
+                maxHeight: '400px',
+                overflow: 'auto',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div style={{ 
+                fontSize: '12px', 
+                color: '#666', 
+                padding: '8px', 
+                backgroundColor: '#f5f5f5',
+                borderRadius: '6px',
+                marginBottom: '10px'
+              }}>
+                当前筛选：科目: {filterSubject} | 子分类: {filterSubCategory} | 
+                共 {filteredGrades.length} 条记录
+              </div>
+              
+              {[...filteredGrades]
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map((grade) => (
+                  <div
+                    key={grade.id}
+                    style={{
+                      padding: '15px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '10px',
+                      marginBottom: '12px',
+                      backgroundColor: grade.isFullMark ? '#f6fbf6' : '#fff'
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 'bold' }}>
+                          {grade.date} {grade.subject}
+                        </span>
+                        {grade.subCategory && (
+                          <span
+                            style={{
+                              marginLeft: '8px',
+                              padding: '2px 6px',
+                              backgroundColor: '#f0f0f0',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              color: '#666'
+                            }}
+                          >
+                            {grade.subCategory}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          flexShrink: 0
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            color: grade.isFullMark ? '#4caf50' : '#1a73e8'
+                          }}
+                        >
+                          {getScoreDisplay(grade)}
+                        </span>
+
+                        {grade.isFullMark && (
+                          <span
+                            style={{
+                              backgroundColor: '#4caf50',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '12px'
+                            }}
+                          >
+                            满分
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        marginBottom: '10px',
+                        fontSize: '14px',
+                        color: '#666',
+                        paddingLeft: '4px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          flex: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {grade.testContent}
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '12px',
+                          marginLeft: '12px'
+                        }}
+                      >
+                        <button
+                          onClick={() => handleEditGrade(grade)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#999',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            padding: '0',
+                            lineHeight: '1'
+                          }}
+                          onMouseEnter={(e) => (e.target.style.color = '#333')}
+                          onMouseLeave={(e) => (e.target.style.color = '#999')}
+                          title="编辑"
+                        >
+                          ✎
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteGrade(grade.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#bbb',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            padding: '0',
+                            lineHeight: '1'
+                          }}
+                          onMouseEnter={(e) => (e.target.style.color = '#e53935')}
+                          onMouseLeave={(e) => (e.target.style.color = '#bbb')}
+                          title="删除"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+
+                    {grade.wrongQuestions && (
+                      <div style={{ marginBottom: '10px' }}>
+                        <div
+                          style={{
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            marginBottom: '5px'
+                          }}
+                        >
+                          错题分析:
+                        </div>
+                        <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+                          {grade.wrongQuestions}
+                        </div>
+                      </div>
+                    )}
+
+                    {grade.analysis && (
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            marginBottom: '5px'
+                          }}
+                        >
+                          总结改进:
+                        </div>
+                        <div style={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>
+                          {grade.analysis}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
 
         {/* 子分类管理弹窗 */}
         {showSubCategoryManager && (
@@ -1649,8 +1768,6 @@ const getCurrentSubCategories = () => {
 
 
 
-
-
 // 重命名文件顶部的 categories 为 baseCategories
 const baseCategories = [
   { 
@@ -1695,6 +1812,8 @@ const BackupManagerModal = ({ onClose }) => {
     }
   };
 
+
+  
   useEffect(() => {
     loadBackups();
   }, []);
@@ -1814,6 +1933,200 @@ const handleManualBackup = async () => {
             </div>
           </div>
         </div>
+
+{/* 图表视图切换 */}
+<div style={{
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '10px',
+  marginBottom: '20px'
+}}>
+  {[
+    { value: 'month', label: '按月' },
+    { value: 'quarter', label: '按季度' },
+    { value: 'year', label: '按年' }
+  ].map(view => {
+    const isActive = chartView === view.value;
+    return (
+      <div
+        key={view.value}
+        onClick={() => {
+          setChartView(view.value);
+          setIsChartReady(false);
+          setTimeout(() => setIsChartReady(true), 50);
+        }}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: isActive ? '#1a73e8' : '#f0f0f0',
+          color: isActive ? '#fff' : '#333',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: isActive ? '500' : 'normal',
+          flex: 1,
+          textAlign: 'center',
+          userSelect: 'none'
+        }}
+      >
+        {view.label}
+      </div>
+    );
+  })}
+</div>
+
+{/* 成绩对比图表 - 添加 key 强制刷新 */}
+<div key={`chart-${chartView}-${filterSubject}-${filterSubCategory}-${chartData.length}`}>
+  {chartData.length > 0 ? (
+    <div style={{
+      marginBottom: '30px',
+      padding: '20px 15px',
+      backgroundColor: '#fff',
+      borderRadius: '12px',
+      border: '1px solid #e5e7eb'
+    }}>
+      <h3 style={{ 
+        marginBottom: '20px', 
+        fontSize: '16px', 
+        textAlign: 'center', 
+        color: '#333'
+      }}>
+        各子分类成绩对比 - {
+          chartView === 'month' ? '本月' : 
+          chartView === 'quarter' ? '本季度' : '本年'
+        }
+      </h3>
+      
+      {/* 图表容器 */}
+      <div style={{ 
+        overflowX: 'auto',
+        paddingBottom: '10px'
+      }}>
+        <div style={{ 
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          gap: '8px',
+          minWidth: Math.max(320, chartData.length * 60)
+        }}>
+          {chartData.map((item, index) => {
+            const scoreNum = Number(item.score) || 0;
+            const barHeight = Math.max(scoreNum * 1.2, 20);
+            const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
+            
+            return (
+              <div
+                key={`${item.id}-${index}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '50px',
+                  flexShrink: 0
+                }}
+              >
+                {/* 柱子 */}
+                <div style={{
+                  height: '100px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  marginBottom: '8px',
+                  width: '100%',
+                  position: 'relative'
+                }}>
+                  <div
+                    style={{
+                      height: `${barHeight}px`,
+                      backgroundColor: barColor,
+                      borderRadius: '4px',
+                      width: '100%',
+                      transition: 'height 0.2s',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* 分数标签 */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-20px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      color: barColor,
+                      whiteSpace: 'nowrap',
+                      backgroundColor: '#fff',
+                      padding: '2px 4px',
+                      borderRadius: '10px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }}>
+                      {scoreNum}%
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 底部文字 */}
+                <div style={{
+                  fontSize: '9px',
+                  color: '#555',
+                  textAlign: 'center',
+                  width: '100%',
+                  lineHeight: '1.3',
+                  wordBreak: 'break-word'
+                }}>
+                  {item.label}
+                </div>
+                <div style={{
+                  fontSize: '8px',
+                  color: '#999',
+                  marginTop: '2px'
+                }}>
+                  {item.date}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* 图例 */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '16px',
+        marginTop: '15px',
+        padding: '8px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '6px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '2px' }}></div>
+          <span style={{ fontSize: '10px' }}>普通11成绩</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '2px' }}></div>
+          <span style={{ fontSize: '10px' }}>满分成绩</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontSize: '10px', color: '#666' }}>{chartData.length}条</span>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div style={{
+      marginBottom: '30px',
+      padding: '40px',
+      backgroundColor: '#f8f9fa',
+      borderRadius: '8px',
+      textAlign: 'center',
+      color: '#666'
+    }}>
+      暂无成绩问问我数据
+    </div>
+  )}
+</div>
+
+
+
 
         {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
@@ -3963,34 +4276,43 @@ const resetForm = () => {
 };
 
 
+// 修复 TaskEditModal 组件中的 handleSave 函数
 const handleSave = () => {
-  console.log('保存模板，内容:', templateContent);
-  
-  // 只检查 templateContent
-  if (!templateContent || templateContent.trim() === '') {
+  // 修复：应该使用 editData.text，而不是 templateContent
+  if (editData.text.trim() === '') {
     alert('任务内容不能为空！');
     return;
   }
 
-  const newTemplate = {
-    id: Date.now().toString(),
-    name: templateContent.trim(),
-    text: templateContent.trim(),
-    content: templateContent.trim(),
-    category: templateCategory,
-    subCategory: templateSubCategory,
-    tags: templateTags || [],
-    scheduledTime: templateScheduledTime,
-    progress: templateProgress,
-    repeatFrequency: repeatFrequency,
-    repeatDays: repeatDays,
-    image: templateImage,
-    isTemplate: true
+  // 构建完整的编辑数据
+  const updatedTask = {
+    ...editData,
+    // 确保计划时间格式正确
+    scheduledTime: editData.startHour && editData.startMinute && editData.endHour && editData.endMinute
+      ? `${editData.startHour.padStart(2, '0')}:${editData.startMinute.padStart(2, '0')}-${editData.endHour.padStart(2, '0')}:${editData.endMinute.padStart(2, '0')}`
+      : editData.scheduledTime || '',
+    
+    // 确保提醒时间正确构建
+    reminderTime: (editData.reminderYear && editData.reminderMonth && editData.reminderDay)
+      ? {
+          year: parseInt(editData.reminderYear),
+          month: parseInt(editData.reminderMonth),
+          day: parseInt(editData.reminderDay),
+          hour: parseInt(editData.reminderHour) || 0,
+          minute: parseInt(editData.reminderMinute) || 0
+        }
+      : null,
+    
+    // 确保进度数据正确
+    progress: editData.progress || {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    }
   };
 
-  console.log('创建新模板:', newTemplate);
-  onSave(newTemplate);
-  resetForm();
+  onSave(updatedTask);
   onClose();
 };
 
@@ -9133,7 +9455,7 @@ const TaskItem = ({
 
 
 function App() {
-
+const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 const [editingTemplate, setEditingTemplate] = useState(null);
 const [templateFormData, setTemplateFormData] = useState({
@@ -12643,28 +12965,19 @@ const calculateTodayStats = () => {
   };
 };
 
- // 在生成图表数据的函数中也要确保包含常规任务
-// 在生成图表数据的函数中也要确保排除未完成的常规任务
-const generateChartData = () => {
-  let dateRange = [];
-  if (statsMode === "week") {
-    dateRange = getWeekDates(currentMonday).map(d => d.date);
-  } else {
-    dateRange = getWeekDates(currentMonday).map(d => d.date);
-  }
-
-  const stats = {
-    totalTime: 0,
-    byCategory: {},
-    byDay: {},
-    tasksByDay: {},
-    completionRates: [],
-    dailyTimes: [],
-    bySubCategory: {}
-  };
-
-  dateRange.forEach(date => {
-    const dayTasks = tasksByDate[date] || [];
+// 在 App 组件中添加这个函数（在 calculateTodayStats 之后）
+const generateStatsData = () => {
+  // 获取本周的日期范围
+  const weekDates = getWeekDates(currentMonday);
+  const dailyStudyData = [];
+  const dailyTasksData = [];
+  
+  // 按分类统计时间
+  const categoryTime = {};
+  const subCategoryTime = {};
+  
+  weekDates.forEach(day => {
+    const dayTasks = tasksByDate[day.date] || [];
     
     // 排除本周任务和未完成的常规任务
     const learningTasks = dayTasks.filter(task => {
@@ -12673,75 +12986,68 @@ const generateChartData = () => {
       return true;
     });
     
-    let dayTotal = 0;
-    let completedTasks = 0;
-
+    let dayTotalTime = 0;
+    let dayCompletedTasks = 0;
+    
     learningTasks.forEach(task => {
-      stats.totalTime += task.timeSpent || 0;
-      dayTotal += task.timeSpent || 0;
-
-      if (!stats.byCategory[task.category]) {
-        stats.byCategory[task.category] = 0;
+      const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
+      dayTotalTime += timeMinutes;
+      
+      // 分类统计
+      if (!categoryTime[task.category]) {
+        categoryTime[task.category] = 0;
       }
-      stats.byCategory[task.category] += task.timeSpent || 0;
-
+      categoryTime[task.category] += timeMinutes;
+      
       // 校内子分类统计
-      if (task.category === '校内') {
-        const subCat = task.subCategory || '未分类';
-        if (!stats.bySubCategory[subCat]) {
-          stats.bySubCategory[subCat] = 0;
+      if (task.category === '校内' && task.subCategory) {
+        if (!subCategoryTime[task.subCategory]) {
+          subCategoryTime[task.subCategory] = 0;
         }
-        stats.bySubCategory[subCat] += task.timeSpent || 0;
+        subCategoryTime[task.subCategory] += timeMinutes;
       }
-
-      if (task.done) completedTasks++;
+      
+      if (task.done) dayCompletedTasks++;
     });
-
-    stats.byDay[date] = dayTotal;
-    stats.tasksByDay[date] = completedTasks;
-
-    if (learningTasks.length > 0) {
-      stats.completionRates.push((completedTasks / learningTasks.length) * 100);
-    }
-
-    stats.dailyTimes.push(dayTotal);
+    
+    dailyStudyData.push({
+      name: `${new Date(day.date).getDate()}日`,
+      time: dayTotalTime,
+      date: day.date.slice(5)
+    });
+    
+    dailyTasksData.push({
+      name: `${new Date(day.date).getDate()}日`,
+      tasks: dayCompletedTasks,
+      date: day.date.slice(5)
+    });
   });
-
-  return {
-    dailyStudyData: Object.entries(stats.byDay).map(([date, time]) => {
-      const minutes = Math.round(time / 60);
-      return {
-        name: `${new Date(date).getDate()}日`,
-        time: minutes,
-        date: date.slice(5)
-      };
-    }),
-    categoryData: categories
-      .filter(cat => cat.name !== "运动" && cat.name !== "本周任务")
-      .map(cat => ({
-        name: cat.name,
-        time: Math.round((stats.byCategory[cat.name] || 0) / 60),
-        color: cat.color
-      })),
-    dailyTasksData: Object.entries(stats.tasksByDay).map(([date, count]) => ({
-      name: `${new Date(date).getDate()}日`,
-      tasks: count,
-      date: date.slice(5)
-    })),
-    subCategoryData: Object.entries(stats.bySubCategory).map(([subCat, time]) => ({
-      name: subCat,
-      time: Math.round(time / 60),
-      color: '#1a73e8'
-    })),
-    avgCompletion: stats.completionRates.length > 0 ?
-      Math.round(stats.completionRates.reduce((a, b) => a + b, 0) / stats.completionRates.length) : 0,
-    avgDailyTime: stats.dailyTimes.length > 0 ?
-      Math.round(stats.dailyTimes.reduce((a, b) => a + b, 0) / stats.dailyTimes.length / 60) : 0
-  };
+  
+  // 转换分类数据为图表格式
+  const categoryData = Object.entries(categoryTime).map(([name, time]) => ({
+    name,
+    time,
+    color: categories.find(c => c.name === name)?.color || '#1a73e8'
+  }));
+  
+  const subCategoryData = Object.entries(subCategoryTime).map(([name, time]) => ({
+    name,
+    time,
+    color: '#1a73e8'
+  }));
+  
+  // 计算平均完成率和平均每日时间
+  const avgCompletion = dailyTasksData.length > 0 
+    ? Math.round(dailyTasksData.reduce((sum, d) => sum + d.tasks, 0) / dailyTasksData.length / 5 * 100)
+    : 0;
+  const avgDailyTime = dailyStudyData.length > 0
+    ? Math.round(dailyStudyData.reduce((sum, d) => sum + d.time, 0) / dailyStudyData.length)
+    : 0;
+  
+  return { dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime };
 };
 
-
-  
+const { dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime } = generateStatsData();
   
   // 判断分类是否全部完成
   const isCategoryComplete = (catName) => {
@@ -14632,9 +14938,7 @@ const handleDeleteTemplate = (index) => {
 
 
 const todayStats = calculateTodayStats();
-const { dailyStudyData, categoryData, subCategoryData,  dailyTasksData, avgCompletion, avgDailyTime } = generateChartData();
 
-  
 
       
     
@@ -15056,6 +15360,7 @@ if (isInitialized && todayTasks.length === 0) {
 
     {showGradeModal && (
       <GradeModal 
+      key={Date.now()}  // 👈 添加这行，每次打开都重新创建组件
         onClose={() => setShowGradeModal(false)} 
         isVisible={showGradeModal}
       />
@@ -15359,7 +15664,7 @@ if (isInitialized && todayTasks.length === 0) {
     zIndex: 10,
     padding: 0 // 确保没有内边距
   }}
-  title="成绩记录"
+  title="成绩111记录"
 >
   📊
 </button>
