@@ -9589,6 +9589,7 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
+// 找到 handleRestoreData 函数，添加 reminderText 的恢复
 const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
@@ -9634,6 +9635,13 @@ const handleRestoreData = useCallback(async (backupData) => {
       });
     }
     
+    // 恢复每日提醒文本 - 新增
+    if (backupData.reminderText !== undefined) {
+      setReminderText(backupData.reminderText);
+      localStorage.setItem('daily_reminder', backupData.reminderText);
+      console.log('📢 恢复每日提醒:', backupData.reminderText || '无');
+    }
+    
     // 恢复类别配置
     if (backupData.categories) {
       setCategories(backupData.categories);
@@ -9656,22 +9664,21 @@ const handleRestoreData = useCallback(async (backupData) => {
 
     console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
     
-    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个`);
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个\n每日提醒: ${backupData.reminderText ? '已恢复' : '无'}`);
 
   } catch (error) {
     console.error('恢复失败:', error);
     alert('恢复失败: ' + error.message);
   }
 }, []);
-
 // 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
 // eslint-disable-next-line no-unused-vars
 
 
 
+
+
+// 找到 syncToGitHub 函数，在收集同步数据时添加 reminderText
 const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -9680,10 +9687,7 @@ const syncToGitHub = useCallback(async () => {
     return;
   }
 
-  // 👇 添加这行 - 显示准备同步中提示
   setIsSyncing(true);
-  
-  // 👇 添加这行 - 添加一个短暂的延迟，让用户能看到提示
   await new Promise(resolve => setTimeout(resolve, 500));
 
   try {
@@ -9709,9 +9713,12 @@ const syncToGitHub = useCallback(async () => {
       // 成绩记录
       grades: await loadMainData('grades') || [],
       
+      // 每日提醒文本 - 新增
+      reminderText: reminderText,  // 添加这行
+      
       // 元数据
       syncTime: new Date().toISOString(),
-      version: '2.1',
+      version: '2.2',  // 更新版本号
       lastSelectedDate: selectedDate,
       lastCurrentMonday: currentMonday.toISOString()
     };
@@ -9720,7 +9727,8 @@ const syncToGitHub = useCallback(async () => {
       任务天数: Object.keys(tasksByDate).length,
       模板数量: templates.length,
       有复盘的日期: Object.keys(dailyReflections).length,
-      本月任务: monthTasks.length
+      本月任务: monthTasks.length,
+      每日提醒: reminderText ? '有' : '无'  // 添加日志
     });
 
     // 获取或创建 Gist
@@ -9759,26 +9767,22 @@ const syncToGitHub = useCallback(async () => {
 
     const result = await response.json();
     
-    // 保存 Gist ID
     if (!gistId && result.id) {
       localStorage.setItem('github_gist_id', result.id);
       console.log('✅ 新 Gist ID 已保存:', result.id);
     }
 
-    // 更新最后同步时间
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
-    // ✅ 添加成功提示
     const syncTime = new Date().toLocaleString();
     const taskCount = Object.keys(tasksByDate).length;
     const reflectionCount = Object.keys(dailyReflections).length;
     
-    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n\n数据已保存到 GitHub Gist`);
+    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
 
   } catch (error) {
     console.error('同步失败:', error);
     
-    // ❌ 添加失败提示
     let errorMessage = '同步失败：';
     if (error.message.includes('401')) {
       errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
@@ -9786,7 +9790,6 @@ const syncToGitHub = useCallback(async () => {
       errorMessage += '权限不足，请确保 Token 有 gist 权限';
     } else if (error.message.includes('404')) {
       errorMessage += 'Gist 不存在，将自动创建新的备份';
-      // 清除无效的 Gist ID
       localStorage.removeItem('github_gist_id');
     } else {
       errorMessage += error.message;
@@ -9794,14 +9797,14 @@ const syncToGitHub = useCallback(async () => {
     
     alert(errorMessage);
   } finally {
-    // 👇 添加这行 - 无论成功失败都要关闭同步状态
     setIsSyncing(false);
   }
-}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks]);
+}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]); // 添加 reminderText 依赖
 
 
 
-// 修复 autoRestoreLatestData 函数
+
+// 找到 autoRestoreLatestData 函数，确保恢复每日提醒
 const autoRestoreLatestData = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   
@@ -9852,7 +9855,10 @@ const autoRestoreLatestData = useCallback(async () => {
     const backupData = JSON.parse(content);
     console.log('✅ 获取到备份数据，更新时间:', gist.updated_at);
     
-    // 🔽 修复这里：总是询问用户是否要恢复，即使本地有数据
+    // 检查备份数据是否包含每日提醒
+    const hasReminder = backupData.reminderText !== undefined;
+    console.log('📢 备份数据包含每日提醒:', hasReminder ? '是' : '否');
+    
     const localDataCount = Object.keys(tasksByDate).length;
     const cloudDataCount = Object.keys(backupData.tasksByDate || {}).length;
     
@@ -9860,7 +9866,8 @@ const autoRestoreLatestData = useCallback(async () => {
       `云端数据：\n` +
       `• 备份时间：${new Date(backupData.syncTime || gist.updated_at).toLocaleString()}\n` +
       `• 任务天数：${cloudDataCount}\n` +
-      `• 模板数量：${(backupData.templates || []).length}\n\n` +
+      `• 模板数量：${(backupData.templates || []).length}\n` +
+      `• 每日提醒：${backupData.reminderText ? '有' : '无'}\n\n` +
       `本地数据：\n` +
       `• 任务天数：${localDataCount}\n\n` +
       `恢复将覆盖当前所有本地数据！`;
@@ -9868,7 +9875,6 @@ const autoRestoreLatestData = useCallback(async () => {
     if (window.confirm(confirmMessage)) {
       console.log('用户确认恢复，开始设置状态...');
       
-      // 保存这个gistId供以后使用
       if (!savedGistId) {
         localStorage.setItem('github_gist_id', targetGistId);
       }
@@ -9881,7 +9887,6 @@ const autoRestoreLatestData = useCallback(async () => {
   } catch (error) {
     console.error('自动恢复失败:', error);
     
-    // 提供更友好的错误信息
     let errorMessage = '恢复失败: ';
     if (error.message.includes('401') || error.message.includes('403')) {
       errorMessage += 'Token 无效或权限不足，请检查同步设置';
@@ -9894,8 +9899,6 @@ const autoRestoreLatestData = useCallback(async () => {
     alert(errorMessage);
   }
 }, [tasksByDate, handleRestoreData]);
-
-
 
 
 
@@ -14134,9 +14137,9 @@ const loadDataWithFallback = async (key, fallback) => {
 
 // 替换现有的 handleExportData 函数
 // 替换现有的 handleExportData 函数
+// 找到 handleExportData 函数，添加 reminderText
 const handleExportData = async () => {
   try {
-    // 使用 loadDataWithFallback 函数安全加载数据
     const allData = {
       tasks: await loadDataWithFallback('tasks', {}),
       templates: await loadDataWithFallback('templates', []),
@@ -14144,18 +14147,19 @@ const handleExportData = async () => {
       dailyRatings: dailyRatings || {},
       dailyReflections: dailyReflections || {},
       grades: await loadDataWithFallback('grades', []),
-      monthTasks: monthTasks || [],  // 添加本月任务
+      monthTasks: monthTasks || [],
+      reminderText: reminderText || '',  // 添加这行
       exportDate: new Date().toISOString(),
-      version: '2.1'
+      version: '2.2'  // 更新版本号
     };
     
-    // 验证数据完整性
     const dataStats = {
       任务天数: Object.keys(allData.tasks || {}).length,
       模板数量: (allData.templates || []).length,
       有复盘的日期: Object.keys(allData.dailyReflections || {}).length,
       成绩记录: (allData.grades || []).length,
-      本月任务: (allData.monthTasks || []).length  // 添加统计
+      本月任务: (allData.monthTasks || []).length,
+      每日提醒: allData.reminderText ? '有' : '无'  // 添加统计
     };
     
     console.log('📊 导出数据统计:', dataStats);
@@ -14169,15 +14173,13 @@ const handleExportData = async () => {
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
     
-    console.log('✅ 数据导出成功');
-    alert(`✅ 导出成功！\n\n导出内容：\n• 任务天数: ${dataStats.任务天数}\n• 模板数量: ${dataStats.模板数量}\n• 复盘天数: ${dataStats.有复盘的日期}\n• 成绩记录: ${dataStats.成绩记录}\n• 本月任务: ${dataStats.本月任务}`);
+    alert(`✅ 导出成功！\n\n导出内容：\n• 任务天数: ${dataStats.任务天数}\n• 模板数量: ${dataStats.模板数量}\n• 复盘天数: ${dataStats.有复盘的日期}\n• 成绩记录: ${dataStats.成绩记录}\n• 本月任务: ${dataStats.本月任务}\n• 每日提醒: ${dataStats.每日提醒}`);
     
   } catch (error) {
     console.error('导出失败:', error);
     alert('导出失败，请重试: ' + error.message);
   }
 };
-
 
 
 
@@ -17332,8 +17334,6 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-
-{/* 隐藏的文件导入input */}
 <input
   id="import-file"
   type="file"
@@ -17355,13 +17355,15 @@ if (isInitialized && todayTasks.length === 0) {
           任务天数: Object.keys(importedData.tasks || {}).length,
           模板数量: (importedData.templates || []).length,
           成就数量: (importedData.customAchievements || []).length,
-          版本: importedData.version || '未知'
+          版本: importedData.version || '未知',
+          每日提醒: importedData.reminderText ? '有' : '无'  // 添加统计
         };
         
         const confirmMessage = `确定要导入以下数据吗？\n` +
           `• 任务天数: ${importStats.任务天数}\n` +
           `• 模板数量: ${importStats.模板数量}\n` +
           `• 成就数量: ${importStats.成就数量}\n` +
+          `• 每日提醒: ${importStats.每日提醒}\n` +
           `• 数据版本: ${importStats.版本}\n\n` +
           `这将覆盖当前所有数据！`;
 
@@ -17373,6 +17375,12 @@ if (isInitialized && todayTasks.length === 0) {
           await saveMainData('customAchievements', importedData.customAchievements || []);
           await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
           await saveMainData('categories', importedData.categories || baseCategories);
+          
+          // 恢复每日提醒
+          if (importedData.reminderText !== undefined) {
+            setReminderText(importedData.reminderText);
+            localStorage.setItem('daily_reminder', importedData.reminderText);
+          }
           
           setTasksByDate(importedData.tasks || {});
           setTemplates(importedData.templates || []);
@@ -17400,6 +17408,7 @@ if (isInitialized && todayTasks.length === 0) {
   }}
   style={{ display: "none" }}
 />
+
 
      
     </div>
