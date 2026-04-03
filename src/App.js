@@ -357,6 +357,7 @@ useEffect(() => {
 
   // 生成图表数据
 // 生成图表数据 - 修改为显示所有历史成绩
+// 生成图表数据 - 修改为显示所有历史成绩
 const generateChartData = () => {
   const now = new Date();
   let startDate, endDate;
@@ -379,28 +380,12 @@ const generateChartData = () => {
       return [];
   }
 
-  // 添加调试日志
-  console.log('📅 图表日期范围:', {
-    chartView,
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
-    filteredGradesCount: filteredGrades.length
-  });
-
   const filteredByDate = filteredGrades.filter(grade => {
     const gradeDate = new Date(grade.date);
     return gradeDate >= startDate && gradeDate <= endDate;
   });
 
-  console.log('📊 按日期筛选后的成绩数量:', filteredByDate.length);
-  console.log('📝 筛选后的成绩:', filteredByDate.map(g => ({ 
-    date: g.date, 
-    subject: g.subject, 
-    subCategory: g.subCategory, 
-    score: g.score 
-  })));
-
-  // 按子分类分组 - 修改：显示所有成绩，不限制数量
+  // 按子分类分组
   const groupedBySubCat = {};
   filteredByDate.forEach(grade => {
     const subCat = grade.subCategory || '未分类';
@@ -410,18 +395,13 @@ const generateChartData = () => {
     groupedBySubCat[subCat].push(grade);
   });
 
-  console.log('📁 子分类分组:', Object.keys(groupedBySubCat));
-  Object.entries(groupedBySubCat).forEach(([subCat, grades]) => {
-    console.log(`  ${subCat}: ${grades.length} 条记录`);
-  });
-
-  // 生成图表数据 - 显示所有成绩（不再限制为最近5条）
+  // 生成图表数据
   const chartData = [];
   Object.entries(groupedBySubCat).forEach(([subCat, subCatGrades]) => {
-    // 按日期排序（从旧到新，这样图表从左到右是时间顺序）
-    const sorted = subCatGrades.sort((a, b) => a.date.localeCompare(b.date));
+    // 按日期排序（从新到旧，最新的在前面）
+    const sorted = subCatGrades.sort((a, b) => b.date.localeCompare(a.date));
     
-    // 显示所有成绩，不再限制数量
+    // 显示所有成绩
     sorted.forEach((grade) => {
       chartData.push({
         id: grade.id,
@@ -436,12 +416,9 @@ const generateChartData = () => {
     });
   });
 
-  // 按日期排序所有数据，确保图表按时间顺序显示
-  chartData.sort((a, b) => a.date.localeCompare(b.date));
+  // 按日期倒序排序所有数据（最新的在前）
+  chartData.sort((a, b) => b.date.localeCompare(a.date));
 
-  console.log('📈 最终图表数据数量:', chartData.length);
-  console.log('📈 图表数据:', chartData.map(d => ({ date: d.date, subCategory: d.subCategory, score: d.score })));
-  
   return chartData;
 };
   
@@ -701,6 +678,7 @@ useEffect(() => {
     });
   }}
   onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+   onTouchStart={(e) => e.stopPropagation()} // ✅ 移动端也加上
   style={{
     width: '100%',
     height: '40px',
@@ -733,6 +711,7 @@ useEffect(() => {
   value={newGrade.subCategory}
   onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
   onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+  onTouchStart={(e) => e.stopPropagation()} // ✅ 移动端也加上
   style={{
     width: '100%',
     height: '40px',
@@ -797,6 +776,7 @@ useEffect(() => {
                     <select
                       value={newGrade.scoreType}
                       onChange={handleScoreTypeChange}
+                      onTouchStart={(e) => e.stopPropagation()} // ✅ 移动端也加上
                       onMouseDown={(e) => e.stopPropagation()}  // 添加这行
                       style={{
                         width: '100%',
@@ -1143,9 +1123,10 @@ useEffect(() => {
   marginBottom: '20px'
 }}>
   {[
+    { value: 'year', label: '按年' },
     { value: 'month', label: '按月' },
-    { value: 'quarter', label: '按季度' },
-    { value: 'year', label: '按年' }
+    { value: 'quarter', label: '按季度' }
+  
   ].map(view => (
     <button
       key={view.value}
@@ -1185,120 +1166,115 @@ useEffect(() => {
       }
     </h3>
     
-    {/* 横向条形图容器 */}
-    <div style={{ 
-      minWidth: '300px',
-      width: '100%'
-    }}>
-      
-      {chartData.map((item, index) => {
-  const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
-  const percentage = item.score;
-  
-  // 格式化日期显示
-  const dateObj = new Date(item.date);
-  const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-  
-  // 截取测试内容（如果太长）
-  const testContent = item.testContent.length > 15 
-    ? item.testContent.substring(0, 12) + '...' 
-    : item.testContent;
-  
-  return (
-    <div
-      key={item.id}
-      style={{
-        marginBottom: '10px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        width: '100%'
-      }}
-    >
-      {/* 左侧标签区域 */}
-      <div style={{
-        width: '110px',
-        flexShrink: 0,
-        fontSize: '11px',
-        color: '#555'
-      }}>
-        {/* 第一行：子分类 + 日期 */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'baseline', 
-          gap: '6px', 
-          flexWrap: 'wrap',
-          marginBottom: '2px'
-        }}>
-          <span style={{ fontWeight: 'bold', color: barColor }}>
-            {item.subCategory}
-          </span>
-          <span style={{ fontSize: '9px', color: '#bbb' }}>
-            {formattedDate}
-          </span>
-        </div>
-        {/* 第二行：测试名称 */}
-        <div style={{ 
-          fontSize: '10px', 
-          color: '#999',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        }}>
-          {testContent}
-        </div>
-      </div>
-      
-      {/* 中间条形图区域 */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}>
+  {/* 横向条形图容器 */}
+<div style={{ 
+  minWidth: '300px',
+  width: '100%'
+}}>
+  {chartData.map((item, index) => {
+    const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
+    const percentage = item.score;
+    
+    // 格式化日期显示
+    const dateObj = new Date(item.date);
+    const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+    
+    // 测试名称不截断，保留完整
+    const testContent = item.testContent;
+    
+    // 查找对应的成绩记录
+    const originalGrade = grades.find(g => g.id === item.id);
+    
+    return (
+      <div
+        key={item.id}
+        style={{
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '8px',
+          width: '100%',
+          cursor: 'pointer'  // 添加指针样式
+        }}
+        onClick={() => {
+          if (originalGrade) {
+            handleEditGrade(originalGrade);
+          }
+        }}
+      >
+        {/* 左侧标签区域 */}
         <div style={{
-          flex: 1,
-          height: '24px',
-          backgroundColor: '#f0f0f0',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          position: 'relative'
+          width: '110px',
+          flexShrink: 0,
+          fontSize: '11px',
+          color: '#555'
         }}>
-          <div style={{
-            width: `${percentage}%`,
-            height: '100%',
-            backgroundColor: barColor,
-            borderRadius: '12px',
-            transition: 'width 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            paddingRight: '6px',
-            color: percentage > 30 ? 'white' : '#333',
-            fontSize: '10px',
-            fontWeight: 'bold'
+          {/* 第一行：子分类 + 日期 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'baseline', 
+            gap: '6px', 
+            flexWrap: 'wrap',
+            marginBottom: '4px'
           }}>
-            {percentage >= 25 && `${percentage}`}
+            <span style={{ fontWeight: 'bold', color: barColor }}>
+              {item.subCategory}
+            </span>
+            <span style={{ fontSize: '9px', color: '#bbb' }}>
+              {formattedDate}
+            </span>
+          </div>
+          {/* 第二行：测试名称 - 自动换行 */}
+          <div style={{ 
+            fontSize: '10px', 
+            color: '#999',
+            wordBreak: 'break-word',
+            whiteSpace: 'normal',
+            lineHeight: '1.4',
+            maxWidth: '100%'
+          }}>
+            {testContent}
           </div>
         </div>
         
-        {/* 右侧分数显示 */}
-        <div style={{
-          width: '32px',
-          flexShrink: 0,
-          textAlign: 'right',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          color: barColor
-        }}>
-          {item.score}
-        </div>
+        {/* 条形图区域 */}
+<div style={{
+  flex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',  // 👈 添加这行，让内容靠右对齐
+  marginTop: '2px'
+}}>
+  <div style={{
+    width: '80%',  // 👈 改成固定宽度百分比，不再使用 flex:1
+    height: '24px',
+    backgroundColor: '#f0f0f0',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    position: 'relative'
+  }}>
+    <div style={{
+      width: `${percentage}%`,
+      height: '100%',
+      backgroundColor: barColor,
+      borderRadius: '12px',
+      transition: 'width 0.3s ease',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingRight: '6px',
+      color: percentage > 30 ? 'white' : '#333',
+      fontSize: '10px',
+      fontWeight: 'bold'
+    }}>
+      {percentage >= 25 && `${percentage}`}
+    </div>
+  </div>
+</div>
       </div>
-    </div>
-  );
-})}
-    </div>
-    
+    );
+  })}
+</div>
     {/* 图例说明 */}
     <div style={{ 
       display: 'flex',
@@ -1626,6 +1602,7 @@ useEffect(() => {
                 <select
                   value={editingSubject || ''}
                   onChange={(e) => setEditingSubject(e.target.value)}
+                  onMouseDown={(e) => e.stopPropagation()}  // ✅ 添加这行
                   style={{
                     width: '100%',
                     padding: '12px',
