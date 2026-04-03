@@ -180,20 +180,14 @@ const GradeModal = ({ onClose, isVisible }) => {
     return `${score}/${fullScore}`;
   };
 
-  const handleSubjectClick = (subject) => {
+ const handleSubjectClick = (subject) => {
   console.log('点击科目:', subject);
   setSelectedSubject(subject);
   setSelectedSubCategory(null);
-  // 强制重新渲染
-  setSelectedSubject(prev => prev);
+  // 不需要强制重新渲染，状态改变会自动触发
 };
 
-// 切换子分类 - 点击同一个按钮不做任何事
 const handleSubCategoryClick = (subCat) => {
-  // 如果点击的是当前已选中的子分类，直接返回，不做任何更新
-  if (selectedSubCategory === subCat) {
-    return;
-  }
   setSelectedSubCategory(subCat);
 };
 
@@ -214,22 +208,23 @@ const handleSubCategoryClick = (subCat) => {
   };
 
   // 生成图表数据（按日期排序）
-  const getChartData = () => {
-    const filtered = getFilteredGrades();
-    
-    // 按日期排序（从旧到新）
-    const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
-    
-    return sorted.map(grade => ({
-      id: grade.id,
-      date: grade.date,
-      label: grade.date.slice(5),
-      score: getPercentageScore(grade),
-      isFullMark: grade.isFullMark,
-      testContent: grade.testContent,
-      subCategory: grade.subCategory
-    }));
-  };
+  // 生成图表数据（按日期倒序排序 - 最新的在前面）
+const getChartData = () => {
+  const filtered = getFilteredGrades();
+  
+  // 按日期倒序排序（从新到旧）
+  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+  
+  return sorted.map(grade => ({
+    id: grade.id,
+    date: grade.date,
+    label: grade.date.slice(5),
+    score: getPercentageScore(grade),
+    isFullMark: grade.isFullMark,
+    testContent: grade.testContent,
+    subCategory: grade.subCategory
+  }));
+};
 
   // 统计信息
   const getStats = () => {
@@ -400,21 +395,23 @@ return (
 }}>
   {mainSubjects.map(subject => (
     <button
-      key={`${subject}-${selectedSubject}`}  // ← 添加 selectedSubject 到 key
-      onClick={() => handleSubjectClick(subject)}
-      style={{
-        flex: 1,
-        padding: '8px 12px',
-        backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
-        color: selectedSubject === subject ? 'white' : '#333',
-        border: 'none',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '14px'
-      }}
-    >
-      {subject}
-    </button>
+  key={`${subject}-${selectedSubject}`}
+  onClick={() => handleSubjectClick(subject)}
+  style={{
+    flex: 1,
+    padding: '8px 12px',
+    backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
+    color: selectedSubject === subject ? 'white' : '#333',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    // 添加这行防止移动端点击闪烁
+    WebkitTapHighlightColor: 'transparent'
+  }}
+>
+  {subject}
+</button>
   ))}
 </div>
 
@@ -429,7 +426,7 @@ return (
             justifyContent: 'center'
           }}>
     <button
-  key={`all-${selectedSubCategory}`}  // ← 添加这行
+  key={`all-${selectedSubCategory}`}
   onClick={() => handleSubCategoryClick(null)}
   style={{
     padding: '6px 14px',
@@ -438,27 +435,29 @@ return (
     border: 'none',
     borderRadius: '20px',
     cursor: 'pointer',
-    fontSize: '13px'
+    fontSize: '13px',
+    WebkitTapHighlightColor: 'transparent'
   }}
 >
   全部
 </button>
             {currentSubCategories.map(subCat => (
   <button
-    key={`${subCat}-${selectedSubCategory}`}  // ← 添加这行
-    onClick={() => handleSubCategoryClick(subCat)}
-    style={{
-      padding: '6px 14px',
-      backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
-      color: selectedSubCategory === subCat ? 'white' : '#333',
-      border: 'none',
-      borderRadius: '20px',
-      cursor: 'pointer',
-      fontSize: '13px'
-    }}
-  >
-    {subCat}
-  </button>
+  key={`${subCat}-${selectedSubCategory}`}
+  onClick={() => handleSubCategoryClick(subCat)}
+  style={{
+    padding: '6px 14px',
+    backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
+    color: selectedSubCategory === subCat ? 'white' : '#333',
+    border: 'none',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    WebkitTapHighlightColor: 'transparent'
+  }}
+>
+  {subCat}
+</button>
 ))}
           </div>
         )}
@@ -484,15 +483,15 @@ return (
           </div>
           
           <div style={{
-            padding: '12px',
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>平均分</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.avgScore}%</div>
-          </div>
+  padding: '12px',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  border: '1px solid #e5e7eb',
+  textAlign: 'center'
+}}>
+  <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>平均分</div>
+  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.avgScore}</div>
+</div>
           
           <div style={{
             padding: '12px',
@@ -17751,3 +17750,5 @@ if (isInitialized && todayTasks.length === 0) {
   
   
   export default App
+
+    
