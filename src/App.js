@@ -379,7 +379,7 @@ useEffect(() => {
   const subCategoryStats = getSubCategoryStats();
 
   // 生成图表数据
-// 生成图表数据
+// 生成图表数据 - 修改为显示所有历史成绩
 const generateChartData = () => {
   const now = new Date();
   let startDate, endDate;
@@ -416,9 +416,14 @@ const generateChartData = () => {
   });
 
   console.log('📊 按日期筛选后的成绩数量:', filteredByDate.length);
-  console.log('📝 筛选后的成绩:', filteredByDate.map(g => ({ date: g.date, subject: g.subject, subCategory: g.subCategory, score: g.score })));
+  console.log('📝 筛选后的成绩:', filteredByDate.map(g => ({ 
+    date: g.date, 
+    subject: g.subject, 
+    subCategory: g.subCategory, 
+    score: g.score 
+  })));
 
-  // 按子分类分组
+  // 按子分类分组 - 修改：显示所有成绩，不限制数量
   const groupedBySubCat = {};
   filteredByDate.forEach(grade => {
     const subCat = grade.subCategory || '未分类';
@@ -430,16 +435,17 @@ const generateChartData = () => {
 
   console.log('📁 子分类分组:', Object.keys(groupedBySubCat));
   Object.entries(groupedBySubCat).forEach(([subCat, grades]) => {
-    console.log(`  ${subCat}: ${grades.length} 条记录`, grades.map(g => ({ date: g.date, score: g.score })));
+    console.log(`  ${subCat}: ${grades.length} 条记录`);
   });
 
-  // 生成每个子分类的趋势数据
+  // 生成图表数据 - 显示所有成绩（不再限制为最近5条）
   const chartData = [];
   Object.entries(groupedBySubCat).forEach(([subCat, subCatGrades]) => {
+    // 按日期排序（从旧到新，这样图表从左到右是时间顺序）
     const sorted = subCatGrades.sort((a, b) => a.date.localeCompare(b.date));
-    const recent = sorted.slice(-5);
     
-    recent.forEach((grade) => {
+    // 显示所有成绩，不再限制数量
+    sorted.forEach((grade) => {
       chartData.push({
         id: grade.id,
         subCategory: subCat,
@@ -447,17 +453,20 @@ const generateChartData = () => {
         label: `${subCat}-${grade.date.slice(5)}`,
         score: getPercentageScore(grade),
         isFullMark: grade.isFullMark,
-        testContent: grade.testContent
+        testContent: grade.testContent,
+        fullDate: grade.date
       });
     });
   });
 
+  // 按日期排序所有数据，确保图表按时间顺序显示
+  chartData.sort((a, b) => a.date.localeCompare(b.date));
+
   console.log('📈 最终图表数据数量:', chartData.length);
-  console.log('📈 图表数据:', chartData);
+  console.log('📈 图表数据:', chartData.map(d => ({ date: d.date, subCategory: d.subCategory, score: d.score })));
   
   return chartData;
 };
-
   
   const chartData = generateChartData();
 
@@ -1298,11 +1307,11 @@ useEffect(() => {
               <div style={{
                 fontSize: '8px',
                 color: '#999',
-                marginTop: '0px',
+                marginTop: '-3px',
                 textAlign: 'center',
-                lineHeight: '1.2'
+                lineHeight: '1'
               }}>
-                -
+               -
               </div>
               {/* 第四行：日期 */}
               <div style={{
@@ -5587,6 +5596,503 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
 };
 
 
+// 常规任务模态框组件 - 修改为支持类别选择
+const RegularTaskModal = ({ onClose, onAdd, categories }) => {
+  const [taskText, setTaskText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('校内');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+
+  // 获取校内子分类
+  const schoolCategory = categories?.find(c => c.name === '校内');
+  const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+
+  const handleAdd = () => {
+    if (taskText.trim()) {
+      onAdd(taskText.trim(), selectedCategory, selectedSubCategory);
+      onClose();
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 350,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }}>
+        <h3 style={{ 
+          textAlign: 'center', 
+          marginBottom: 20, 
+          color: '#FF9800',
+          fontSize: 18
+        }}>
+          📋 添加常规任务
+        </h3>
+        
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: 5, 
+            fontSize: 13, 
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            任务内容
+          </label>
+          <input
+            type="text"
+            value={taskText}
+            onChange={(e) => setTaskText(e.target.value)}
+            placeholder="输入常规任务内容..."
+            style={{
+              width: '100%',
+              padding: 10,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+          />
+        </div>
+
+        {/* 类别选择 */}
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: 5, 
+            fontSize: 13, 
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            类别
+          </label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setSelectedSubCategory('');
+            }}
+            style={{
+              width: '100%',
+              padding: 10,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              boxSizing: 'border-box'
+            }}
+          >
+            {categories.filter(c => c.name !== "常规任务" && c.name !== "本周任务").map(c => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 子类别选择 - 仅当选择"校内"时显示 */}
+        {selectedCategory === '校内' && (
+          <div style={{ marginBottom: 15 }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: 5, 
+              fontSize: 13, 
+              fontWeight: 'bold',
+              color: '#333'
+            }}>
+              子类别
+            </label>
+            <select
+              value={selectedSubCategory}
+              onChange={(e) => setSelectedSubCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: 10,
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 14,
+                backgroundColor: '#fff',
+                cursor: 'pointer',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">无子类别</option>
+              {schoolSubCategories.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div style={{
+          fontSize: 11,
+          color: '#999',
+          marginBottom: 15,
+          padding: '8px',
+          backgroundColor: '#fff3e0',
+          borderRadius: 6,
+          textAlign: 'center'
+        }}>
+          💡 提示：常规任务会固定显示在所有任务上方，每天都会出现
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleAdd}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#FF9800',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            添加
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+// 常规任务编辑模态框
+// 常规任务编辑模态框
+const RegularTaskEditModal = ({ task, onClose, onSave, categories }) => {
+  const [editText, setEditText] = useState(task.text);
+  const [selectedCategory, setSelectedCategory] = useState(task.targetCategory || task.category || '校内');
+  const [selectedSubCategory, setSelectedSubCategory] = useState(task.targetSubCategory || task.subCategory || '');
+
+  // 获取校内子分类 - 使用传入的 categories 或 baseCategories
+  const schoolCategory = (categories || baseCategories).find(c => c.name === '校内');
+  const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+
+  const handleSave = () => {
+    if (!editText.trim()) {
+      alert('任务内容不能为空');
+      return;
+    }
+    onSave(task.id, editText.trim(), selectedCategory, selectedSubCategory);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '90%',
+        maxWidth: 350,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }}>
+        <h3 style={{ 
+          textAlign: 'center', 
+          marginBottom: 20, 
+          color: '#FF9800',
+          fontSize: 18
+        }}>
+          ✏️ 编辑常规任务
+        </h3>
+        
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: 5, 
+            fontSize: 13, 
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            任务内容
+          </label>
+          <input
+            type="text"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            placeholder="输入任务内容..."
+            style={{
+              width: '100%',
+              padding: 10,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+            onKeyPress={(e) => e.key === 'Enter' && handleSave()}
+          />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: 5, 
+            fontSize: 13, 
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            完成后移动到
+          </label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setSelectedSubCategory('');
+            }}
+            style={{
+              width: '100%',
+              padding: 10,
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              fontSize: 14,
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              boxSizing: 'border-box'
+            }}
+          >
+            {(categories || baseCategories).filter(c => c.name !== "常规任务" && c.name !== "本周任务").map(c => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 子分类选择 - 仅当选择"校内"时显示 */}
+        {selectedCategory === '校内' && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: 5, 
+              fontSize: 13, 
+              fontWeight: 'bold',
+              color: '#333'
+            }}>
+              子分类
+            </label>
+            <select
+              value={selectedSubCategory}
+              onChange={(e) => setSelectedSubCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: 10,
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 14,
+                backgroundColor: '#fff',
+                cursor: 'pointer',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">无子类别</option>
+              {schoolSubCategories.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div style={{
+          fontSize: 11,
+          color: '#999',
+          marginBottom: 15,
+          padding: '8px',
+          backgroundColor: '#fff3e0',
+          borderRadius: 6,
+          textAlign: 'center'
+        }}>
+          💡 提示：完成任务后会自动移动到所选分类
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              flex: 1,
+              padding: 10,
+              backgroundColor: '#FF9800',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 常规任务项组件 - 确保 onToggle 正确传递
+const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleEdit = (id, newText, category, subCategory) => {
+    onEdit(id, newText, category, subCategory);
+  };
+
+  // 获取类别颜色
+  const getCategoryColor = (category) => {
+    const colorMap = {
+      '语文': '#FF0000',
+      '数学': '#0000FF',
+      '英语': '#008000',
+      '运动': '#FFA500',
+      '科学': '#800080',
+      '校内': '#1a73e8'
+    };
+    return colorMap[category] || '#FF9800';
+  };
+
+  return (
+    <>
+      <li style={{
+        position: "relative",
+        background: "#fff3e0",
+        borderRadius: 6,
+        minHeight: "24px",
+        marginBottom: 4,
+        padding: "8px",
+        border: "1px solid #FFB74D",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap"
+      }}>
+        <input
+  type="checkbox"
+  checked={false}
+  onChange={() => onToggle(task)}  // 传递整个 task 对象，而不是 task.id
+  style={{ margin: 0, cursor: "pointer" }}
+/>
+        
+        <span
+          onClick={() => setShowEditModal(true)}
+          style={{
+            flex: 1,
+            wordBreak: "break-word",
+            cursor: "pointer",
+            color: "#333",
+            fontSize: "14px"
+          }}
+        >
+          {task.text}
+        </span>
+        
+        {/* 类别标签 */}
+        {task.targetCategory && task.targetCategory !== "常规任务" && (
+          <span style={{
+            fontSize: "10px",
+            padding: "2px 6px",
+            borderRadius: "10px",
+            backgroundColor: getCategoryColor(task.targetCategory),
+            color: "#fff",
+            whiteSpace: "nowrap"
+          }}>
+            {task.targetCategory === "校内" && task.targetSubCategory ? `📚 ${task.targetSubCategory}` : task.targetCategory}
+          </span>
+        )}
+        
+        <button
+          onClick={() => onDelete(task.id)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#bbb',
+            cursor: 'pointer',
+            fontSize: '16px',
+            padding: '0 4px',
+            lineHeight: 1
+          }}
+          onMouseEnter={(e) => (e.target.style.color = '#e53935')}
+          onMouseLeave={(e) => (e.target.style.color = '#bbb')}
+          title="删除任务"
+        >
+          ×
+        </button>
+      </li>
+
+      {showEditModal && (
+        <RegularTaskEditModal
+          task={task}
+          categories={categories}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEdit}
+        />
+      )}
+    </>
+  );
+};
+
 const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask, onDeleteTask }) => {
   // ========== 所有状态定义 ==========
   const [newTaskText, setNewTaskText] = useState('');
@@ -5982,9 +6488,6 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
   );
 };
 
-
-
-
 const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -6320,11 +6823,6 @@ const DateDot = ({ date, tasksByDate }) => {
   );
 };
 
-
- 
-
-
-
 // 删除确认模态框
 const DeleteConfirmModal = ({ task, selectedDate, onClose, onDelete }) => {
   const [deleteOption, setDeleteOption] = useState('today');
@@ -6524,10 +7022,6 @@ const MoveSelectModal = ({ task, categories, onClose, onMove }) => {
     </div>
   );
 };
-
-
-
-
 
 // 任务迁移模态框组件
 const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
@@ -8446,12 +8940,6 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 };
 
 
-
-
-
-
-
-
 // 任务项组件
 const TaskItem = ({
   task,
@@ -9267,6 +9755,7 @@ const TaskItem = ({
 
 
 function App() {
+const [showRegularTaskEditModal, setShowRegularTaskEditModal] = useState(null);
 const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 const [editingTemplate, setEditingTemplate] = useState(null);
@@ -9275,8 +9764,7 @@ const [templateFormData, setTemplateFormData] = useState({
   category: '校内',
   subCategory: ''
 });
-  const [showRegularTaskPanel, setShowRegularTaskPanel] = useState(false);
-const [regularTaskTemplates, setRegularTaskTemplates] = useState([]); // 空数组，让用户自己添加
+
   const [tasksByDate, setTasksByDate] = useState({});
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -9329,7 +9817,12 @@ const [newMonthTask, setNewMonthTask] = useState({
   const addInputRef = useRef(null);
   const bulkInputRef = useRef(null);
   // 临时保留旧变量避免错误
-
+// 常规任务相关状态 - 添加在这里
+const [regularTasks, setRegularTasks] = useState(() => {
+  const saved = localStorage.getItem('regular_tasks');
+  return saved ? JSON.parse(saved) : [];
+});
+const [showRegularTaskModal, setShowRegularTaskModal] = useState(false);
   const todayTasks = tasksByDate[selectedDate] || [];
  // 添加类别保存函数
 const handleSaveCategories = (updatedCategories) => {
@@ -9345,135 +9838,22 @@ const [categories, setCategories] = useState(baseCategories.map(cat => ({
   subCategories: []
 })));
 
+// 添加这个状态 - 用于控制各个分类的折叠/展开
+const [collapsedCategories, setCollapsedCategories] = useState({
+  "本周任务": false,
+  "常规任务": true,
+  "语文": false,
+  "数学": false,
+  "英语": false,
+  "科学": false,
+  "运动": false,
+  "校内": false
+});
+
 const isAddingTask = useRef(false);
-
-// 打开新建模板弹窗
-const handleOpenTemplateModal = () => {
-  setTemplateFormData({
-    text: '',
-    category: '校内',
-    subCategory: ''
-  });
-  setEditingTemplate(null);
-  setShowTemplateModal(true);
-};
-
-
-
-// 打开编辑模板弹窗
-const handleOpenEditTemplateModal = (template, index) => {
-  setTemplateFormData({
-    text: template.text,
-    category: template.category,
-    subCategory: template.subCategory || ''
-  });
-  setEditingTemplate({ ...template, index });
-  setShowTemplateModal(true);
-};
-
-// 保存模板
-const handleSaveTemplate = () => {
-  if (!templateFormData.text.trim()) {
-    alert('请输入模板名称');
-    return;
-  }
-  
-  const newTemplate = {
-    id: editingTemplate?.id || Date.now().toString(),
-    text: templateFormData.text.trim(),
-    category: templateFormData.category,
-    subCategory: templateFormData.subCategory || ''
-  };
-  
-  if (editingTemplate) {
-    const newTemplates = [...regularTaskTemplates];
-    newTemplates[editingTemplate.index] = newTemplate;
-    setRegularTaskTemplates(newTemplates);
-    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
-  } else {
-    setRegularTaskTemplates(prev => [...prev, newTemplate]);
-    localStorage.setItem('regular_task_templates', JSON.stringify([...regularTaskTemplates, newTemplate]));
-  }
-  
-  setShowTemplateModal(false);
-};
-
-// 使用模板添加任务
-
-// 使用模板添加任务
-const handleUseRegularTask = (template) => {
-  // 防止重复调用
-  if (isAddingTask.current) {
-    console.log('正在添加任务中，跳过重复调用');
-    return;
-  }
-  
-  isAddingTask.current = true;
-  console.log('使用模板添加任务:', template);
-  
-  // 生成更唯一的ID
-  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const newTask = {
-    id: uniqueId,
-    text: template.text,
-    category: template.category,
-    subCategory: template.subCategory || '',
-    done: false,
-    timeSpent: 0,
-    subTasks: [],
-    note: "",
-    reflection: "",
-    image: null,
-    scheduledTime: "",
-    pinned: false,
-    progress: {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    reminderTime: null,
-    repeatFrequency: '',
-    repeatDays: [false, false, false, false, false, false, false],
-    isRepeating: false
-  };
-
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    if (!newTasksByDate[selectedDate]) {
-      newTasksByDate[selectedDate] = [];
-    }
-    
-    // 检查是否已存在相同内容的任务
-    const exists = newTasksByDate[selectedDate].some(task => 
-      task.text === newTask.text && 
-      task.category === newTask.category
-    );
-    
-    if (!exists) {
-      newTasksByDate[selectedDate].push(newTask);
-      console.log('✅ 任务添加成功');
-    } else {
-      console.log('⚠️ 任务已存在，跳过添加');
-    }
-    
-    return newTasksByDate;
-  });
-  
-  // 延迟重置标志
-  setTimeout(() => {
-    isAddingTask.current = false;
-  }, 500);
-};
-
-
   const [showSchedule, setShowSchedule] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [statsMode, setStatsMode] = useState("week");
-  const [collapsedCategories, setCollapsedCategories] = useState({
-  "常规任务": true  // 这会让"常规任务"默认折叠
-});
   const [showImageModal, setShowImageModal] = useState(null);
   const [showHonorModal, setShowHonorModal] = useState(false);
   const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
@@ -9497,6 +9877,12 @@ const handleUseRegularTask = (template) => {
   reminderHour: "",
   reminderMinute: "",
 });
+
+
+
+
+
+
 
 
 // 在 App 组件中添加状态
@@ -10074,7 +10460,10 @@ window.testWeekDays = () => {
 };
 
 
-
+// 保存常规任务到 localStorage - 添加在这里
+useEffect(() => {
+  localStorage.setItem('regular_tasks', JSON.stringify(regularTasks));
+}, [regularTasks]);
 
 // 在 App 组件中添加调试函数
 useEffect(() => {
@@ -10699,47 +11088,22 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     );
   };
 
-// 修复 TaskEditModal 组件中的 handleSave 函数
-const handleSave = () => {
-  // 修复：应该使用 editData.text，而不是 templateContent
-  if (editData.text.trim() === '') {
-    alert('任务内容不能为空！');
-    return;
-  }
 
-  // 构建完整的编辑数据
-  const updatedTask = {
-    ...editData,
-    // 确保计划时间格式正确
-    scheduledTime: editData.startHour && editData.startMinute && editData.endHour && editData.endMinute
-      ? `${editData.startHour.padStart(2, '0')}:${editData.startMinute.padStart(2, '0')}-${editData.endHour.padStart(2, '0')}:${editData.endMinute.padStart(2, '0')}`
-      : editData.scheduledTime || '',
+  // 👇 在这里添加这个函数（在 return 之前）
+  const handleSave = () => {
+    // 获取选中的日期对应的日期字符串
+    const targetDates = getDateOptions()
+      .filter(option => selectedDays.includes(option.day))
+      .map(option => option.value);
     
-    // 确保提醒时间正确构建
-    reminderTime: (editData.reminderYear && editData.reminderMonth && editData.reminderDay)
-      ? {
-          year: parseInt(editData.reminderYear),
-          month: parseInt(editData.reminderMonth),
-          day: parseInt(editData.reminderDay),
-          hour: parseInt(editData.reminderHour) || 0,
-          minute: parseInt(editData.reminderMinute) || 0
-        }
-      : null,
-    
-    // 确保进度数据正确
-    progress: editData.progress || {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
+    if (targetDates.length === 0) {
+      alert('请至少选择一个日期');
+      return;
     }
+    
+    onSave(task, targetDates);
+    onClose();
   };
-
-  onSave(updatedTask);
-  onClose();
-};
-
-
 
 
   return (
@@ -12134,15 +12498,7 @@ useEffect(() => {
     try {
  
 
-// 加载常规任务模板
-const savedRegularTemplates = localStorage.getItem('regular_task_templates');
-if (savedRegularTemplates) {
-  try {
-    setRegularTaskTemplates(JSON.parse(savedRegularTemplates));
-  } catch (e) {
-    console.error('加载常规任务模板失败:', e);
-  }
-}
+
 
 // 在 initializeApp 函数开始处添加这个辅助函数
 const loadDataWithFallback = async (key, fallback) => {
@@ -12158,85 +12514,94 @@ const loadDataWithFallback = async (key, fallback) => {
 // 然后替换现有的数据加载代码：
 
 // 加载任务数据
+
+// 加载任务数据
 const savedTasks = await loadDataWithFallback('tasks', {});
 console.log('✅ 加载的任务数据:', savedTasks);
 if (savedTasks) {
   setTasksByDate(savedTasks);
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
-    // ===== 在这里添加代码 =====
-        // 确保所有日期都有常规任务
-        if (savedTasks && Object.keys(savedTasks).length > 0) {
-          // 收集所有常规任务模板
-          const regularTemplates = [];
-          const seenTexts = new Set();
-          
-          // 从已有数据中收集常规任务模板
-          Object.values(savedTasks).forEach(tasks => {
-            tasks.forEach(task => {
-              if (task.isRegularTask && !seenTexts.has(task.text)) {
-                seenTexts.add(task.text);
-                regularTemplates.push({
-                  text: task.text,
-                  targetCategory: task.targetCategory,
-                  targetSubCategory: task.targetSubCategory || '',
-                  note: task.note || "",
-                  tags: task.tags || []
-                });
-              }
-            });
+  // ===== 修改：确保每个日期都有独立的常规任务 =====
+  if (savedTasks && Object.keys(savedTasks).length > 0) {
+    // 收集所有常规任务模板（从所有日期中获取，去重）
+    const regularTemplates = [];
+    const seenTexts = new Set();
+    
+    // 从已有数据中收集常规任务模板
+    Object.values(savedTasks).forEach(tasks => {
+      tasks.forEach(task => {
+        if (task.isRegularTask && !seenTexts.has(task.text)) {
+          seenTexts.add(task.text);
+          regularTemplates.push({
+            text: task.text,
+            targetCategory: task.targetCategory,
+            targetSubCategory: task.targetSubCategory || '',
+            note: task.note || "",
+            tags: task.tags || []
           });
-          
-          // 如果有常规任务模板，确保每个日期都有这些任务
-          if (regularTemplates.length > 0) {
-            const allDates = Object.keys(savedTasks);
-            let needsUpdate = false;
-            
-            allDates.forEach(date => {
-              const dateTasks = savedTasks[date] || [];
-              const dateHasRegularTasks = dateTasks.some(t => t.isRegularTask);
-              
-              // 如果这个日期没有常规任务，添加所有常规任务模板
-              if (!dateHasRegularTasks && regularTemplates.length > 0) {
-                needsUpdate = true;
-                const newRegularTasks = regularTemplates.map(template => ({
-                  id: `regular_init_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
-                  text: template.text,
-                  targetCategory: template.targetCategory,
-                  targetSubCategory: template.targetSubCategory,
-                  category: "常规任务",
-                  done: false,
-                  timeSpent: 0,
-                  subTasks: [],
-                  note: template.note,
-                  reflection: "",
-                  image: null,
-                  scheduledTime: "",
-                  pinned: false,
-                  tags: template.tags || [],
-                  isRegularTask: true,
-                  progress: {
-                    initial: 0,
-                    current: 0,
-                    target: 0,
-                    unit: "%"
-                  }
-                }));
-                
-                savedTasks[date] = [...dateTasks, ...newRegularTasks];
-              }
-            });
-            
-            if (needsUpdate) {
-              console.log('✅ 已为所有日期添加常规任务');
-              // 更新状态
-              setTasksByDate(savedTasks);
-            }
-          }
         }
-        // ===== 添加代码结束 =====
+      });
+    });
+    
+    // 如果有常规任务模板，确保每个日期都有这些任务（独立副本）
+    if (regularTemplates.length > 0) {
+      const allDates = Object.keys(savedTasks);
+      let needsUpdate = false;
+      
+      allDates.forEach(date => {
+        const dateTasks = savedTasks[date] || [];
         
-} else {
+        // 获取这个日期已有的常规任务文本
+        const existingRegularTexts = new Set(
+          dateTasks.filter(t => t.isRegularTask).map(t => t.text)
+        );
+        
+        // 找出这个日期缺失的常规任务
+        const missingTemplates = regularTemplates.filter(
+          template => !existingRegularTexts.has(template.text)
+        );
+        
+        if (missingTemplates.length > 0) {
+          needsUpdate = true;
+          const newRegularTasks = missingTemplates.map(template => ({
+            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
+            text: template.text,
+            targetCategory: template.targetCategory,
+            targetSubCategory: template.targetSubCategory,
+            category: "常规任务",
+            done: false,
+            timeSpent: 0,
+            subTasks: [],
+            note: template.note,
+            reflection: "",
+            image: null,
+            scheduledTime: "",
+            pinned: false,
+            tags: template.tags || [],
+            isRegularTask: true,
+            progress: {
+              initial: 0,
+              current: 0,
+              target: 0,
+              unit: "%"
+            }
+          }));
+          
+          savedTasks[date] = [...dateTasks, ...newRegularTasks];
+        }
+      });
+      
+      if (needsUpdate) {
+        console.log('✅ 已为所有日期添加缺失的常规任务（独立副本）');
+        // 更新状态
+        setTasksByDate(savedTasks);
+      }
+    }
+  }
+}
+
+else {
   console.log('ℹ️ 没有任务数据，使用空对象');
   setTasksByDate({});
 }
@@ -12544,22 +12909,15 @@ useEffect(() => {
 }, [isInitialized, syncToGitHub]);
 
 
+
 // 替换现有的 useEffect 来处理新日期的常规任务复制
 useEffect(() => {
   // 确保组件已初始化
   if (!isInitialized) return;
   
-  // 检查当前选中日期是否有常规任务，如果没有则从其他日期复制
+  // 检查当前选中日期是否有常规任务，如果没有则从模板创建
   setTasksByDate(prev => {
     const currentDateTasks = prev[selectedDate] || [];
-    
-    // 检查当前日期是否已有常规任务
-    const hasRegularTasks = currentDateTasks.some(task => task.isRegularTask);
-    
-    // 如果已有常规任务，不需要添加
-    if (hasRegularTasks) {
-      return prev;
-    }
     
     // 收集所有常规任务模板（从所有日期中获取，去重）
     const regularTaskTemplates = [];
@@ -12592,10 +12950,24 @@ useEffect(() => {
       return prev;
     }
     
-    console.log(`📋 为日期 ${selectedDate} 创建 ${regularTaskTemplates.length} 个常规任务`);
+    // 获取当前日期已有的常规任务文本
+    const existingRegularTexts = new Set(
+      currentDateTasks.filter(t => t.isRegularTask).map(t => t.text)
+    );
     
-    // 为新日期创建常规任务（状态为未完成）
-    const newRegularTasks = regularTaskTemplates.map(template => ({
+    // 找出缺失的常规任务
+    const missingTemplates = regularTaskTemplates.filter(
+      template => !existingRegularTexts.has(template.text)
+    );
+    
+    if (missingTemplates.length === 0) {
+      return prev;
+    }
+    
+    console.log(`📋 为日期 ${selectedDate} 创建 ${missingTemplates.length} 个缺失的常规任务（独立副本）`);
+    
+    // 为新日期创建常规任务（状态为未完成，独立副本）
+    const newRegularTasks = missingTemplates.map(template => ({
       id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${selectedDate}`,
       text: template.text,
       targetCategory: template.targetCategory,
@@ -12621,11 +12993,8 @@ useEffect(() => {
     };
   });
   
-}, [selectedDate, isInitialized]); // 当选中的日期变化时执行
+}, [selectedDate, isInitialized]);
 
-
-  // 替换现有的 useEffect 点击外部处理逻辑
-// 替换现有的 useEffect 点击外部处理逻辑
 
 // 替换现有的 useEffect 点击外部处理逻辑
 useEffect(() => {
@@ -12864,70 +13233,24 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
 
 
         
-// 添加自定义模板
-const handleAddRegularTaskTemplate = () => {
-  const text = window.prompt('输入任务模板名称:', '');
-  if (!text || !text.trim()) return;
-  
-  const category = window.prompt('选择分类 (校内/语文/数学/英语/运动/科学等):', '校内');
-  if (!category) return;
-  
-  let subCategory = '';
-  if (category === '校内') {
-    subCategory = window.prompt('校内子分类 (数学/语文/英语/运动):', '');
-  }
-  
+
+
+
+
+// 添加模板保存函数
+const handleAddTemplate = (templateData) => {
   const newTemplate = {
-    id: Date.now().toString(),
-    text: text.trim(),
-    category: category,
-    subCategory: subCategory || ''
+    id: Date.now(),
+    ...templateData,
+    createdAt: new Date().toISOString()
   };
-  
-  setRegularTaskTemplates(prev => [...prev, newTemplate]);
-  // 保存到 localStorage
-  localStorage.setItem('regular_task_templates', JSON.stringify([...regularTaskTemplates, newTemplate]));
-  alert(`已添加模板: ${text}`);
+  setTemplates(prev => [...prev, newTemplate]);
 };
 
-// 删除模板
-const handleDeleteRegularTaskTemplate = (index) => {
-  if (window.confirm('确定要删除这个模板吗？')) {
-    const newTemplates = [...regularTaskTemplates];
-    newTemplates.splice(index, 1);
-    setRegularTaskTemplates(newTemplates);
-    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
-  }
+// 添加模板删除函数
+const handleDeleteTemplate = (index) => {
+  setTemplates(prev => prev.filter((_, i) => i !== index));
 };
-
-// 编辑模板
-const handleEditRegularTaskTemplate = (index) => {
-  const template = regularTaskTemplates[index];
-  const newText = window.prompt('编辑模板名称:', template.text);
-  if (newText && newText.trim()) {
-    const newCategory = window.prompt('编辑分类:', template.category);
-    let newSubCategory = template.subCategory;
-    if (newCategory === '校内') {
-      newSubCategory = window.prompt('编辑子分类:', template.subCategory || '');
-    }
-    
-    const newTemplates = [...regularTaskTemplates];
-    newTemplates[index] = {
-      ...template,
-      text: newText.trim(),
-      category: newCategory || template.category,
-      subCategory: newSubCategory || ''
-    };
-    setRegularTaskTemplates(newTemplates);
-    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
-  }
-};
-
-// 使用模板添加任务
-
-
-
-
 // 添加任务函数
 const handleAddTask = () => {
   if (!newTaskText.trim()) {
@@ -13097,6 +13420,13 @@ const handleAddTask = () => {
   console.log('✅ 任务添加成功:', newTask);
 };
 
+// 在 handleAddTask 函数附近添加这个函数
+const handleUseTemplate = (template) => {
+  setNewTaskText(template.text || template.content || '');
+  setNewTaskCategory(template.category || '校内');
+  setNewTaskSubCategory(template.subCategory || '');
+  setShowAddInput(true);
+};
 
 // 添加本周任务
 const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = '') => {
@@ -13157,6 +13487,177 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
     return newTasksByDate;
   });
 };
+
+// 获取常规任务 - 添加在这里
+const getRegularTasks = () => {
+  return regularTasks.filter(task => !task.archived);
+};
+
+// 添加常规任务
+// 修改添加常规任务函数，增加类别和子类别
+// 添加常规任务
+// 添加常规任务
+const handleAddRegularTask = (text, category, subCategory) => {
+  if (!text.trim()) return;
+  
+  // 目标分类：如果用户选择了分类就使用，否则默认"校内"
+  const targetCat = category || "校内";
+  const targetSub = subCategory || "";
+  
+  console.log('📝 添加常规任务:', {
+    任务: text,
+    目标分类: targetCat,
+    目标子分类: targetSub
+  });
+  
+  // 为当前日期添加常规任务
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    const currentTasks = newTasksByDate[selectedDate] || [];
+    
+    // 检查是否已存在相同的常规任务
+    const exists = currentTasks.some(t => t.isRegularTask && t.text === text.trim());
+    if (exists) {
+      alert('该常规任务已存在！');
+      return prev;
+    }
+    
+    const newTask = {
+      id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${selectedDate}`,
+      text: text.trim(),
+      done: false,
+      category: "常规任务",  // 显示在常规任务分类下
+      subCategory: "",
+      targetCategory: targetCat,  // 完成后移动到的分类
+      targetSubCategory: targetSub,  // 完成后移动到的子分类
+      createdAt: new Date().toISOString(),
+      isRegularTask: true,
+      timeSpent: 0,
+      subTasks: [],
+      note: "",
+      reflection: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      tags: [],
+      progress: {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      }
+    };
+    
+    newTasksByDate[selectedDate] = [...currentTasks, newTask];
+    return newTasksByDate;
+  });
+};
+
+// 切换常规任务完成状态 - 完成后自动移动到对应分类
+// 切换常规任务完成状态 - 完成后自动移动到对应分类
+const toggleRegularTask = (task) => {
+  // 如果任务已经完成，不做处理（防止重复移动）
+  if (task.done) {
+    alert('任务已完成，不能重复完成');
+    return;
+  }
+
+  // 获取目标分类（如果任务有 targetCategory 则使用，否则使用 category）
+  const targetCategory = task.targetCategory || task.category || "校内";
+  const targetSubCategory = task.targetSubCategory || task.subCategory || "";
+  
+  console.log('📝 完成常规任务:', {
+    任务: task.text,
+    目标分类: targetCategory,
+    目标子分类: targetSubCategory
+  });
+  
+  // 1. 从当前日期的常规任务列表中删除这个任务
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    const currentDateTasks = newTasksByDate[selectedDate] || [];
+    
+    // 过滤掉这个常规任务
+    newTasksByDate[selectedDate] = currentDateTasks.filter(t => t.id !== task.id);
+    
+    // 2. 在目标分类中添加已完成的任务（独立的任务对象）
+    const completedTask = {
+      id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+      text: task.text,
+      category: targetCategory,
+      subCategory: targetSubCategory,
+      done: true,
+      timeSpent: 0,
+      subTasks: [],
+      note: task.note || "",
+      reflection: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      tags: task.tags || [],
+      progress: {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      },
+      reminderTime: null,
+      completedFromRegularTask: true, // 标记这是从常规任务完成的
+      completedDate: selectedDate,
+      originalText: task.text
+    };
+    
+    // 添加到目标分类
+    if (!newTasksByDate[selectedDate]) {
+      newTasksByDate[selectedDate] = [];
+    }
+    newTasksByDate[selectedDate].push(completedTask);
+    
+    console.log(`✅ 任务 "${task.text}" 已完成，已移动到 ${targetCategory}${targetSubCategory ? `/${targetSubCategory}` : ''} 分类`);
+    
+    return newTasksByDate;
+  });
+  
+  // 显示提示
+  alert(`✅ 任务 "${task.text}" 已完成！\n已移动到 ${targetCategory}${targetSubCategory ? `/${targetSubCategory}` : ''} 分类`);
+};
+
+// 删除常规任务
+const deleteRegularTask = (taskId) => {
+  if (window.confirm('确定要删除这个常规任务吗？')) {
+    setRegularTasks(prev => prev.filter(task => task.id !== taskId));
+  }
+};
+
+// 编辑常规任务
+// 编辑常规任务 - 支持编辑类别和子类别
+const editRegularTask = (taskId, newText, newCategory, newSubCategory) => {
+  if (!newText.trim()) return;
+  
+  // 更新所有日期中的这个常规任务
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    
+    Object.keys(newTasksByDate).forEach(date => {
+      newTasksByDate[date] = newTasksByDate[date].map(task => {
+        if (task.isRegularTask && task.id === taskId) {
+          return {
+            ...task,
+            text: newText.trim(),
+            category: newCategory,
+            subCategory: newSubCategory || '',
+            targetCategory: newCategory,
+            targetSubCategory: newSubCategory || ''
+          };
+        }
+        return task;
+      });
+    });
+    
+    return newTasksByDate;
+  });
+};
+
 
 
 
@@ -14203,16 +14704,7 @@ const clearAllData = async () => {
 
 
 
-// 在 handleExportData 函数之前添加这个辅助函数
-const loadDataWithFallback = async (key, fallback) => {
-  try {
-    const data = await loadMainData(key);
-    return data !== null ? data : fallback;
-  } catch (error) {
-    console.error(`加载 ${key} 失败:`, error);
-    return fallback;
-  }
-};
+
 
 // 替换现有的 handleExportData 函数
 // 替换现有的 handleExportData 函数
@@ -14648,64 +15140,10 @@ const generateMarkdownContent = () => {
 
 
 
-// 在 App 组件中找到这个函数并替换
-// 在 App 组件中修改 handleAddTemplate 函数
-const handleAddTemplate = (template) => {
-  console.log('保存模板:', template);
-  
-  // 只更新 templates 状态
-  setTemplates(prev => {
-    // 检查是否已存在相同内容的模板
-    const exists = prev.some(t => t.text === template.text);
-    if (exists) {
-      console.log('模板已存在，跳过添加');
-      return prev;
-    }
-    const newTemplates = [...prev, template];
-    saveMainData('templates', newTemplates);
-    return newTemplates;
-  });
-  
-  // 同时更新常规任务模板状态，但也要去重
-  const newRegularTemplate = {
-    id: template.id,
-    text: template.text || template.content,
-    category: template.category,
-    subCategory: template.subCategory || '',
-    tags: template.tags || []
-  };
-  
-  setRegularTaskTemplates(prev => {
-    // 检查是否已存在相同内容的常规任务模板
-    const exists = prev.some(t => t.text === newRegularTemplate.text);
-    if (exists) {
-      console.log('常规任务模板已存在，跳过添加');
-      return prev;
-    }
-    const newTemplates = [...prev, newRegularTemplate];
-    localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
-    return newTemplates;
-  });
-  
-  console.log('✅ 模板已添加');
-};
 
 
 
-// 同时修复 handleDeleteTemplate
-const handleDeleteTemplate = (index) => {
-  setTemplates(prev => {
-    const newTemplates = prev.filter((_, i) => i !== index);
-    saveMainData('templates', newTemplates);
-    return newTemplates;
-  });
-};
-  // 使用模板
-  const handleUseTemplate = (template) => {
-    handleAddTask(template);
-  };
 
-  
 
   // 计算今日统计数据
 
@@ -16025,6 +16463,104 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
+{/* 常规任务区域 */}
+{/* 常规任务区域 */}
+<div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", border: "2px solid #FF9800", backgroundColor: "#fff" }}>
+  <div 
+    style={{ 
+      backgroundColor: "#FF9800", 
+      color: "#fff", 
+      padding: "3px 8px", 
+      fontWeight: "bold", 
+      display: "flex", 
+      justifyContent: "space-between", 
+      alignItems: "center",
+      cursor: "pointer"
+    }}
+    onClick={() => setCollapsedCategories(prev => ({ ...prev, "常规任务": !prev["常规任务"] }))}
+  >
+    <span>📋 常规任务 ({todayTasks.filter(t => t.isRegularTask).length})</span>
+    <button 
+      onClick={(e) => { 
+        e.stopPropagation(); 
+        setShowRegularTaskModal(true); 
+      }}
+      style={{ 
+        background: "transparent", 
+        border: "none", 
+        color: "#fff", 
+        cursor: "pointer", 
+        fontSize: 16 
+      }}
+    >
+      ➕
+    </button>
+  </div>
+  {!collapsedCategories["常规任务"] && (
+    <div style={{ padding: 8 }}>
+      {(() => {
+        const currentRegularTasks = todayTasks.filter(task => task.isRegularTask);
+        
+        if (currentRegularTasks.length === 0) {
+          return (
+            <div style={{ 
+              textAlign: "center", 
+              padding: "20px", 
+              color: "#999",
+              fontSize: "13px"
+            }}>
+              暂无常规任务，点击 ➕ 添加<br/>
+              <span style={{ fontSize: "11px", color: "#ccc" }}>完成任务后会自动移动到对应分类</span>
+            </div>
+          );
+        }
+        
+        return (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px",
+            alignItems: "start"
+          }}>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px"
+            }}>
+              {currentRegularTasks.slice(0, Math.ceil(currentRegularTasks.length / 2)).map((task) => (
+                <RegularTaskItem
+                  key={task.id}
+                  task={task}
+                  categories={categories}
+                  onToggle={toggleRegularTask}  // 传递整个 task 对象
+                  onDelete={() => deleteRegularTask(task.id)}
+                  onEdit={editRegularTask}
+                />
+              ))}
+            </div>
+            
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px"
+            }}>
+              {currentRegularTasks.slice(Math.ceil(currentRegularTasks.length / 2)).map((task) => (
+                <RegularTaskItem
+                  key={task.id}
+                  task={task}
+                  categories={categories}
+                  onToggle={toggleRegularTask}  // 传递整个 task 对象
+                  onDelete={() => deleteRegularTask(task.id)}
+                  onEdit={editRegularTask}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  )}
+</div>
 
 
       {categories.map((c) => {
@@ -16045,6 +16581,8 @@ if (isInitialized && todayTasks.length === 0) {
             }}
           >
             
+
+ 
 
 {/* 分类标题 */}
 <div
@@ -16414,6 +16952,16 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
+
+{/* 常规任务模态框 - 添加在这里 */}
+{showRegularTaskModal && (
+  <RegularTaskModal
+    onClose={() => setShowRegularTaskModal(false)}
+    onAdd={handleAddRegularTask}
+    categories={categories}  // 添加这行
+  />
+)}
+
 {showReflectionModal && (
   <div style={{
     position: 'fixed',
@@ -16567,7 +17115,6 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 添加任务、常规任务、批量导入按钮 */}
 <div style={{
   display: "flex",
   gap: 10,
@@ -16581,7 +17128,6 @@ if (isInitialized && todayTasks.length === 0) {
       e.stopPropagation();
       setShowAddInput(!showAddInput);
       setShowBulkInput(false);
-      setShowRegularTaskPanel(false);
     }}
     style={{
       flex: 1,
@@ -16597,29 +17143,6 @@ if (isInitialized && todayTasks.length === 0) {
     {showAddInput ? "取消添加" : "添加任务"}
   </div>
   
-  {/* 常规任务按钮 */}
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setShowRegularTaskPanel(!showRegularTaskPanel);
-      setShowAddInput(false);
-      setShowBulkInput(false);
-    }}
-    style={{
-      flex: 1,
-      padding: 8,
-      backgroundColor: "#FF9800",
-      color: "#fff",
-      borderRadius: 6,
-      cursor: "pointer",
-      textAlign: "center",
-      userSelect: "none"
-    }}
-  >
-    {showRegularTaskPanel ? "取消常规" : "常规任务"}
-  </div>
-  
   {/* 批量导入按钮 */}
   <div
     onClick={(e) => {
@@ -16627,7 +17150,6 @@ if (isInitialized && todayTasks.length === 0) {
       e.stopPropagation();
       setShowBulkInput(!showBulkInput);
       setShowAddInput(false);
-      setShowRegularTaskPanel(false);
     }}
     style={{
       flex: 1,
@@ -16647,141 +17169,10 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-
 {/* 添加任务输入框（展开时显示） - 确保这行代码在按钮之后且没有被条件包裹 */}
 {showAddInput && (
   <div ref={addInputRef} style={{ marginTop: 8 }}>
     {/* 输入框内容... */}
-  </div>
-)}
-
-{/* 常规任务面板 */}
-{/* 常规任务面板 */}
-{showRegularTaskPanel && (
-  <div style={{
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: '#fff9e6',
-    borderRadius: 8,
-    border: '1px solid #FF9800'
-  }}>
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12
-    }}>
-      <div style={{ fontWeight: 'bold', color: '#FF9800' }}>
-        📋 我的任务模板 ({regularTaskTemplates.length})
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-  onClick={handleOpenTemplateModal}
-  style={{
-    padding: '4px 8px',
-    backgroundColor: '#FF9800',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 4,
-    cursor: 'pointer',
-    fontSize: 12
-  }}
->
-  + 新建模板
-</button>
-      </div>
-    </div>
-    
-    {regularTaskTemplates.length === 0 ? (
-      <div style={{
-        textAlign: 'center',
-        padding: '20px',
-        color: '#999',
-        fontSize: 13
-      }}>
-        暂无模板，点击"新建模板"添加
-      </div>
-    ) : (
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 8,
-        maxHeight: '200px',
-        overflow: 'auto'
-      }}>
-        {regularTaskTemplates.map((template, index) => (
-          <div
-            key={template.id || index}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              backgroundColor: '#f5f5f5',
-              borderRadius: 6,
-              padding: '4px 8px',
-              border: '1px solid #e0e0e0'
-            }}
-          >
-            <span
-              onClick={() => handleUseRegularTask(template)}
-              style={{
-                cursor: 'pointer',
-                fontSize: 13,
-                padding: '4px 4px',
-                color: '#333'
-              }}
-              title={`点击添加任务 (${template.category}${template.subCategory ? '/' + template.subCategory : ''})`}
-            >
-              {template.text}
-            </span>
-            <button
-  onClick={() => handleOpenEditTemplateModal(template, index)}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 12,
-    color: '#666',
-    padding: '2px'
-  }}
-  title="编辑模板"
->
-  ✏️
-</button>
-            <button
-              onClick={() => {
-                if (window.confirm('确定要删除这个模板吗？')) {
-                  const newTemplates = [...regularTaskTemplates];
-                  newTemplates.splice(index, 1);
-                  setRegularTaskTemplates(newTemplates);
-                  localStorage.setItem('regular_task_templates', JSON.stringify(newTemplates));
-                }
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12,
-                color: '#999',
-                padding: '2px'
-              }}
-              title="删除模板"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
-    
-    <div style={{
-      fontSize: 11,
-      color: '#999',
-      marginTop: 8,
-      textAlign: 'center'
-    }}>
-      💡 点击模板名称即可添加到今日任务
-    </div>
   </div>
 )}
 
