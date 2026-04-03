@@ -653,83 +653,88 @@ useEffect(() => {
                   />
                 </div>
 
-                {/* 科目和子分类 */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px'
-                }}>
-                  <div>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '4px', 
-                      fontSize: '13px', 
-                      fontWeight: '500' 
-                    }}>
-                      科目
-                    </label>
-                    <select
-  value={newGrade.subject}
-  onChange={(e) => {
-    setNewGrade({
-      ...newGrade,
-      subject: e.target.value,
-      subCategory: ''
-    });
-  }}
-  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
-   onTouchStart={(e) => e.stopPropagation()} // ✅ 移动端也加上
-  style={{
-    width: '100%',
-    height: '40px',
-    padding: '0 10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    backgroundColor: 'white'
-  }}
->
-  {subjects.filter(s => s !== '全部').map(subject => (
-    <option key={subject} value={subject}>{subject}</option>
-  ))}
-</select>
-                  </div>
+               
+               {/* 科目和子分类 - 改为同行显示 */}
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: 12,
+  marginBottom: 12
+}}>
+  {/* 科目 */}
+  <div>
+    <label style={{ 
+      display: 'block', 
+      marginBottom: 4, 
+      fontSize: 13, 
+      fontWeight: '500' 
+    }}>
+      科目
+    </label>
+    <select
+      value={newGrade.subject}
+      onChange={(e) => {
+        setNewGrade({
+          ...newGrade,
+          subject: e.target.value,
+          subCategory: ''
+        });
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      style={{
+        width: '100%',
+        height: 40,
+        padding: '0 10px',
+        border: '1px solid #d1d5db',
+        borderRadius: 6,
+        fontSize: 14,
+        backgroundColor: 'white',
+        boxSizing: 'border-box'
+      }}
+    >
+      {subjects.filter(s => s !== '全部').map(subject => (
+        <option key={subject} value={subject}>{subject}</option>
+      ))}
+    </select>
+  </div>
 
-                  <div>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '4px', 
-                      fontSize: '13px', 
-                      fontWeight: '500' 
-                    }}>
-                      子分类
-                      <span style={{ fontSize: '11px', color: '#999', marginLeft: '4px' }}>
-                        (可选)
-                      </span>
-                    </label>
-                    <select
-  value={newGrade.subCategory}
-  onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
-  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
-  onTouchStart={(e) => e.stopPropagation()} // ✅ 移动端也加上
-  style={{
-    width: '100%',
-    height: '40px',
-    padding: '0 10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    backgroundColor: 'white'
-  }}
->
-  <option value="">选择子分类</option>
-  {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
-    <option key={subCat} value={subCat}>{subCat}</option>
-  ))}
-</select>
-
-                  </div>
-                </div>
+  {/* 子分类 */}
+  <div>
+    <label style={{ 
+      display: 'block', 
+      marginBottom: 4, 
+      fontSize: 13, 
+      fontWeight: '500' 
+    }}>
+      子分类
+      <span style={{ fontSize: 11, color: '#999', marginLeft: 4 }}>
+        (可选)
+      </span>
+    </label>
+    <select
+      value={newGrade.subCategory}
+      onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      style={{
+        width: '100%',
+        height: 40,
+        padding: '0 10px',
+        border: '1px solid #d1d5db',
+        borderRadius: 6,
+        fontSize: 14,
+        backgroundColor: 'white',
+        boxSizing: 'border-box'
+      }}
+    >
+      <option value="">选择子分类</option>
+      {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
+        <option key={subCat} value={subCat}>{subCat}</option>
+      ))}
+    </select>
+  </div>
+</div>
 
                 {/* 测试内容 */}
                 <div>
