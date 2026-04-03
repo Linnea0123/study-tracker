@@ -1135,8 +1135,7 @@ useEffect(() => {
   </div>
 )}
  
-{/* 在成绩记录列表之前添加图表区域 */}
-{/* 图表视图切换 */}
+{/* 图表视图切换 - 保持不变 */}
 <div style={{
   display: 'flex',
   justifyContent: 'center',
@@ -1186,155 +1185,141 @@ useEffect(() => {
       }
     </h3>
     
-    {/* 柱状图容器 */}
+    {/* 横向条形图容器 */}
     <div style={{ 
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-end',
-      gap: '4px',
-      padding: '10px 5px',
-      minWidth: '100%',
-      width: 'max-content'
+      minWidth: '300px',
+      width: '100%'
     }}>
+      
       {chartData.map((item, index) => {
-        const maxBarHeight = 100;
-        const minBarHeight = 15;
-        const scoreRatio = item.score / 100;
-        const height = Math.max(minBarHeight, maxBarHeight * scoreRatio);
-        const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
-        
-        const labelParts = item.label.split('-');
-        const subCategory = labelParts[0];
-        const dateParts = labelParts.slice(1).join('-').split('-');
-        const month = dateParts[0];
-        const day = dateParts[1];
-        
-        return (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: '18px',
-              flexShrink: 0
-            }}
-          >
-            <div style={{
-              height: `${maxBarHeight}px`,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              marginBottom: '4px',
-              width: '100%'
-            }}>
-              <div style={{
-                height: `${height}px`,
-                backgroundColor: barColor,
-                borderRadius: '3px 3px 2px 2px',
-                transition: 'height 0.3s ease',
-                position: 'relative',
-                cursor: 'pointer',
-                width: '100%',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '-18px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: '9px',
-                  fontWeight: 'bold',
-                  color: barColor,
-                  whiteSpace: 'nowrap',
-                  backgroundColor: 'transparent'
-                }}>
-                  {item.score}
-                </div>
-              </div>
-            </div>
-            
-            {/* 底部文字区域 - 保持三行：子分类、月份、日期 */}
-            <div style={{
-              height: '50px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              width: '100%',
-              marginTop: '2px'
-            }}>
-              {/* 第一行：子分类 */}
-              <div style={{
-                fontSize: '9px',
-                color: '#555',
-                textAlign: 'center',
-                width: '100%',
-                fontWeight: '500',
-                lineHeight: '1.2',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '2px',
-                padding: '1px 2px',
-                wordBreak: 'break-word'
-              }}>
-                {subCategory}
-              </div>
-              {/* 第二行：月份 */}
-              <div style={{
-                fontSize: '8px',
-                color: '#999',
-                marginTop: '1px',
-                textAlign: 'center',
-                lineHeight: '1.2'
-              }}>
-                {month}
-              </div>
-              {/* 第三行：分隔线 */}
-              <div style={{
-                fontSize: '8px',
-                color: '#999',
-                marginTop: '-3px',
-                textAlign: 'center',
-                lineHeight: '1'
-              }}>
-               -
-              </div>
-              {/* 第四行：日期 */}
-              <div style={{
-                fontSize: '8px',
-                color: '#999',
-                marginTop: '0px',
-                textAlign: 'center',
-                lineHeight: '1.2'
-              }}>
-                {day}
-              </div>
-            </div>
+  const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
+  const percentage = item.score;
+  
+  // 格式化日期显示
+  const dateObj = new Date(item.date);
+  const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+  
+  // 截取测试内容（如果太长）
+  const testContent = item.testContent.length > 15 
+    ? item.testContent.substring(0, 12) + '...' 
+    : item.testContent;
+  
+  return (
+    <div
+      key={item.id}
+      style={{
+        marginBottom: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        width: '100%'
+      }}
+    >
+      {/* 左侧标签区域 */}
+      <div style={{
+        width: '110px',
+        flexShrink: 0,
+        fontSize: '11px',
+        color: '#555'
+      }}>
+        {/* 第一行：子分类 + 日期 */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'baseline', 
+          gap: '6px', 
+          flexWrap: 'wrap',
+          marginBottom: '2px'
+        }}>
+          <span style={{ fontWeight: 'bold', color: barColor }}>
+            {item.subCategory}
+          </span>
+          <span style={{ fontSize: '9px', color: '#bbb' }}>
+            {formattedDate}
+          </span>
+        </div>
+        {/* 第二行：测试名称 */}
+        <div style={{ 
+          fontSize: '10px', 
+          color: '#999',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
+          {testContent}
+        </div>
+      </div>
+      
+      {/* 中间条形图区域 */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px'
+      }}>
+        <div style={{
+          flex: 1,
+          height: '24px',
+          backgroundColor: '#f0f0f0',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
+          <div style={{
+            width: `${percentage}%`,
+            height: '100%',
+            backgroundColor: barColor,
+            borderRadius: '12px',
+            transition: 'width 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            paddingRight: '6px',
+            color: percentage > 30 ? 'white' : '#333',
+            fontSize: '10px',
+            fontWeight: 'bold'
+          }}>
+            {percentage >= 25 && `${percentage}`}
           </div>
-        );
-      })}
+        </div>
+        
+        {/* 右侧分数显示 */}
+        <div style={{
+          width: '32px',
+          flexShrink: 0,
+          textAlign: 'right',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          color: barColor
+        }}>
+          {item.score}
+        </div>
+      </div>
+    </div>
+  );
+})}
     </div>
     
+    {/* 图例说明 */}
     <div style={{ 
       display: 'flex',
       justifyContent: 'center',
       gap: '16px',
-      marginTop: '12px',
-      padding: '6px',
+      marginTop: '16px',
+      padding: '8px',
       backgroundColor: '#f8f9fa',
       borderRadius: '8px',
-      fontSize: '10px'
+      fontSize: '11px'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '2px' }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '5px' }}></div>
         <span>普通成绩</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '2px' }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '5px' }}></div>
         <span>满分成绩</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontWeight: 'bold' }}>{chartData.length}条</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontWeight: 'bold' }}>共 {chartData.length} 条</span>
       </div>
     </div>
   </div>
@@ -1356,6 +1341,8 @@ useEffect(() => {
     </div>
   </div>
 )}
+
+
 
 
         {/* 成绩记录列表 */}
