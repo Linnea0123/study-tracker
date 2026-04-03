@@ -177,6 +177,29 @@ select:focus {
   }
 }
 
+/* 防止 select 元素在移动端闪动 */
+select {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+select:focus {
+  outline: none;
+}
+
+/* 防止快速点击时的闪动 */
+button, select, input {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 确保模态框内的元素不会触发外部关闭 */
+.modal-content,
+.modal-content * {
+  pointer-events: auto;
+}
+
 @media (max-width: 480px) {
   .task-li-swiped {
     transform: translateX(-60px);
