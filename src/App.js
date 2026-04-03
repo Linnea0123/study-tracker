@@ -627,32 +627,35 @@ useEffect(() => {
                 gap: '12px'
               }}>
                 {/* 日期 */}
-                <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '4px', 
-                    fontSize: '13px', 
-                    fontWeight: '500' 
-                  }}>
-                    日期
-                  </label>
-                  <input
-                    type="date"
-                    value={newGrade.date}
-                    onChange={(e) => setNewGrade({...newGrade, date: e.target.value})}
-                    style={{
-                      width: '100%',
-                      height: '40px',
-                      padding: '0 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                      backgroundColor: 'white'
-                    }}
-                  />
-                </div>
-
+<div>
+  <label style={{ 
+    display: 'block', 
+    marginBottom: 4, 
+    fontSize: 13, 
+    fontWeight: '500' 
+  }}>
+    日期
+  </label>
+  <input
+    type="date"
+    value={newGrade.date}
+    onChange={(e) => setNewGrade({...newGrade, date: e.target.value})}
+    style={{
+      width: '100%',
+      height: 40,
+      padding: '0 10px',
+      border: '1px solid #d1d5db',
+      borderRadius: 6,
+      fontSize: 14,
+      boxSizing: 'border-box',
+      backgroundColor: 'white',
+      // 添加以下样式统一日期选择器外观
+      WebkitAppearance: 'none',
+      appearance: 'none',
+      fontFamily: 'inherit'
+    }}
+  />
+</div>
                
                {/* 科目和子分类 - 改为同行显示 */}
 <div style={{
@@ -661,79 +664,90 @@ useEffect(() => {
   gap: 12,
   marginBottom: 12
 }}>
-  {/* 科目 */}
-  <div>
-    <label style={{ 
-      display: 'block', 
-      marginBottom: 4, 
-      fontSize: 13, 
-      fontWeight: '500' 
-    }}>
-      科目
-    </label>
-    <select
-      value={newGrade.subject}
-      onChange={(e) => {
-        setNewGrade({
-          ...newGrade,
-          subject: e.target.value,
-          subCategory: ''
-        });
-      }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      style={{
-        width: '100%',
-        height: 40,
-        padding: '0 10px',
-        border: '1px solid #d1d5db',
-        borderRadius: 6,
-        fontSize: 14,
-        backgroundColor: 'white',
-        boxSizing: 'border-box'
-      }}
-    >
-      {subjects.filter(s => s !== '全部').map(subject => (
-        <option key={subject} value={subject}>{subject}</option>
-      ))}
-    </select>
-  </div>
+ 
 
-  {/* 子分类 */}
-  <div>
-    <label style={{ 
-      display: 'block', 
-      marginBottom: 4, 
-      fontSize: 13, 
-      fontWeight: '500' 
-    }}>
-      子分类
-      <span style={{ fontSize: 11, color: '#999', marginLeft: 4 }}>
-        (可选)
-      </span>
-    </label>
-    <select
-      value={newGrade.subCategory}
-      onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
-      onMouseDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      style={{
-        width: '100%',
-        height: 40,
-        padding: '0 10px',
-        border: '1px solid #d1d5db',
-        borderRadius: 6,
-        fontSize: 14,
-        backgroundColor: 'white',
-        boxSizing: 'border-box'
-      }}
-    >
-      <option value="">选择子分类</option>
-      {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
-        <option key={subCat} value={subCat}>{subCat}</option>
-      ))}
-    </select>
-  </div>
+ {/* 科目 */}
+<div>
+  <label style={{ 
+    display: 'block', 
+    marginBottom: 4, 
+    fontSize: 13, 
+    fontWeight: '500' 
+  }}>
+    科目
+  </label>
+  <select
+    value={newGrade.subject}
+    onChange={(e) => {
+      e.stopPropagation();
+      setNewGrade({
+        ...newGrade,
+        subject: e.target.value,
+        subCategory: ''
+      });
+    }}
+    onClick={(e) => e.stopPropagation()}
+    style={{
+      width: '100%',
+      height: 40,
+      padding: '0 10px',
+      border: '1px solid #d1d5db',
+      borderRadius: 6,
+      fontSize: 14,
+      backgroundColor: 'white',
+      boxSizing: 'border-box',
+      WebkitAppearance: 'menulist',
+      appearance: 'menulist'
+    }}
+  >
+    {subjects.filter(s => s !== '全部').map(subject => (
+      <option key={subject} value={subject}>{subject}</option>
+    ))}
+  </select>
+</div>
+  
+
+{/* 子分类 */}
+<div>
+  <label style={{ 
+    display: 'block', 
+    marginBottom: 4, 
+    fontSize: 13, 
+    fontWeight: '500' 
+  }}>
+    子分类
+    <span style={{ fontSize: 11, color: '#999', marginLeft: 4 }}>
+      (可选)
+    </span>
+  </label>
+  <select
+    value={newGrade.subCategory}
+    onChange={(e) => {
+      e.stopPropagation();
+      setNewGrade({...newGrade, subCategory: e.target.value});
+    }}
+    onClick={(e) => e.stopPropagation()}
+    style={{
+      width: '100%',
+      height: 40,
+      padding: '0 10px',
+      border: '1px solid #d1d5db',
+      borderRadius: 6,
+      fontSize: 14,
+      backgroundColor: 'white',
+      boxSizing: 'border-box',
+      // 确保移动端正常显示
+      WebkitAppearance: 'menulist',
+      appearance: 'menulist'
+    }}
+  >
+    <option value="">选择子分类</option>
+    {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
+      <option key={subCat} value={subCat}>{subCat}</option>
+    ))}
+  </select>
+</div>
+
 </div>
 
                 {/* 测试内容 */}
@@ -937,31 +951,69 @@ useEffect(() => {
                   />
                 </div>
                 
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (editingGrade) {
-                      handleSaveEditGrade();
-                    } else {
-                      handleAddGrade();
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#1a73e8',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    marginTop: '8px'
-                  }}
-                >
-                  {editingGrade ? '保存修改' : '添加记录'}
-                </button>
+                
+
+<div style={{
+  display: 'flex',
+  gap: 12,
+  marginTop: 8
+}}>
+  {/* 保存/添加按钮 */}
+  <button
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (editingGrade) {
+        handleSaveEditGrade();
+      } else {
+        handleAddGrade();
+      }
+    }}
+    style={{
+      flex: 1,
+      padding: 14,
+      backgroundColor: '#1a73e8',
+      color: 'white',
+      border: 'none',
+      borderRadius: 8,
+      cursor: 'pointer',
+      fontSize: 15,
+      fontWeight: '500'
+    }}
+  >
+    {editingGrade ? '保存修改' : '添加记录'}
+  </button>
+
+  {/* 删除按钮 - 仅在编辑模式下显示 */}
+  {editingGrade && (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 直接调用 handleDeleteGrade，它内部已经有 confirm 了
+        handleDeleteGrade(editingGrade.id);
+        setShowAddForm(false);
+        setEditingGrade(null);
+        resetNewGradeForm();
+      }}
+      style={{
+        flex: 1,
+        padding: 14,
+        backgroundColor: '#dc3545',
+        color: 'white',
+        border: 'none',
+        borderRadius: 8,
+        cursor: 'pointer',
+        fontSize: 15,
+        fontWeight: '500'
+      }}
+    >
+      删除记录
+    </button>
+  )}
+</div>
+
+                
               </div>
             </div>
           </div>
