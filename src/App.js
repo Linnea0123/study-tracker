@@ -5970,6 +5970,7 @@ const RegularTaskEditModal = ({ task, onClose, onSave, categories }) => {
 };
 
 // 常规任务项组件 - 确保 onToggle 正确传递
+
 const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -5977,9 +5978,8 @@ const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
     onEdit(id, newText, category, subCategory);
   };
 
- const handleDelete = () => {
+  const handleDelete = () => {
     if (window.confirm(`确定要删除常规任务 "${task.text}" 吗？\n\n删除后将从所有日期中移除！`)) {
-      // 传递任务文本而不是 ID，更可靠
       onDelete(task.text);
     }
   };
@@ -6009,60 +6009,70 @@ const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
         border: "1px solid #FFB74D",
         display: "flex",
         alignItems: "center",
+        justifyContent: "space-between",
         gap: 8,
         flexWrap: "wrap"
       }}>
-        <input
-          type="checkbox"
-          checked={false}
-          onChange={() => onToggle(task)}
-          style={{ margin: 0, cursor: "pointer" }}
-        />
-        
-        <span
-          onClick={() => setShowEditModal(true)}
-          style={{
-            flex: 1,
-            wordBreak: "break-word",
-            cursor: "pointer",
-            color: "#333",
-            fontSize: "14px"
-          }}
-        >
-          {task.text}
-        </span>
-        
-        {/* 类别标签 */}
-        {task.targetCategory && task.targetCategory !== "常规任务" && (
-          <span style={{
-            fontSize: "10px",
-            padding: "2px 6px",
-            borderRadius: "10px",
-            backgroundColor: getCategoryColor(task.targetCategory),
-            color: "#fff",
-            whiteSpace: "nowrap"
-          }}>
-            {task.targetCategory === "校内" && task.targetSubCategory ? `📚 ${task.targetSubCategory}` : task.targetCategory}
+        {/* 左侧：复选框 + 任务内容 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+          <input
+            type="checkbox"
+            checked={false}
+            onChange={() => onToggle(task)}
+            style={{ margin: 0, cursor: "pointer", flexShrink: 0 }}
+          />
+          
+          {/* 👇 任务文字 - 字体改小一号（13px） */}
+          <span
+            onClick={() => setShowEditModal(true)}
+            style={{
+              wordBreak: "break-word",
+              cursor: "pointer",
+              color: "#333",
+              fontSize: "13px"  // 原来是 14px，改为 13px
+            }}
+          >
+            {task.text}
           </span>
-        )}
-        
-        <button
-          onClick={handleDelete}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#bbb',
-            cursor: 'pointer',
-            fontSize: '16px',
-            padding: '0 4px',
-            lineHeight: 1
-          }}
-          onMouseEnter={(e) => (e.target.style.color = '#e53935')}
-          onMouseLeave={(e) => (e.target.style.color = '#bbb')}
-          title="删除任务"
-        >
-          ×
-        </button>
+        </div>
+
+        {/* 右侧：标签和删除按钮 */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0px", flexShrink: 0, marginRight: "-6px" }}>
+          {/* 类别标签 */}
+          {task.targetCategory && task.targetCategory !== "常规任务" && (
+            <span style={{
+              fontSize: "10px",
+              padding: "2px 6px",
+              borderRadius: "10px",
+              backgroundColor: getCategoryColor(task.targetCategory),
+              color: "#fff",
+              whiteSpace: "nowrap"
+            }}>
+              {task.targetCategory === "校内" && task.targetSubCategory ? `📚 ${task.targetSubCategory}` : task.targetCategory}
+            </span>
+          )}
+          
+          {/* 删除按钮 */}
+          <button
+            onClick={handleDelete}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#bbb',
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: '0 2px',
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => (e.target.style.color = '#e53935')}
+            onMouseLeave={(e) => (e.target.style.color = '#bbb')}
+            title="删除任务"
+          >
+            ×
+          </button>
+        </div>
       </li>
 
       {showEditModal && (
@@ -6076,6 +6086,8 @@ const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
     </>
   );
 };
+
+
 
 const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask, onDeleteTask }) => {
   // ========== 所有状态定义 ==========
