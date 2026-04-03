@@ -692,28 +692,29 @@ useEffect(() => {
                       科目
                     </label>
                     <select
-                      value={newGrade.subject}
-                      onChange={(e) => {
-                        setNewGrade({
-                          ...newGrade,
-                          subject: e.target.value,
-                          subCategory: ''
-                        });
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '40px',
-                        padding: '0 10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        backgroundColor: 'white'
-                      }}
-                    >
-                      {subjects.filter(s => s !== '全部').map(subject => (
-                        <option key={subject} value={subject}>{subject}</option>
-                      ))}
-                    </select>
+  value={newGrade.subject}
+  onChange={(e) => {
+    setNewGrade({
+      ...newGrade,
+      subject: e.target.value,
+      subCategory: ''
+    });
+  }}
+  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+  style={{
+    width: '100%',
+    height: '40px',
+    padding: '0 10px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white'
+  }}
+>
+  {subjects.filter(s => s !== '全部').map(subject => (
+    <option key={subject} value={subject}>{subject}</option>
+  ))}
+</select>
                   </div>
 
                   <div>
@@ -729,23 +730,25 @@ useEffect(() => {
                       </span>
                     </label>
                     <select
-                      value={newGrade.subCategory}
-                      onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
-                      style={{
-                        width: '100%',
-                        height: '40px',
-                        padding: '0 10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        backgroundColor: 'white'
-                      }}
-                    >
-                      <option value="">选择子分类</option>
-                      {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
-                        <option key={subCat} value={subCat}>{subCat}</option>
-                      ))}
-                    </select>
+  value={newGrade.subCategory}
+  onChange={(e) => setNewGrade({...newGrade, subCategory: e.target.value})}
+  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+  style={{
+    width: '100%',
+    height: '40px',
+    padding: '0 10px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white'
+  }}
+>
+  <option value="">选择子分类</option>
+  {(subjectSubCategories[newGrade.subject] || []).map(subCat => (
+    <option key={subCat} value={subCat}>{subCat}</option>
+  ))}
+</select>
+
                   </div>
                 </div>
 
@@ -794,6 +797,7 @@ useEffect(() => {
                     <select
                       value={newGrade.scoreType}
                       onChange={handleScoreTypeChange}
+                      onMouseDown={(e) => e.stopPropagation()}  // 添加这行
                       style={{
                         width: '100%',
                         height: '40px',
@@ -994,42 +998,47 @@ useEffect(() => {
     display: 'flex',
     gap: '12px'
   }}>
-    <select
-      value={filterSubject}
-      onChange={(e) => {
-        setFilterSubject(e.target.value);
-        setFilterSubCategory('全部');
-      }}
-      style={{
-        flex: 1,
-        padding: '10px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: 'white'
-      }}
-    >
-      {subjects.map(subject => (
-        <option key={subject} value={subject}>{subject}</option>
-      ))}
-    </select>
+ 
+<select
+  value={filterSubject}
+  onChange={(e) => {
+    setFilterSubject(e.target.value);
+    setFilterSubCategory('全部');
+  }}
+  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+  style={{
+    flex: 1,
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white'
+  }}
+>
+  {subjects.map(subject => (
+    <option key={subject} value={subject}>{subject}</option>
+  ))}
+</select>
 
-    <select
-      value={filterSubCategory}
-      onChange={(e) => setFilterSubCategory(e.target.value)}
-      style={{
-        flex: 1,
-        padding: '10px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: 'white'
-      }}
-    >
-      {getCurrentSubCategories().map(subCat => (
-        <option key={subCat} value={subCat}>{subCat}</option>
-      ))}
-    </select>
+
+<select
+  value={filterSubCategory}
+  onChange={(e) => setFilterSubCategory(e.target.value)}
+  onMouseDown={(e) => e.stopPropagation()}  // 添加这行
+  style={{
+    flex: 1,
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    backgroundColor: 'white'
+  }}
+>
+  {getCurrentSubCategories().map(subCat => (
+    <option key={subCat} value={subCat}>{subCat}</option>
+  ))}
+</select>
+    
   </div>
 
 
@@ -6037,7 +6046,7 @@ const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
         </div>
 
         {/* 右侧：标签和删除按钮 */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0px", flexShrink: 0, marginRight: "-6px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginRight: "-6px" }}>
           {/* 类别标签 */}
           {task.targetCategory && task.targetCategory !== "常规任务" && (
             <span style={{
@@ -6054,24 +6063,22 @@ const RegularTaskItem = ({ task, onToggle, onDelete, onEdit, categories }) => {
           
           {/* 删除按钮 */}
           <button
-            onClick={handleDelete}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#bbb',
-              cursor: 'pointer',
-              fontSize: '16px',
-              padding: '0 2px',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-            onMouseEnter={(e) => (e.target.style.color = '#e53935')}
-            onMouseLeave={(e) => (e.target.style.color = '#bbb')}
-            title="删除任务"
-          >
-            ×
-          </button>
+  onClick={handleDelete}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    color: '#bbb',        // 固定颜色
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '0 2px',
+    lineHeight: 1,
+    display: 'flex',
+    alignItems: 'center'
+  }}
+  title="删除任务"
+>
+  ×
+</button>
         </div>
       </li>
 
