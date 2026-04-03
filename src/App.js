@@ -1171,109 +1171,124 @@ useEffect(() => {
   minWidth: '300px',
   width: '100%'
 }}>
-  {chartData.map((item, index) => {
-    const barColor = item.isFullMark ? '#4caf50' : '#1a73e8';
-    const percentage = item.score;
-    
-    // 格式化日期显示
-    const dateObj = new Date(item.date);
-    const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-    
-    // 测试名称不截断，保留完整
-    const testContent = item.testContent;
-    
-    // 查找对应的成绩记录
-    const originalGrade = grades.find(g => g.id === item.id);
-    
-    return (
-      <div
-        key={item.id}
-        style={{
-          marginBottom: '12px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '8px',
-          width: '100%',
-          cursor: 'pointer'  // 添加指针样式
-        }}
-        onClick={() => {
-          if (originalGrade) {
-            handleEditGrade(originalGrade);
-          }
-        }}
-      >
-        {/* 左侧标签区域 */}
-        <div style={{
-          width: '110px',
-          flexShrink: 0,
-          fontSize: '11px',
-          color: '#555'
-        }}>
-          {/* 第一行：子分类 + 日期 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'baseline', 
-            gap: '6px', 
-            flexWrap: 'wrap',
-            marginBottom: '4px'
-          }}>
-            <span style={{ fontWeight: 'bold', color: barColor }}>
-              {item.subCategory}
-            </span>
-            <span style={{ fontSize: '9px', color: '#bbb' }}>
-              {formattedDate}
-            </span>
-          </div>
-          {/* 第二行：测试名称 - 自动换行 */}
-          <div style={{ 
-            fontSize: '10px', 
-            color: '#999',
-            wordBreak: 'break-word',
-            whiteSpace: 'normal',
-            lineHeight: '1.4',
-            maxWidth: '100%'
-          }}>
-            {testContent}
-          </div>
-        </div>
-        
-        {/* 条形图区域 */}
-<div style={{
-  flex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',  // 👈 添加这行，让内容靠右对齐
-  marginTop: '2px'
-}}>
+ 
+
+{chartData.map((item, index) => {
+  const percentage = item.score;
+  
+  // 根据分数设置不同的颜色深度
+  const getBarColor = (score) => {
+    if (item.isFullMark) return '#4caf50';  // 满分绿色
+    if (score >= 90) return '#1a73e8';       // 90分以上 深蓝
+    if (score >= 75) return '#4285f4';       // 75-89分 中蓝
+    if (score >= 60) return '#669df6';       // 60-74分 浅蓝
+    return '#a0c4ff';                         // 60分以下 很浅的蓝
+  };
+  
+  const barColor = getBarColor(percentage);
+  
+  // 格式化日期显示
+  const dateObj = new Date(item.date);
+  const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+  
+  // 测试名称
+  const testContent = item.testContent;
+  
+  // 查找对应的成绩记录
+  const originalGrade = grades.find(g => g.id === item.id);
+  
+  return (
+   
+<div
+  key={item.id}
+  style={{
+    marginBottom: '12px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '8px',
+    width: '100%',
+    cursor: 'pointer'
+  }}
+  onClick={() => {
+    if (originalGrade) {
+      handleEditGrade(originalGrade);
+    }
+  }}
+>
+  {/* 左侧标签区域 - 固定宽度 */}
   <div style={{
-    width: '80%',  // 👈 改成固定宽度百分比，不再使用 flex:1
-    height: '24px',
-    backgroundColor: '#f0f0f0',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    position: 'relative'
+    width: '120px',
+    flexShrink: 0,
+    fontSize: '11px',
+    color: '#555'
+  }}>
+    {/* 第一行：子分类 + 日期 */}
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'baseline', 
+      gap: '6px',
+      flexWrap: 'wrap',
+      marginBottom: '4px'
+    }}>
+      <span style={{ fontWeight: 'bold', color: barColor }}>
+        {item.subCategory}
+      </span>
+      <span style={{ fontSize: '9px', color: '#bbb' }}>
+        {formattedDate}
+      </span>
+    </div>
+    {/* 第二行：测试名称 - 自动换行 */}
+    <div style={{ 
+      fontSize: '10px', 
+      color: '#999',
+      wordBreak: 'break-word',
+      whiteSpace: 'normal',
+      lineHeight: '1.4'
+    }}>
+      {testContent}
+    </div>
+  </div>
+  
+  {/* 柱状图区域 - 固定宽度，不用 flex:1 */}
+  <div style={{
+    width: '100%',      // 👈 固定宽度，不要用 flex:1
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end'
   }}>
     <div style={{
-      width: `${percentage}%`,
-      height: '100%',
-      backgroundColor: barColor,
-      borderRadius: '12px',
-      transition: 'width 0.3s ease',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      paddingRight: '6px',
-      color: percentage > 30 ? 'white' : '#333',
-      fontSize: '10px',
-      fontWeight: 'bold'
+      width: '100%',
+      height: '28px',
+      backgroundColor: '#f0f0f0',
+      borderRadius: '14px',
+      overflow: 'hidden',
+      position: 'relative'
     }}>
-      {percentage >= 25 && `${percentage}`}
+      <div style={{
+        width: `${percentage}%`,
+        height: '100%',
+        backgroundColor: barColor,
+        borderRadius: '14px',
+        transition: 'width 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingRight: '8px',
+        color: percentage > 40 ? 'white' : '#333',
+        fontSize: '11px',
+        fontWeight: 'bold'
+      }}>
+        {percentage}
+      </div>
     </div>
   </div>
 </div>
-      </div>
-    );
-  })}
+
+
+  );
+})}
+
+ 
 </div>
     {/* 图例说明 */}
     <div style={{ 
