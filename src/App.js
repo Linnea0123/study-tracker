@@ -104,12 +104,17 @@ const RegularTaskDragDrop = ({ tasks, categories, onToggle, onDelete, onEdit, is
     }
   };
   
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    const newOrder = sortedTasks.map(t => t.originalId || t.id);
-    onOrderChange(newOrder);
-  };
+// 在 RegularTaskSortableList 组件中，修改 handleDrop 函数
+const handleDrop = (e) => {
+  e.preventDefault();
+  if (!isSortingMode) return;
+  
+  // 保存新顺序
+  const newOrder = taskList.map(t => t.originalId || t.id);
+  onSortingEnd(newOrder);
+  dragItemIndex.current = null;
+  // 不要在这里调用 onSortingModeChange 或类似的东西
+};
   
   return (
     <div 
@@ -178,19 +183,7 @@ const RegularTaskDragDrop = ({ tasks, categories, onToggle, onDelete, onEdit, is
         </div>
       </div>
       
-      {isSortingMode && (
-        <div style={{ 
-          marginTop: 12, 
-          padding: 8, 
-          backgroundColor: '#fff3e0', 
-          borderRadius: 6,
-          fontSize: 12,
-          color: '#FF9800',
-          textAlign: 'center'
-        }}>
-          💡 拖拽任务到想要的位置，然后点击"✓ 完成排序"保存
-        </div>
-      )}
+      
     </div>
   );
 };
@@ -198,48 +191,49 @@ const RegularTaskDragDrop = ({ tasks, categories, onToggle, onDelete, onEdit, is
 
 
 // 完全重写 RegularTaskSortableList 组件
+// 修复 RegularTaskSortableList 组件
 const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onSortingEnd }) => {
   const [taskList, setTaskList] = useState([]);
   const dragItemIndex = useRef(null);
   
-  // 初始化任务列表
+  // 初始化任务列表 - 排序模式和非排序模式都使用保存的顺序
   useEffect(() => {
-    if (!isSortingMode) {
-      // 非排序模式：按保存的顺序显示
-      const savedOrder = localStorage.getItem('regular_tasks_order');
-      if (savedOrder && tasks.length > 0) {
-        const orderIds = JSON.parse(savedOrder);
-        const taskMap = new Map();
-        tasks.forEach(task => {
-          // 使用 originalId 作为唯一标识
-          const taskId = task.originalId || task.id;
-          taskMap.set(taskId, task);
-        });
-        const ordered = [];
-        orderIds.forEach(id => {
-          if (taskMap.has(id)) {
-            ordered.push(taskMap.get(id));
-            taskMap.delete(id);
-          }
-        });
-        ordered.push(...taskMap.values());
-        setTaskList(ordered);
-      } else {
-        setTaskList([...tasks]);
-      }
+    const savedOrder = localStorage.getItem('regular_tasks_order');
+    const taskMap = new Map();
+    
+    // 建立任务映射
+    tasks.forEach(task => {
+      const taskId = task.originalId || task.id;
+      taskMap.set(taskId, task);
+    });
+    
+    if (savedOrder && tasks.length > 0) {
+      const orderIds = JSON.parse(savedOrder);
+      const ordered = [];
+      
+      // 按保存的顺序排列
+      orderIds.forEach(id => {
+        if (taskMap.has(id)) {
+          ordered.push(taskMap.get(id));
+          taskMap.delete(id);
+        }
+      });
+      
+      // 添加新任务（不在保存顺序中的）
+      ordered.push(...taskMap.values());
+      setTaskList(ordered);
     } else {
-      // 排序模式：直接使用当前任务列表
       setTaskList([...tasks]);
     }
-  }, [tasks, isSortingMode]);
+  }, [tasks]); // 移除 isSortingMode 依赖，让两种模式使用相同的顺序
   
-  // 当任务列表变化时（比如添加/删除任务），更新排序顺序存储
+  // 当任务列表变化时（比如拖拽排序后），更新存储
   useEffect(() => {
-    if (!isSortingMode && taskList.length > 0) {
+    if (taskList.length > 0) {
       const orderIds = taskList.map(t => t.originalId || t.id);
       localStorage.setItem('regular_tasks_order', JSON.stringify(orderIds));
     }
-  }, [taskList, isSortingMode]);
+  }, [taskList]);
   
   if (taskList.length === 0) {
     return <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>暂无常规任务</div>;
@@ -283,37 +277,38 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     e.preventDefault();
     if (!isSortingMode) return;
     
-    // 保存新顺序
+    // 保存新顺序到父组件和 localStorage
     const newOrder = taskList.map(t => t.originalId || t.id);
     onSortingEnd(newOrder);
     dragItemIndex.current = null;
   };
   
-  // 渲染任务项（带全局索引）
-  const renderTaskItem = (task, globalIndex) => {
-    return (
-      <div
-        key={task.id}
-        draggable={isSortingMode}
-        onDragStart={(e) => handleDragStart(e, globalIndex)}
-        onDragEnd={handleDragEnd}
-        onDragOver={(e) => handleDragOver(e, globalIndex)}
-        style={{ 
-          cursor: isSortingMode ? 'grab' : 'default',
-          marginBottom: '8px'
-        }}
-      >
-        <RegularTaskItem
-          task={task}
-          categories={categories}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          isDraggable={isSortingMode}
-        />
-      </div>
-    );
-  };
+  // 渲染任务项
+ // 在 RegularTaskSortableList 中，渲染任务项时不需要额外的拖拽手柄
+const renderTaskItem = (task, globalIndex) => {
+  return (
+    <div
+      key={task.id}
+      draggable={isSortingMode}
+      onDragStart={(e) => handleDragStart(e, globalIndex)}
+      onDragEnd={handleDragEnd}
+      onDragOver={(e) => handleDragOver(e, globalIndex)}
+      style={{ 
+        cursor: isSortingMode ? 'grab' : 'default',
+        marginBottom: '8px'
+      }}
+    >
+      <RegularTaskItem
+        task={task}
+        categories={categories}
+        onToggle={onToggle}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        isDraggable={isSortingMode}
+      />
+    </div>
+  );
+};
   
   return (
     <div 
@@ -348,7 +343,6 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     </div>
   );
 };
-
 
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
@@ -6085,21 +6079,18 @@ const RegularTaskEditModal = ({ task, onClose, onSave, categories }) => {
 // 常规任务项组件 - 确保 onToggle 正确传递
 
 // 修改 RegularTaskItem 组件，添加拖拽时的视觉反馈
+// 修改 RegularTaskItem 组件
+// 修改 RegularTaskItem 组件 - 添加拖拽手柄
+// 修改 RegularTaskItem 组件 - 拖拽手柄放到右边
 const RegularTaskItem = ({ 
   task, 
   onToggle, 
   onDelete, 
   onEdit, 
   categories,
-  isDraggable = false,
-  dragIndex,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd
+  isDraggable = false
 }) => {
   const [showEditModal, setShowEditModal] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const handleEdit = (id, newText, category, subCategory) => {
     onEdit(id, newText, category, subCategory);
@@ -6109,34 +6100,6 @@ const RegularTaskItem = ({
     if (window.confirm(`确定要删除常规任务 "${task.text}" 吗？\n\n删除后将从所有日期中移除！`)) {
       onDelete(task.text);
     }
-  };
-
-// 在 RegularTaskItem 组件中，修改 handleDragStart 函数
-// 在 RegularTaskItem 组件中，确保 onDragStart 正确传递
-const handleDragStart = (e) => {
-  if (!isDraggable) {
-    e.preventDefault();
-    return;
-  }
-  // 不要调用 e.stopPropagation()，这可能会阻止拖拽
-  e.dataTransfer.effectAllowed = 'move';
-  if (onDragStart) onDragStart(e);
-};
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    if (onDragEnd) onDragEnd();
-  };
-
-  const handleDragOver = (e) => {
-    if (!isDraggable) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (onDragOver) onDragOver(e, dragIndex);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (onDrop) onDrop(dragIndex);
   };
 
   // 获取类别颜色
@@ -6156,54 +6119,33 @@ const handleDragStart = (e) => {
     <>
       <li
         draggable={isDraggable}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onDragEnd={handleDragEnd}
         style={{
           position: "relative",
-          background: isDragging ? "#e0e0e0" : "#fff3e0",
+          background: "#fff3e0",
           borderRadius: 6,
           minHeight: "24px",
           marginBottom: 4,
           padding: "8px",
-          border: isDragging ? "2px dashed #FF9800" : "1px solid #FFB74D",
+          border: "1px solid #FFB74D",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
           flexWrap: "wrap",
           cursor: isDraggable ? 'grab' : 'default',
-          opacity: isDragging ? 0.6 : 1,
           transition: 'all 0.2s ease'
         }}
       >
-        {/* 拖拽手柄 */}
-        {isDraggable && (
-          <div
-            style={{
-              cursor: 'grab',
-              color: '#999',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              marginRight: '4px',
-              userSelect: 'none'
-            }}
-            title="拖拽调整顺序"
-          >
-            ⋮⋮
-          </div>
-        )}
-        
-        {/* 左侧：复选框 + 任务内容 */}
+        {/* 左侧内容 */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-          <input
-            type="checkbox"
-            checked={false}
-            onChange={() => onToggle(task)}
-            style={{ margin: 0, cursor: "pointer", flexShrink: 0 }}
-          />
+          {!isDraggable && (
+            <input
+              type="checkbox"
+              checked={false}
+              onChange={() => onToggle(task)}
+              style={{ margin: 0, cursor: "pointer", flexShrink: 0 }}
+            />
+          )}
           
           <span
             onClick={() => setShowEditModal(true)}
@@ -6219,9 +6161,9 @@ const handleDragStart = (e) => {
           </span>
         </div>
 
-        {/* 右侧：标签和删除按钮 */}
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginRight: "-6px" }}>
-          {task.targetCategory && task.targetCategory !== "常规任务" && (
+        {/* 右侧：标签、删除按钮、拖拽手柄 */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          {task.targetCategory && task.targetCategory !== "常规任务" && !isDraggable && (
             <span style={{
               fontSize: "10px",
               padding: "2px 6px",
@@ -6234,23 +6176,43 @@ const handleDragStart = (e) => {
             </span>
           )}
           
-          <button
-            onClick={handleDelete}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#bbb',
-              cursor: 'pointer',
-              fontSize: '16px',
-              padding: '0 2px',
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-            title="删除任务"
-          >
-            ×
-          </button>
+          {!isDraggable && (
+            <button
+              onClick={handleDelete}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#bbb',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '0 2px',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              title="删除任务"
+            >
+              ×
+            </button>
+          )}
+          
+          {/* 拖拽手柄 - 放在最右边，只在排序模式下显示 */}
+          {isDraggable && (
+            <div
+              style={{
+                cursor: 'grab',
+                color: '#999',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                userSelect: 'none',
+                paddingLeft: '4px'
+              }}
+              title="拖拽调整顺序"
+            >
+              ⋮⋮
+            </div>
+          )}
         </div>
       </li>
 
@@ -6265,7 +6227,6 @@ const handleDragStart = (e) => {
     </>
   );
 };
-
 
 const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask, onDeleteTask }) => {
   // ========== 所有状态定义 ==========
@@ -16803,14 +16764,17 @@ if (isInitialized && todayTasks.length === 0) {
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span>📋 常规任务 ({todayTasks.filter(t => t.isRegularTask).length})</span>
-      
+    </div>
+    
+    {/* 按钮组 - 调整顺序按钮在左边，添加按钮在右边 */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <button
         onClick={(e) => { 
           e.stopPropagation();
           setIsSortingRegularTasks(!isSortingRegularTasks);
         }}
         style={{
-          background: isSortingRegularTasks ? "#ff9800" : "transparent",
+          background: isSortingRegularTasks ? "#ff9800" : "rgba(255,255,255,0.2)",
           border: "1px solid rgba(255,255,255,0.5)",
           borderRadius: 4,
           color: "#fff",
@@ -16824,35 +16788,46 @@ if (isInitialized && todayTasks.length === 0) {
       >
         {isSortingRegularTasks ? "✓ 完成排序" : "⋮⋮ 调整顺序"}
       </button>
+      
+      <button 
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          setShowRegularTaskModal(true); 
+        }}
+        style={{ 
+          background: "rgba(255,255,255,0.2)", 
+          border: "none", 
+          color: "#fff", 
+          cursor: "pointer", 
+          fontSize: 16,
+          width: 28,
+          height: 28,
+          borderRadius: 4,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        +
+      </button>
     </div>
-    
-    <button 
-      onClick={(e) => { 
-        e.stopPropagation(); 
-        setShowRegularTaskModal(true); 
-      }}
-      style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 16 }}
-    >
-      ➕
-    </button>
   </div>
   
   {!collapsedCategories["常规任务"] && (
-    // 在 App 组件中，找到 RegularTaskSortableList 的使用位置，确保 onSortingEnd 正确实现
-<RegularTaskSortableList
-  tasks={todayTasks.filter(t => t.isRegularTask)}
-  categories={categories}
-  onToggle={toggleRegularTask}
-  onDelete={deleteRegularTaskByText}
-  onEdit={editRegularTask}
-  isSortingMode={isSortingRegularTasks}
-  onSortingEnd={(newOrder) => {
-    console.log('保存新顺序:', newOrder);
-    setRegularTasksOrder(newOrder);
-    localStorage.setItem('regular_tasks_order', JSON.stringify(newOrder));
-    setIsSortingRegularTasks(false);
-  }}
-/>
+    <RegularTaskSortableList
+      tasks={todayTasks.filter(t => t.isRegularTask)}
+      categories={categories}
+      onToggle={toggleRegularTask}
+      onDelete={deleteRegularTaskByText}
+      onEdit={editRegularTask}
+      isSortingMode={isSortingRegularTasks}
+      onSortingEnd={(newOrder) => {
+  // 保存顺序，但保持排序模式
+  setRegularTasksOrder(newOrder);
+  localStorage.setItem('regular_tasks_order', JSON.stringify(newOrder));
+  // 不要退出排序模式
+}}
+    />
   )}
 </div>
 
