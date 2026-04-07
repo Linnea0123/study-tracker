@@ -5048,8 +5048,8 @@ const handleSave = () => {
 </div>
 
           {/* 常用标签 */}
-          <div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>常用标签:</div>
+        <div style={{ marginBottom: 16 }}>  {/* 添加这行，给常用标签区域底部留出间距 */}
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>常用标签:</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {commonTags.map((tag, index) => (
                 <button
@@ -5083,6 +5083,7 @@ const handleSave = () => {
           <div style={{ marginBottom: 15 }}>
             <label style={{
               display: 'block',
+            
               marginBottom: 8,
               fontWeight: '600',
               color: '#333',
@@ -5873,18 +5874,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
           </div>
         )}
 
-        {/* 提示信息 */}
-        <div style={{
-          fontSize: 11,
-          color: '#999',
-          marginBottom: 15,
-          padding: '8px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: 6,
-          textAlign: 'center'
-        }}>
-          💡 提示：完成任务后会自动移动到所选分类
-        </div>
+       
 
         {/* 按钮区域 */}
         <div style={{ display: 'flex', gap: 10 }}>
@@ -6082,17 +6072,7 @@ const RegularTaskModal = ({ onClose, onAdd, categories }) => {
           </div>
         )}
 
-        <div style={{
-          fontSize: 11,
-          color: '#999',
-          marginBottom: 15,
-          padding: '8px',
-          backgroundColor: '#fff3e0',
-          borderRadius: 6,
-          textAlign: 'center'
-        }}>
-          💡 提示：完成任务后会自动移动到所选分类
-        </div>
+       
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button
@@ -7984,7 +7964,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     color: '#333',
     fontSize: 14
   }}>
-    📝 任务内容
+    内容
   </label>
   <textarea
     value={editData.text}
@@ -8145,161 +8125,208 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
   />
 </div>
 
-          {/* 类别和子类别在同一行 */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 16,
-              alignItems: 'start',
-              marginBottom: 12,
-            }}
-          >
-            {/* 任务类别 */}
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: 8,
-                  fontWeight: 600,
-                  color: '#333',
-                  fontSize: 14,
-                }}
-              >
-                类别
-              </label>
+         {/* 类别和子类别在同一行 */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
+    alignItems: 'start',
+    marginBottom: 8,
+  }}
+>
+  {/* 任务类别 */}
+  <div>
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
+      类别
+    </label>
 
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select
-                  value={editData.category}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      category: e.target.value,
-                      subCategory: '',
-                    })
-                  }
-                  style={{
-                    flex: 1,
-                    height: 36,
-                    padding: '0 10px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.name} value={cat.name}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <select
+        value={editData.category}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            category: e.target.value,
+            subCategory: '',
+          })
+        }
+        style={{
+          flex: 1,
+          height: 36,
+          padding: '0 10px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
+        }}
+      >
+        {categories.map((cat) => (
+          <option key={cat.name} value={cat.name}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newCategory = window.prompt('输入新类别名称:');
-                    if (newCategory && newCategory.trim()) {
-                      const exists = categories.find(cat => cat.name === newCategory.trim());
-                      if (exists) {
-                        alert('该类别已存在！');
-                        return;
-                      }
-                      const newCat = {
-                        name: newCategory.trim(),
-                        color: '#1a73e8',
-                        subCategories: []
-                      };
-                      const updatedCategories = [...categories, newCat];
-                      setCategories(updatedCategories);
-                      saveMainData('categories', updatedCategories);
-                      setEditData({ ...editData, category: newCategory.trim() });
-                      alert(`新类别 "${newCategory}" 添加成功！`);
-                    }
-                  }}
-                  style={{
-                    height: 36,
-                    width: 36,
-                    backgroundColor: '#f9f9f9',
-                    color: '#333',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 18,
-                    fontWeight: 600,
-                    lineHeight: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxSizing: 'border-box',
-                  }}
-                  title="添加新类别"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+      <button
+        type="button"
+        onClick={() => {
+          const newCategory = window.prompt('输入新类别名称:');
+          if (newCategory && newCategory.trim()) {
+            const exists = categories.find(cat => cat.name === newCategory.trim());
+            if (exists) {
+              alert('该类别已存在！');
+              return;
+            }
+            const newCat = {
+              name: newCategory.trim(),
+              color: '#1a73e8',
+              subCategories: []
+            };
+            const updatedCategories = [...categories, newCat];
+            setCategories(updatedCategories);
+            saveMainData('categories', updatedCategories);
+            setEditData({ ...editData, category: newCategory.trim() });
+            alert(`新类别 "${newCategory}" 添加成功！`);
+          }
+        }}
+        style={{
+          height: 36,
+          width: 36,
+          backgroundColor: '#f9f9f9',
+          color: '#333',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          cursor: 'pointer',
+          fontSize: 18,
+          fontWeight: 600,
+          lineHeight: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+        }}
+        title="添加新类别"
+      >
+        +
+      </button>
+    </div>
+  </div>
 
-            {/* 子类别选择 - 仅校内类别显示 */}
-            {(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: 8,
-                  fontWeight: 600,
-                  color: '#333',
-                  fontSize: 14,
-                }}>
-                  子类别
-                </label>
+  {/* 子类别选择 - 仅校内类别显示 */}
+  {(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
+    <div>
+      <label
+        style={{
+          display: 'block',
+          marginBottom: 8,
+          fontWeight: 600,
+          color: '#333',
+          fontSize: 14,
+        }}
+      >
+        子类别
+      </label>
 
-                <div style={{ position: 'relative', zIndex: 10 }}>
-                  <select
-                    value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      if (editData.isRegularTask) {
-                        setEditData({ ...editData, targetSubCategory: e.target.value });
-                      } else {
-                        setEditData({ ...editData, subCategory: e.target.value });
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                    }}
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      padding: '0 12px',
-                      border: '2px solid #e0e0e0',
-                      borderRadius: 8,
-                      fontSize: 14,
-                      backgroundColor: '#fff',
-                      cursor: 'pointer',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      WebkitAppearance: 'menulist',
-                      MozAppearance: 'menulist',
-                      appearance: 'menulist'
-                    }}
-                  >
-                    <option value="">选择子类别（可选）</option>
-                    {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
-                      <option key={subCat} value={subCat}>
-                        {subCat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <select
+          value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
+          onChange={(e) => {
+            if (editData.isRegularTask) {
+              setEditData({ ...editData, targetSubCategory: e.target.value });
+            } else {
+              setEditData({ ...editData, subCategory: e.target.value });
+            }
+          }}
+          style={{
+            flex: 1,
+            height: 36,
+            padding: '0 10px',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            fontSize: 14,
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+            boxSizing: 'border-box',
+          }}
+        >
+          <option value="">选择子类别（可选）</option>
+          {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
+            <option key={subCat} value={subCat}>
+              {subCat}
+            </option>
+          ))}
+        </select>
+
+        {/* 添加子类别按钮 */}
+        <button
+          type="button"
+          onClick={() => {
+            const newSubCategory = window.prompt('输入新子类别名称:');
+            if (newSubCategory && newSubCategory.trim()) {
+              const schoolCategory = categories.find(c => c.name === '校内');
+              if (schoolCategory && schoolCategory.subCategories.includes(newSubCategory.trim())) {
+                alert('该子类别已存在！');
+                return;
+              }
+              
+              const updatedCategories = categories.map(cat => {
+                if (cat.name === '校内') {
+                  return {
+                    ...cat,
+                    subCategories: [...(cat.subCategories || []), newSubCategory.trim()]
+                  };
+                }
+                return cat;
+              });
+              
+              setCategories(updatedCategories);
+              saveMainData('categories', updatedCategories);
+              
+              // 自动选中新添加的子类别
+              if (editData.isRegularTask) {
+                setEditData({ ...editData, targetSubCategory: newSubCategory.trim() });
+              } else {
+                setEditData({ ...editData, subCategory: newSubCategory.trim() });
+              }
+              
+              alert(`新子类别 "${newSubCategory}" 添加成功！`);
+            }
+          }}
+          style={{
+            height: 36,
+            width: 36,
+            backgroundColor: '#f9f9f9',
+            color: '#333',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 18,
+            fontWeight: 600,
+            lineHeight: '36px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+          title="添加新子类别"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )}
+</div>
 
           {/* 📊 进度跟踪 */}
           <div>
@@ -8976,6 +9003,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 <label
                   style={{
                     display: 'block',
+                    marginTop: 8,
                     marginBottom: 8,
                     fontWeight: 600,
                     color: '#333',
@@ -9119,6 +9147,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 <label
                   style={{
                     display: 'block',
+                    marginTop: 8,
                     marginBottom: 8,
                     fontWeight: 600,
                     color: '#333',
