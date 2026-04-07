@@ -7,190 +7,6 @@ import './App.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 
-// 常规任务拖拽排序组件
-const RegularTaskDragDrop = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onOrderChange }) => {
-  const [dragIndex, setDragIndex] = React.useState(null);
-  const [dragColumn, setDragColumn] = React.useState(null);
-  const containerRef = React.useRef(null);
-  
-  // 获取排序后的任务列表
-  const getSortedTasks = () => {
-    const savedOrder = localStorage.getItem('regular_tasks_order');
-    if (savedOrder && !isSortingMode) {
-      const orderIds = JSON.parse(savedOrder);
-      const taskMap = new Map();
-      tasks.forEach(task => {
-        taskMap.set(task.originalId || task.id, task);
-      });
-      const ordered = [];
-      orderIds.forEach(id => {
-        if (taskMap.has(id)) {
-          ordered.push(taskMap.get(id));
-          taskMap.delete(id);
-        }
-      });
-      ordered.push(...taskMap.values());
-      return ordered;
-    }
-    return [...tasks];
-  };
-  
-  const [sortedTasks, setSortedTasks] = React.useState(getSortedTasks());
-  
-  React.useEffect(() => {
-    if (!isSortingMode) {
-      setSortedTasks(getSortedTasks());
-    }
-  }, [tasks, isSortingMode]);
-  
-  if (sortedTasks.length === 0) {
-    return <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>暂无常规任务</div>;
-  }
-  
-  const midIndex = Math.ceil(sortedTasks.length / 2);
-  const leftTasks = sortedTasks.slice(0, midIndex);
-  const rightTasks = sortedTasks.slice(midIndex);
-  
-  const handleDragStart = (e, index, column, taskId) => {
-    if (!isSortingMode) return;
-    setDragIndex(index);
-    setDragColumn(column);
-    e.dataTransfer.setData('text/plain', JSON.stringify({ index, column, taskId }));
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  };
-  
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '';
-    setDragIndex(null);
-    setDragColumn(null);
-  };
-  
-  const handleDragOver = (e, targetIndex, targetColumn) => {
-    e.preventDefault();
-    if (!isSortingMode || dragIndex === null) return;
-    
-    const leftCount = leftTasks.length;
-    let sourceGlobal, targetGlobal;
-    
-    if (dragColumn === 'left') {
-      sourceGlobal = dragIndex;
-    } else {
-      sourceGlobal = leftCount + dragIndex;
-    }
-    
-    if (targetColumn === 'left') {
-      targetGlobal = targetIndex;
-    } else {
-      targetGlobal = leftCount + targetIndex;
-    }
-    
-    if (sourceGlobal === targetGlobal) return;
-    
-    const newTasks = [...sortedTasks];
-    const [movedTask] = newTasks.splice(sourceGlobal, 1);
-    newTasks.splice(targetGlobal, 0, movedTask);
-    
-    setSortedTasks(newTasks);
-    
-    // 更新拖拽索引
-    const newLeftCount = Math.ceil(newTasks.length / 2);
-    if (targetGlobal < newLeftCount) {
-      setDragColumn('left');
-      setDragIndex(targetGlobal);
-    } else {
-      setDragColumn('right');
-      setDragIndex(targetGlobal - newLeftCount);
-    }
-  };
-  
-// 在 RegularTaskSortableList 组件中，修改 handleDrop 函数
-// 修改 RegularTaskSortableList 的 handleDrop 函数
-const handleDrop = (e) => {
-  e.preventDefault();
-  if (!isSortingMode) return;
-  
-  // 保存新顺序
-  const newOrder = taskList.map(t => t.originalId || t.id);
-  if (onSortingEnd) {
-    onSortingEnd(newOrder);
-  }
-  dragItemIndex.current = null;
-};
-  
-  return (
-    <div 
-      ref={containerRef}
-      style={{ padding: 8 }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        {/* 左列 */}
-        <div>
-          {leftTasks.map((task, idx) => (
-            <div
-              key={task.id}
-              data-task-id={task.originalId || task.id}
-              className="regular-task-item"
-              draggable={isSortingMode}
-              onDragStart={(e) => handleDragStart(e, idx, 'left', task.originalId || task.id)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, idx, 'left')}
-              style={{ 
-                cursor: isSortingMode ? 'grab' : 'default',
-                marginBottom: '4px',
-                opacity: dragIndex === idx && dragColumn === 'left' ? 0.5 : 1
-              }}
-            >
-              <RegularTaskItem
-                task={task}
-                categories={categories}
-                onToggle={onToggle}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                isDraggable={isSortingMode}
-                 showCategoryTag={true}  
-              />
-            </div>
-          ))}
-        </div>
-        
-        {/* 右列 */}
-        <div>
-          {rightTasks.map((task, idx) => (
-            <div
-              key={task.id}
-              data-task-id={task.originalId || task.id}
-              className="regular-task-item"
-              draggable={isSortingMode}
-              onDragStart={(e) => handleDragStart(e, idx, 'right', task.originalId || task.id)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, idx, 'right')}
-              style={{ 
-                cursor: isSortingMode ? 'grab' : 'default',
-                marginBottom: '4px',
-                opacity: dragIndex === idx && dragColumn === 'right' ? 0.5 : 1
-              }}
-            >
-              <RegularTaskItem
-                task={task}
-                categories={categories}
-                onToggle={onToggle}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                 showCategoryTag={true}  
-                isDraggable={isSortingMode}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      
-    </div>
-  );
-};
 
 
 
@@ -305,7 +121,7 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     e.preventDefault();
     if (!isSortingMode) return;
     
-    // 保存新顺序
+    // ✅ 改成使用 taskList（注意：taskList 已经在第 70 行定义了）
     const newOrder = taskList.map(t => t.originalId || t.id);
     if (onSortingEnd) {
       onSortingEnd(newOrder);
@@ -355,19 +171,8 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
         </div>
       </div>
       
-      {isSortingMode && (
-        <div style={{ 
-          marginTop: 12, 
-          padding: 8, 
-          backgroundColor: '#fff3e0', 
-          borderRadius: 6,
-          fontSize: 12,
-          color: '#FF9800',
-          textAlign: 'center'
-        }}>
-          💡 拖拽任务调整顺序，然后点击"✓ 完成排序"保存
-        </div>
-      )}
+     
+     
     </div>
   );
 };
@@ -2295,16 +2100,15 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync || false);
   const [gistId, setGistId] = useState(config.gistId || '');
 
- // 添加这个函数
- const handleSave = () => {
-  if (!editText.trim()) {
-    alert('任务内容不能为空');
-    return;
-  }
-  // 只保存，不重新排序
-  onSave(task.id, editText.trim(), selectedCategory, selectedSubCategory);
-  onClose();  // 只是关闭模态框
-};
+  // ✅ 改成这样
+  const handleSave = () => {
+    if (!token.trim()) {
+      alert('请输入 GitHub Token');
+      return;
+    }
+    onSave({ token, autoSync, gistId });
+    onClose();
+  };
 
 
   return (
@@ -3820,6 +3624,435 @@ const ImageModal = ({ imageUrl, onClose }) => (
   </div>
 );
 
+// ========== 在这里添加 DailyLogModal 组件 ==========
+const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByDate, selectedDate }) => {
+  // 实时从 tasksByDate 和 selectedDate 生成日志内容
+  const generateRealTimeContent = useCallback(() => {
+    const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
+    
+    // 只显示已完成的任务（包括从常规任务完成的）
+    const completedTasks = dayTasks.filter(task => {
+      if (task.isRegularTask && !task.done) return false;
+      if (task.category === "本周任务") return false;
+      return task.done === true;
+    });
+    
+    // 未完成的任务只显示校内分类的
+    const incompleteTasks = dayTasks.filter(task => {
+      if (task.isRegularTask) return false;
+      if (task.category === "本周任务") return false;
+      return !task.done && task.category === "校内";
+    });
+    
+    // 按分类和子分类组织任务
+    const tasksByCategory = {};
+    
+    completedTasks.forEach(task => {
+      if (!tasksByCategory[task.category]) {
+        tasksByCategory[task.category] = {
+          withSubCategories: {},
+          withoutSubCategories: []
+        };
+      }
+      
+      if (task.subCategory) {
+        if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
+          tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
+        }
+        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
+      } else {
+        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
+      }
+    });
+    
+    incompleteTasks.forEach(task => {
+      if (task.category === "校内") {
+        if (!tasksByCategory[task.category]) {
+          tasksByCategory[task.category] = {
+            withSubCategories: {},
+            withoutSubCategories: []
+          };
+        }
+        
+        if (task.subCategory) {
+          if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
+            tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
+          }
+          tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
+        } else {
+          tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
+        }
+      }
+    });
+    
+    const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+    const totalMinutes = Math.floor(totalTime / 60);
+    
+    let logContent = ``;
+    let markdownContent = `# 学习任务\n\n`;
+    
+    Object.entries(tasksByCategory).forEach(([category, categoryData]) => {
+      logContent += `${category}\n`;
+      markdownContent += `## ${category}\n`;
+      
+      if (categoryData.withoutSubCategories.length > 0) {
+        categoryData.withoutSubCategories.forEach((task) => {
+          const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+          const timeText = minutes > 0 ? `【${minutes}m】` : "";
+          
+          if (task.isCompleted) {
+            logContent += `  ✔️ ${task.text}${timeText}\n`;
+            markdownContent += `- [x] ${task.text}${timeText}\n`;
+          } else {
+            logContent += `  ❌ ${task.text}${timeText}\n`;
+            markdownContent += `- [ ] ${task.text}${timeText}\n`;
+          }
+        });
+      }
+      
+      if (categoryData.withoutSubCategories.length > 0 && Object.keys(categoryData.withSubCategories).length > 0) {
+        logContent += '\n';
+        markdownContent += '\n';
+      }
+      
+      Object.entries(categoryData.withSubCategories).forEach(([subCategory, subTasks]) => {
+        logContent += `  - ${subCategory}\n`;
+        markdownContent += `### - ${subCategory}\n`;
+        
+        subTasks.forEach((task) => {
+          const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+          const timeText = minutes > 0 ? `【${minutes}m】` : "";
+          
+          if (task.isCompleted) {
+            logContent += `    ✔️ ${task.text}${timeText}\n`;
+            markdownContent += `- [x] ${task.text}${timeText}\n`;
+          } else {
+            logContent += `    ❌ ${task.text}${timeText}\n`;
+            markdownContent += `- [ ] ${task.text}${timeText}\n`;
+          }
+        });
+        
+        if (Object.keys(categoryData.withSubCategories).length > 1) {
+          logContent += '\n';
+          markdownContent += '\n';
+        }
+      });
+      
+      logContent += '\n';
+      markdownContent += '\n';
+    });
+    
+    const totalTasksCount = completedTasks.length + incompleteTasks.length;
+    
+    markdownContent += `# 学习统计\n`;
+    markdownContent += `- 完成任务: ${completedTasks.length} 个\n`;
+    markdownContent += `- 未完成任务: ${incompleteTasks.length} 个\n`;
+    markdownContent += `- 总任务数: ${totalTasksCount} 个\n`;
+    markdownContent += `- 完成率: ${totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0}%\n`;
+    markdownContent += `- 学习时长: ${totalMinutes} 分钟\n`;
+    markdownContent += `- 平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
+    
+    const newStats = {
+      completedTasks: completedTasks.length,
+      incompleteTasks: incompleteTasks.length,
+      totalTasks: totalTasksCount,
+      completionRate: totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0,
+      totalMinutes: totalMinutes,
+      averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
+      categories: Object.keys(tasksByCategory).length
+    };
+    
+    return { logContent, markdownContent, newStats };
+  }, [tasksByDate, selectedDate]);
+  
+  const [currentContent, setCurrentContent] = useState(() => generateRealTimeContent());
+  
+  useEffect(() => {
+    setCurrentContent(generateRealTimeContent());
+  }, [tasksByDate, selectedDate, generateRealTimeContent]);
+  
+  const totalHours = (currentContent.newStats.totalMinutes / 60).toFixed(1);
+  
+  const generateMarkdownContent = () => {
+    let markdown = `# 学习任务\n\n`;
+    
+    if (dailyRating > 0 || dailyReflection) {
+      markdown += "## 💭 今日总结\n\n";
+      if (dailyRating > 0) {
+        markdown += `- **评分**: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
+      }
+      if (dailyReflection) {
+        markdown += `- **复盘**: ${dailyReflection}\n`;
+      }
+      markdown += "\n";
+    }
+    
+    markdown += currentContent.markdownContent.replace('# 学习任务\n\n', '');
+    return markdown;
+  };
+  
+  const markdownContent = generateMarkdownContent();
+  
+  const handleCopy = () => {
+    onCopy(markdownContent);
+  };
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: '10px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 15,
+        width: '95%',
+        maxWidth: 500,
+        maxHeight: '90vh',
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        textAlign: 'center',
+        position: 'relative'
+      }}>
+        <h3 style={{ 
+          textAlign: 'center', 
+          marginBottom: 20, 
+          color: '#1a73e8',
+          fontSize: '18px',
+          flexShrink: 0
+        }}>
+          📅 {selectedDate} 学习汇总
+        </h3>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 8,
+          marginBottom: 20,
+          flexShrink: 0
+        }}>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 8,
+            borderRadius: 8,
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成任务</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
+              {currentContent.newStats.completedTasks} 个
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 8,
+            borderRadius: 8,
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>总任务数</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
+              {currentContent.newStats.totalTasks} 个
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 8,
+            borderRadius: 8,
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成率</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
+              {currentContent.newStats.completionRate}%
+            </div>
+          </div>
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: 8,
+            borderRadius: 8,
+            textAlign: 'center',
+            minHeight: '50px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>学习时长</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
+              {totalHours}h
+            </div>
+          </div>
+        </div>
+        
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          padding: 15,
+          borderRadius: 8,
+          marginBottom: 15,
+          fontSize: 12,
+          lineHeight: 1.4,
+          whiteSpace: 'pre-wrap',
+          textAlign: 'left',
+          flex: 1,
+          minHeight: 'auto'
+        }}>
+          {(dailyRating > 0 || dailyReflection) && (
+            <>
+              <div style={{ 
+                fontWeight: 'bold', 
+                marginBottom: 8,
+                color: '#1a73e8',
+                borderBottom: '1px solid #1a73e8',
+                paddingBottom: 4
+              }}>
+                === 今日总结 ===
+              </div>
+              
+              {dailyRating > 0 && (
+                <div style={{ marginBottom: 6 }}>
+                  <span style={{ fontWeight: 'bold' }}>评分: </span>
+                  {'⭐'.repeat(dailyRating)} ({dailyRating}/5)
+                </div>
+              )}
+              
+              {dailyReflection && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: 4 }}>复盘:</div>
+                  <div style={{ 
+                    backgroundColor: '#fff9c4', 
+                    padding: 8, 
+                    borderRadius: 4,
+                    border: '1px solid #ffd54f'
+                  }}>
+                    {dailyReflection}
+                  </div>
+                </div>
+              )}
+              
+              <div style={{ 
+                borderBottom: '1px solid #ccc', 
+                margin: '12px 0',
+                opacity: 0.5
+              }}></div>
+            </>
+          )}
+          
+          {currentContent.logContent.split('\n').map((line, index) => {
+            const isIncompleteTask = line.includes('❌');
+            return (
+              <div
+                key={index}
+                style={{
+                  color: isIncompleteTask ? '#999' : '#000',
+                  filter: isIncompleteTask ? 'grayscale(100%) opacity(0.6)' : 'none',
+                  backgroundColor: 'transparent',
+                  padding: '0',
+                  marginBottom: '0',
+                  borderRadius: '0'
+                }}
+              >
+                {line || '\u00A0'}
+              </div>
+            );
+          })}
+        </div>
+        
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', marginBottom: 4, color: '#555', textAlign: 'left' }}>评价：</label>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  style={{
+                    flex: 1,
+                    padding: '6px 0',
+                    border: 'none',
+                    borderRadius: 6,
+                    backgroundColor: (dailyRating || 0) >= star ? '#ffe066' : '#f1f3f4',
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    minHeight: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ⭐
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#666',
+              width: '30px',
+              height: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              zIndex: 1001
+            }}
+            title="关闭"
+          >
+            ×
+          </button>
+          <button
+            onClick={handleCopy}
+            style={{
+              flex: 1,
+              padding: 12,
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }}
+          >
+            📋 复制日志
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+// ========== DailyLogModal 组件结束 ==========
+
+
 
 
 
@@ -4211,43 +4444,27 @@ const resetForm = () => {
 };
 
 
-// 修复 TaskEditModal 组件中的 handleSave 函数
 const handleSave = () => {
-  // 修复：应该使用 editData.text，而不是 templateContent
-  if (editData.text.trim() === '') {
+  if (!templateContent.trim()) {
     alert('任务内容不能为空！');
     return;
   }
 
-  // 构建完整的编辑数据
-  const updatedTask = {
-    ...editData,
-    // 确保计划时间格式正确
-    scheduledTime: editData.startHour && editData.startMinute && editData.endHour && editData.endMinute
-      ? `${editData.startHour.padStart(2, '0')}:${editData.startMinute.padStart(2, '0')}-${editData.endHour.padStart(2, '0')}:${editData.endMinute.padStart(2, '0')}`
-      : editData.scheduledTime || '',
-    
-    // 确保提醒时间正确构建
-    reminderTime: (editData.reminderYear && editData.reminderMonth && editData.reminderDay)
-      ? {
-          year: parseInt(editData.reminderYear),
-          month: parseInt(editData.reminderMonth),
-          day: parseInt(editData.reminderDay),
-          hour: parseInt(editData.reminderHour) || 0,
-          minute: parseInt(editData.reminderMinute) || 0
-        }
-      : null,
-    
-    // 确保进度数据正确
-    progress: editData.progress || {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    }
+  const templateData = {
+    name: templateName || templateContent.slice(0, 20),
+    text: templateContent,
+    category: templateCategory,
+    subCategory: templateSubCategory,
+    tags: templateTags,
+    scheduledTime: templateScheduledTime,
+    progress: templateProgress,
+    repeatFrequency: repeatFrequency,
+    repeatDays: repeatDays,
+    image: templateImage
   };
 
-  onSave(updatedTask);
+  // 直接保存 templateData，不要使用未定义的 editData
+  onSave(templateData);
   onClose();
 };
 
@@ -6288,8 +6505,45 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     unit: '%'
   });
 
+  // 在 MonthTaskPage 组件内部，找到其他函数定义的位置，添加这个函数
+const handleAddTask = () => {
+  if (!newTaskText.trim()) {
+    alert('请输入任务内容');
+    return;
+  }
+
+  const newTask = {
+    id: Date.now().toString(),
+    text: newTaskText.trim(),
+    category: selectedCategory,
+    subCategory: selectedSubCategory,
+    deadline: deadline,
+    progress: 0,
+    target: target,
+    unit: unit,
+    createdAt: new Date().toISOString()
+  };
+
+  if (onAddTask) {
+    onAddTask(newTask);
+  }
+
+  // 重置表单
+  setNewTaskText('');
+  setSelectedCategory('校内');
+  setSelectedSubCategory('');
+  setDeadline('');
+  setTarget(100);
+  setUnit('%');
+  setShowAddForm(false);
+};
+
   const categories = ['校内', '语文', '数学', '英语', '科学', '运动', '其他'];
   const subCategories = ['数学', '语文', '英语', '运动'];
+
+
+
+  
 
   // ========== 计算函数 ==========
   const calculateMonthProgress = () => {
@@ -7445,12 +7699,11 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
   const fileInputRef = useRef(null);
 
   // 修复后的 handleSave 函数
-  const handleSave = () => {
-    // 使用 editData.text 而不是 templateContent
-    if (editData.text.trim() === '') {
-      alert('任务内容不能为空！');
-      return;
-    }
+ const handleSave = () => {
+  if (editData.text.trim() === '') {
+    alert('任务内容不能为空！');
+    return;
+  }
 
     // 构建完整的编辑数据
     const updatedTask = {
@@ -7479,8 +7732,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
         unit: "%"
       }
     };
-
-    onSave(updatedTask);
+ onSave(task, editData);
     onClose();
   };
 
@@ -9925,160 +10177,13 @@ const TaskItem = ({
 
 
 
-// 在 App 组件外部添加这个组件
-const SortableSubCategoryTasks = ({ 
-  tasks, 
-  subCategory, 
-  isSortingMode, 
-  onSortingEnd,
-  onDeleteTask,
-  onEditTime,
-  onEditNote,
-  onEditReflection,
-  onOpenEditModal,
-  onShowImageModal,
-  toggleDone,
-  formatTimeNoSeconds,
-  formatTimeWithSeconds,
-  onMoveTask,
-  categories,
-  setShowMoveModal,
-  onUpdateProgress,
-  onEditSubTask,
-  onToggleSubTask,
-  onDeleteImage
-}) => {
-  const [taskList, setTaskList] = useState([]);
-  const dragItemIndex = useRef(null);
-  
-  // 初始化任务列表
-  useEffect(() => {
-    setTaskList([...tasks]);
-  }, [tasks]);
-  
-  if (taskList.length === 0) return null;
-  
-  const handleDragStart = (e, index) => {
-    if (!isSortingMode) return;
-    dragItemIndex.current = index;
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  };
-  
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '';
-    dragItemIndex.current = null;
-  };
-  
-  const handleDragOver = (e, targetIndex) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    if (dragItemIndex.current === null) return;
-    if (dragItemIndex.current === targetIndex) return;
-    
-    const newList = [...taskList];
-    const draggedItem = newList[dragItemIndex.current];
-    newList.splice(dragItemIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTaskList(newList);
-    dragItemIndex.current = targetIndex;
-  };
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    onSortingEnd(taskList);
-    dragItemIndex.current = null;
-  };
-  
-  return (
-    <div 
-      style={{ paddingLeft: 8 }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-    >
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {taskList.map((task, idx) => (
-          <div
-            key={task.id}
-            draggable={isSortingMode}
-            onDragStart={(e) => handleDragStart(e, idx)}
-            onDragEnd={handleDragEnd}
-            onDragOver={(e) => handleDragOver(e, idx)}
-            style={{ 
-              cursor: isSortingMode ? 'grab' : 'default',
-              marginBottom: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <TaskItem
-                task={task}
-                onDeleteTask={onDeleteTask}
-                onEditTime={onEditTime}
-                onEditNote={onEditNote}
-                onEditReflection={onEditReflection}
-                onOpenEditModal={onOpenEditModal}
-                onShowImageModal={onShowImageModal}
-                toggleDone={toggleDone}
-                formatTimeNoSeconds={formatTimeNoSeconds}
-                formatTimeWithSeconds={formatTimeWithSeconds}
-                onMoveTask={onMoveTask}
-                categories={categories}
-                setShowMoveModal={setShowMoveModal}
-                onUpdateProgress={onUpdateProgress}
-                onEditSubTask={onEditSubTask}
-                onToggleSubTask={onToggleSubTask}
-                onDeleteImage={onDeleteImage}
-              />
-            </div>
-            {isSortingMode && (
-              <div
-                style={{
-                  cursor: 'grab',
-                  color: '#999',
-                  fontSize: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  userSelect: 'none',
-                  padding: '8px 4px'
-                }}
-                title="拖拽调整顺序"
-              >
-                ⋮⋮
-              </div>
-            )}
-          </div>
-        ))}
-      </ul>
-      
-      {isSortingMode && (
-        <div style={{ 
-          marginTop: 8, 
-          padding: 6, 
-          backgroundColor: '#e3f2fd', 
-          borderRadius: 4,
-          fontSize: 11,
-          color: '#1565C0',
-          textAlign: 'center'
-        }}>
-          💡 拖拽任务调整顺序
-        </div>
-      )}
-    </div>
-  );
-};
 
 
 // SortableTaskList 组件 - 删除提示信息后的版本
 const SortableTaskList = ({ 
   tasks, 
   category, 
-  subCategory, 
+  subCategory,
   isSortingMode, 
   onSortingEnd,
   onDeleteTask,
@@ -10101,9 +10206,10 @@ const SortableTaskList = ({
   const [taskList, setTaskList] = useState([]);
   const dragItemIndex = useRef(null);
   
-  // 获取保存的任务顺序
   useEffect(() => {
-    const orderKey = `tasks_order_${category}_${subCategory}`;
+    const orderKey = subCategory 
+      ? `tasks_order_${category}_${subCategory}`
+      : `tasks_order_${category}`;
     const savedOrder = localStorage.getItem(orderKey);
     const taskMap = new Map();
     
@@ -10125,7 +10231,6 @@ const SortableTaskList = ({
       ordered.push(...taskMap.values());
       setTaskList(ordered);
     } else {
-      // 按置顶优先排序
       const sorted = [...tasks].sort((a, b) => {
         if (a.pinned && !b.pinned) return -1;
         if (!a.pinned && b.pinned) return 1;
@@ -10135,9 +10240,10 @@ const SortableTaskList = ({
     }
   }, [tasks, category, subCategory]);
   
-  // 保存顺序到 localStorage
   const saveOrder = (newList) => {
-    const orderKey = `tasks_order_${category}_${subCategory}`;
+    const orderKey = subCategory 
+      ? `tasks_order_${category}_${subCategory}`
+      : `tasks_order_${category}`;
     const orderIds = newList.map(t => t.id);
     localStorage.setItem(orderKey, JSON.stringify(orderIds));
     if (onSortingEnd) {
@@ -10176,22 +10282,21 @@ const SortableTaskList = ({
     setTaskList(newList);
     dragItemIndex.current = targetIndex;
   };
- const handleDrop = (e) => {
-  e.preventDefault();
-  if (!isSortingMode) return;
-  saveOrder(taskList);
-  dragItemIndex.current = null;
-  // 不要调用 onSortingEnd 来退出排序模式
-  // 只保存顺序，不退出
-};
+  
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (!isSortingMode) return;
+    saveOrder(taskList);
+    dragItemIndex.current = null;
+  };
   
   return (
     <ul
       style={{
         listStyle: "none",
-        padding: "0 0 0 8px",
+        padding: subCategory ? "0 0 0 8px" : 0,
         margin: 0,
-        borderLeft: "2px solid #e0e0e0"
+        borderLeft: subCategory ? "2px solid #e0e0e0" : "none"
       }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
@@ -10210,7 +10315,7 @@ const SortableTaskList = ({
             position: 'relative'
           }}
         >
-          {/* 排序模式显示拖拽手柄 - 放在最右侧 */}
+          {/* 排序模式显示拖拽手柄 - 始终显示 */}
           {isSortingMode && (
             <div
               style={{
@@ -10219,7 +10324,7 @@ const SortableTaskList = ({
                 top: '50%',
                 transform: 'translateY(-50%)',
                 cursor: 'grab',
-                color: '#ccc',
+                color: '#999',
                 fontSize: '16px',
                 display: 'flex',
                 alignItems: 'center',
@@ -10255,8 +10360,6 @@ const SortableTaskList = ({
           />
         </div>
       ))}
-      
-      {/* 删除了提示信息部分 */}
     </ul>
   );
 };
@@ -10322,9 +10425,9 @@ const endSortingSubCategory = (subCategory, orderedTasks) => {
   saveSubCategoryOrder(subCategory, orderedIds);
   setSortingSubCategory(null);
 };
-const dragDataRef = useRef(null);
+
 // 在 App 组件中，找到其他 useRef 的位置，添加：
-const dragSourceRef = useRef(null);
+
 const [showRegularTaskEditModal, setShowRegularTaskEditModal] = useState(null);
 const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
@@ -10720,6 +10823,27 @@ const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
 
+     // ✅ 新增：恢复排序数据
+    if (backupData.taskOrders) {
+      Object.entries(backupData.taskOrders).forEach(([key, order]) => {
+        localStorage.setItem(key, JSON.stringify(order));
+      });
+      console.log('✅ 恢复任务排序:', Object.keys(backupData.taskOrders).length);
+    }
+    
+    if (backupData.subCategoryOrders) {
+      Object.entries(backupData.subCategoryOrders).forEach(([key, order]) => {
+        localStorage.setItem(key, JSON.stringify(order));
+      });
+      console.log('✅ 恢复子分类排序:', Object.keys(backupData.subCategoryOrders).length);
+    }
+    
+    if (backupData.regularTasksOrder) {
+      localStorage.setItem('regular_tasks_order', JSON.stringify(backupData.regularTasksOrder));
+      setRegularTasksOrder(backupData.regularTasksOrder);
+      console.log('✅ 恢复常规任务排序');
+    }
+
     // 恢复核心数据
     if (backupData.tasksByDate) {
       setTasksByDate(backupData.tasksByDate);
@@ -10804,7 +10928,6 @@ const handleRestoreData = useCallback(async (backupData) => {
 
 
 
-// 找到 syncToGitHub 函数，在收集同步数据时添加 reminderText
 const syncToGitHub = useCallback(async () => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -10819,6 +10942,27 @@ const syncToGitHub = useCallback(async () => {
   try {
     // 先保存当前日期的数据
     await saveDailyData(selectedDate);
+    
+    // ✅ 在这里添加收集排序数据的代码（不要删除上面的 saveDailyData）
+    
+  // ✅ 正确代码
+const allTaskOrders = {};
+const allSubCategoryOrders = {};  // 先定义
+const allKeys = Object.keys(localStorage);
+
+allKeys.forEach(key => {
+  if (key.startsWith('tasks_order_')) {
+    allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
+  }
+  if (key.startsWith('subcategory_order_')) {
+    allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
+  }
+});
+    
+
+    
+    // 收集常规任务排序顺序
+    const regularTasksOrder = localStorage.getItem('regular_tasks_order');
     
     // 收集所有需要同步的数据
     const syncData = {
@@ -10841,6 +10985,11 @@ const syncToGitHub = useCallback(async () => {
       
       // 每日提醒文本 - 新增
       reminderText: reminderText,  // 添加这行
+
+       taskOrders: allTaskOrders,
+  subCategoryOrders: allSubCategoryOrders,
+  regularTasksOrder: regularTasksOrder ? JSON.parse(regularTasksOrder) : [],
+  
       
       // 元数据
       syncTime: new Date().toISOString(),
@@ -11672,7 +11821,6 @@ const handleRenameCategory = (index, newName) => {
 };
 
 
-
 // 跨日期任务模态框
 const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
   const [selectedDays, setSelectedDays] = useState([new Date(selectedDate).getDay()]);
@@ -11709,8 +11857,7 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     );
   };
 
-
-  // 👇 在这里添加这个函数（在 return 之前）
+  // 保存函数 - 已移除多余的 {} 块
   const handleSave = () => {
     // 获取选中的日期对应的日期字符串
     const targetDates = getDateOptions()
@@ -11725,7 +11872,6 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     onSave(task, targetDates);
     onClose();
   };
-
 
   return (
     <div style={{
@@ -11828,7 +11974,6 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
     </div>
   );
 };
-
 const handleCrossDateTask = (task, targetDates) => {
   // 如果没有传入 task 对象，说明是从编辑模态框调用，需要获取当前任务
   if (!task) return;
@@ -12369,180 +12514,6 @@ useEffect(() => {
 
 
 
-const generateDailyLog = () => {
-  // 只显示已完成的任务（包括从常规任务完成的）
-  const completedTasks = todayTasks.filter(task => {
-    // 排除未完成的常规任务
-    if (task.isRegularTask && !task.done) return false;
-    // 排除本周任务（如果有需要）
-    if (task.category === "本周任务") return false;
-    // 只显示已完成的任务
-    return task.done === true;
-  });
-  
-  // 未完成的任务只显示校内分类的（常规任务已完成的不在这里）
-  const incompleteTasks = todayTasks.filter(task => {
-    // 排除常规任务（不管是完成还是未完成，常规任务都不在未完成中显示）
-    if (task.isRegularTask) return false;
-    // 排除本周任务
-    if (task.category === "本周任务") return false;
-    // 只显示未完成且分类为"校内"的任务
-    return !task.done && task.category === "校内";
-  });
-  
-  console.log('📊 生成日志统计:', {
-    已完成任务: completedTasks.length,
-    未完成任务: incompleteTasks.length,
-    今日总任务: todayTasks.length,
-    常规任务: todayTasks.filter(t => t.isRegularTask).length
-  });
-
-  // 按分类和子分类组织任务
-  const tasksByCategory = {};
-  
-  // 处理已完成任务
-  completedTasks.forEach(task => {
-    if (!tasksByCategory[task.category]) {
-      tasksByCategory[task.category] = {
-        withSubCategories: {},
-        withoutSubCategories: []
-      };
-    }
-    
-    if (task.subCategory) {
-      if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
-        tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
-      }
-      tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
-    } else {
-      tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
-    }
-  });
-
-  // 处理未完成任务 - 只处理"校内"分类
-  incompleteTasks.forEach(task => {
-    if (task.category === "校内") {
-      if (!tasksByCategory[task.category]) {
-        tasksByCategory[task.category] = {
-          withSubCategories: {},
-          withoutSubCategories: []
-        };
-      }
-      
-      if (task.subCategory) {
-        if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
-          tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
-        }
-        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
-      } else {
-        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
-      }
-    }
-  });
-
-  const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-  const totalMinutes = Math.floor(totalTime / 60);
-
-  // 原始格式内容
-  let logContent = ``;
-
-  // Markdown 格式内容
-  let markdownContent = `# 学习任务\n\n`;
-
-  // 遍历每个分类
-  Object.entries(tasksByCategory).forEach(([category, categoryData]) => {
-    logContent += `${category}\n`;
-    markdownContent += `## ${category}\n`;
-    
-    // 1️⃣ 先显示没有子分类的任务
-    if (categoryData.withoutSubCategories.length > 0) {
-      categoryData.withoutSubCategories.forEach((task) => {
-        const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-        const timeText = minutes > 0 ? `【${minutes}m】` : "";
-        
-        if (task.isCompleted) {
-          // 已完成任务
-          logContent += `  ✔️ ${task.text}${timeText}\n`;
-          markdownContent += `- [x] ${task.text}${timeText}\n`;
-        } else {
-          // 未完成任务 - 只针对校内分类
-          logContent += `  ❌ ${task.text}${timeText}\n`;
-          markdownContent += `- [ ] ${task.text}${timeText}\n`;
-        }
-      });
-    }
-
-    // 2️⃣ 再显示有子分类的任务
-    if (categoryData.withoutSubCategories.length > 0 && Object.keys(categoryData.withSubCategories).length > 0) {
-      logContent += '\n';
-      markdownContent += '\n';
-    }
-
-    Object.entries(categoryData.withSubCategories).forEach(([subCategory, subTasks]) => {
-      logContent += `  - ${subCategory}\n`;
-      markdownContent += `### - ${subCategory}\n`;
-
-      subTasks.forEach((task) => {
-        const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-        const timeText = minutes > 0 ? `【${minutes}m】` : "";
-
-        if (task.isCompleted) {
-          // 已完成任务
-          logContent += `    ✔️ ${task.text}${timeText}\n`;
-          markdownContent += `- [x] ${task.text}${timeText}\n`;
-        } else {
-          // 未完成任务 - 只针对校内分类
-          logContent += `    ❌ ${task.text}${timeText}\n`;
-          markdownContent += `- [ ] ${task.text}${timeText}\n`;
-        }
-      });
-      
-      if (Object.keys(categoryData.withSubCategories).length > 1) {
-        logContent += '\n';
-        markdownContent += '\n';
-      }
-    });
-    
-    logContent += '\n';
-    markdownContent += '\n';
-  });
-
-  // 统计信息
-  const totalTasksCount = completedTasks.length + incompleteTasks.length;
-
-  markdownContent += `# 学习统计\n`;
-  markdownContent += `- 完成任务: ${completedTasks.length} 个\n`;
-  markdownContent += `- 未完成任务: ${incompleteTasks.length} 个\n`;
-  markdownContent += `- 总任务数: ${totalTasksCount} 个\n`;
-  markdownContent += `- 完成率: ${totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0}%\n`;
-  markdownContent += `- 学习时长: ${totalMinutes} 分钟\n`;
-  markdownContent += `- 平均每项: ${completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0} 分钟`;
-
-  setShowDailyLogModal(prev => {
-    const newStats = {
-      completedTasks: completedTasks.length,
-      incompleteTasks: incompleteTasks.length,
-      totalTasks: totalTasksCount,
-      completionRate: totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0,
-      totalMinutes: totalMinutes,
-      averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
-      categories: Object.keys(tasksByCategory).length
-    };
-    
-    // 如果状态没变，返回之前的状态避免重新渲染
-    if (prev && prev.stats && JSON.stringify(prev.stats) === JSON.stringify(newStats)) {
-      return prev;
-    }
-    
-    return {
-      visible: true,
-      content: logContent,
-      markdownContent: markdownContent,
-      date: selectedDate,
-      stats: newStats
-    };
-  });
-};
 
 
 
@@ -13352,9 +13323,6 @@ useEffect(() => {
       
 
  
-//初始化end
-
-
 
 
 
@@ -15459,7 +15427,10 @@ const clearAllData = async () => {
 
 
 
-
+// 生成每日日志
+const generateDailyLog = () => {
+  setShowDailyLogModal(true);
+};
 
 
 
@@ -15513,388 +15484,7 @@ const handleExportData = async () => {
 
 
 
-
   
-  
-const DailyLogModal = ({ logData, onClose, onCopy,  dailyRating, dailyReflection }) => {
-  
-  
-   const moodOptions = [
-    { emoji: '', label: '无', value: 0 },
-    { emoji: '😊', label: '开心', value: 1 },
-    { emoji: '😐', label: '平静', value: 2 },
-    { emoji: '😔', label: '疲惫', value: 3 },
-    { emoji: '😤', label: '烦躁', value: 4 },
-    { emoji: '🤩', label: '充满活力', value: 5 },
-    { emoji: '😴', label: '困倦', value: 6 }
-  ];
-  
-  
-  const totalHours = (logData.stats.totalMinutes / 60).toFixed(1);
-
-  const generateFormattedContent = () => {
-    return logData.content.replace(/✅/g, '');
-  };
-
- 
-const generateMarkdownContent = () => {
-  let markdown = `# 学习任务\n\n`;
-  
-  // 添加心情、评分和复盘内容到最上方
-  if (dailyRating > 0 || getCurrentDailyReflection) {
-    markdown += "## 💭 今日总结\n\n";
-    
-    
-    // 评分显示
-    if (dailyRating > 0) {
-      markdown += `- **评分**: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
-    }
-    
-    // 复盘显示
-    if (dailyReflection) {
-      markdown += `- **复盘**: ${dailyReflection}\n`;
-    }
-    
-    markdown += "\n";
-  }
-  
-  markdown += logData.markdownContent.replace('# 学习任务\n\n', '');
-  return markdown;
-};
-
-
-
-  const formattedContent = generateFormattedContent();
-  const markdownContent = generateMarkdownContent();
-
-  // 在复制功能中使用 markdownContent
-  const handleCopy = () => {
-    onCopy(markdownContent); // 使用 markdownContent
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 15,
-        width: '95%',
-        maxWidth: 500,
-        maxHeight: '90vh',
-        overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        textAlign: 'center',
-  position: 'relative'
-      }}>
-        <h3 style={{ 
-          textAlign: 'center', 
-          marginBottom: 20, 
-          color: '#1a73e8',
-          fontSize: '18px',
-          flexShrink: 0
-        }}>
-          📅 {logData.date} 学习汇总
-        </h3>
-
-        {/* 统计卡片 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 8,
-          marginBottom: 20,
-          flexShrink: 0
-        }}>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成任务</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {logData.stats.completedTasks} 个
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>总任务数</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {logData.stats.totalTasks} 个
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成率</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {logData.stats.completionRate}%
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>学习时长</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {totalHours}h
-            </div>
-          </div>
-        </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-<div style={{
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
-    fontSize: 12,
-    lineHeight: 1.4,
-    whiteSpace: 'pre-wrap',
-    textAlign: 'left',
-    flex: 1,
-    minHeight: 'auto'
-  }}>
-    {/* 添加心情总结到最上方 */}
-    {( dailyRating > 0 || dailyReflection) && (
-      <>
-        <div style={{ 
-          fontWeight: 'bold', 
-          marginBottom: 8,
-          color: '#1a73e8',
-          borderBottom: '1px solid #1a73e8',
-          paddingBottom: 4
-        }}>
-          === 今日总结 ===
-        </div>
-        
-   
-     
-        
-        {/* 评分显示 */}
-        {dailyRating > 0 && (
-          <div style={{ marginBottom: 6 }}>
-            <span style={{ fontWeight: 'bold' }}>评分: </span>
-            {'⭐'.repeat(dailyRating)} ({dailyRating}/5)
-          </div>
-        )}
-        
-        
-
-        {/* 复盘显示 */}
-{dailyReflection && (
-  <div style={{ marginBottom: 12 }}>
-    <div style={{ fontWeight: 'bold', marginBottom: 4 }}>复盘:</div>
-    <div style={{ 
-      backgroundColor: '#fff9c4', 
-      padding: 8, 
-      borderRadius: 4,
-      border: '1px solid #ffd54f'
-    }}>
-      {dailyReflection}
-    </div>
-  </div>
-)}
-
-<div style={{ 
-  borderBottom: '1px solid #ccc', 
-  margin: '12px 0',
-  opacity: 0.5
-}}></div>
-</>
-)}
-
-{/* 任务内容 - 让未完成任务变灰 */}
-{formattedContent.split('\n').map((line, index) => {
-  const isIncompleteTask = line.includes('❌');
-  
-  return (
-    <div
-      key={index}
-      style={{
-        color: isIncompleteTask ? '#999' : '#000',
-        filter: isIncompleteTask ? 'grayscale(100%) opacity(0.6)' : 'none',
-        backgroundColor: 'transparent',
-        // 移除 padding 和 margin，只保留颜色变化
-        padding: '0',
-        marginBottom: '0',
-        borderRadius: '0'
-      }}
-    >
-      {line || '\u00A0'}
-    </div>
-  );
-})}
-</div>
-
-
-        
-{/* 心情、评价、复盘区域（横排简洁版） */}
-<div
-  style={{
-    backgroundColor: '#fff',
-    border: '1px solid #eee',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    fontSize: 14,
-    lineHeight: 1.8,
-    color: '#333',
-  }}
->
- 
-
-
-
-
-{/* 评分选择 - 第二行 */}
-<div style={{ marginBottom: 12 }}>
-  <label style={{ display: 'block', marginBottom: 4, color: '#555' , textAlign: 'left'}}>评价：</label>
-  <div style={{ display: 'flex', gap: 4 }}>
-    {[1, 2, 3, 4, 5].map((star) => (
-      <button
-        key={star}
-        onClick={(e) => {
-          e.preventDefault(); // 阻止默认行为
-          e.stopPropagation(); // 阻止事件冒泡
-          setCurrentDailyRating(star);
-        }}
-        style={{
-          flex: 1,
-          padding: '6px 0',
-          border: 'none',
-          borderRadius: 6,
-          backgroundColor: getCurrentDailyRating() >= star ? '#ffe066' : '#f1f3f4',
-          fontSize: 18,
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          boxShadow: getCurrentDailyRating() >= star ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-          minHeight: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        ⭐
-      </button>
-    ))}
-  </div>
-</div>
-  
-
-
-  
-</div>
-
-
-
-
-
-
-
-        {/* 按钮区域 */}
-        <div style={{ 
-          display: 'flex', 
-          gap: 10,
-          flexShrink: 0
-        }}>
-         <button
-  onClick={onClose}
-  style={{
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    background: 'transparent',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#666',
-    width: '30px',
-    height: '30px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-    zIndex: 1001
-  }}
-  title="关闭"
->
-  ×
-</button>
-           <button
-        onClick={handleCopy}
-        style={{
-          flex: 1,
-          padding: 12,
-          backgroundColor: '#28a745',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-          fontSize: 14,
-          fontWeight: 'bold'
-        }}
-      >
-        📋 复制日志
-      </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -16368,76 +15958,6 @@ if (isInitialized && todayTasks.length === 0) {
 
       
   
-      {showDailyLogModal && (
-  <DailyLogModal
-    logData={showDailyLogModal}
-    onClose={() => setShowDailyLogModal(null)}
-    onCopy={() => {
-      const copyToClipboard = (text) => {
-        if (navigator.clipboard && window.isSecureContext) {
-          return navigator.clipboard.writeText(text);
-        } else {
-          const textArea = document.createElement('textarea');
-          textArea.value = text;
-          textArea.style.position = 'fixed';
-          textArea.style.left = '-999999px';
-          textArea.style.top = '-999999px';
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          try {
-            document.execCommand('copy');
-            return Promise.resolve();
-          } catch (err) {
-            return Promise.reject(err);
-          } finally {
-            document.body.removeChild(textArea);
-          }
-        }
-      };
-
-      const generateFullContent = () => {
-        let content = '';
-        
-        // 添加心情、评分和复盘内容到最上方
-        if ( dailyRating > 0 || getCurrentDailyReflection()) {
-          content += "=== 今日总结 ===\n";
-          
-          
-          // 评分显示
-          if (dailyRating > 0) {
-            content += `评分: ${'⭐'.repeat(dailyRating)} (${dailyRating}/5)\n`;
-          }
-          
-          // 修复：确保 currentReflection 被使用
-          const currentReflection = getCurrentDailyReflection();
-          if (currentReflection) {
-            content += `复盘:\n${currentReflection}\n`; // 这里使用它
-          }
-          
-          content += "\n";
-        }
-        
-        content += showDailyLogModal.content.replace(/✅/g, '');
-        return content;
-      };
-
-
-
-
-
-      const fullContent = generateFullContent();
-      
-      copyToClipboard(fullContent).then(() => {
-        alert('日志已复制到剪贴板！');
-      }).catch(() => {
-        alert('复制失败，请手动复制日志内容');
-      });
-    }}
-    dailyRating={dailyRating}
-    dailyReflection={getCurrentDailyReflection()} // 这里也要改为使用新函数
-  />
-)}
 
 
 
@@ -16604,7 +16124,39 @@ if (isInitialized && todayTasks.length === 0) {
         <BackupManagerModal onClose={() => setShowBackupModal(false)} />
       )}
 
-
+{showDailyLogModal && (
+  <DailyLogModal
+    logData={showDailyLogModal}
+    tasksByDate={tasksByDate}
+    selectedDate={selectedDate}
+    dailyRating={dailyRating}
+    dailyReflection={getCurrentDailyReflection()}
+    onClose={() => setShowDailyLogModal(null)}
+    onCopy={(text) => {
+      // 复制逻辑
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('复制失败:', err);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+      alert('日志已复制到剪贴板！');
+    }}
+  />
+)}
 
 
 
@@ -17238,11 +16790,11 @@ if (isInitialized && todayTasks.length === 0) {
     onClick={() => setCollapsedCategories(prev => ({ ...prev, "常规任务": !prev["常规任务"] }))}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span>📋 常规任务 ({todayTasks.filter(t => t.isRegularTask).length})</span>
+      <span>常规任务 ({todayTasks.filter(t => t.isRegularTask).length})</span>
     </div>
     
     {/* 按钮组 */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
       {/* 排序按钮 - 背景色固定，只有文字变化 */}
       <div
         onClick={(e) => { 
@@ -17250,8 +16802,7 @@ if (isInitialized && todayTasks.length === 0) {
           setIsSortingRegularTasks(!isSortingRegularTasks);
         }}
         style={{
-          background: "rgba(255,255,255,0.2)",  // 固定背景色
-          border: "1px solid rgba(255,255,255,0.5)",
+         
           borderRadius: 4,
           color: "#fff",
           cursor: "pointer",
@@ -17260,11 +16811,11 @@ if (isInitialized && todayTasks.length === 0) {
           display: "flex",
           alignItems: "center",
           gap: 3,
-          minWidth: "56px",
+          minWidth: "25px",
           userSelect: "none"
         }}
       >
-        {isSortingRegularTasks ? "✓ 完成" : "⋮⋮ 排序"}
+        {isSortingRegularTasks ? "✓" : "☰"}
       </div>
       
       <div 
@@ -17273,17 +16824,17 @@ if (isInitialized && todayTasks.length === 0) {
           setShowRegularTaskModal(true); 
         }}
         style={{ 
-          background: "rgba(255,255,255,0.2)", 
-          border: "none", 
-          color: "#fff", 
-          cursor: "pointer", 
-          fontSize: 16,
-          width: 28,
-          height: 28,
+          background: "rgba(255,255,255,0.2)",  // 固定背景色
+          border: "1px solid rgba(255,255,255,0.5)",
           borderRadius: 4,
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: "14px",
+          padding: "0px 6px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          gap: 3,
+          minWidth: "25px",
           userSelect: "none"
         }}
       >
@@ -17311,37 +16862,32 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-      {categories.map((c) => {
-        const catTasks = getCategoryTasks(c.name);
-        if (catTasks.length === 0) return null;
-        const isComplete = isCategoryComplete(c.name);
-        const isCollapsed = collapsedCategories[c.name];
+{categories.map((c) => {
+  const catTasks = getCategoryTasks(c.name);
+  if (catTasks.length === 0) return null;
+  const isComplete = isCategoryComplete(c.name);
+  const isCollapsed = collapsedCategories[c.name];
+  const isSortingMode = sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory;
 
-        return (
-          <div
-            key={c.name}
-            style={{
-              marginBottom: 8,
-              borderRadius: 10,
-              overflow: "hidden",
-              border: `2px solid ${isComplete ? "#ccc" : c.color}`,
-              backgroundColor: "#fff"
-            }}
-          >
-            
-
+  return (
+    <div
+      key={c.name}
+      style={{
+        marginBottom: 8,
+        borderRadius: 10,
+        overflow: "hidden",
+        border: `2px solid ${isComplete ? "#ccc" : c.color}`,
+        backgroundColor: "#fff"
+      }}
+    >
  
 
 {/* 分类标题 */}
 <div
-  onClick={() => setCollapsedCategories(prev => ({
-    ...prev,
-    [c.name]: !prev[c.name]
-  }))}
   style={{
     backgroundColor: isComplete ? "#f0f0f0" : c.color,
     color: isComplete ? "#888" : "#fff",
-    fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 8px",
     fontWeight: "bold",
     display: "flex",
@@ -17354,69 +16900,74 @@ if (isInitialized && todayTasks.length === 0) {
   }}
 >
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    <span>
+    <span
+      onClick={() => setCollapsedCategories(prev => ({ ...prev, [c.name]: !prev[c.name] }))}
+      style={{ cursor: 'pointer' }}
+    >
       {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
       {isComplete && " ✓"}
     </span>
-    
-   
-
-   {/* 子类别管理按钮 - 仅校内类别显示 */}
-{c.name === '校内' && (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      setEditingCategory(c);
-    }}
-    style={{
-      background: 'transparent',
-      border: 'none',
-      color: '#fff',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '10px',
-      padding: '1px 6px'
-    }}
-    title="管理子类别"
-  >
-    📁
-  </button>
-)}
   </div>
 
-  {/* 将计时器和时间显示移到右边 */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    {/* 分类计时器按钮 */}
-   
+{/* 右侧：排序按钮 + 时间显示 */}
+<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  {/* 排序按钮 - 校内类别不显示 */}
+  {c.name !== '校内' && (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isSortingMode) {
+          setSortingSubCategory(null);
+        } else {
+          setSortingSubCategory({ category: c.name, subCategory: null });
+        }
+      }}
+      style={{
+        
+        borderRadius: 4,
+        color: "#fff",
+        cursor: "pointer",
+        fontSize: "11px",
+        padding: "2px 6px",
+        display: "flex",
+        alignItems: "center",
+        gap: 3,
+        minWidth: "25px",
+        userSelect: "none"
+      }}
+    >
+      {isSortingMode ? "✓" : "☰"}
+    </div>
+  )}
 
+ 
 
-
-{/* 时间显示 */}
-<span
-  onClick={(e) => {
-    e.stopPropagation();
-    editCategoryTime(c.name);
-  }}
-  style={{
-    fontSize: 11,
-    color: isComplete ? "#888" : "#fff",
-    fontStyle: 'Calibri, "微软雅黑", sans-serif',  // ← 添加
-    cursor: "pointer",
-    padding: "2px 6px",
-    borderRadius: "4px",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    minWidth: "50px",
-    maxWidth: "70px",
-    textAlign: "center",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    flexShrink: 0
-  }}
-  title="点击修改总时间"
->
-  {formatCategoryTime(totalTime(c.name))}
-</span>
+    {/* 时间显示 */}
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        editCategoryTime(c.name);
+      }}
+      style={{
+        fontSize: 11,
+        color: isComplete ? "#888" : "#fff",
+        fontStyle: 'Calibri, "微软雅黑", sans-serif',
+        cursor: "pointer",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        backgroundColor: "rgba(255,255,255,0.2)",
+        minWidth: "25px",
+        maxWidth: "70px",
+        textAlign: "center",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        flexShrink: 0
+      }}
+      title="点击修改总时间"
+    >
+      {formatCategoryTime(totalTime(c.name))}
+    </span>
   </div>
 </div>
 
@@ -17494,7 +17045,7 @@ if (isInitialized && todayTasks.length === 0) {
             </span>
             
             {/* 右侧：排序按钮 + 时间显示 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
 
 {/* 排序按钮 - 点击前后样式相同 */}
 <div
@@ -17507,8 +17058,7 @@ if (isInitialized && todayTasks.length === 0) {
     }
   }}
   style={{
-    background: "rgba(0,0,0,0.05)",  // 固定背景色，不随状态改变
-    border: "1px solid rgba(0,0,0,0.1)",
+    
     borderRadius: 4,
     color: "#666",  // 固定文字颜色
     cursor: "pointer",
@@ -17517,13 +17067,13 @@ if (isInitialized && todayTasks.length === 0) {
     display: "flex",
     alignItems: "center",
     gap: 3,
-    minWidth: "56px",
+    minWidth: "25px",
     userSelect: "none",
     transition: "none"
   }}
   title={isSortingMode ? "完成排序" : "调整顺序"}
 >
-  {isSortingMode ? "✓ 完成" : "⋮⋮ 排序"}
+  {isSortingMode ? "✓" : "☰"}
 </div>
               
               {/* 时间显示 */}
@@ -17585,6 +17135,7 @@ if (isInitialized && todayTasks.length === 0) {
               tasks={subCatTasks}
               category={c.name}
               subCategory={subCat}
+              
               isSortingMode={isSortingMode}
               onSortingEnd={(newOrder) => {
                 const orderKey = `tasks_order_${c.name}_${subCat}`;
@@ -17612,6 +17163,9 @@ if (isInitialized && todayTasks.length === 0) {
           )}
         </div>
       );
+
+
+      
     });
   })()
 ) : (
@@ -17619,41 +17173,40 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-      // 非校内类别：直接显示任务列表
-      <ul style={{
-        listStyle: "none",
-        padding: 0,
-        margin: 0
-      }}>
-        {getCategoryTasks(c.name)
-          .sort((a, b) => {
-            if (a.pinned && !b.pinned) return -1;
-            if (!a.pinned && b.pinned) return 1;
-            return 0;
-          })
-          .map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onDeleteTask={deleteTask}
-              onEditTime={editTaskTime}
-              onDeleteImage={handleDeleteImage}
-              onEditNote={editTaskNote}
-              onEditReflection={editTaskReflection}
-              onOpenEditModal={openTaskEditModal}
-              onShowImageModal={setShowImageModal}
-              toggleDone={toggleDone}
-              formatTimeNoSeconds={formatTimeNoSeconds}
-              formatTimeWithSeconds={formatTimeWithSeconds}
-              onMoveTask={moveTask}
-              categories={categories}
-              setShowMoveModal={setShowMoveModal}
-              onUpdateProgress={handleUpdateProgress}
-              onEditSubTask={editSubTask}
-              onToggleSubTask={toggleSubTask}
-            />
-          ))}
-      </ul>
+
+    
+// 非校内类别：使用 SortableTaskList 组件
+<SortableTaskList
+  tasks={getCategoryTasks(c.name)}
+  category={c.name}
+  subCategory={null}
+  isSortingMode={sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory}
+  onSortingEnd={(newOrder) => {
+    // 保存顺序到 localStorage
+    const orderKey = `tasks_order_${c.name}`;
+    localStorage.setItem(orderKey, JSON.stringify(newOrder));
+    // 强制重新渲染以应用新顺序
+    setTasksByDate(prev => ({ ...prev }));
+  }}
+  onDeleteTask={deleteTask}
+  onEditTime={editTaskTime}
+  onDeleteImage={handleDeleteImage}
+  onEditNote={editTaskNote}
+  onEditReflection={editTaskReflection}
+  onOpenEditModal={openTaskEditModal}
+  onShowImageModal={setShowImageModal}
+  toggleDone={toggleDone}
+  formatTimeNoSeconds={formatTimeNoSeconds}
+  formatTimeWithSeconds={formatTimeWithSeconds}
+  onMoveTask={moveTask}
+  categories={categories}
+  setShowMoveModal={setShowMoveModal}
+  onUpdateProgress={handleUpdateProgress}
+  onEditSubTask={editSubTask}
+  onToggleSubTask={toggleSubTask}
+/>
+
+
     )}
   </div>
 )}
