@@ -6130,7 +6130,7 @@ const RegularTaskItem = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
+          gap: 3,
           flexWrap: "wrap",
           cursor: isDraggable ? 'grab' : 'default',
           transition: 'all 0.2s ease'
@@ -6162,7 +6162,7 @@ const RegularTaskItem = ({
         </div>
 
         {/* 右侧：标签、删除按钮、拖拽手柄 */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
           {task.targetCategory && task.targetCategory !== "常规任务" && !isDraggable && (
             <span style={{
               fontSize: "10px",
