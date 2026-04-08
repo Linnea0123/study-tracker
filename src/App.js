@@ -8,185 +8,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, 
 
 
 
-
-
-// 完全重写 RegularTaskSortableList 组件
-// 修复后的 RegularTaskSortableList 组件
-const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onSortingEnd }) => {
-  const [taskList, setTaskList] = useState([]);
-  const dragItemIndex = useRef(null);
-  
-  // 初始化任务列表 - 使用保存的顺序
-  useEffect(() => {
-    const savedOrder = localStorage.getItem('regular_tasks_order');
-    const taskMap = new Map();
-    
-    tasks.forEach(task => {
-      const taskId = task.originalId || task.id;
-      taskMap.set(taskId, task);
-    });
-    
-    if (savedOrder && tasks.length > 0) {
-      const orderIds = JSON.parse(savedOrder);
-      const ordered = [];
-      
-      orderIds.forEach(id => {
-        if (taskMap.has(id)) {
-          ordered.push(taskMap.get(id));
-          taskMap.delete(id);
-        }
-      });
-      
-      ordered.push(...taskMap.values());
-      setTaskList(ordered);
-    } else {
-      setTaskList([...tasks]);
-    }
-  }, [tasks]);
-  
-  // 当任务列表变化时，保存顺序
-  useEffect(() => {
-    if (taskList.length > 0 && !isSortingMode) {
-      const orderIds = taskList.map(t => t.originalId || t.id);
-      localStorage.setItem('regular_tasks_order', JSON.stringify(orderIds));
-    }
-  }, [taskList, isSortingMode]);
-  
-  // 当外部 tasks 变化时，保持原有顺序
-  useEffect(() => {
-    if (tasks.length > 0 && taskList.length > 0) {
-      const existingIds = new Set(taskList.map(t => t.originalId || t.id));
-      const newTasks = tasks.filter(t => !existingIds.has(t.originalId || t.id));
-      
-      if (newTasks.length > 0) {
-        setTaskList(prev => [...prev, ...newTasks]);
-      }
-      
-      const currentIds = new Set(tasks.map(t => t.originalId || t.id));
-      const removedTasks = taskList.filter(t => !currentIds.has(t.originalId || t.id));
-      
-      if (removedTasks.length > 0) {
-        setTaskList(prev => prev.filter(t => currentIds.has(t.originalId || t.id)));
-      }
-    }
-  }, [tasks, taskList]);
-  
-  if (taskList.length === 0) {
-    return <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>暂无常规任务</div>;
-  }
-  
-  // 分成两列
-  const mid = Math.ceil(taskList.length / 2);
-  const leftTasks = taskList.slice(0, mid);
-  const rightTasks = taskList.slice(mid);
-  
-  const handleDragStart = (e, index) => {
-    if (!isSortingMode) return;
-    dragItemIndex.current = index;
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  };
-  
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '';
-    dragItemIndex.current = null;
-  };
-  
-  const handleDragOver = (e, targetIndex) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    if (dragItemIndex.current === null) return;
-    if (dragItemIndex.current === targetIndex) return;
-    
-    const newList = [...taskList];
-    const draggedItem = newList[dragItemIndex.current];
-    newList.splice(dragItemIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTaskList(newList);
-    dragItemIndex.current = targetIndex;
-  };
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    
-    // ✅ 修复：使用 taskList 而不是未定义的变量
-    const newOrder = taskList.map(t => t.originalId || t.id);
-    if (onSortingEnd) {
-      onSortingEnd(newOrder);
-    }
-    dragItemIndex.current = null;
-  };
-  
-  // ✅ 修复：计算全局索引的函数
-  const getGlobalIndex = (isLeft, leftIdx, rightIdx) => {
-    if (isLeft) return leftIdx;
-    return leftTasks.length + rightIdx;
-  };
-  
-  return (
-    <div 
-      style={{ padding: 8 }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        {/* 左列 */}
-        <div>
-          {leftTasks.map((task, idx) => (
-            <div
-              key={task.id}
-              draggable={isSortingMode}
-              onDragStart={(e) => handleDragStart(e, idx)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, idx)}
-              style={{ 
-                cursor: isSortingMode ? 'grab' : 'default',
-                marginBottom: '8px'
-              }}
-            >
-              <RegularTaskItem
-                task={task}
-                categories={categories}
-                onToggle={onToggle}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                isDraggable={isSortingMode}
-              />
-            </div>
-          ))}
-        </div>
-        {/* 右列 */}
-        <div>
-          {rightTasks.map((task, idx) => (
-            <div
-              key={task.id}
-              draggable={isSortingMode}
-              onDragStart={(e) => handleDragStart(e, leftTasks.length + idx)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, leftTasks.length + idx)}
-              style={{ 
-                cursor: isSortingMode ? 'grab' : 'default',
-                marginBottom: '8px'
-              }}
-            >
-              <RegularTaskItem
-                task={task}
-                categories={categories}
-                onToggle={onToggle}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                isDraggable={isSortingMode}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('数学');
@@ -1700,6 +1521,181 @@ return (
     </div>
   );
 };
+
+// 完全重写 RegularTaskSortableList 组件
+// 修复后的 RegularTaskSortableList 组件
+const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onSortingEnd }) => {
+  const [taskList, setTaskList] = useState([]);
+  const dragItemIndex = useRef(null);
+  
+  // 初始化任务列表 - 使用保存的顺序
+  useEffect(() => {
+    const savedOrder = localStorage.getItem('regular_tasks_order');
+    const taskMap = new Map();
+    
+    tasks.forEach(task => {
+      const taskId = task.originalId || task.id;
+      taskMap.set(taskId, task);
+    });
+    
+    if (savedOrder && tasks.length > 0) {
+      const orderIds = JSON.parse(savedOrder);
+      const ordered = [];
+      
+      orderIds.forEach(id => {
+        if (taskMap.has(id)) {
+          ordered.push(taskMap.get(id));
+          taskMap.delete(id);
+        }
+      });
+      
+      ordered.push(...taskMap.values());
+      setTaskList(ordered);
+    } else {
+      setTaskList([...tasks]);
+    }
+  }, [tasks]);
+  
+  // 当任务列表变化时，保存顺序
+  useEffect(() => {
+    if (taskList.length > 0 && !isSortingMode) {
+      const orderIds = taskList.map(t => t.originalId || t.id);
+      localStorage.setItem('regular_tasks_order', JSON.stringify(orderIds));
+    }
+  }, [taskList, isSortingMode]);
+  
+  // 当外部 tasks 变化时，保持原有顺序
+  useEffect(() => {
+    if (tasks.length > 0 && taskList.length > 0) {
+      const existingIds = new Set(taskList.map(t => t.originalId || t.id));
+      const newTasks = tasks.filter(t => !existingIds.has(t.originalId || t.id));
+      
+      if (newTasks.length > 0) {
+        setTaskList(prev => [...prev, ...newTasks]);
+      }
+      
+      const currentIds = new Set(tasks.map(t => t.originalId || t.id));
+      const removedTasks = taskList.filter(t => !currentIds.has(t.originalId || t.id));
+      
+      if (removedTasks.length > 0) {
+        setTaskList(prev => prev.filter(t => currentIds.has(t.originalId || t.id)));
+      }
+    }
+  }, [tasks, taskList]);
+  
+  if (taskList.length === 0) {
+    return <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>暂无常规任务</div>;
+  }
+  
+  // 分成两列
+  const mid = Math.ceil(taskList.length / 2);
+  const leftTasks = taskList.slice(0, mid);
+  const rightTasks = taskList.slice(mid);
+  
+  const handleDragStart = (e, index) => {
+    if (!isSortingMode) return;
+    dragItemIndex.current = index;
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.style.opacity = '0.5';
+  };
+  
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '';
+    dragItemIndex.current = null;
+  };
+  
+  const handleDragOver = (e, targetIndex) => {
+    e.preventDefault();
+    if (!isSortingMode) return;
+    if (dragItemIndex.current === null) return;
+    if (dragItemIndex.current === targetIndex) return;
+    
+    const newList = [...taskList];
+    const draggedItem = newList[dragItemIndex.current];
+    newList.splice(dragItemIndex.current, 1);
+    newList.splice(targetIndex, 0, draggedItem);
+    
+    setTaskList(newList);
+    dragItemIndex.current = targetIndex;
+  };
+  
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (!isSortingMode) return;
+    
+    // ✅ 修复：使用 taskList 而不是未定义的变量
+    const newOrder = taskList.map(t => t.originalId || t.id);
+    if (onSortingEnd) {
+      onSortingEnd(newOrder);
+    }
+    dragItemIndex.current = null;
+  };
+  
+
+  
+  return (
+    <div 
+      style={{ padding: 8 }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        {/* 左列 */}
+        <div>
+          {leftTasks.map((task, idx) => (
+            <div
+              key={task.id}
+              draggable={isSortingMode}
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              style={{ 
+                cursor: isSortingMode ? 'grab' : 'default',
+                marginBottom: '8px'
+              }}
+            >
+              <RegularTaskItem
+                task={task}
+                categories={categories}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                isDraggable={isSortingMode}
+              />
+            </div>
+          ))}
+        </div>
+        {/* 右列 */}
+        <div>
+          {rightTasks.map((task, idx) => (
+            <div
+              key={task.id}
+              draggable={isSortingMode}
+              onDragStart={(e) => handleDragStart(e, leftTasks.length + idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, leftTasks.length + idx)}
+              style={{ 
+                cursor: isSortingMode ? 'grab' : 'default',
+                marginBottom: '8px'
+              }}
+            >
+              <RegularTaskItem
+                task={task}
+                categories={categories}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                isDraggable={isSortingMode}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 
 // 重命名文件顶部的 categories 为 baseCategories
@@ -9499,12 +9495,22 @@ const TaskItem = ({
     >
       {/* 第一行：任务内容 + 复选框 */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
-        <input
-          type="checkbox"
-          checked={task.done}
-          onChange={() => toggleDone(task)}
-          style={{ marginTop: "2px" }}
-        />
+     <input
+  type="checkbox"
+  checked={task.done}
+  onChange={(e) => {
+    e.stopPropagation();
+    console.log('toggleDone 存在吗？', typeof toggleDone);
+    console.log('task:', task.text);
+    if (typeof toggleDone === 'function') {
+      toggleDone(task);
+    } else {
+      console.error('toggleDone 不是函数！');
+    }
+  }}
+  onClick={(e) => e.stopPropagation()}
+  style={{ marginTop: "2px", cursor: "pointer" }}
+/>
         
         {/* 任务文字 */}
         <div style={{ display: "flex", alignItems: "center", flex: 1, flexWrap: "wrap", gap: "4px" }}>
@@ -9866,7 +9872,6 @@ const TaskItem = ({
               </span>
             )}
 
-       {/* 提醒时间 - 只有在有月和日时才显示 */}
 {task.reminderTime && task.reminderTime.month && task.reminderTime.day && (
   <span
     style={{
@@ -9881,9 +9886,12 @@ const TaskItem = ({
       alignItems: "center",
       gap: 2
     }}
-    title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+    title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month}月${task.reminderTime.day}日${task.reminderTime.hour ? ` ${task.reminderTime.hour}:${String(task.reminderTime.minute || 0).padStart(2, '0')}` : ''}`}
   >
-    🔔 {task.reminderTime.year ? `${task.reminderTime.year}/` : ''}{task.reminderTime.month}/${task.reminderTime.day} {task.reminderTime.hour || '00'}:{task.reminderTime.minute || '00'}
+    🔔 {task.reminderTime.month}/{task.reminderTime.day}
+    {task.reminderTime.hour !== undefined && task.reminderTime.hour !== '' && task.reminderTime.hour !== 0 && (
+      <> {String(task.reminderTime.hour).padStart(2, '0')}:{String(task.reminderTime.minute || 0).padStart(2, '0')}</>
+    )}
   </span>
 )}
 
@@ -10688,6 +10696,8 @@ const todayTasks = useMemo(() => {
   return tasksByDate[selectedDate] || [];
 }, [tasksByDate, selectedDate]);
  // 添加类别保存函数
+
+
 const handleSaveCategories = (updatedCategories) => {
   setCategories(updatedCategories);
   saveMainData('categories', updatedCategories);
@@ -12213,14 +12223,17 @@ const handleCrossDateTask = (task, targetDates) => {
   alert(`任务已设置在 ${targetDates.length} 个日期显示`);
 };
 
-
 const toggleDone = (task) => {
   const wasDone = task.done;
+  console.log('=== toggleDone 开始 ===');
+  console.log('任务:', task.text);
+  console.log('当前 pinned:', task.pinned);
+  console.log('当前 category:', task.category);
 
   // 如果是跨日期任务，同步所有日期的状态
   if (task.crossDateId || (task.dateRange && task.dateRange.allDates)) {
     const crossDateId = task.crossDateId || task.dateRange?.allDates?.join('_');
-    const actualCompletedDate = selectedDate; // 记录实际完成/取消的日期
+    const actualCompletedDate = selectedDate;
     
     setTasksByDate(prevTasksByDate => {
       const newTasksByDate = { ...prevTasksByDate };
@@ -12235,14 +12248,12 @@ const toggleDone = (task) => {
           
           if (isSameCrossTask) {
             updatedCount++;
-            // 如果是实际操作的日期，记录 actualCompletedDate
             const isActualDate = (date === actualCompletedDate);
             return {
               ...t,
               done: !wasDone,
               pinned: !wasDone ? false : t.pinned,
               subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks,
-              // 记录实际完成的日期
               actualCompletedDate: isActualDate && !wasDone ? actualCompletedDate : 
                                    (isActualDate && wasDone ? null : t.actualCompletedDate)
             };
@@ -12251,16 +12262,68 @@ const toggleDone = (task) => {
         });
       });
       
-      console.log(`同步更新了 ${updatedCount} 个跨日期任务，实际操作日期: ${actualCompletedDate}`);
+      console.log(`同步更新了 ${updatedCount} 个跨日期任务`);
       return newTasksByDate;
     });
     return;
   }
   
-  // ... 其余代码保持不变
+setTimeout(() => {
+  console.log('=== 最终检查 ===');
+  console.log('todayTasks:', todayTasks.map(t => ({ text: t.text, category: t.category, pinned: t.pinned, done: t.done })));
+  console.log('getCategoryTasks("运动"):', getCategoryTasks('运动'));
+  console.log('运动分类在 categories 中吗？', categories.find(c => c.name === '运动'));
+}, 500);
+
+
+
+
+  // ✅ 处理普通任务（包括置顶任务）- 关键修改在这里
+  setTasksByDate(prev => {
+    const currentTasks = prev[selectedDate] || [];
+    const updatedTasks = currentTasks.map(t =>
+      t.id === task.id 
+        ? { 
+            ...t, 
+            done: !wasDone,
+            pinned: false,  // ✅ 直接设置为 false，强制取消置顶
+            subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+          } 
+        : t
+    );
+    
+
+    // 在 toggleDone 函数的最后，setTasksByDate 之后添加
+setTimeout(() => {
+  console.log('=== 调试：查看当前所有任务 ===');
+  const allTasks = tasksByDate[selectedDate] || [];
+  console.log('所有任务:', allTasks.map(t => ({ text: t.text, category: t.category, pinned: t.pinned, done: t.done })));
+  
+  console.log('=== 运动分类的任务 ===');
+  const sportsTasks = allTasks.filter(t => t.category === '运动');
+  console.log('运动分类任务:', sportsTasks.map(t => ({ text: t.text, pinned: t.pinned, done: t.done })));
+  
+  console.log('=== 置顶任务 ===');
+  console.log('pinnedTasks:', pinnedTasks.map(t => ({ text: t.text, pinned: t.pinned })));
+}, 100);
+    // 调试日志
+    const updatedTask = updatedTasks.find(t => t.id === task.id);
+    console.log('更新后的任务:', updatedTask?.text);
+    console.log('更新后的 pinned:', updatedTask?.pinned);
+    console.log('更新后的 done:', updatedTask?.done);
+    
+    // 查看运动分类
+    const sportsTasks = updatedTasks.filter(t => t.category === '运动');
+    console.log('运动分类任务:', sportsTasks.map(t => ({ text: t.text, pinned: t.pinned, done: t.done })));
+    
+    return {
+      ...prev,
+      [selectedDate]: updatedTasks
+    };
+  });
+  
+  console.log('=== toggleDone 结束 ===');
 };
-
-
 
 
 // 迁移任务函数
@@ -12381,12 +12444,20 @@ const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
       });
       setTasksByDate(updatedTasksByDate);
     } else {
-      setTasksByDate(prev => ({
-        ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
-          t.id === task.id ? updateTaskWithSubTaskEdit(t) : t
-        )
-      }));
+      // 在 toggleDone 函数中，处理普通任务的部分
+setTasksByDate(prev => ({
+  ...prev,
+  [selectedDate]: (prev[selectedDate] || []).map(t =>
+    t.id === task.id 
+      ? { 
+          ...t, 
+          done: !wasDone,
+          pinned: !wasDone ? false : t.pinned,  // ✅ 完成后取消置顶
+          subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+        } 
+      : t
+  )
+}));
     }
   }
 };
@@ -12823,7 +12894,6 @@ useEffect(() => {
 
 
  
-
 useEffect(() => {
   const checkReminders = () => {
     const now = new Date();
@@ -12831,52 +12901,44 @@ useEffect(() => {
     const currentMonth = now.getMonth() + 1;
     const currentDay = now.getDate();
 
-    const updatedTasksByDate = { ...tasksByDate };
-    let hasChanges = false;
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      let hasChanges = false;
 
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
-        // 只有在有月和日时才检查提醒
-        if (task.reminderTime && task.reminderTime.month && task.reminderTime.day && !task.pinned) {
-          const { year, month, day } = task.reminderTime;
-          
-          // 如果年份为空，使用当前年份
-          const checkYear = year || currentYear;
-          
-          console.log('📋 检查任务提醒:', {
-            任务: task.text,
-            提醒日期: `${checkYear}-${month}-${day}`,
-            是否今天: checkYear === currentYear && month === currentMonth && day === currentDay
-          });
-
-          // 只检查日期是否匹配
-          if (checkYear === currentYear && 
-              month === currentMonth && 
-              day === currentDay) {
-            console.log('🎯 触发提醒并置顶任务:', task.text);
-            hasChanges = true;
-            return { ...task, pinned: true };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(task => {
+          // 只有在有月和日、未完成、且未置顶时才检查提醒
+          if (task.reminderTime && task.reminderTime.month && task.reminderTime.day && !task.pinned && !task.done) {
+            const { year, month, day } = task.reminderTime;
+            const checkYear = year || currentYear;
+            
+            if (checkYear === currentYear && 
+                month === currentMonth && 
+                day === currentDay) {
+              console.log('🎯 触发提醒并置顶任务:', task.text, '原分类:', task.category);
+              hasChanges = true;
+              return {
+                ...task,
+                pinned: true
+              };
+            }
           }
-        }
-        return task;
+          return task;
+        });
       });
-    });
 
-    if (hasChanges) {
-  console.log('✅ 更新任务状态，置顶到期任务');
-  setTasksByDate(updatedTasksByDate);
-  localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(updatedTasksByDate));
-}
+      if (hasChanges) {
+        console.log('✅ 更新任务状态，置顶到期任务');
+        return newTasksByDate;
+      }
+      return prev;
+    });
   };
 
-  // 每分钟检查一次提醒
   const intervalId = setInterval(checkReminders, 60000);
   checkReminders();
   return () => clearInterval(intervalId);
 }, [tasksByDate]);
-
-  // 进度更新函数
-
   // 进度更新函数
 const handleUpdateProgress = (task, newCurrent) => {
   console.log('更新进度:', task.text, '新进度:', newCurrent);
@@ -13593,95 +13655,6 @@ useEffect(() => {
 
 
 
-// 替换现有的 useEffect 来处理新日期的常规任务复制
-// 处理新日期的常规任务复制
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  setTasksByDate(prev => {
-    const currentDateTasks = prev[selectedDate] || [];
-    
-    // 收集所有常规任务模板（从所有日期中获取，去重）
-    const regularTaskTemplates = [];
-    const seenTaskTexts = new Set();
-    const taskOriginalIds = new Map();
-    
-    // 遍历所有日期，收集常规任务模板
-    Object.values(prev).forEach(tasks => {
-      tasks.forEach(task => {
-        // 只收集未删除的常规任务
-        if (task.isRegularTask && !seenTaskTexts.has(task.text)) {
-          seenTaskTexts.add(task.text);
-          taskOriginalIds.set(task.text, task.originalId || task.id);
-          regularTaskTemplates.push({
-            text: task.text,
-            targetCategory: task.targetCategory,
-            targetSubCategory: task.targetSubCategory || '',
-            note: task.note || "",
-            tags: task.tags || [],
-            progress: task.progress || {
-              initial: 0,
-              current: 0,
-              target: 0,
-              unit: "%"
-            },
-            originalId: task.originalId || task.id
-          });
-        }
-      });
-    });
-    
-    // 如果没有常规任务模板，不处理
-    if (regularTaskTemplates.length === 0) {
-      return prev;
-    }
-    
-    // 获取当前日期已有的常规任务文本
-    const existingRegularTexts = new Set(
-      currentDateTasks.filter(t => t.isRegularTask).map(t => t.text)
-    );
-    
-    // 找出缺失的常规任务
-    const missingTemplates = regularTaskTemplates.filter(
-      template => !existingRegularTexts.has(template.text)
-    );
-    
-    if (missingTemplates.length === 0) {
-      return prev;
-    }
-    
-    console.log(`📋 为日期 ${selectedDate} 创建 ${missingTemplates.length} 个缺失的常规任务`);
-    
-    // 为新日期创建常规任务
-    const newRegularTasks = missingTemplates.map(template => ({
-      id: `${template.originalId}_${selectedDate}`,
-      originalId: template.originalId,
-      text: template.text,
-      targetCategory: template.targetCategory,
-      targetSubCategory: template.targetSubCategory,
-      category: "常规任务",
-      done: false,
-      timeSpent: 0,
-      subTasks: [],
-      note: template.note,
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: template.tags || [],
-      isRegularTask: true,
-      progress: template.progress
-    }));
-    
-    return {
-      ...prev,
-      [selectedDate]: [...currentDateTasks, ...newRegularTasks]
-    };
-  });
-  
-}, [selectedDate, isInitialized]);
-// 替换现有的 useEffect 点击外部处理逻辑
-
 
 // 替换原来的 handleClickOutside 函数
 useEffect(() => {
@@ -13784,7 +13757,9 @@ const getWeekTasks = () => {
 };
 
   const weekTasks = getWeekTasks();
-  const pinnedTasks = todayTasks.filter(task => task.pinned);
+  const pinnedTasks = useMemo(() => {
+  return todayTasks.filter(task => task.pinned === true);
+}, [todayTasks]);
   const weekDates = getWeekDates(currentMonday);
 
 
@@ -15665,20 +15640,31 @@ const editCategoryTime = (catName) => {
   }
 };
 
- // 找到这个函数或者直接修改渲染逻辑
 const getCategoryTasks = (catName) => {
-  // 排除被置顶的任务（置顶的任务已经在置顶区域显示了）
-  return todayTasks.filter(t => 
+  if (catName === '运动') {
+    console.log('=== 调试 getCategoryTasks("运动") ===');
+    console.log('todayTasks 数量:', todayTasks.length);
+    todayTasks.forEach(t => {
+      console.log(`任务: "${t.text}", category: "${t.category}", pinned: ${t.pinned}, type: ${typeof t.pinned}`);
+    });
+  }
+  
+  const result = todayTasks.filter(t => 
     t.category === catName && 
-    !t.pinned  // 添加这行：排除置顶的任务
+    t.pinned !== true  // 改用 !== true
   );
+  
+  if (catName === '运动') {
+    console.log('过滤后的结果数量:', result.length);
+    console.log('========================');
+  }
+  
+  return result;
 };
-
 const getTasksBySubCategory = (catName) => {
-  // 修改：排除置顶的任务
   const catTasks = todayTasks.filter(t => 
     t.category === catName && 
-    !t.pinned  // 👈 添加这行
+    (t.pinned === false || t.pinned === undefined || t.pinned === null)
   );
   const grouped = {};
   
@@ -16740,110 +16726,120 @@ if (isInitialized && todayTasks.length === 0) {
   justifyContent: "space-between",
   marginBottom: 10
 }}>
-  {weekDates.map((d) => {
-    const dateStr = d.date;
-    const isSelected = dateStr === selectedDate;
-    const dayTasks = tasksByDate[dateStr] || [];
-    
-    // 排除本周任务和未完成的常规任务
-    const filteredTasks = dayTasks.filter(task => {
-      if (task.category === "本周任务") return false; // 排除本周任务
-      if (task.isRegularTask && !task.done) return false; // 排除未完成的常规任务
-      return true; // 包含其他所有任务（已完成的任务、已完成的常规任务、其他分类的任务）
-    });
-    
-    const totalCount = filteredTasks.length;
-    const completedCount = filteredTasks.filter(task => task.done).length;
-    const allDone = totalCount > 0 && completedCount === totalCount;
-    const hasIncomplete = totalCount > 0 && completedCount < totalCount;
-    
-    // 获取当天的学习状态评分
-    const dailyRating = dailyRatings[dateStr] || 0;
-    
-    // 根据评分设置背景颜色
-    const getRatingColor = (rating) => {
-      switch(rating) {
-        case 5: return '#4CAF50'; // 很好 - 绿色
-        case 4: return '#8BC34A'; // 好 - 浅绿
-        case 3: return '#FFC107'; // 一般 - 黄色
-        case 2: return '#FF9800'; // 较差 - 橙色
-        case 1: return '#F44336'; // 差 - 红色
-        default: return 'transparent'; // 未评分
-      }
-    };
-    
-    return (
-      <div
-        key={dateStr}
-        onClick={() => setSelectedDate(dateStr)}
-        style={{
-          padding: "4px 6px",
-          borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
-          textAlign: "center",
-          flex: 1,
-          margin: "0 2px",
-          fontSize: 12,
-          cursor: "pointer",
-          backgroundColor: isSelected ? "#fff9c4" : "transparent",
-          color: isSelected ? "#000" : "#000",
+ {weekDates.map((d) => {
+  const dateStr = d.date;
+  const isSelected = dateStr === selectedDate;
+  const dayTasks = tasksByDate[dateStr] || [];
+  
+  // 检查这一天是否有跨日期任务
+  const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
+  
+  // 排除本周任务和未完成的常规任务
+  const filteredTasks = dayTasks.filter(task => {
+    if (task.category === "本周任务") return false;
+    if (task.isRegularTask && !task.done) return false;
+    return true;
+  });
+  
+  const totalCount = filteredTasks.length;
+  const completedCount = filteredTasks.filter(task => task.done).length;
+  const allDone = totalCount > 0 && completedCount === totalCount;
+  const hasIncomplete = totalCount > 0 && completedCount < totalCount;
+  
+  const dailyRating = dailyRatings[dateStr] || 0;
+  
+  const getRatingColor = (rating) => {
+    switch(rating) {
+      case 5: return '#4CAF50';
+      case 4: return '#8BC34A';
+      case 3: return '#FFC107';
+      case 2: return '#FF9800';
+      case 1: return '#F44336';
+      default: return 'transparent';
+    }
+  };
+  
+  return (
+    <div
+      key={dateStr}
+      onClick={() => setSelectedDate(dateStr)}
+      style={{
+        padding: "4px 6px",
+        borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
+        textAlign: "center",
+        flex: 1,
+        margin: "0 2px",
+        fontSize: 12,
+        cursor: "pointer",
+        backgroundColor: isSelected ? "#fff9c4" : "transparent",
+        color: isSelected ? "#000" : "#000",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        minHeight: "20px",
+        background: dailyRating > 0 
+          ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+          : isSelected ? '#fff9c4' : 'transparent'
+      }}
+    >
+   <div style={{ position: "relative", display: "inline-block" }}>
+  <span>{d.label}</span>
+  {hasCrossDateTask && (
+    <span style={{
+      position: "absolute",
+      top: "50%",
+      right: "-16px",
+      transform: "translateY(-50%)",
+      fontSize: "10px",
+      color: "#ff9800"
+    }}>⚡</span>
+  )}
+</div>
+      <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+      
+      {dailyRating > 0 && (
+        <div style={{
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          minHeight: "20px",
-          // 添加评分背景色 - 如果当天有评分
-          background: dailyRating > 0 
-            ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
-            : isSelected ? '#fff9c4' : 'transparent'
-        }}
-      >
-        <div>{d.label}</div>
-        <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
-        
-        {/* 显示学习状态星星（1-5星） */}
-        {dailyRating > 0 && (
+          justifyContent: "center",
+          gap: "1px",
+          marginTop: "2px",
+          fontSize: "8px",
+          color: "#FFB800"
+        }}>
+          {'⭐'.repeat(dailyRating)}
+        </div>
+      )}
+      
+      {totalCount > 0 && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "2px",
+          marginTop: dailyRating > 0 ? "0px" : "4px"
+        }}>
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "1px",
-            marginTop: "2px",
-            fontSize: "8px",
-            color: "#FFB800"
+            width: "6px",
+            height: "6px",
+            borderRadius: "50%",
+            backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+          }} />
+          <span style={{
+            fontSize: "9px",
+            fontWeight: "bold",
+            color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
           }}>
-            {'⭐'.repeat(dailyRating)}
-          </div>
-        )}
-        
-        {/* 任务数量显示 - 只显示已计入统计的任务 */}
-        {totalCount > 0 && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "2px",
-            marginTop: dailyRating > 0 ? "0px" : "4px"
-          }}>
-            {/* 圆点 */}
-            <div style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
-            }} />
-            
-            {/* 任务数 - 显示已完成/总数 */}
-            <span style={{
-              fontSize: "9px",
-              fontWeight: "bold",
-              color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
-            }}>
-              {completedCount}/{totalCount}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  })}
+            {completedCount}/{totalCount}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+})}
+ 
+
+  
 </div>
 
 
@@ -16918,89 +16914,64 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 {/* 置顶任务区域 */}
-      {pinnedTasks.length > 0 && (
-        <div style={{
-          marginBottom: 8,
-          borderRadius: 10,
-          overflow: "hidden",
-          border: "2px solid #ffcc00",
-          backgroundColor: "#fff"
-        }}>
-         
-         <div
-  style={{
-    backgroundColor: "#ffcc00",
-    color: "#000",
-    padding: "6px 10px",
-    fontWeight: "bold",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
-  }}
->
-  <span>置顶 ({pinnedTasks.length})</span>
-  <span
-  style={{
-    fontSize: 12,
-    color: "#333",
-    padding: "2px 8px",
-    border: "1px solid #e0e0e0",
-    borderRadius: "4px",
-    backgroundColor: "#f5f5f5",
-    flexShrink: 0,
-    whiteSpace: 'nowrap'
-  }}
-  title="置顶任务总时间"
->
-  {(() => {
-    // 计算所有置顶任务的总时间
-    const totalTime = pinnedTasks.reduce((sum, task) => {
-      return sum + (task.timeSpent || 0);
-    }, 0);
-    return formatTimeNoSeconds(totalTime);
-  })()}
-</span>
+{pinnedTasks.length > 0 && (
+  <div style={{
+    marginBottom: 8,
+    borderRadius: 10,
+    overflow: "hidden",
+    border: "2px solid #ffcc00",
+    backgroundColor: "#fff"
+  }}>
+    <div style={{
+      backgroundColor: "#ffcc00",
+      color: "#000",
+      padding: "6px 10px",
+      fontWeight: "bold",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }}>
+      <span>置顶 ({pinnedTasks.length})</span>
+      <span>...</span>
+    </div>
+    <ul style={{
+      listStyle: "none",
+      padding: 8,
+      margin: 0
+    }}>
+      {pinnedTasks
+        .sort((a, b) => b.id - a.id)
+        .map((task) => (
+          <div 
+            key={task.id} 
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <TaskItem
+              task={task}
+              onEditTime={editTaskTime}
+              getTaskCompletionType={getTaskCompletionType}
+              onEditNote={editTaskNote}
+              onDeleteTask={deleteTask}
+              onEditReflection={editTaskReflection}
+              onOpenEditModal={openTaskEditModal}
+              onShowImageModal={setShowImageModal}
+              onDeleteImage={handleDeleteImage}
+              toggleDone={toggleDone}
+              formatTimeNoSeconds={formatTimeNoSeconds}
+              formatTimeWithSeconds={formatTimeWithSeconds}
+              onMoveTask={moveTask}
+              categories={categories}
+              setShowMoveModal={setShowMoveModal}
+              onUpdateProgress={handleUpdateProgress}
+              onToggleSubTask={toggleSubTask}
+              onEditSubTask={editSubTask}
+            />
           </div>
-          <ul style={{
-            listStyle: "none",
-            padding: 8,
-            margin: 0
-          }}>
-            {pinnedTasks
-  .sort((a, b) => {
-    return b.id - a.id;
-  })
-  .map((task) => (
-    <TaskItem
-      key={task.id}
-      task={task}
-      onEditTime={editTaskTime}
-      getTaskCompletionType={getTaskCompletionType}  // 
-      onEditNote={editTaskNote}
-      onDeleteTask={deleteTask}  
-      onEditReflection={editTaskReflection}
-      onOpenEditModal={openTaskEditModal}
-      onShowImageModal={setShowImageModal}
-      onDeleteImage={handleDeleteImage} 
-      toggleDone={toggleDone}
-      formatTimeNoSeconds={formatTimeNoSeconds}
-      formatTimeWithSeconds={formatTimeWithSeconds}
-      onMoveTask={moveTask}
-      categories={categories}
-   
-      setShowMoveModal={setShowMoveModal}
-      onUpdateProgress={handleUpdateProgress}
-     
-      onToggleSubTask={toggleSubTask} // 添加这行
- 
-    
-      onEditSubTask={editSubTask}  // 添加这行 - 这里缺少了
-    />
-))}
-          </ul>
-        </div>
-      )}
-
+        ))}
+    </ul>
+  </div>
+)}
 
 
 
