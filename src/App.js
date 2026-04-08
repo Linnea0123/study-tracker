@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, 
 
 
 // 完全重写 RegularTaskSortableList 组件
-// 修复 RegularTaskSortableList 组件
+// 修复后的 RegularTaskSortableList 组件
 const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onSortingEnd }) => {
   const [taskList, setTaskList] = useState([]);
   const dragItemIndex = useRef(null);
@@ -21,7 +21,6 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     const savedOrder = localStorage.getItem('regular_tasks_order');
     const taskMap = new Map();
     
-    // 建立任务映射
     tasks.forEach(task => {
       const taskId = task.originalId || task.id;
       taskMap.set(taskId, task);
@@ -31,7 +30,6 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
       const orderIds = JSON.parse(savedOrder);
       const ordered = [];
       
-      // 按保存的顺序排列
       orderIds.forEach(id => {
         if (taskMap.has(id)) {
           ordered.push(taskMap.get(id));
@@ -39,18 +37,16 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
         }
       });
       
-      // 添加新任务（不在保存顺序中的）
       ordered.push(...taskMap.values());
       setTaskList(ordered);
     } else {
       setTaskList([...tasks]);
     }
-  }, [tasks]); // 依赖 tasks，当 tasks 变化时重新排序
+  }, [tasks]);
   
-  // 当任务列表变化时，保存顺序（但不改变顺序本身）
+  // 当任务列表变化时，保存顺序
   useEffect(() => {
     if (taskList.length > 0 && !isSortingMode) {
-      // 只在非排序模式下保存顺序，避免在拖拽过程中保存
       const orderIds = taskList.map(t => t.originalId || t.id);
       localStorage.setItem('regular_tasks_order', JSON.stringify(orderIds));
     }
@@ -59,21 +55,17 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
   // 当外部 tasks 变化时，保持原有顺序
   useEffect(() => {
     if (tasks.length > 0 && taskList.length > 0) {
-      // 检查是否有新任务
       const existingIds = new Set(taskList.map(t => t.originalId || t.id));
       const newTasks = tasks.filter(t => !existingIds.has(t.originalId || t.id));
       
       if (newTasks.length > 0) {
-        // 有新任务，添加到末尾
         setTaskList(prev => [...prev, ...newTasks]);
       }
       
-      // 检查是否有任务被删除
       const currentIds = new Set(tasks.map(t => t.originalId || t.id));
       const removedTasks = taskList.filter(t => !currentIds.has(t.originalId || t.id));
       
       if (removedTasks.length > 0) {
-        // 有任务被删除，从列表中移除
         setTaskList(prev => prev.filter(t => currentIds.has(t.originalId || t.id)));
       }
     }
@@ -107,7 +99,6 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     if (dragItemIndex.current === null) return;
     if (dragItemIndex.current === targetIndex) return;
     
-    // 重新排序
     const newList = [...taskList];
     const draggedItem = newList[dragItemIndex.current];
     newList.splice(dragItemIndex.current, 1);
@@ -121,7 +112,7 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     e.preventDefault();
     if (!isSortingMode) return;
     
-    // ✅ 改成使用 taskList（注意：taskList 已经在第 70 行定义了）
+    // ✅ 修复：使用 taskList 而不是未定义的变量
     const newOrder = taskList.map(t => t.originalId || t.id);
     if (onSortingEnd) {
       onSortingEnd(newOrder);
@@ -129,29 +120,10 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
     dragItemIndex.current = null;
   };
   
-  const renderTaskItem = (task, globalIndex) => {
-    return (
-      <div
-        key={task.id}
-        draggable={isSortingMode}
-        onDragStart={(e) => handleDragStart(e, globalIndex)}
-        onDragEnd={handleDragEnd}
-        onDragOver={(e) => handleDragOver(e, globalIndex)}
-        style={{ 
-          cursor: isSortingMode ? 'grab' : 'default',
-          marginBottom: '8px'
-        }}
-      >
-        <RegularTaskItem
-          task={task}
-          categories={categories}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          isDraggable={isSortingMode}
-        />
-      </div>
-    );
+  // ✅ 修复：计算全局索引的函数
+  const getGlobalIndex = (isLeft, leftIdx, rightIdx) => {
+    if (isLeft) return leftIdx;
+    return leftTasks.length + rightIdx;
   };
   
   return (
@@ -163,20 +135,58 @@ const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
         {/* 左列 */}
         <div>
-          {leftTasks.map((task, idx) => renderTaskItem(task, idx))}
+          {leftTasks.map((task, idx) => (
+            <div
+              key={task.id}
+              draggable={isSortingMode}
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              style={{ 
+                cursor: isSortingMode ? 'grab' : 'default',
+                marginBottom: '8px'
+              }}
+            >
+              <RegularTaskItem
+                task={task}
+                categories={categories}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                isDraggable={isSortingMode}
+              />
+            </div>
+          ))}
         </div>
         {/* 右列 */}
         <div>
-          {rightTasks.map((task, idx) => renderTaskItem(task, leftTasks.length + idx))}
+          {rightTasks.map((task, idx) => (
+            <div
+              key={task.id}
+              draggable={isSortingMode}
+              onDragStart={(e) => handleDragStart(e, leftTasks.length + idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, leftTasks.length + idx)}
+              style={{ 
+                cursor: isSortingMode ? 'grab' : 'default',
+                marginBottom: '8px'
+              }}
+            >
+              <RegularTaskItem
+                task={task}
+                categories={categories}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                isDraggable={isSortingMode}
+              />
+            </div>
+          ))}
         </div>
       </div>
-      
-     
-     
     </div>
   );
 };
-
 const GradeModal = ({ onClose, isVisible }) => {
   const [grades, setGrades] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('数学');
@@ -2100,7 +2110,6 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync || false);
   const [gistId, setGistId] = useState(config.gistId || '');
 
-  // ✅ 改成这样
   const handleSave = () => {
     if (!token.trim()) {
       alert('请输入 GitHub Token');
@@ -2109,7 +2118,6 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
     onSave({ token, autoSync, gistId });
     onClose();
   };
-
 
   return (
     <div style={{
@@ -4063,17 +4071,15 @@ const RepeatModal = ({ config, onSave, onClose }) => {
   const [frequency, setFrequency] = useState(config.frequency|| '');
   const [days, setDays] = useState(config.days ? [...config.days] : []);
 
- // 修复：确保至少选择一天
-  const handleSave = () => {
-    if (frequency === 'weekly' && !days.some(day => day)) {
-      alert('请至少选择一天！');
-      return;
-    }
-    
-    onSave({ frequency, days });
-    onClose();
-  };
+const handleSave = () => {
+  if (frequency === 'weekly' && !days.some(day => day)) {
+    alert('请至少选择一天！');
+    return;
+  }
 
+  onSave({ frequency, days });
+  onClose();
+};
   
   return (
     <div style={{
@@ -4718,33 +4724,40 @@ const handleSave = () => {
 
 
 
-{/* 类别和子类别在同一行 */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: 16,
-  alignItems: 'start',
-  marginBottom: 12,
-}}>
+{/* 类别和子类别在同一行 - 两个选择框等长，总宽度与输入框一致 */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',  // 两列等宽
+    gap: 12,
+    alignItems: 'start',
+    marginBottom: 16,
+  }}
+>
   {/* 任务类别 */}
   <div>
-    <label style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: 600,
-      color: '#333',
-      fontSize: 14,
-    }}>
+    <label
+      style={{
+        display: 'block',
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14,
+      }}
+    >
       类别
     </label>
 
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
-        value={templateCategory}
-        onChange={(e) => {
-          setTemplateCategory(e.target.value);
-          setTemplateSubCategory('');
-        }}
+        value={editData.category}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            category: e.target.value,
+            subCategory: '',
+          })
+        }
         style={{
           flex: 1,
           height: 36,
@@ -4769,30 +4782,20 @@ const handleSave = () => {
         onClick={() => {
           const newCategory = window.prompt('输入新类别名称:');
           if (newCategory && newCategory.trim()) {
-            // 检查是否已存在
             const exists = categories.find(cat => cat.name === newCategory.trim());
             if (exists) {
               alert('该类别已存在！');
               return;
             }
-            
-            // 创建新类别
             const newCat = {
               name: newCategory.trim(),
               color: '#1a73e8',
               subCategories: []
             };
-            
-            // 更新类别状态
             const updatedCategories = [...categories, newCat];
             setCategories(updatedCategories);
-            
-            // 保存到存储
             saveMainData('categories', updatedCategories);
-            
-            // 自动选择新类别
-            setTemplateCategory(newCategory.trim());
-            
+            setEditData({ ...editData, category: newCategory.trim() });
             alert(`新类别 "${newCategory}" 添加成功！`);
           }
         }}
@@ -4806,11 +4809,11 @@ const handleSave = () => {
           cursor: 'pointer',
           fontSize: 18,
           fontWeight: 600,
-          lineHeight: '36px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxSizing: 'border-box',
+          flexShrink: 0,
         }}
         title="添加新类别"
       >
@@ -4820,60 +4823,121 @@ const handleSave = () => {
   </div>
 
   {/* 子类别选择 - 仅校内类别显示 */}
-  {templateCategory === '校内' && (
+  {(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
     <div>
-      <label style={{
-        display: 'block',
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14,
-      }}>
+      <label
+        style={{
+          display: 'block',
+          marginBottom: 8,
+          fontWeight: 600,
+          color: '#333',
+          fontSize: 14,
+        }}
+      >
         子类别
       </label>
 
-      <select
-        value={templateSubCategory || ''}
-        onChange={(e) => setTemplateSubCategory(e.target.value)}
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 10px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-          boxSizing: 'border-box',
-        }}
-      >
-        <option value="">选择子类别（可选）</option>
-        {categories
-          .find((c) => c.name === '校内')
-          ?.subCategories?.map((subCat) => (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <select
+          value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
+          onChange={(e) => {
+            if (editData.isRegularTask) {
+              setEditData({ ...editData, targetSubCategory: e.target.value });
+            } else {
+              setEditData({ ...editData, subCategory: e.target.value });
+            }
+          }}
+          style={{
+            flex: 1,  // 👈 关键：和类别选择框一样使用 flex:1
+            height: 36,
+            padding: '0 10px',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            fontSize: 14,
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+            boxSizing: 'border-box',
+          }}
+        >
+          <option value="">选择子类别</option>
+          {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
             <option key={subCat} value={subCat}>
               {subCat}
             </option>
           ))}
-      </select>
+        </select>
+
+        <button
+          type="button"
+          onClick={() => {
+            const newSubCategory = window.prompt('输入新子类别名称:');
+            if (newSubCategory && newSubCategory.trim()) {
+              const schoolCategory = categories.find(c => c.name === '校内');
+              if (schoolCategory && schoolCategory.subCategories.includes(newSubCategory.trim())) {
+                alert('该子类别已存在！');
+                return;
+              }
+              
+              const updatedCategories = categories.map(cat => {
+                if (cat.name === '校内') {
+                  return {
+                    ...cat,
+                    subCategories: [...(cat.subCategories || []), newSubCategory.trim()]
+                  };
+                }
+                return cat;
+              });
+              
+              setCategories(updatedCategories);
+              saveMainData('categories', updatedCategories);
+              
+              if (editData.isRegularTask) {
+                setEditData({ ...editData, targetSubCategory: newSubCategory.trim() });
+              } else {
+                setEditData({ ...editData, subCategory: newSubCategory.trim() });
+              }
+              
+              alert(`新子类别 "${newSubCategory}" 添加成功！`);
+            }
+          }}
+          style={{
+            height: 36,
+            width: 36,
+            backgroundColor: '#f9f9f9',
+            color: '#333',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 18,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            flexShrink: 0,
+          }}
+          title="添加新子类别"
+        >
+          +
+        </button>
+      </div>
     </div>
   )}
 </div>
-
-
 
         
 
           
 
-          {/* 标签编辑 - 合并成一排 */}
+ 
+ 
+ {/* 标签编辑 - 合并成一排 */}
 <div style={{
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
-  marginBottom: 12,
+  marginBottom: 28,  // 👈 改成 28，增大标签到常用标签的距离
 }}>
-  {/* 添加新标签和当前标签合并在一排 */}
   <div style={{
     display: 'flex',
     gap: 8,
@@ -4899,8 +4963,8 @@ const handleSave = () => {
         <input
           type="text"
           placeholder="标签名称"
-          value={newTagName}
-          onChange={(e) => setNewTagName(e.target.value)}
+          value={editData.newTagName || ''}
+          onChange={(e) => setEditData({ ...editData, newTagName: e.target.value })}
           style={{
             flex: 1,
             height: 32,
@@ -4913,11 +4977,10 @@ const handleSave = () => {
             minWidth: 0,
           }}
         />
-
         <input
           type="color"
-          value={newTagColor}
-          onChange={(e) => setNewTagColor(e.target.value)}
+          value={editData.newTagColor || '#e0e0e0'}
+          onChange={(e) => setEditData({ ...editData, newTagColor: e.target.value })}
           style={{
             width: 32,
             height: 32,
@@ -4930,20 +4993,22 @@ const handleSave = () => {
             flexShrink: 0,
           }}
         />
-
         <button
           type="button"
           onClick={() => {
-            if (newTagName?.trim()) {
+            if (editData.newTagName?.trim()) {
               const newTag = {
-                name: newTagName.trim(),
-                color: newTagColor || '#e0e0e0',
+                name: editData.newTagName.trim(),
+                color: editData.newTagColor || '#e0e0e0',
                 textColor: '#333',
               };
-              const updatedTags = [...(templateTags || []), newTag];
-              setTemplateTags(updatedTags);
-              setNewTagName('');
-              setNewTagColor('#e0e0e0');
+              const updatedTags = [...(editData.tags || []), newTag];
+              setEditData({
+                ...editData,
+                tags: updatedTags,
+                newTagName: '',
+                newTagColor: '#e0e0e0',
+              });
             }
           }}
           style={{
@@ -4990,10 +5055,10 @@ const handleSave = () => {
         backgroundColor: '#fafafa',
         alignItems: 'center',
         boxSizing: 'border-box',
-        maxHeight: 40, // 固定高度，避免滚动
-        overflow: 'hidden', // 隐藏溢出内容
+        maxHeight: 40,
+        overflow: 'hidden',
       }}>
-        {templateTags?.map((tag, index) => (
+        {editData.tags?.map((tag, index) => (
           <span
             key={index}
             style={{
@@ -5013,9 +5078,9 @@ const handleSave = () => {
             <button
               type="button"
               onClick={() => {
-                const newTags = [...templateTags];
+                const newTags = [...editData.tags];
                 newTags.splice(index, 1);
-                setTemplateTags(newTags);
+                setEditData({ ...editData, tags: newTags });
               }}
               style={{
                 background: 'transparent',
@@ -5036,8 +5101,7 @@ const handleSave = () => {
             </button>
           </span>
         ))}
-
-        {(!templateTags || templateTags.length === 0) && (
+        {(!editData.tags || editData.tags.length === 0) && (
           <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>
             暂无标签
           </span>
@@ -5047,163 +5111,173 @@ const handleSave = () => {
   </div>
 </div>
 
-          {/* 常用标签 */}
-        <div style={{ marginBottom: 16 }}>  {/* 添加这行，给常用标签区域底部留出间距 */}
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>常用标签:</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {commonTags.map((tag, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    const existingTags = templateTags || [];
-                    const isAlreadyAdded = existingTags.some(t => t.name === tag.name);
-                    if (!isAlreadyAdded) {
-                      setTemplateTags([...existingTags, tag]);
-                    }
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: tag.color,
-                    color: tag.textColor,
-                    border: 'none',
-                    borderRadius: 16,
-                    cursor: 'pointer',
-                    fontSize: 11,
-                    fontWeight: '500'
-                  }}
-                >
-                  {tag.name}
-                </button>
-              ))}
-            </div>
-          </div>
+{/* 常用标签 */}
+<div style={{ marginBottom: 32 }}>  {/* 👈 改成 32，增大距离 */}
+  <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>常用标签:</div>
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+    {commonTags.map((tag, index) => (
+      <button
+        key={index}
+        type="button"
+        onClick={() => {
+          const existingTags = editData.tags || [];
+          const isAlreadyAdded = existingTags.some(t => t.name === tag.name);
+          if (!isAlreadyAdded) {
+            setEditData({
+              ...editData,
+              tags: [...existingTags, tag]
+            });
+          }
+        }}
+        style={{
+          padding: '6px 12px',
+          backgroundColor: tag.color,
+          color: tag.textColor,
+          border: 'none',
+          borderRadius: 16,
+          cursor: 'pointer',
+          fontSize: 11,
+          fontWeight: '500'
+        }}
+      >
+        {tag.name}
+      </button>
+    ))}
+  </div>
+</div>
 
-          {/* 重复设置 */}
-          <div style={{ marginBottom: 15 }}>
-            <label style={{
-              display: 'block',
-            
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14,
-            }}>
-              🔄 重复设置
-            </label>
-            
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>重复频率:</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    background: repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
-                    color: repeatFrequency === 'daily' ? '#fff' : '#000',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontSize: 13,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setRepeatFrequency('daily')}
-                >
-                  每天
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    background: repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
-                    color: repeatFrequency === 'weekly' ? '#fff' : '#000',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontSize: 13,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setRepeatFrequency('weekly')}
-                >
-                  每周
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    background: !repeatFrequency ? '#1a73e8' : '#f0f0f0',
-                    color: !repeatFrequency ? '#fff' : '#000',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontSize: 13,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setRepeatFrequency('')}
-                >
-                  不重复
-                </button>
-              </div>
-            </div>
 
-            {repeatFrequency === 'weekly' && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'nowrap',
-                  gap: 4,
-                  justifyContent: 'space-between',
-                  overflowX: 'auto'
-                }}>
-                  {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-                    <button
-                      key={day}
-                      type="button"
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
-                        color: repeatDays?.[index] ? '#fff' : '#000',
-                        border: repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        flexShrink: 0
-                      }}
-                      onClick={() => {
-                        const currentRepeatDays = repeatDays || [false, false, false, false, false, false, false];
-                        const newRepeatDays = [...currentRepeatDays];
-                        newRepeatDays[index] = !newRepeatDays[index];
-                        setRepeatDays(newRepeatDays);
-                      }}
-                      title={`周${day}`}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {repeatFrequency && (
-              <div style={{
-                fontSize: 11,
-                color: '#666',
-                textAlign: 'center',
-                padding: '6px 8px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: 4
-              }}>
-                {repeatFrequency === 'daily' 
-                  ? '任务将在未来7天重复创建' 
-                  : repeatFrequency === 'weekly' && repeatDays?.some(day => day)
-                    ? `已选择：${repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
-                    : '请选择重复的星期'
-                }
-              </div>
-            )}
-          </div>
+      {/* 重复设置 */}
+<div style={{ marginBottom: 15 }}>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14,
+  }}>
+    🔄 重复设置
+  </label>
+  
+  {/* 重复频率按钮 - 删除了"重复频率"标签 */}
+  <div style={{ marginBottom: 10 }}>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
+      >
+        每天
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
+      >
+        每周
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
+          color: !editData.repeatFrequency ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
+      >
+        不重复
+      </button>
+    </div>
+  </div>
+
+  {/* 星期选择 */}
+  {editData.repeatFrequency === 'weekly' && (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'nowrap',
+        gap: 4,
+        justifyContent: 'space-between',
+        overflowX: 'auto'
+      }}>
+        {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+          <button
+            key={day}
+            type="button"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
+              color: editData.repeatDays?.[index] ? '#fff' : '#000',
+              border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
+              fontSize: 12,
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+            onClick={() => {
+              const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
+              const newRepeatDays = [...currentRepeatDays];
+              newRepeatDays[index] = !newRepeatDays[index];
+              setEditData({ 
+                ...editData, 
+                repeatDays: newRepeatDays 
+              });
+            }}
+            title={`周${day}`}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* 说明文字 */}
+  {editData.repeatFrequency && (
+    <div style={{
+      fontSize: 11,
+      color: '#666',
+      textAlign: 'center',
+      padding: '6px 8px',
+      backgroundColor: '#f5f5f5',
+      borderRadius: 4
+    }}>
+      {editData.repeatFrequency === 'daily' 
+        ? '任务将在未来7天重复创建' 
+        : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
+          ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
+          : '请选择重复的星期'
+      }
+    </div>
+  )}
+</div>
+      
 
           {/* 计划时间 */}
           <div>
@@ -7625,7 +7699,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     tags: task.tags || [],
     scheduledTime: task.scheduledTime || '',
     
-    reminderYear: task.reminderTime?.year?.toString() || '',
+      reminderYear: task.reminderTime?.year?.toString() || '2026',  // 👈 改为 '2026'
     reminderMonth: task.reminderTime?.month?.toString() || '',
     reminderDay: task.reminderTime?.day?.toString() || '',
     reminderHour: task.reminderTime?.hour?.toString() || '',
@@ -7734,10 +7808,8 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     { name: '紧急', color: '#ff9800', textColor: '#fff' },
     { name: '复习', color: '#4caf50', textColor: '#fff' },
     { name: '预习', color: '#2196f3', textColor: '#fff' },
-    { name: '作业', color: '#9c27b0', textColor: '#fff' },
     { name: '考试', color: '#f44336', textColor: '#fff' },
     { name: '背诵', color: '#795548', textColor: '#fff' },
-    { name: '练习', color: '#607d8b', textColor: '#fff' }
   ];
 
   return (
@@ -8260,7 +8332,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
             boxSizing: 'border-box',
           }}
         >
-          <option value="">选择子类别（可选）</option>
+          <option value="">选择</option>
           {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
             <option key={subCat} value={subCat}>
               {subCat}
@@ -8749,138 +8821,143 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 </div>
               </div>
 
-              {/* 重复设置 */}
-              <div style={{ marginBottom: 15 }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: 8,
-                  fontWeight: '600',
-                  color: '#333',
-                  fontSize: 14,
-                }}>
-                  🔄 重复设置
-                </label>
-                
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>重复频率:</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
-                        color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
-                    >
-                      每天
-                    </button>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
-                        color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
-                    >
-                      每周
-                    </button>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
-                        color: !editData.repeatFrequency ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
-                    >
-                      不重复
-                    </button>
-                  </div>
-                </div>
 
-                {editData.repeatFrequency === 'weekly' && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'nowrap',
-                      gap: 4,
-                      justifyContent: 'space-between',
-                      overflowX: 'auto'
-                    }}>
-                      {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-                        <button
-                          key={day}
-                          type="button"
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
-                            color: editData.repeatDays?.[index] ? '#fff' : '#000',
-                            border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            flexShrink: 0
-                          }}
-                          onClick={() => {
-                            const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
-                            const newRepeatDays = [...currentRepeatDays];
-                            newRepeatDays[index] = !newRepeatDays[index];
-                            setEditData({ 
-                              ...editData, 
-                              repeatDays: newRepeatDays 
-                            });
-                          }}
-                          title={`周${day}`}
-                        >
-                          {day}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+{/* 重复设置 */}
+<div style={{ marginBottom: 15 }}>
+  <label style={{
+    display: 'block',
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14,
+  }}>
+    🔄 重复设置
+  </label>
+  
+  {/* 重复频率按钮 - 删除了"重复频率"标签 */}
+  <div style={{ marginBottom: 10 }}>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
+      >
+        每天
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
+          color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
+      >
+        每周
+      </button>
+      <button
+        type="button"
+        style={{
+          flex: 1,
+          padding: '8px 12px',
+          background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
+          color: !editData.repeatFrequency ? '#fff' : '#000',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          cursor: 'pointer'
+        }}
+        onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
+      >
+        不重复
+      </button>
+    </div>
+  </div>
 
-                {editData.repeatFrequency && (
-                  <div style={{
-                    fontSize: 11,
-                    color: '#666',
-                    textAlign: 'center',
-                    padding: '6px 8px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 4
-                  }}>
-                    {editData.repeatFrequency === 'daily' 
-                      ? '任务将在未来7天重复创建' 
-                      : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
-                        ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
-                        : '请选择重复的星期'
-                    }
-                  </div>
-                )}
-              </div>
+  {/* 星期选择 */}
+  {editData.repeatFrequency === 'weekly' && (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'nowrap',
+        gap: 4,
+        justifyContent: 'space-between',
+        overflowX: 'auto'
+      }}>
+        {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+          <button
+            key={day}
+            type="button"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
+              color: editData.repeatDays?.[index] ? '#fff' : '#000',
+              border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
+              fontSize: 12,
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+            onClick={() => {
+              const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
+              const newRepeatDays = [...currentRepeatDays];
+              newRepeatDays[index] = !newRepeatDays[index];
+              setEditData({ 
+                ...editData, 
+                repeatDays: newRepeatDays 
+              });
+            }}
+            title={`周${day}`}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* 说明文字 */}
+  {editData.repeatFrequency && (
+    <div style={{
+      fontSize: 11,
+      color: '#666',
+      textAlign: 'center',
+      padding: '6px 8px',
+      backgroundColor: '#f5f5f5',
+      borderRadius: 4
+    }}>
+      {editData.repeatFrequency === 'daily' 
+        ? '任务将在未来7天重复创建' 
+        : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
+          ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
+          : '请选择重复的星期'
+      }
+    </div>
+  )}
+</div>
 
               {/* 🕓 计划时间 */}
               <div>
                 <label style={{
                   display: 'block',
+                  
                   marginBottom: 8,
                   fontWeight: '600',
                   color: '#333',
@@ -8998,149 +9075,161 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 )}
               </div>
 
+              
+
               {/* 🔔 提醒时间 */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginTop: 8,
-                    marginBottom: 8,
-                    fontWeight: 600,
-                    color: '#333',
-                    fontSize: 14,
-                  }}
-                >
-                  🔔 提醒时间
-                </label>
+<div>
+  <label
+    style={{
+      display: 'block',
+      marginTop: 8,
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    🔔 提醒时间
+  </label>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 6,
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
-                  }}
-                >
-                  <input
-                    type="number"
-                    min="2024"
-                    max="2030"
-                    placeholder="2025"
-                    value={editData.reminderYear || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, reminderYear: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 4px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      textAlign: 'center',
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+  <div
+    style={{
+      display: 'flex',
+      gap: 4,
+      alignItems: 'center',
+      flexWrap: 'nowrap',
+      width: '100%',
+    }}
+  >
+    {/* 年份 */}
+    <input
+      type="number"
+      min="2024"
+      max="2030"
+      placeholder="2025"
+      value={editData.reminderYear || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderYear: e.target.value })
+      }
+      style={{
+        flex: 1.2,  // 年份稍宽
+        minWidth: '60px',
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-                  <span style={{ color: '#666' }}>/</span>
+    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
 
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    placeholder="MM"
-                    value={editData.reminderMonth || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, reminderMonth: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 4px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      textAlign: 'center',
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+    {/* 月份 */}
+    <input
+      type="number"
+      min="1"
+      max="12"
+      placeholder="MM"
+      value={editData.reminderMonth || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderMonth: e.target.value })
+      }
+      style={{
+        flex: 1,
+        minWidth: '45px',
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-                  <span style={{ color: '#666' }}>/</span>
+    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
 
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="DD"
-                    value={editData.reminderDay || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, reminderDay: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 4px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      textAlign: 'center',
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+    {/* 日 */}
+    <input
+      type="number"
+      min="1"
+      max="31"
+      placeholder="DD"
+      value={editData.reminderDay || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderDay: e.target.value })
+      }
+      style={{
+        flex: 1,
+        minWidth: '45px',
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-                  <span style={{ color: '#666' }}> </span>
+    <span style={{ color: '#666', marginLeft: '2px', flexShrink: 0 }}> </span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    placeholder="HH"
-                    value={editData.reminderHour || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, reminderHour: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 4px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      textAlign: 'center',
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+    {/* 时 */}
+    <input
+      type="number"
+      min="0"
+      max="23"
+      placeholder="HH"
+      value={editData.reminderHour || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderHour: e.target.value })
+      }
+      style={{
+        flex: 1,
+        minWidth: '45px',
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
 
-                  <span style={{ color: '#666' }}>:</span>
+    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>:</span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    placeholder="MM"
-                    value={editData.reminderMinute || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, reminderMinute: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 4px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      textAlign: 'center',
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
+    {/* 分 */}
+    <input
+      type="number"
+      min="0"
+      max="59"
+      placeholder="MM"
+      value={editData.reminderMinute || ''}
+      onChange={(e) =>
+        setEditData({ ...editData, reminderMinute: e.target.value })
+      }
+      style={{
+        flex: 1,
+        minWidth: '45px',
+        height: 36,
+        padding: '0 4px',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        fontSize: 14,
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        boxSizing: 'border-box',
+      }}
+    />
+  </div>
+</div>
 
               {/* 📋 子任务编辑 */}
               <div>
@@ -9330,6 +9419,7 @@ const TaskItem = ({
   toggleDone,
   formatTimeWithSeconds,
   onMoveTask,
+  getTaskCompletionType ,
   categories,
   setShowMoveModal,
   onToggleSubTask,
@@ -9427,26 +9517,78 @@ const TaskItem = ({
         
         {/* 任务文字 */}
         <div style={{ display: "flex", alignItems: "center", flex: 1, flexWrap: "wrap", gap: "4px" }}>
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenEditModal(task);
-            }}
-            style={{
-              wordBreak: "break-word",
-              cursor: "pointer",
-              color: task.done ? "#999" : "#000",
-              fontWeight: task.pinned ? "bold" : "normal",
-              fontSize: "14px",
-              lineHeight: 1.4,
-              whiteSpace: "pre-wrap",
-              wordWrap: "break-word"
-            }}
-          >
-            {task.text}
           
-            {task.isWeekTask && " 🌟"}
-          </div>
+ <div
+  onClick={(e) => {
+    e.stopPropagation();
+    onOpenEditModal(task);
+  }}
+  style={{
+    wordBreak: "break-word",
+    cursor: "pointer",
+    color: task.done ? "#999" : "#000",
+    fontWeight: task.pinned ? "bold" : "normal",
+    fontSize: "14px",
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap",
+    wordWrap: "break-word",
+    display: "inline-flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "4px"
+  }}
+>
+  <span>{task.text}</span>
+
+
+ {/* 日期范围标签 */}
+  {task.dateRange && task.dateRange.start && task.dateRange.end && (
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        // 切换展开/收起子任务列表
+        const subTaskContainer = e.currentTarget.closest('.task-item')?.querySelector('.date-range-subtasks');
+        if (subTaskContainer) {
+          subTaskContainer.style.display = subTaskContainer.style.display === 'none' ? 'block' : 'none';
+        }
+      }}
+      style={{
+        fontSize: "10px",
+        padding: "2px 6px",
+        backgroundColor: "#e3f2fd",
+        color: "#1a73e8",
+        borderRadius: "12px",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "2px"
+      }}
+      title="点击查看每天的完成情况"
+    >
+      📅 {task.dateRange.start.slice(5)} - {task.dateRange.end.slice(5)}
+    </span>
+  )}
+  
+
+
+  {task.isWeekTask && <span>🌟</span>}
+  {/* 修改这里：同时检查 task.image 和 task.hasImage */}
+  {(task.image || task.hasImage) && (
+  <span style={{
+    color: "#ff4444",
+    fontSize: "12px",
+    fontWeight: "normal",
+    backgroundColor: "#ffe5e5",
+    padding: "2px 6px",
+    borderRadius: "4px",
+    marginLeft: "4px",
+    display: "inline-block"
+  }}>
+    【图片】
+  </span>
+)}
+</div>
           
          
 
@@ -9608,6 +9750,7 @@ const TaskItem = ({
                   style={{
                     fontSize: 11,
                     color: "#666",
+                    marginTop: 8,
                     backgroundColor: "#f0f0f0",
                     padding: "2px 6px",
                     borderRadius: 4,
@@ -9907,6 +10050,72 @@ const TaskItem = ({
         </div>
       )}
 
+      {/* 跨日期任务的子任务列表 - 显示每天的完成情况 */}
+{/* 跨日期任务的子任务列表 - 显示每天的完成情况 */}
+
+{task.dateRange && task.dateRange.allDates && task.dateRange.allDates.length > 0 && (
+  <div 
+    className="date-range-subtasks"
+    style={{ 
+      marginLeft: "20px", 
+      marginTop: "6px",
+      marginBottom: "6px",
+      display: "none",
+      borderLeft: "2px solid #1a73e8",
+      paddingLeft: "8px"
+    }}
+  >
+    <div style={{ 
+      fontSize: "11px", 
+      color: "#666", 
+      marginBottom: "4px",
+      fontWeight: "bold"
+    }}>
+      📅 各天完成情况：
+    </div>
+    {task.dateRange.allDates.map((date, idx) => {
+      // 获取该日期任务的实际完成状态
+      let isCompleted = task.done; // 默认同步完成
+      let completionType = 'synced'; // 'actual' 实际完成, 'synced' 同步完成
+      
+      // ✅ 修复：使用 getTaskCompletionType prop（从组件参数解构）
+      if (getTaskCompletionType) {
+        const result = getTaskCompletionType(task, date);
+        isCompleted = result.completed;
+        completionType = result.type;
+      }
+      
+      const dateObj = new Date(date);
+      const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+      
+      return (
+        <div 
+          key={date}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "11px",
+            padding: "2px 0",
+            color: isCompleted ? "#4CAF50" : "#999"
+          }}
+        >
+          <span style={{ minWidth: "70px" }}>
+            {date.slice(5)} (周{weekDays[dateObj.getDay()]})
+          </span>
+          <span>
+            {isCompleted ? (
+              completionType === 'actual' ? "✓ 已完成" : "✓ 同步完成"
+            ) : (
+              "○ 未完成"
+            )}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+)}
+
       {/* 子任务区域 */}
       <div style={{ marginLeft: "20px" }}>
         {task.subTasks && task.subTasks.length > 0 && (
@@ -10143,6 +10352,7 @@ const SortableTaskList = ({
   onOpenEditModal,
   onShowImageModal,
   toggleDone,
+  getTaskCompletionType,
   formatTimeNoSeconds,
   formatTimeWithSeconds,
   onMoveTask,
@@ -10290,6 +10500,7 @@ const SortableTaskList = ({
           
           <TaskItem
             task={task}
+            getTaskCompletionType={getTaskCompletionType}  // 
             onDeleteTask={onDeleteTask}
             onEditTime={onEditTime}
             onDeleteImage={onDeleteImage}
@@ -10315,8 +10526,15 @@ const SortableTaskList = ({
 
 
 function App() {
-  // 在 App 组件中，找到其他 useState 定义的位置，添加这一行
-// // 在 App 组件中，找到其他 useState 定义的位置，添加：
+const [bulkDateRange, setBulkDateRange] = useState('today');
+const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
+  return new Date().toISOString().split('T')[0];
+});
+const [bulkDateRangeEnd, setBulkDateRangeEnd] = useState(() => {
+  return new Date().toISOString().split('T')[0];
+});
+const [bulkPreviewTasks, setBulkPreviewTasks] = useState([]);
+
 const isAddingRegularTask = useRef(false);
 const [subCategoryTaskOrder, setSubCategoryTaskOrder] = useState({}); // 存储每个子分类的任务顺序
 // 在 App 组件中，找到其他 useState 定义的位置，添加：
@@ -10377,6 +10595,9 @@ const endSortingSubCategory = (subCategory, orderedTasks) => {
 
 // 在 App 组件中，找到其他 useRef 的位置，添加：
 
+
+
+
 const [showRegularTaskEditModal, setShowRegularTaskEditModal] = useState(null);
 const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
@@ -10394,6 +10615,25 @@ const [regularTasksOrder, setRegularTasksOrder] = useState(() => {
 const [isSortingRegularTasks, setIsSortingRegularTasks] = useState(false);
 const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
   const [tasksByDate, setTasksByDate] = useState({});
+  // 获取跨日期任务在指定日期的完成类型
+const getTaskCompletionType = useCallback((task, date) => {
+  // 检查这个任务是否在该日期被实际完成过
+  const dayTasks = tasksByDate[date] || [];
+  
+  // 查找是否有同文本的任务是被实际完成的
+  const actualCompletedTask = dayTasks.find(t => 
+    t.text === task.text && 
+    t.actualCompletedDate === date  // 标记实际完成的日期
+  );
+  
+  if (actualCompletedTask && actualCompletedTask.actualCompletedDate === date) {
+    return { completed: true, type: 'actual' };
+  }
+  
+  // 否则返回同步完成状态
+  return { completed: task.done, type: task.done ? 'synced' : 'none' };
+}, [tasksByDate]);
+
   const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
@@ -11987,162 +12227,46 @@ const toggleDone = (task) => {
   const wasDone = task.done;
 
   // 如果是跨日期任务，同步所有日期的状态
-  if (task.isCrossDate && task.crossDateId) {
+  if (task.crossDateId || (task.dateRange && task.dateRange.allDates)) {
+    const crossDateId = task.crossDateId || task.dateRange?.allDates?.join('_');
+    const actualCompletedDate = selectedDate; // 记录实际完成/取消的日期
+    
     setTasksByDate(prevTasksByDate => {
       const newTasksByDate = { ...prevTasksByDate };
+      let updatedCount = 0;
 
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t => {
-          if (t.crossDateId === task.crossDateId) {
+          const isSameCrossTask = (t.crossDateId && t.crossDateId === crossDateId) ||
+            (t.dateRange && t.dateRange.allDates && 
+             t.text === task.text && 
+             JSON.stringify(t.dateRange.allDates) === JSON.stringify(task.dateRange?.allDates));
+          
+          if (isSameCrossTask) {
+            updatedCount++;
+            // 如果是实际操作的日期，记录 actualCompletedDate
+            const isActualDate = (date === actualCompletedDate);
             return {
               ...t,
               done: !wasDone,
-              pinned: !wasDone ? false : t.pinned,  // 👈 完成时取消置顶
-              subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+              pinned: !wasDone ? false : t.pinned,
+              subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks,
+              // 记录实际完成的日期
+              actualCompletedDate: isActualDate && !wasDone ? actualCompletedDate : 
+                                   (isActualDate && wasDone ? null : t.actualCompletedDate)
             };
           }
           return t;
         });
       });
       
+      console.log(`同步更新了 ${updatedCount} 个跨日期任务，实际操作日期: ${actualCompletedDate}`);
       return newTasksByDate;
     });
-
-  } else if (task.isWeekTask) {
-    // 本周任务的处理逻辑
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      const todayStr = selectedDate;
-      
-      if (!wasDone) {
-        // 任务从未完成变为完成
-        
-        // 1. 从所有日期中删除这个本周任务
-        Object.keys(newTasksByDate).forEach(date => {
-          newTasksByDate[date] = newTasksByDate[date].filter(t => 
-            !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
-          );
-        });
-        
-        // 2. 在完成当天创建对应分类的任务（已完成状态，并且取消置顶）
-        const newCompletedTask = {
-          id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-          text: task.text,
-          category: task.targetCategory || task.category,
-          subCategory: task.targetSubCategory || task.subCategory || '',
-          done: true,
-          pinned: false,  // 👈 完成时取消置顶
-          timeSpent: 0,
-          subTasks: task.subTasks || [],
-          note: task.note || "",
-          reflection: task.reflection || "",
-          image: task.image || null,
-          scheduledTime: task.scheduledTime || "",
-          progress: task.progress || {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          },
-          tags: task.tags || [],
-          reminderTime: task.reminderTime || null,
-          completedFromWeekTask: true,
-          completedDate: todayStr
-        };
-        
-        if (!newTasksByDate[todayStr]) {
-          newTasksByDate[todayStr] = [];
-        }
-        newTasksByDate[todayStr].push(newCompletedTask);
-        
-      } else {
-        // 任务从完成变为未完成（取消完成）
-        if (newTasksByDate[todayStr]) {
-          newTasksByDate[todayStr] = newTasksByDate[todayStr].filter(t => 
-            !(t.completedFromWeekTask && t.text === task.text)
-          );
-        }
-        
-        const weekStart = task.weekStart || currentMonday.toISOString();
-        const weekDates = getWeekDates(currentMonday);
-        const taskId = Date.now().toString();
-        
-        const restoredWeekTask = {
-          id: taskId,
-          text: task.text,
-          category: "本周任务",
-          targetCategory: task.targetCategory || task.category,
-          targetSubCategory: task.targetSubCategory || task.subCategory || '',
-          done: false,
-          pinned: false,  // 👈 恢复时取消置顶
-          timeSpent: 0,
-          note: task.note || "",
-          image: task.image || null,
-          scheduledTime: task.scheduledTime || "",
-          isWeekTask: true,
-          reflection: task.reflection || "",
-          subTasks: task.subTasks || [],
-          tags: task.tags || [],
-          weekStart: weekStart,
-          progress: task.progress || {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          },
-          reminderTime: task.reminderTime || null
-        };
-        
-        weekDates.forEach(dateObj => {
-          const taskDate = new Date(dateObj.date);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          if (taskDate >= today) {
-            if (!newTasksByDate[dateObj.date]) {
-              newTasksByDate[dateObj.date] = [];
-            }
-            
-            const existingTask = newTasksByDate[dateObj.date].find(
-              t => t.isWeekTask && t.text === task.text && t.weekStart === weekStart
-            );
-            
-            if (!existingTask) {
-              newTasksByDate[dateObj.date].push({
-                ...restoredWeekTask,
-                id: `${taskId}_${dateObj.date}`
-              });
-            }
-          }
-        });
-      }
-      
-      return newTasksByDate;
-    });
-    
-  } else {
-    // 普通任务的处理 - 完成时取消置顶
-    const updateTaskWithDone = (t, doneState) => {
-      const currentSubTasks = t.subTasks || [];
-      const newSubTasks = doneState 
-        ? currentSubTasks.map(st => ({ ...st, done: true }))
-        : currentSubTasks;
-      
-      return {
-        ...t,
-        done: doneState,
-        pinned: doneState ? false : t.pinned,  // 👈 完成时取消置顶
-        subTasks: newSubTasks
-      };
-    };
-
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? updateTaskWithDone(t, !wasDone) : t
-      )
-    }));
+    return;
   }
+  
+  // ... 其余代码保持不变
 };
 
 
@@ -12717,9 +12841,7 @@ useEffect(() => {
   const currentMonth = now.getMonth() + 1;
   const currentDay = now.getDate();
 
-  console.log('🔔🔔 检查提醒日期:', {
-    当前日期: `${currentYear}-${currentMonth}-${currentDay}`
-  });
+
 
   const updatedTasksByDate = { ...tasksByDate };
   let hasChanges = false;
@@ -12881,8 +13003,7 @@ useEffect(() => {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
-    console.log('🔔 手动检查提醒时间:', `${currentYear}-${currentMonth}-${currentDay} ${currentHour}:${currentMinute}`);
-
+    
     const updatedTasksByDate = { ...tasksByDate };
     let hasChanges = false;
 
@@ -13575,8 +13696,16 @@ useEffect(() => {
   
 }, [selectedDate, isInitialized]);
 // 替换现有的 useEffect 点击外部处理逻辑
+
+
+// 替换原来的 handleClickOutside 函数
 useEffect(() => {
   const handleClickOutside = (event) => {
+    // ⭐ 新增：检测是否是复制快捷键 (Ctrl+C 或 Cmd+C)
+    if (event.ctrlKey && event.key === 'c') {
+      return; // 不关闭输入框
+    }
+    
     // 检查是否点击了重复设置或计划时间的按钮
     const isRepeatButton = event.target.closest('button')?.textContent?.includes('重复');
     const isTimeButton = event.target.closest('button')?.textContent?.includes('计划时间');
@@ -13594,8 +13723,16 @@ useEffect(() => {
       return;
     }
 
-    // 删除所有关于 regularInputRef 的代码
+    // 检查是否点击了批量导入区域内的任何元素
+    const isBulkInputClick = bulkInputRef.current && bulkInputRef.current.contains(event.target);
+    const isAddInputClick = addInputRef.current && addInputRef.current.contains(event.target);
+    
+    // 如果点击的是批量导入区域或添加任务区域，不关闭
+    if (isBulkInputClick || isAddInputClick) {
+      return;
+    }
 
+    // 关闭添加任务输入框
     if (addInputRef.current && !addInputRef.current.contains(event.target)) {
       const isModalClick = event.target.closest('[style*="position: fixed"]') ||
         event.target.closest('[style*="z-index: 1000"]');
@@ -13605,6 +13742,7 @@ useEffect(() => {
       }
     }
 
+    // 关闭批量导入输入框
     if (bulkInputRef.current && !bulkInputRef.current.contains(event.target)) {
       const isModalClick = event.target.closest('[style*="position: fixed"]') ||
         event.target.closest('[style*="z-index: 1000"]');
@@ -13615,9 +13753,20 @@ useEffect(() => {
     }
   };
 
+  // ⭐ 添加键盘事件监听
+  const handleKeyDown = (event) => {
+    // 如果按下 Ctrl+C 或 Cmd+C，不做任何处理（不关闭输入框）
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      return;
+    }
+  };
+
   document.addEventListener('click', handleClickOutside);
+  document.addEventListener('keydown', handleKeyDown);
+  
   return () => {
     document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('keydown', handleKeyDown);
   };
 }, []);
 
@@ -14331,92 +14480,305 @@ const editRegularTask = (taskId, newText, newCategory, newSubCategory) => {
   };
 
 
-const handleImportTasks = () => {
-  console.log('🎯 === 开始批量导入 - 详细调试 ===');
+  // 解析批量文本并生成预览
+// 解析批量文本并生成预览
+const parseBulkTextToPreview = useCallback(() => {
+  if (!bulkText.trim()) return [];
   
-  // 1. 检查输入内容
-  if (!bulkText.trim()) {
-    console.log('❌ 批量文本为空');
-    alert('请输入要导入的任务内容');
-    return;
-  }
-  console.log('✅ 批量文本内容:', bulkText);
-
-  // 2. 解析文本
   const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-  console.log('✅ 解析后的行数:', lines.length, '内容:', lines);
+  if (lines.length < 2) return [];
   
-  if (lines.length < 2) {  // 至少需要1行分类 + 1行任务
-    console.log('❌ 内容太少');
-    alert('请至少输入一行分类和一行任务内容');
-    return;
-  }
-
-  // 3. 从第一行识别子分类 - 只检测现有的校内子类别
+  // 第一行是类别/子分类
   const firstLine = lines[0];
-  const category = "校内"; // 固定分类
+  let category = "校内";
   let subCategory = "未分类";
   
-  // 获取现有的校内子类别
   const schoolSubCategories = categories
     .find(c => c.name === '校内')
-    ?.subCategories || ['语文', '数学', '英语', '运动']; // 如果没有获取到，使用默认值
+    ?.subCategories || ['语文', '数学', '英语', '运动'];
   
-  console.log('📚 现有的校内子类别:', schoolSubCategories);
-  
-  // 遍历所有校内子类别，检查第一行是否包含该子类别名称
   for (const subCat of schoolSubCategories) {
     if (firstLine.includes(subCat)) {
+      category = "校内";
       subCategory = subCat;
-      console.log(`✅ 检测到子类别: ${subCat}`);
       break;
     }
   }
-
-  console.log('📝 最终分类:', { category, subCategory });
-
-  // 4. 处理任务行（从第二行开始），将[图片]行合并到上一个任务
-  const processedTasks = [];
-  let currentTask = null;
-
-  for (let i = 1; i < lines.length; i++) {  // 从索引1开始（第二行）
-    const line = lines[i];
+  
+  // 解析日期范围的函数
+  const parseDateRangeFromText = (text) => {
+    // 匹配 @5.1-5.3 格式
+    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
+    const match = text.match(rangePattern);
     
-    // 检查是否是图片行（只包含[图片]或主要是[图片]）
-    const isImageLine = line.includes('[图片]') && line.trim().length <= 10;
+    if (match) {
+      return {
+        startMonth: parseInt(match[1]),
+        startDay: parseInt(match[2]),
+        endMonth: parseInt(match[3]),
+        endDay: parseInt(match[4]),
+        rangeText: match[0]
+      };
+    }
     
-    if (isImageLine) {
-      // 如果是图片行，且有当前任务，将图片标记添加到任务中
-      if (currentTask) {
-        if (!currentTask.imageMarker) {
-          currentTask.imageMarker = true;
-          // 在备注中添加红色[图片]标记
-          currentTask.note = (currentTask.note ? currentTask.note + '\n' : '') + '**[图片]**';
+    if (text.includes('@周末')) {
+      return { type: 'weekend', rangeText: '@周末' };
+    }
+    
+    return null;
+  };
+  
+  // 获取默认日期范围
+// 获取默认日期范围
+// 获取默认日期范围
+const getDefaultDateRange = () => {
+  const todayDate = new Date();
+  const formatDateNum = (date) => {
+    return { month: date.getMonth() + 1, day: date.getDate() };
+  };
+  
+  switch (bulkDateRange) {
+    case 'today': {
+      return {
+        startMonth: todayDate.getMonth() + 1,
+        startDay: todayDate.getDate(),
+        endMonth: todayDate.getMonth() + 1,
+        endDay: todayDate.getDate(),
+        rangeText: `@${todayDate.getMonth() + 1}.${todayDate.getDate()}`
+      };
+    }
+    case 'next3': {
+      const endDate = new Date(todayDate);
+      endDate.setDate(todayDate.getDate() + 2);
+      return {
+        startMonth: todayDate.getMonth() + 1,
+        startDay: todayDate.getDate(),
+        endMonth: endDate.getMonth() + 1,
+        endDay: endDate.getDate(),
+        rangeText: `@${todayDate.getMonth() + 1}.${todayDate.getDate()}-${endDate.getMonth() + 1}.${endDate.getDate()}`
+      };
+    }
+    case 'next4': {
+      const endDate = new Date(todayDate);
+      endDate.setDate(todayDate.getDate() + 3);
+      return {
+        startMonth: todayDate.getMonth() + 1,
+        startDay: todayDate.getDate(),
+        endMonth: endDate.getMonth() + 1,
+        endDay: endDate.getDate(),
+        rangeText: `@${todayDate.getMonth() + 1}.${todayDate.getDate()}-${endDate.getMonth() + 1}.${endDate.getDate()}`
+      };
+    }
+    case 'custom': {
+      if (bulkDateRangeStart && bulkDateRangeEnd) {
+        const start = new Date(bulkDateRangeStart);
+        const end = new Date(bulkDateRangeEnd);
+        return {
+          startMonth: start.getMonth() + 1,
+          startDay: start.getDate(),
+          endMonth: end.getMonth() + 1,
+          endDay: end.getDate(),
+          rangeText: `@${start.getMonth() + 1}.${start.getDate()}-${end.getMonth() + 1}.${end.getDate()}`
+        };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+};
+  
+  const defaultRange = getDefaultDateRange();
+  const tasks = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    let line = lines[i];
+    
+    // 跳过图片行
+    if (line === '[图片]' || line.includes('[图片]')) {
+      continue;
+    }
+    
+    // 检查是否有内置日期范围
+    let dateRange = parseDateRangeFromText(line);
+    let taskLine = line;
+    
+    if (dateRange) {
+      taskLine = line.replace(dateRange.rangeText, '').trim();
+    } else if (defaultRange) {
+      dateRange = { ...defaultRange };
+    }
+    
+    // 解析任务文本和备注
+    let taskText = taskLine;
+    let note = "";
+    const parts = taskLine.split("|").map(s => s.trim());
+    if (parts.length >= 2) {
+      taskText = parts[0];
+      note = parts[1];
+    }
+    
+    // 清理
+    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
+    if (!taskText) continue;
+    
+    tasks.push({
+      text: taskText,
+      note: note,
+      category: category,
+      subCategory: subCategory,
+      dateRange: dateRange,
+      dateRangeText: dateRange?.rangeText || '',
+      duration: null
+    });
+  }
+  
+  return tasks;
+}, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories]);
+// 监听批量文本变化，更新预览
+useEffect(() => {
+  const previewTasks = parseBulkTextToPreview();
+  setBulkPreviewTasks(previewTasks);
+}, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories, parseBulkTextToPreview]);
+
+// 带持续时间的导入函数
+// 带持续时间的导入函数
+const handleImportTasksWithDuration = () => {
+  console.log('🎯 === 开始批量导入（带持续时间） ===');
+  console.log('预览任务列表:', bulkPreviewTasks);
+  
+  if (bulkPreviewTasks.length === 0) {
+    alert('没有有效的任务内容');
+    return;
+  }
+  
+  const allTasks = [];
+  const currentYear = new Date().getFullYear();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  bulkPreviewTasks.forEach((task, taskIndex) => {
+    const taskDuration = (task.duration && task.duration > 0) ? task.duration * 60 : 0;
+    console.log(`处理任务 ${taskIndex + 1}: "${task.text}", 时长: ${task.duration}分钟`);
+    
+    // 解析日期范围
+    let targetDates = [selectedDate];
+    
+    if (task.dateRange) {
+      console.log('检测到日期范围:', task.dateRange);
+      
+      if (task.dateRange.type === 'weekend') {
+        const dayOfWeek = today.getDay();
+        const daysToFriday = (5 - dayOfWeek + 7) % 7;
+        const friday = new Date(today);
+        friday.setDate(today.getDate() + daysToFriday);
+        
+        targetDates = [];
+        for (let i = 0; i < 3; i++) {
+          const date = new Date(friday);
+          date.setDate(friday.getDate() + i);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          targetDates.push(`${year}-${month}-${day}`);
+        }
+        console.log('周末日期:', targetDates);
+      } 
+      else if (task.dateRange.startMonth && task.dateRange.startDay) {
+        const startDate = new Date(currentYear, task.dateRange.startMonth - 1, task.dateRange.startDay);
+        const endDate = new Date(currentYear, task.dateRange.endMonth - 1, task.dateRange.endDay);
+        
+        console.log('日期范围:', startDate, '至', endDate);
+        
+        if (startDate <= endDate) {
+          targetDates = [];
+          const current = new Date(startDate);
+          while (current <= endDate) {
+            const year = current.getFullYear();
+            const month = String(current.getMonth() + 1).padStart(2, '0');
+            const day = String(current.getDate()).padStart(2, '0');
+            targetDates.push(`${year}-${month}-${day}`);
+            current.setDate(current.getDate() + 1);
+          }
+          console.log('生成的日期列表:', targetDates);
         }
       }
-    } else {
-      // 处理任务文本：先按 | 分割，然后清理任务文本中的 "@所有家长"
-      const parts = line.split("|").map(s => s.trim());
-      let taskText = parts[0] || `导入任务${processedTasks.length + 1}`;
-      const note = parts[1] || "";
-      
-      // 自动删除任务文本中的 "@所有家长"（包括各种可能的形式）
-      taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
-      
-      // 如果清理后任务文本为空，使用默认名称
-      if (!taskText) {
-        taskText = `导入任务${processedTasks.length + 1}`;
+      else if (task.dateRange.rangeText && task.dateRange.rangeText.includes('@')) {
+        const match = task.dateRange.rangeText.match(/@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/);
+        if (match) {
+          const startMonth = parseInt(match[1]);
+          const startDay = parseInt(match[2]);
+          const endMonth = parseInt(match[3]);
+          const endDay = parseInt(match[4]);
+          
+          const startDate = new Date(currentYear, startMonth - 1, startDay);
+          const endDate = new Date(currentYear, endMonth - 1, endDay);
+          
+          if (startDate <= endDate) {
+            targetDates = [];
+            const current = new Date(startDate);
+            while (current <= endDate) {
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              targetDates.push(`${year}-${month}-${day}`);
+              current.setDate(current.getDate() + 1);
+            }
+          }
+        }
       }
+    }
+    
+    console.log(`任务 "${task.text}" 将添加到 ${targetDates.length} 个日期:`, targetDates);
+    
+    // ✅ 修复：为每个日期创建任务，不要重复循环
+    if (targetDates.length > 1) {
+      // 跨日期任务：为每个日期创建独立的任务，但共享 crossDateId
+      const crossDateId = `cross_${Date.now()}_${taskIndex}`;
       
-      // 创建新任务
-      currentTask = {
-        id: `import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
-        text: taskText,
-        category: category,
-        subCategory: subCategory,
+      targetDates.forEach(date => {
+        const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+        
+        allTasks.push({
+          id: uniqueId,
+          crossDateId: crossDateId,
+          text: task.text,
+          category: task.category || "校内",
+          subCategory: task.subCategory || "",
+          done: false,
+          timeSpent: taskDuration,
+          note: task.note || "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          reflection: "",
+          tags: [...(bulkTags || [])],
+          subTasks: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          createdAt: new Date().toISOString(),
+          dateRange: {
+            start: targetDates[0],
+            end: targetDates[targetDates.length - 1],
+            allDates: [...targetDates]
+          }
+        });
+      });
+    } else {
+      // 单天任务
+      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      allTasks.push({
+        id: uniqueId,
+        text: task.text,
+        category: task.category || "校内",
+        subCategory: task.subCategory || "",
         done: false,
-        timeSpent: 0,
-        note: note,
+        timeSpent: taskDuration,
+        note: task.note || "",
         image: null,
         scheduledTime: "",
         pinned: false,
@@ -14429,47 +14791,307 @@ const handleImportTasks = () => {
           target: 0,
           unit: "%"
         },
-        imageMarker: false // 标记是否有图片
-      };
+        createdAt: new Date().toISOString(),
+        dateRange: null
+      });
+    }
+  });
+  
+  console.log(`共创建 ${allTasks.length} 个任务实例`);
+  
+  if (allTasks.length === 0) {
+    alert('没有创建任何任务');
+    return;
+  }
+  
+  // 更新状态
+  setTasksByDate(prev => {
+    const updated = { ...prev };
+    
+    allTasks.forEach(newTask => {
+      let targetDate;
+      if (newTask.dateRange) {
+        // 跨日期任务：从任务的 dateRange 中获取日期，或者使用 selectedDate
+        targetDate = newTask.dateRange.start;
+      } else {
+        targetDate = selectedDate;
+      }
       
-      processedTasks.push(currentTask);
+      console.log(`添加任务到 ${targetDate}: "${newTask.text}"`);
+      
+      if (!updated[targetDate]) {
+        updated[targetDate] = [];
+      }
+      
+      updated[targetDate].push(newTask);
+    });
+    
+    return updated;
+  });
+  
+  console.log(`✅ 成功添加 ${allTasks.length} 个任务实例`);
+  
+  // 清空表单
+  setBulkText("");
+  setBulkTags([]);
+  setBulkDateRange("today");
+  setBulkDateRangeStart(new Date().toISOString().split('T')[0]);
+  setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
+  setBulkPreviewTasks([]);
+  setShowBulkInput(false);
+  
+  alert(`已导入 ${bulkPreviewTasks.length} 个任务，共 ${allTasks.length} 个任务实例`);
+};
+
+
+const handleImportTasks = () => {
+  console.log('🎯 === 开始批量导入 ===');
+  
+  if (!bulkText.trim()) {
+    alert('请输入要导入的任务内容');
+    return;
+  }
+
+  const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+  console.log('解析的行数:', lines.length);
+  
+  if (lines.length < 2) {
+    alert('请至少输入一行分类和一行任务内容');
+    return;
+  }
+
+  // 从第一行识别子分类
+  const firstLine = lines[0];
+  const category = "校内";
+  let subCategory = "未分类";
+  
+  const schoolSubCategories = categories
+    .find(c => c.name === '校内')
+    ?.subCategories || ['语文', '数学', '英语', '运动'];
+  
+  for (const subCat of schoolSubCategories) {
+    if (firstLine.includes(subCat)) {
+      subCategory = subCat;
+      console.log('检测到子类别:', subCat);
+      break;
     }
   }
 
-  console.log('🎁 处理后的任务:', processedTasks);
-  console.log(`📊 分类 "${subCategory}" 下共导入 ${processedTasks.length} 个任务`);
-
-  // 5. 更新状态
-  setTasksByDate(prevTasksByDate => {
-    const updatedTasksByDate = { ...prevTasksByDate };
+  // 辅助函数：解析日期范围
+  const parseDateRange = (text) => {
+    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
+    const match = text.match(rangePattern);
     
-    if (!updatedTasksByDate[selectedDate]) {
-      updatedTasksByDate[selectedDate] = [];
+    if (match) {
+      const startMonth = parseInt(match[1]);
+      const startDay = parseInt(match[2]);
+      const endMonth = parseInt(match[3]);
+      const endDay = parseInt(match[4]);
+      
+      const currentYear = new Date().getFullYear();
+      const startDate = new Date(currentYear, startMonth - 1, startDay);
+      const endDate = new Date(currentYear, endMonth - 1, endDay);
+      
+      if (startDate <= endDate) {
+        const dates = [];
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const year = current.getFullYear();
+          const month = String(current.getMonth() + 1).padStart(2, '0');
+          const day = String(current.getDate()).padStart(2, '0');
+          dates.push(`${year}-${month}-${day}`);
+          current.setDate(current.getDate() + 1);
+        }
+        return { dates, rangeText: match[0] };
+      }
     }
+    
+    if (text.includes('@周末')) {
+      const today = new Date();
+      const dates = [];
+      const dayOfWeek = today.getDay();
+      const daysToFriday = (5 - dayOfWeek + 7) % 7;
+      const friday = new Date(today);
+      friday.setDate(today.getDate() + daysToFriday);
+      
+      for (let i = 0; i < 3; i++) {
+        const date = new Date(friday);
+        date.setDate(friday.getDate() + i);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        dates.push(`${year}-${month}-${day}`);
+      }
+      return { dates, rangeText: '@周末' };
+    }
+    
+    return null;
+  };
 
-    let addedCount = 0;
-    processedTasks.forEach(newTask => {
-      const exists = updatedTasksByDate[selectedDate].some(
-        existingTask => existingTask.text === newTask.text
+  // 处理单行任务的函数
+  const processLine = (line, index, currentRange, cat, subCat, tags) => {
+    // 检查是否是日期范围行
+    const rangeResult = parseDateRange(line);
+    if (rangeResult) {
+      return { type: 'range', data: rangeResult };
+    }
+    
+    // 检查是否是图片行
+    if (line === '[图片]' || line.includes('[图片]')) {
+      return { type: 'image' };
+    }
+    
+    // 处理任务文本
+    let taskText = line;
+    let note = "";
+    
+    const parts = line.split("|").map(s => s.trim());
+    if (parts.length >= 2) {
+      taskText = parts[0];
+      note = parts[1];
+    }
+    
+    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '');
+    taskText = taskText.replace(/@\d{1,2}[./月]\d{1,2}[日]?-\d{1,2}[./月]\d{1,2}[日]?/g, '');
+    taskText = taskText.replace(/@周末/g, '');
+    taskText = taskText.trim();
+    
+    if (!taskText) {
+      taskText = `导入任务${index + 1}`;
+    }
+    
+    const taskId = `import_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    if (currentRange && currentRange.dates && currentRange.dates.length > 0) {
+      const crossDateId = `cross_${Date.now()}_${index}`;
+      const tasks = [];
+      currentRange.dates.forEach(date => {
+        tasks.push({
+          id: `${crossDateId}_${date}`,
+          crossDateId: crossDateId,
+          text: taskText,
+          category: cat,
+          subCategory: subCat,
+          done: false,
+          timeSpent: 0,
+          note: note,
+          image: null,
+          hasImage: false,
+          scheduledTime: "",
+          pinned: false,
+          reflection: "",
+          tags: [...tags],
+          subTasks: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          dateRange: {
+            start: currentRange.dates[0],
+            end: currentRange.dates[currentRange.dates.length - 1],
+            allDates: [...currentRange.dates]
+          }
+        });
+      });
+      return { type: 'tasks', data: tasks };
+    } else {
+      return { 
+        type: 'task', 
+        data: {
+          id: taskId,
+          text: taskText,
+          category: cat,
+          subCategory: subCat,
+          done: false,
+          timeSpent: 0,
+          note: note,
+          image: null,
+          hasImage: false,
+          scheduledTime: "",
+          pinned: false,
+          reflection: "",
+          tags: [...tags],
+          subTasks: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          dateRange: null
+        }
+      };
+    }
+  };
+
+  // 主循环
+  const allProcessedTasks = [];
+  let tempDateRange = null;
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const result = processLine(line, i, tempDateRange, category, subCategory, bulkTags);
+    
+    if (result.type === 'range') {
+      tempDateRange = result.data;
+      console.log('检测到日期范围:', result.data.rangeText, '日期:', result.data.dates);
+    } else if (result.type === 'tasks') {
+      allProcessedTasks.push(...result.data);
+    } else if (result.type === 'task') {
+      allProcessedTasks.push(result.data);
+    }
+  }
+
+  console.log(`共创建 ${allProcessedTasks.length} 个任务实例`);
+
+  if (allProcessedTasks.length === 0) {
+    alert('没有创建任何任务');
+    return;
+  }
+
+  // 更新状态
+  setTasksByDate(prev => {
+    const updated = { ...prev };
+    
+    allProcessedTasks.forEach(newTask => {
+      let targetDate;
+      if (newTask.dateRange) {
+        const idParts = newTask.id.split('_');
+        targetDate = idParts[idParts.length - 1];
+      } else {
+        targetDate = selectedDate;
+      }
+      
+      console.log(`添加任务到 ${targetDate}: "${newTask.text}"`);
+      
+      if (!updated[targetDate]) {
+        updated[targetDate] = [];
+      }
+      
+      const exists = updated[targetDate].some(t => 
+        t.text === newTask.text && 
+        t.dateRange?.start === newTask.dateRange?.start
       );
       
       if (!exists) {
-        updatedTasksByDate[selectedDate].push(newTask);
-        addedCount++;
+        updated[targetDate].push(newTask);
       }
     });
-
-    console.log(`📊 成功添加 ${addedCount} 个任务`);
-    return updatedTasksByDate;
+    
+    return updated;
   });
 
-  // 6. 清理
+  console.log(`✅ 成功添加 ${allProcessedTasks.length} 个任务实例`);
+  
   setBulkText("");
   setBulkTags([]);
   setShowBulkInput(false);
   
-  console.log('🎉 批量导入流程完成');
+  alert(`已导入 ${allProcessedTasks.length} 个任务`);
 };
+
 
 
 // 修复 toggleSubTask 函数
@@ -14834,13 +15456,10 @@ const deleteTask = (task, deleteOption = 'today') => {
 
 
   
-  const saveTaskEdit = (task, editData) => {
-    console.log('saveTaskEdit 被调用:', editData.repeatFrequency);
-    // 如果有重复设置，先删除原有的重复任务（如果是重复任务的话）
-
-
-
-// 构建提醒时间对象 - 修复这部分
+ const saveTaskEdit = (task, editData) => {
+  console.log('saveTaskEdit 被调用:', editData);
+  
+  // 构建提醒时间对象
   const reminderTime = {};
   if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
   if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
@@ -14848,220 +15467,54 @@ const deleteTask = (task, deleteOption = 'today') => {
   if (editData.reminderHour !== '') reminderTime.hour = parseInt(editData.reminderHour) || 0;
   if (editData.reminderMinute !== '') reminderTime.minute = parseInt(editData.reminderMinute) || 0;
 
-  console.log('📅 保存的提醒时间:', reminderTime);
-
-
+  // 更新任务
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
     
-    if (task.repeatId) {
-      setTasksByDate(prev => {
-        const newTasksByDate = { ...prev };
-        Object.keys(newTasksByDate).forEach(date => {
-          newTasksByDate[date] = newTasksByDate[date].filter(t => 
-            !(t.repeatId === task.repeatId)
-          );
-        });
-        return newTasksByDate;
+    // 处理本周任务
+    if (task.isWeekTask) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text ? {
+            ...t,
+            text: editData.text,
+            note: editData.note || "",           // ✅ 添加这行
+            reflection: editData.reflection || "", // ✅ 添加这行
+            category: editData.category,
+            subCategory: editData.subCategory || '',
+            scheduledTime: editData.scheduledTime || "",
+            tags: editData.tags || [],
+            subTasks: editData.subTasks || [],
+            reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+            // ... 其他字段
+          } : t
+        );
       });
-    }
-  
-    // 如果有新的重复设置，创建重复任务
-    if (editData.repeatFrequency) {
-
- // 先更新当前任务
- if (task.isWeekTask) {
-  const updatedTasksByDate = { ...tasksByDate };
-  Object.keys(updatedTasksByDate).forEach(date => {
-    updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-      t.isWeekTask && t.text === task.text ? {
-        ...t,
-        isRepeating: true,
-        repeatFrequency: editData.repeatFrequency,
-        repeatDays: editData.repeatDays,
-        repeatId: task.repeatId || `repeat_${Date.now()}`
-      } : t
-    );
-  });
-  setTasksByDate(updatedTasksByDate);
-} else {
-  setTasksByDate(prev => ({
-    ...prev,
-    [selectedDate]: prev[selectedDate].map(t =>
-      t.id === task.id ? {
-        ...t,
-        isRepeating: true,
-        repeatFrequency: editData.repeatFrequency,
-        repeatDays: editData.repeatDays,
-        repeatId: task.repeatId || `repeat_${Date.now()}`
-      } : t
-    )
-  }));
-}
-
-
-      const baseTask = {
-        id: task.id || Date.now().toString(),
-        text: editData.text,
-        category: editData.category,
-        subCategory: editData.subCategory || '',
-        done: false,
-        timeSpent: 0,
-        subTasks: editData.subTasks || [],
-        note: editData.note || "",
-        reflection: editData.reflection || "",
-        image: task.image || null,
-        scheduledTime: editData.scheduledTime || "",
-        pinned: editData.pinned || false,
-        progress: editData.progress || {
-          initial: 0,
-          current: 0,
-          target: 0,
-          unit: "%"
-        },
-        tags: editData.tags || [],
-        reminderTime: editData.reminderTime || null,
-        repeatFrequency: editData.repeatFrequency,
-        repeatDays: editData.repeatDays || [false, false, false, false, false, false, false],
-        isRepeating: true,
-        repeatId: task.repeatId || `repeat_${Date.now()}`
-      };
-  
-      const startDate = new Date(selectedDate);
-      
-      if (editData.repeatFrequency === 'daily') {
-        // 每日重复 - 未来7天
-        for (let i = 0; i < 7; i++) {
-          const date = new Date(startDate);
-          date.setDate(date.getDate() + i);
-          const dateStr = date.toISOString().split("T")[0];
-  
-          // 跳过今天，避免重复创建
-          if (i === 0) continue;
-  
-          setTasksByDate(prev => {
-            const newTasksByDate = { ...prev };
-            if (!newTasksByDate[dateStr]) {
-              newTasksByDate[dateStr] = [];
-            }
-  
-            // 检查是否已存在相同任务
-            const existingTask = newTasksByDate[dateStr].find(
-              t => t.repeatId === baseTask.repeatId
-            );
-  
-            if (!existingTask) {
-              newTasksByDate[dateStr].push({
-                ...baseTask,
-                id: `${baseTask.repeatId}_${dateStr}`
-              });
-            }
-  
-            return newTasksByDate;
-          });
-        }
-      } else if (editData.repeatFrequency === 'weekly') {
-        // 每周重复
-        for (let week = 0; week < 4; week++) {
-          const weekStart = new Date(startDate);
-          weekStart.setDate(startDate.getDate() + (week * 7));
-          const weekMonday = getMonday(weekStart);
-  
-          // 将 forEach 改为 for 循环
-          for (let dayIndex = 0; dayIndex < editData.repeatDays.length; dayIndex++) {
-            const isSelected = editData.repeatDays[dayIndex];
-            if (isSelected) {
-              const taskDate = new Date(weekMonday);
-              taskDate.setDate(weekMonday.getDate() + dayIndex);
-              
-              const year = taskDate.getFullYear();
-              const month = String(taskDate.getMonth() + 1).padStart(2, '0');
-              const day = String(taskDate.getDate()).padStart(2, '0');
-              const dateStr = `${year}-${month}-${day}`;
-  
-              const today = new Date(selectedDate);
-              today.setHours(0, 0, 0, 0);
-              const taskDateClean = new Date(taskDate);
-              taskDateClean.setHours(0, 0, 0, 0);
-  
-              // 跳过今天，避免重复创建
-              if (taskDateClean.getTime() === today.getTime()) continue;
-  
-              if (taskDateClean >= today) {
-                setTasksByDate(prev => {
-                  const newTasksByDate = { ...prev };
-                  if (!newTasksByDate[dateStr]) {
-                    newTasksByDate[dateStr] = [];
-                  }
-  
-                  const existingTask = newTasksByDate[dateStr].find(
-                    t => t.repeatId === baseTask.repeatId
-                  );
-  
-                  if (!existingTask) {
-                    newTasksByDate[dateStr].push({
-                      ...baseTask,
-                      id: `${baseTask.repeatId}_${dateStr}`
-                    });
-                  }
-  
-                  return newTasksByDate;
-                });
-              }
-            }
-          }
-        }
-      }
     } else {
-      // 没有重复设置，只更新当前任务
-      if (task.isWeekTask) {
-        const updatedTasksByDate = { ...tasksByDate };
-        Object.keys(updatedTasksByDate).forEach(date => {
-          updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-            t.isWeekTask && t.text === task.text ? {
-              ...t,
-              text: editData.text,
-              note: editData.note,
-              reflection: editData.reflection,
-              scheduledTime: editData.scheduledTime,
-              category: editData.category,
-              subCategory: editData.subCategory || '',
-              progress: editData.progress,
-              tags: editData.tags || [],
-              subTasks: editData.subTasks || [],
-              reminderTime: editData.reminderTime,
-              repeatFrequency: '',
-              repeatDays: [false, false, false, false, false, false, false],
-              isRepeating: false
-            } : t
-          );
-        });
-        setTasksByDate(updatedTasksByDate);
-      } else {
-        setTasksByDate(prev => ({
-          ...prev,
-          [selectedDate]: prev[selectedDate].map(t =>
-            t.id === task.id ? {
-              ...t,
-              text: editData.text,
-              note: editData.note,
-              reflection: editData.reflection,
-              scheduledTime: editData.scheduledTime,
-              category: editData.category,
-              subCategory: editData.subCategory || '',
-              progress: editData.progress,
-              tags: editData.tags || [],
-              subTasks: editData.subTasks || [],
-              reminderTime: editData.reminderTime,
-              repeatFrequency: '',
-              repeatDays: [false, false, false, false, false, false, false],
-              isRepeating: false
-            } : t
-          )
-        }));
-      }
+      // 普通任务
+      newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
+        t.id === task.id ? {
+          ...t,
+          text: editData.text,
+          note: editData.note || "",           // ✅ 添加这行
+          reflection: editData.reflection || "", // ✅ 添加这行
+          category: editData.category,
+          subCategory: editData.subCategory || '',
+          scheduledTime: editData.scheduledTime || "",
+          tags: editData.tags || [],
+          subTasks: editData.subTasks || [],
+          reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+          progress: editData.progress || t.progress,
+          // ... 其他字段
+        } : t
+      );
     }
-  };
-
-
+    
+    return newTasksByDate;
+  });
+  
+  console.log('✅ 任务已保存，note:', editData.note, 'reflection:', editData.reflection);
+};
 
 
 
@@ -16027,12 +16480,14 @@ if (isInitialized && todayTasks.length === 0) {
     task={showTaskEditModal}
     categories={categories}
     onClose={() => setShowTaskEditModal(null)}
-    onSave={(editData) => saveTaskEdit(showTaskEditModal, editData)}
+    onSave={(task, editData) => {
+      console.log('🔴🔴🔴 App中的onSave被调用！');
+      saveTaskEdit(task, editData);
+    }}
     onTogglePinned={togglePinned}
     onImageUpload={handleImageUpload}
     setShowDeleteModal={setShowDeleteModal}
-    setCategories={setCategories} // 添加这行
-    // ==== 添加这行 ====
+    setCategories={setCategories}
     setShowMoveTaskModal={setShowMoveTaskModal}
     setShowCrossDateModal={setShowCrossDateModal}
   />
@@ -16537,6 +16992,7 @@ if (isInitialized && todayTasks.length === 0) {
       key={task.id}
       task={task}
       onEditTime={editTaskTime}
+       getTaskCompletionType={getTaskCompletionType}  // 
       onEditNote={editTaskNote}
       onDeleteTask={deleteTask}  
       onEditReflection={editTaskReflection}
@@ -16702,6 +17158,7 @@ if (isInitialized && todayTasks.length === 0) {
             task={task}
             onDeleteTask={deleteTask}
             onEditTime={editTaskTime}
+             getTaskCompletionType={getTaskCompletionType}  // 
             onEditNote={editTaskNote}
             onEditReflection={editTaskReflection}
             onOpenEditModal={openTaskEditModal}
@@ -17086,7 +17543,7 @@ if (isInitialized && todayTasks.length === 0) {
               tasks={subCatTasks}
               category={c.name}
               subCategory={subCat}
-              
+              getTaskCompletionType={getTaskCompletionType} 
               isSortingMode={isSortingMode}
               onSortingEnd={(newOrder) => {
                 const orderKey = `tasks_order_${c.name}_${subCat}`;
@@ -17477,22 +17934,107 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 添加任务输入框（展开时显示） - 确保这行代码在按钮之后且没有被条件包裹 */}
-{showAddInput && (
-  <div ref={addInputRef} style={{ marginTop: 8 }}>
-    {/* 输入框内容... */}
-  </div>
-)}
 
-
-
-{/* 批量导入输入框（展开时显示） */}
 {showBulkInput && (
-  <div ref={bulkInputRef} style={{ marginTop: 8 }}>
-    {/* 批量导入内容... */}
+  <div 
+    ref={bulkInputRef} 
+    style={{ marginTop: 8 }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    {/* 批量文本输入框 */}
+    <textarea
+      value={bulkText}
+      onChange={(e) => setBulkText(e.target.value)}
+      placeholder="第一行：类别
+第二行起：任务内容"
+      style={{
+        width: "100%",
+        minHeight: 120,
+        padding: 8,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        fontSize: "14px",
+        fontFamily: "monospace",
+        resize: "vertical"
+      }}
+    />
+
+    {/* 日期范围选择 */}
+<div style={{
+  display: "flex",
+  gap: 8,
+  marginTop: 8,
+  alignItems: "center",
+  flexWrap: "wrap"
+}}>
+  <span style={{ fontSize: 12, color: "#666" }}>日期范围：</span>
+  <select
+    value={bulkDateRange}
+    onChange={(e) => {
+      setBulkDateRange(e.target.value);
+      // 当选择自定义时，自动设置开始日期为今天
+      if (e.target.value === 'custom') {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        setBulkDateRangeStart(todayStr);
+        setBulkDateRangeEnd(todayStr);
+      }
+    }}
+    style={{
+      padding: "6px 10px",
+      borderRadius: 6,
+      border: "1px solid #ccc",
+      fontSize: "13px",
+      backgroundColor: "#fff"
+    }}
+  >
+    <option value="today">仅今天（默认）</option>
+    <option value="next3">未来3天（含今天）</option>
+    <option value="next4">未来4天（含今天）</option>
+    <option value="custom">自定义</option>
+  </select>
+  
+  {bulkDateRange === 'custom' && (
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <input
+        type="date"
+        value={bulkDateRangeStart}
+        onChange={(e) => setBulkDateRangeStart(e.target.value)}
+        style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
+      />
+      <span>至</span>
+      <input
+        type="date"
+        value={bulkDateRangeEnd}
+        onChange={(e) => setBulkDateRangeEnd(e.target.value)}
+        style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
+      />
+    </div>
+  )}
+</div>
+
+    {/* 导入按钮 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleImportTasksWithDuration();
+      }}
+      style={{
+        marginTop: 12,
+        padding: "10px",
+        width: "100%",
+        backgroundColor: "#1a73e8",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        fontWeight: "bold"
+      }}
+    >
+      导入任务
+    </button>
   </div>
 )}
-
 
       {/* 添加任务输入框（展开时显示） */}
      {/* 添加任务输入框内的功能按钮 */}
@@ -17641,54 +18183,7 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
      
-     {showBulkInput && (
-  <div ref={bulkInputRef} style={{ marginTop: 8 }}>
-    <textarea
-      value={bulkText}
-      onChange={(e) => setBulkText(e.target.value)}
-      placeholder="第一行：主任务内容
-第二行及以后：子任务（每行一个子任务）"
-      style={{
-        width: "100%",
-        minHeight: 80,
-        padding: 6,
-        borderRadius: 6,
-        border: "1px solid #ccc",
-        fontSize: "16px"
-      }}
-      onClick={(e) => e.stopPropagation()}
-    />
-
-
-
-    {/* 导入任务按钮 */}
-<button
-  onClick={(e) => {
-    console.log('🎯 === 批量导入按钮被点击 ===');
-    console.log('批量文本内容:', bulkText);
-    console.log('批量标签:', bulkTags);
-    e.stopPropagation();
-    handleImportTasks();
-  }}
-  style={{
-    marginTop: 6,
-    padding: 6,
-    width: "100%",
-    backgroundColor: "#1a73e8",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer"
-  }}
->
-  导入任务
-</button>
-
-
-
-          
-        </div>
-      )}
+   
 <div style={{
   display: "flex",
   justifyContent: "space-between",
