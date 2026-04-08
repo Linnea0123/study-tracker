@@ -4750,32 +4750,27 @@ const handleSave = () => {
 
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
-        value={editData.category}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            category: e.target.value,
-            subCategory: '',
-          })
-        }
-        style={{
-          flex: 1,
-          height: 36,
-          padding: '0 10px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-          boxSizing: 'border-box',
-        }}
-      >
-        {categories.map((cat) => (
-          <option key={cat.name} value={cat.name}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
+  value={templateCategory}  // ✅ 改为 templateCategory
+  onChange={(e) => setTemplateCategory(e.target.value)}  // ✅ 直接设置
+  style={{
+    flex: 1,
+    height: 36,
+    padding: '0 10px',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    fontSize: 14,
+    backgroundColor: '#fff',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+  }}
+>
+  {categories.map((cat) => (
+    <option key={cat.name} value={cat.name}>
+      {cat.name}
+    </option>
+  ))}
+</select>
+      
 
       <button
         type="button"
@@ -4839,33 +4834,27 @@ const handleSave = () => {
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <select
-          value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
-          onChange={(e) => {
-            if (editData.isRegularTask) {
-              setEditData({ ...editData, targetSubCategory: e.target.value });
-            } else {
-              setEditData({ ...editData, subCategory: e.target.value });
-            }
-          }}
-          style={{
-            flex: 1,  // 👈 关键：和类别选择框一样使用 flex:1
-            height: 36,
-            padding: '0 10px',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            fontSize: 14,
-            backgroundColor: '#fff',
-            cursor: 'pointer',
-            boxSizing: 'border-box',
-          }}
-        >
-          <option value="">选择子类别</option>
-          {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
-            <option key={subCat} value={subCat}>
-              {subCat}
-            </option>
-          ))}
-        </select>
+  value={templateSubCategory || ''}  // ✅ 改为 templateSubCategory
+  onChange={(e) => setTemplateSubCategory(e.target.value)}  // ✅ 直接设置
+  style={{
+    flex: 1,
+    height: 36,
+    padding: '0 10px',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    fontSize: 14,
+    backgroundColor: '#fff',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+  }}
+>
+  <option value="">选择子类别</option>
+  {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
+    <option key={subCat} value={subCat}>
+      {subCat}
+    </option>
+  ))}
+</select>
 
         <button
           type="button"
@@ -6445,7 +6434,7 @@ const RegularTaskItem = ({
         }}
       >
         {/* 左侧内容 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flex: 1, minWidth: 0 }}>
           {/* 复选框：用于标记完成，点击时调用 onToggle */}
           <input
             type="checkbox"
@@ -6471,12 +6460,12 @@ const RegularTaskItem = ({
         </div>
 
         {/* 右侧：标签、删除按钮、拖拽手柄 */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
           {displayCategory && displayCategory !== "常规任务" && !isDraggable && (
             <span style={{
               fontSize: "10px",
-              padding: "2px 8px",
-              borderRadius: "10px",
+              padding: "2px 5px",
+              borderRadius: "8px",
               backgroundColor: getCategoryColor(displayCategory),
               color: "#fff",
               whiteSpace: "nowrap"
@@ -7699,7 +7688,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     tags: task.tags || [],
     scheduledTime: task.scheduledTime || '',
     
-      reminderYear: task.reminderTime?.year?.toString() || '2026',  // 👈 改为 '2026'
+    reminderYear: task.reminderTime?.year?.toString() || new Date().getFullYear().toString(),
     reminderMonth: task.reminderTime?.month?.toString() || '',
     reminderDay: task.reminderTime?.day?.toString() || '',
     reminderHour: task.reminderTime?.hour?.toString() || '',
@@ -8954,130 +8943,159 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 </div>
 
               {/* 🕓 计划时间 */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  
-                  marginBottom: 8,
-                  fontWeight: '600',
-                  color: '#333',
-                  fontSize: 14,
-                }}>
-                  ⏰ 计划时间
-                </label>
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14,
+  }}>
+    ⏰ 计划时间
+  </label>
 
-                <div style={{
-                  display: 'flex',
-                  gap: 6,
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'nowrap',
-                }}>
-                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      placeholder="时"
-                      value={editData.startHour}
-                      onChange={(e) => setEditData({ ...editData, startHour: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    <span style={{ color: '#666' }}>:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="分"
-                      value={editData.startMinute}
-                      onChange={(e) => setEditData({ ...editData, startMinute: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
+  <div style={{
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap',
+  }}>
+    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        placeholder="时"
+        value={editData.startHour}
+        onChange={(e) => setEditData({ ...editData, startHour: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        placeholder="分"
+        value={editData.startMinute}
+        onChange={(e) => setEditData({ ...editData, startMinute: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
 
-                  <span style={{ color: '#666', fontSize: 12 }}>至</span>
+    <span style={{ color: '#666', fontSize: 12 }}>至</span>
 
-                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      placeholder="时"
-                      value={editData.endHour}
-                      onChange={(e) => setEditData({ ...editData, endHour: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    <span style={{ color: '#666' }}>:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="分"
-                      value={editData.endMinute}
-                      onChange={(e) => setEditData({ ...editData, endMinute: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                </div>
+    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        placeholder="时"
+        value={editData.endHour}
+        onChange={(e) => setEditData({ ...editData, endHour: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+      <span style={{ color: '#666' }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        placeholder="分"
+        value={editData.endMinute}
+        onChange={(e) => setEditData({ ...editData, endMinute: e.target.value })}
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 4px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
 
-                {editData.startHour && editData.startMinute && editData.endHour && editData.endMinute && (
-                  <div style={{
-                    fontSize: 12,
-                    color: '#28a745',
-                    textAlign: 'center',
-                    marginTop: 6,
-                    padding: 4,
-                    backgroundColor: '#e8f5e8',
-                    borderRadius: 4
-                  }}>
-                    计划时间: {editData.startHour}:{editData.startMinute} - {editData.endHour}:{editData.endMinute}
-                  </div>
-                )}
-              </div>
+    {/* 👇 添加取消计划时间按钮 */}
+    <button
+      type="button"
+      onClick={() => {
+        setEditData({
+          ...editData,
+          startHour: '',
+          startMinute: '',
+          endHour: '',
+          endMinute: '',
+          scheduledTime: ''
+        });
+      }}
+      style={{
+        height: 36,
+        padding: '0 12px',
+        backgroundColor: '#f0f0f0',
+        color: '#666',
+        border: '1px solid #ccc',
+        borderRadius: 6,
+        cursor: 'pointer',
+        fontSize: 12,
+        whiteSpace: 'nowrap',
+        flexShrink: 0
+      }}
+      title="取消计划时间"
+    >
+      取消
+    </button>
+  </div>
+
+  {editData.startHour && editData.startMinute && editData.endHour && editData.endMinute && (
+    <div style={{
+      fontSize: 12,
+      color: '#28a745',
+      textAlign: 'center',
+      marginTop: 6,
+      padding: 4,
+      backgroundColor: '#e8f5e8',
+      borderRadius: 4
+    }}>
+      计划时间: {editData.startHour}:{editData.startMinute} - {editData.endHour}:{editData.endMinute}
+    </div>
+  )}
+</div>
 
               
 
-              {/* 🔔 提醒时间 */}
+{/* 🔔 提醒时间 */}
 <div>
   <label
     style={{
@@ -9112,7 +9130,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
         setEditData({ ...editData, reminderYear: e.target.value })
       }
       style={{
-        flex: 1.2,  // 年份稍宽
+        flex: 1.2,
         minWidth: '60px',
         height: 36,
         padding: '0 4px',
@@ -9228,6 +9246,36 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
         boxSizing: 'border-box',
       }}
     />
+
+    {/* 👇 添加取消提醒时间按钮 */}
+   <button
+  type="button"
+  onClick={() => {
+    setEditData({
+      ...editData,
+      reminderYear: '',
+      reminderMonth: '',
+      reminderDay: '',
+      reminderHour: '',
+      reminderMinute: ''
+    });
+  }}
+  style={{
+    height: 36,
+    padding: '0 12px',
+    backgroundColor: '#f0f0f0',
+    color: '#666',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 12,
+    whiteSpace: 'nowrap',
+    flexShrink: 0
+  }}
+  title="取消提醒时间"
+>
+  取消
+</button>
   </div>
 </div>
 
@@ -9875,26 +9923,26 @@ const TaskItem = ({
               </span>
             )}
 
-            {/* 提醒时间 */}
-            {task.reminderTime && (
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#666",
-                  backgroundColor: "#fff0f0",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #ffcccc",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2
-                }}
-                title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
-              >
-                🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
-              </span>
-            )}
+       {/* 提醒时间 - 只有在有月和日时才显示 */}
+{task.reminderTime && task.reminderTime.month && task.reminderTime.day && (
+  <span
+    style={{
+      fontSize: 11,
+      color: "#666",
+      backgroundColor: "#fff0f0",
+      padding: "2px 6px",
+      borderRadius: 4,
+      border: "1px solid #ffcccc",
+      whiteSpace: "nowrap",
+      display: "flex",
+      alignItems: "center",
+      gap: 2
+    }}
+    title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
+  >
+    🔔 {task.reminderTime.year ? `${task.reminderTime.year}/` : ''}{task.reminderTime.month}/${task.reminderTime.day} {task.reminderTime.hour || '00'}:{task.reminderTime.minute || '00'}
+  </span>
+)}
 
             {/* 标签 - 显示在时间旁边 */}
             {task.tags && task.tags.length > 0 && (
@@ -12833,62 +12881,56 @@ useEffect(() => {
 
  
 
-// 修复：检查提醒时间并置顶到期任务
 useEffect(() => {
   const checkReminders = () => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  const currentDay = now.getDate();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
 
+    const updatedTasksByDate = { ...tasksByDate };
+    let hasChanges = false;
 
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
+        // 只有在有月和日时才检查提醒
+        if (task.reminderTime && task.reminderTime.month && task.reminderTime.day && !task.pinned) {
+          const { year, month, day } = task.reminderTime;
+          
+          // 如果年份为空，使用当前年份
+          const checkYear = year || currentYear;
+          
+          console.log('📋 检查任务提醒:', {
+            任务: task.text,
+            提醒日期: `${checkYear}-${month}-${day}`,
+            是否今天: checkYear === currentYear && month === currentMonth && day === currentDay
+          });
 
-  const updatedTasksByDate = { ...tasksByDate };
-  let hasChanges = false;
-
-  Object.keys(updatedTasksByDate).forEach(date => {
-    updatedTasksByDate[date] = updatedTasksByDate[date].map(task => {
-      if (task.reminderTime && !task.pinned) {
-        const { year, month, day } = task.reminderTime;
-        
-        console.log('📋📋 检查任务提醒:', {
-          任务: task.text,
-          提醒日期: `${year}-${month}-${day}`,
-          是否今天: year === currentYear && month === currentMonth && day === currentDay
-        });
-
-        // 只检查日期是否匹配
-        if (year === currentYear && 
-            month === currentMonth && 
-            day === currentDay) {
-          console.log('🎯🎯 触发提醒并置顶任务:', task.text);
-          hasChanges = true;
-          return { ...task, pinned: true };
+          // 只检查日期是否匹配
+          if (checkYear === currentYear && 
+              month === currentMonth && 
+              day === currentDay) {
+            console.log('🎯 触发提醒并置顶任务:', task.text);
+            hasChanges = true;
+            return { ...task, pinned: true };
+          }
         }
-      }
-      return task;
+        return task;
+      });
     });
-  });
 
-  if (hasChanges) {
-    console.log('✅ 更新任务状态，置顶到期任务');
-    setTasksByDate(updatedTasksByDate);
-    localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(updatedTasksByDate));
-  }
-};
-
-
-
+    if (hasChanges) {
+  console.log('✅ 更新任务状态，置顶到期任务');
+  setTasksByDate(updatedTasksByDate);
+  localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(updatedTasksByDate));
+}
+  };
 
   // 每分钟检查一次提醒
   const intervalId = setInterval(checkReminders, 60000);
-  
-  // 立即检查2  是一次
   checkReminders();
-
   return () => clearInterval(intervalId);
 }, [tasksByDate]);
-
 
   // 进度更新函数
 
@@ -13992,17 +14034,18 @@ const handleAddTask = () => {
     scheduledTime = `${repeatConfig.startHour.padStart(2, '0')}:${repeatConfig.startMinute.padStart(2, '0')}-${repeatConfig.endHour.padStart(2, '0')}:${repeatConfig.endMinute.padStart(2, '0')}`;
   }
 
-  // 构建提醒时间
-  let reminderTime = null;
-  if (repeatConfig.reminderYear && repeatConfig.reminderMonth && repeatConfig.reminderDay) {
-    reminderTime = {
-      year: parseInt(repeatConfig.reminderYear),
-      month: parseInt(repeatConfig.reminderMonth),
-      day: parseInt(repeatConfig.reminderDay),
-      hour: parseInt(repeatConfig.reminderHour) || 0,
-      minute: parseInt(repeatConfig.reminderMinute) || 0
-    };
-  }
+ // 在 handleAddTask 函数中（约在第 1620 行附近）
+// 构建提醒时间 - 只有在有月和日时才创建
+let reminderTime = null;
+if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
+  reminderTime = {
+    year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
+    month: parseInt(repeatConfig.reminderMonth),
+    day: parseInt(repeatConfig.reminderDay),
+    hour: parseInt(repeatConfig.reminderHour) || 0,
+    minute: parseInt(repeatConfig.reminderMinute) || 0
+  };
+}
 
   const newTask = {
     id: Date.now().toString(),
@@ -14128,7 +14171,6 @@ const handleAddTask = () => {
   // 清空输入
   setNewTaskText('');
   setNewTaskSubCategory('');
-  setBulkTags([]);
   setRepeatConfig({
     frequency: "",
     days: [false, false, false, false, false, false, false],
@@ -15455,57 +15497,55 @@ const deleteTask = (task, deleteOption = 'today') => {
   };
 
 
-  
- const saveTaskEdit = (task, editData) => {
+const saveTaskEdit = (task, editData) => {
   console.log('saveTaskEdit 被调用:', editData);
   
-  // 构建提醒时间对象
-  const reminderTime = {};
-  if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
-  if (editData.reminderMonth) reminderTime.month = parseInt(editData.reminderMonth);
-  if (editData.reminderDay) reminderTime.day = parseInt(editData.reminderDay);
-  if (editData.reminderHour !== '') reminderTime.hour = parseInt(editData.reminderHour) || 0;
-  if (editData.reminderMinute !== '') reminderTime.minute = parseInt(editData.reminderMinute) || 0;
+  // 构建提醒时间对象 - 只有在有月和日时才保存
+  let reminderTime = null;
+  if (editData.reminderMonth && editData.reminderDay) {
+    reminderTime = {};
+    if (editData.reminderYear) reminderTime.year = parseInt(editData.reminderYear);
+    reminderTime.month = parseInt(editData.reminderMonth);
+    reminderTime.day = parseInt(editData.reminderDay);
+    if (editData.reminderHour !== '') reminderTime.hour = parseInt(editData.reminderHour) || 0;
+    if (editData.reminderMinute !== '') reminderTime.minute = parseInt(editData.reminderMinute) || 0;
+  }
 
   // 更新任务
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
-    // 处理本周任务
     if (task.isWeekTask) {
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t =>
           t.isWeekTask && t.text === task.text ? {
             ...t,
             text: editData.text,
-            note: editData.note || "",           // ✅ 添加这行
-            reflection: editData.reflection || "", // ✅ 添加这行
+            note: editData.note || "",
+            reflection: editData.reflection || "",
             category: editData.category,
             subCategory: editData.subCategory || '',
             scheduledTime: editData.scheduledTime || "",
             tags: editData.tags || [],
             subTasks: editData.subTasks || [],
-            reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
-            // ... 其他字段
+            reminderTime: reminderTime,
           } : t
         );
       });
     } else {
-      // 普通任务
       newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
         t.id === task.id ? {
           ...t,
           text: editData.text,
-          note: editData.note || "",           // ✅ 添加这行
-          reflection: editData.reflection || "", // ✅ 添加这行
+          note: editData.note || "",
+          reflection: editData.reflection || "",
           category: editData.category,
           subCategory: editData.subCategory || '',
           scheduledTime: editData.scheduledTime || "",
           tags: editData.tags || [],
           subTasks: editData.subTasks || [],
-          reminderTime: Object.keys(reminderTime).length > 0 ? reminderTime : null,
+          reminderTime: reminderTime,
           progress: editData.progress || t.progress,
-          // ... 其他字段
         } : t
       );
     }
@@ -15513,9 +15553,8 @@ const deleteTask = (task, deleteOption = 'today') => {
     return newTasksByDate;
   });
   
-  console.log('✅ 任务已保存，note:', editData.note, 'reflection:', editData.reflection);
+  console.log('✅ 任务已保存，reminderTime:', reminderTime);
 };
-
 
 
   
@@ -16486,8 +16525,9 @@ if (isInitialized && todayTasks.length === 0) {
     }}
     onTogglePinned={togglePinned}
     onImageUpload={handleImageUpload}
+    setCategories={setCategories} 
     setShowDeleteModal={setShowDeleteModal}
-    setCategories={setCategories}
+ 
     setShowMoveTaskModal={setShowMoveTaskModal}
     setShowCrossDateModal={setShowCrossDateModal}
   />
@@ -16992,7 +17032,7 @@ if (isInitialized && todayTasks.length === 0) {
       key={task.id}
       task={task}
       onEditTime={editTaskTime}
-       getTaskCompletionType={getTaskCompletionType}  // 
+      getTaskCompletionType={getTaskCompletionType}  // 
       onEditNote={editTaskNote}
       onDeleteTask={deleteTask}  
       onEditReflection={editTaskReflection}
@@ -17158,7 +17198,7 @@ if (isInitialized && todayTasks.length === 0) {
             task={task}
             onDeleteTask={deleteTask}
             onEditTime={editTaskTime}
-             getTaskCompletionType={getTaskCompletionType}  // 
+            getTaskCompletionType={getTaskCompletionType}  // 
             onEditNote={editTaskNote}
             onEditReflection={editTaskReflection}
             onOpenEditModal={openTaskEditModal}
