@@ -8016,64 +8016,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
         }}>
          
           {/* 任务内容 */}
-         {/* 任务内容 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    内容
-  </label>
-  <textarea
-    value={editData.text}
-    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
-    placeholder="请输入任务内容..."
-    style={{
-      width: '100%',
-      padding: '12px',
-      border: '2px solid #e0e0e0',
-      borderRadius: 8,
-      fontSize: 14,
-      backgroundColor: '#fafafa',
-      fontFamily: 'inherit',
-      boxSizing: 'border-box',
-      height: '44px',
-      minHeight: '44px',
-      resize: 'vertical',
-      outline: 'none',
-      lineHeight: '1.4',
-      overflow: 'hidden'
-    }}
-    onFocus={(e) => {
-      e.target.style.borderColor = '#1a73e8';
-      e.target.style.backgroundColor = '#fff';
-      // 删除这行：e.target.style.height = 'auto';
-      // 删除这行：e.target.style.height = e.target.scrollHeight + 'px';
-    }}
-    onBlur={(e) => {
-      e.target.style.borderColor = '#e0e0e0';
-      e.target.style.backgroundColor = '#fafafa';
-      // 只有一行时恢复高度
-      if (editData.text.split('\n').length <= 1) {
-        e.target.style.height = '44px';
-      }
-    }}
-    onInput={(e) => {
-      // 只有换行时才调整高度
-      const newText = e.target.value;
-      const lineCount = newText.split('\n').length;
-      if (lineCount > 1) {
-        e.target.style.height = 'auto';
-        e.target.style.height = e.target.scrollHeight + 'px';
-      } else {
-        e.target.style.height = '44px';
-      }
-    }}
-  />
-</div>
+
 
 
 {/* 备注 */}
