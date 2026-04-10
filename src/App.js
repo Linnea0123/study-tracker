@@ -13241,6 +13241,34 @@ const savedTasks = await loadDataWithFallback('tasks', {});
 console.log('✅ 加载的任务数据:', savedTasks);
 if (savedTasks) {
   setTasksByDate(savedTasks);
+  // ===== 自动清理孤立的常规任务模板 =====
+// 收集所有在 tasksByDate 中实际存在的常规任务文本
+const existingRegularTaskTexts = new Set();
+Object.values(savedTasks).forEach(tasks => {
+  tasks.forEach(task => {
+    if (task.isRegularTask && task.text) {
+      existingRegularTaskTexts.add(task.text);
+    }
+  });
+});
+
+// 获取 localStorage 中的模板
+const storedTemplates = await loadDataWithFallback('regular_tasks', []);
+const templatesToKeep = storedTemplates.filter(template => 
+  existingRegularTaskTexts.has(template.text)
+);
+
+// 如果有孤立的模板，清理它们
+if (templatesToKeep.length !== storedTemplates.length) {
+  console.log(`🧹 清理孤立常规任务模板: ${storedTemplates.length} -> ${templatesToKeep.length}`);
+  await saveMainData('regular_tasks', templatesToKeep);
+  // 同时更新 regularTasks 状态
+  setRegularTasks(templatesToKeep);
+} else {
+  // 如果没有孤立模板，正常加载
+  const savedRegularTasks = await loadDataWithFallback('regular_tasks', []);
+  setRegularTasks(savedRegularTasks);
+}
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
   // ===== 修改：确保每个日期都有独立的常规任务 =====
@@ -13442,7 +13470,39 @@ useEffect(() => {
 
 
 
-
+// 自动清理孤立的常规任务模板（每次页面加载时执行）
+useEffect(() => {
+  const cleanupOrphanedRegularTasks = () => {
+    // 收集所有实际存在的常规任务文本
+    const existingRegularTaskTexts = new Set();
+    Object.values(tasksByDate).forEach(tasks => {
+      tasks.forEach(task => {
+        if (task.isRegularTask && task.text) {
+          existingRegularTaskTexts.add(task.text);
+        }
+      });
+    });
+    
+    // 获取当前的模板
+    const storedTemplates = localStorage.getItem('regular_tasks');
+    if (storedTemplates) {
+      const parsedTemplates = JSON.parse(storedTemplates);
+      const templatesToKeep = parsedTemplates.filter(template => 
+        existingRegularTaskTexts.has(template.text)
+      );
+      
+      if (templatesToKeep.length !== parsedTemplates.length) {
+        console.log(`🧹 自动清理: 删除 ${parsedTemplates.length - templatesToKeep.length} 个孤立模板`);
+        localStorage.setItem('regular_tasks', JSON.stringify(templatesToKeep));
+        setRegularTasks(templatesToKeep);
+      }
+    }
+  };
+  
+  if (isInitialized && Object.keys(tasksByDate).length > 0) {
+    cleanupOrphanedRegularTasks();
+  }
+}, [isInitialized, tasksByDate]);
 
 
 
