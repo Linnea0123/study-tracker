@@ -10693,12 +10693,17 @@ const [regularTasks, setRegularTasks] = useState(() => {
 const [showRegularTaskModal, setShowRegularTaskModal] = useState(false);
 
 // 替换为：
+// 获取当前日期的任务列表（用于显示）
 const todayTasks = useMemo(() => {
-  return tasksByDate[selectedDate] || [];
+  const dateTasks = tasksByDate[selectedDate] || [];
+  
+  // 常规任务只显示未完成的（因为完成后会从常规任务区域移除）
+  // 其他分类的任务正常显示
+  return dateTasks.map(task => {
+    // 如果是已完成的常规任务，不显示在常规任务区域（它已经在其他分类了）
+    return task;
+  });
 }, [tasksByDate, selectedDate]);
- // 添加类别保存函数
-
-
 const handleSaveCategories = (updatedCategories) => {
   setCategories(updatedCategories);
   saveMainData('categories', updatedCategories);
@@ -10755,36 +10760,21 @@ const isAddingTask = useRef(false);
 
 
 const deleteRegularTaskByText = (taskText) => {
-  console.log('🗑️ 通过文本删除常规任务:', taskText);
+  console.log('🗑️ 删除常规任务:', taskText);
   
-  // ✅ 关键：记录被删除的任务，永久禁止重新创建
-  deletedRegularTasksRef.current.add(taskText);
-  
-  // 1. 从 tasksByDate 中删除所有日期的匹配任务
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
-    let deletedCount = 0;
     
     Object.keys(newTasksByDate).forEach(date => {
       newTasksByDate[date] = newTasksByDate[date].filter(task => {
-        const shouldDelete = task.isRegularTask && task.text === taskText;
-        if (shouldDelete) {
-          deletedCount++;
-          console.log(`  删除 ${date} 的常规任务:`, task.text);
-        }
-        return !shouldDelete;
+        return !(task.isRegularTask && task.text === taskText);
       });
     });
     
-    console.log(`✅ 共删除 ${deletedCount} 个常规任务实例（所有日期）`);
     return newTasksByDate;
   });
   
-  // 2. 删除 regularTasks 状态中的记录
   setRegularTasks(prev => prev.filter(task => task.text !== taskText));
-  
-  // 3. 可选：显示提示
-  alert(`✅ 已永久删除常规任务 "${taskText}"`);
 };
 
 // 在 App 组件中添加状态
@@ -13441,96 +13431,6 @@ useEffect(() => {
 
 
 
-// 处理新日期的常规任务复制 - 修改后
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  setTasksByDate(prev => {
-    const currentDateTasks = prev[selectedDate] || [];
-    
-    // 收集所有常规任务模板（从所有日期中获取，去重）
-    const regularTaskTemplates = [];
-    const seenTaskTexts = new Set();
-    
-    // 遍历所有日期，收集常规任务模板
-    Object.values(prev).forEach(tasks => {
-      tasks.forEach(task => {
-        // 只收集常规任务，并且去重
-        if (task.isRegularTask && !seenTaskTexts.has(task.text)) {
-          // ✅ 关键：跳过用户已删除的任务，永远不再创建
-          if (deletedRegularTasksRef.current.has(task.text)) {
-            console.log(`⏭️ 跳过已删除的任务，不再创建: ${task.text}`);
-            return;
-          }
-          seenTaskTexts.add(task.text);
-          regularTaskTemplates.push({
-            text: task.text,
-            targetCategory: task.targetCategory,
-            targetSubCategory: task.targetSubCategory || '',
-            note: task.note || "",
-            tags: task.tags || [],
-            progress: task.progress || {
-              initial: 0,
-              current: 0,
-              target: 0,
-              unit: "%"
-            },
-            originalId: task.originalId || task.id
-          });
-        }
-      });
-    });
-    
-    // 如果没有常规任务模板，不处理
-    if (regularTaskTemplates.length === 0) {
-      return prev;
-    }
-    
-    // 获取当前日期已有的常规任务文本
-    const existingRegularTexts = new Set(
-      currentDateTasks.filter(t => t.isRegularTask).map(t => t.text)
-    );
-    
-    // 找出缺失的常规任务
-    const missingTemplates = regularTaskTemplates.filter(
-      template => !existingRegularTexts.has(template.text)
-    );
-    
-    if (missingTemplates.length === 0) {
-      return prev;
-    }
-    
-    console.log(`📋 为日期 ${selectedDate} 创建 ${missingTemplates.length} 个缺失的常规任务`);
-    
-    // 为新日期创建常规任务
-    const newRegularTasks = missingTemplates.map(template => ({
-      id: `${template.originalId}_${selectedDate}`,
-      originalId: template.originalId,
-      text: template.text,
-      targetCategory: template.targetCategory,
-      targetSubCategory: template.targetSubCategory,
-      category: "常规任务",
-      done: false,
-      timeSpent: 0,
-      subTasks: [],
-      note: template.note,
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: template.tags || [],
-      isRegularTask: true,
-      progress: template.progress
-    }));
-    
-    return {
-      ...prev,
-      [selectedDate]: [...currentDateTasks, ...newRegularTasks]
-    };
-  });
-}, [selectedDate, isInitialized]);
-
-
 
 
 
@@ -14216,11 +14116,12 @@ const getRegularTasks = () => {
 };
 
 // 添加常规任务
-// 添加常规任务
+// 添加常规任务 - 修改为添加到所有日期
+
+// 添加常规任务模板 - 立即添加到所有今天及未来的日期
 const handleAddRegularTask = (text, category, subCategory) => {
   if (!text.trim()) return;
   
-  // 防止重复添加
   if (isAddingRegularTask.current) {
     console.log('正在添加中，跳过重复调用');
     return;
@@ -14228,94 +14129,116 @@ const handleAddRegularTask = (text, category, subCategory) => {
   
   const targetCat = category || "校内";
   const targetSub = subCategory || "";
-  const originalId = `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+  const templateId = `regular_template_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
   
-  console.log('📝 添加常规任务:', { text, targetCat, targetSub, originalId });
-  
-  // 检查是否已存在
-  let exists = false;
-  Object.values(tasksByDate).forEach(tasks => {
-    if (tasks.some(t => t.isRegularTask && t.text === text.trim())) {
-      exists = true;
-    }
-  });
-  
-  if (exists) {
+  // 检查模板是否已存在
+  if (regularTasks.some(t => t.text === text.trim())) {
     alert('该常规任务已存在！');
     return;
   }
   
   isAddingRegularTask.current = true;
   
+  // 1. ✅ 添加到模板列表（关键！这样未来任何新日期都会自动添加）
+  const newTemplate = {
+    id: templateId,
+    text: text.trim(),
+    targetCategory: targetCat,
+    targetSubCategory: targetSub,
+    note: "",
+    tags: [],
+    createdAt: new Date().toISOString()
+  };
+  
+  setRegularTasks(prev => [...prev, newTemplate]);
+  
+  // 2. ✅ 获取今天及未来30天的所有日期（确保覆盖足够远的未来）
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const futureDates = [];
+  for (let i = 0; i < 90; i++) { // 未来90天
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    futureDates.push(dateStr);
+  }
+  
+  // 同时包括当前已存在的所有日期（包括过去的）
+  const existingDates = Object.keys(tasksByDate);
+  const allTargetDates = [...new Set([...existingDates, ...futureDates])].sort();
+  
+  console.log(`📋 添加常规任务 "${text}" 到 ${allTargetDates.length} 个日期（今天及未来90天 + 已有日期）`);
+  
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
-    const currentTasks = newTasksByDate[selectedDate] || [];
     
-    const newTask = {
-      id: `${originalId}_${selectedDate}`,
-      originalId: originalId,
-      text: text.trim(),
-      done: false,
-      category: "常规任务",
-      targetCategory: targetCat,
-      targetSubCategory: targetSub,
-      subCategory: "",
-      createdAt: new Date().toISOString(),
-      isRegularTask: true,
-      timeSpent: 0,
-      subTasks: [],
-      note: "",
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
+    allTargetDates.forEach(date => {
+      if (!newTasksByDate[date]) {
+        newTasksByDate[date] = [];
       }
-    };
+      
+      const alreadyExists = newTasksByDate[date].some(
+        t => t.isRegularTask && t.text === text.trim()
+      );
+      
+      if (!alreadyExists) {
+        const newTask = {
+          id: `${templateId}_${date}_${Date.now()}`,
+          originalId: templateId,
+          text: text.trim(),
+          done: false,
+          category: "常规任务",
+          targetCategory: targetCat,
+          targetSubCategory: targetSub,
+          isRegularTask: true,
+          timeSpent: 0,
+          subTasks: [],
+          note: "",
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          }
+        };
+        
+        newTasksByDate[date].push(newTask);
+      }
+    });
     
-    newTasksByDate[selectedDate] = [...currentTasks, newTask];
     return newTasksByDate;
   });
   
-  // 延迟重置标志
   setTimeout(() => {
     isAddingRegularTask.current = false;
   }, 100);
 };
 
-// 切换常规任务完成状态 - 完成后自动移动到对应分类
-// 切换常规任务完成状态 - 完成后自动移动到对应分类
+// 切换常规任务完成状态 - 只从当天常规任务区域移除，不删除模板
 const toggleRegularTask = (task) => {
-  // 如果任务已经完成，不做处理（防止重复移动）
+  console.log('📝 完成常规任务:', task.text, '日期:', selectedDate);
+  
   if (task.done) {
     alert('任务已完成，不能重复完成');
     return;
   }
 
-  // 获取目标分类（如果任务有 targetCategory 则使用，否则使用 category）
-  const targetCategory = task.targetCategory || task.category || "校内";
-  const targetSubCategory = task.targetSubCategory || task.subCategory || "";
+  const targetCategory = task.targetCategory || "校内";
+  const targetSubCategory = task.targetSubCategory || "";
   
-  console.log('📝 完成常规任务:', {
-    任务: task.text,
-    目标分类: targetCategory,
-    目标子分类: targetSubCategory
-  });
-  
-  // 1. 从当前日期的常规任务列表中删除这个任务
   setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    const currentDateTasks = newTasksByDate[selectedDate] || [];
+    const currentDateTasks = prev[selectedDate] || [];
     
-    // 过滤掉这个常规任务
-    newTasksByDate[selectedDate] = currentDateTasks.filter(t => t.id !== task.id);
+    // 1. 从当天的常规任务中删除这个任务
+    const filteredTasks = currentDateTasks.filter(t => t.id !== task.id);
     
-    // 2. 在目标分类中添加已完成的任务（独立的任务对象）
+    // 2. 在目标分类中添加已完成的任务（用于记录）
     const completedTask = {
       id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
       text: task.text,
@@ -14337,26 +14260,21 @@ const toggleRegularTask = (task) => {
         unit: "%"
       },
       reminderTime: null,
-      completedFromRegularTask: true, // 标记这是从常规任务完成的
-      completedDate: selectedDate,
-      originalText: task.text
+      completedFromRegularTask: true,
+      completedDate: selectedDate
     };
     
-    // 添加到目标分类
-    if (!newTasksByDate[selectedDate]) {
-      newTasksByDate[selectedDate] = [];
-    }
-    newTasksByDate[selectedDate].push(completedTask);
+    console.log(`✅ 任务 "${task.text}" 已完成，已移动到 ${targetCategory}`);
     
-    console.log(`✅ 任务 "${task.text}" 已完成，已移动到 ${targetCategory}${targetSubCategory ? `/${targetSubCategory}` : ''} 分类`);
-    
-    return newTasksByDate;
+    return {
+      ...prev,
+      [selectedDate]: [...filteredTasks, completedTask]
+    };
   });
   
-  // 显示提示
-  alert(`✅ 任务 "${task.text}" 已完成！\n已移动到 ${targetCategory}${targetSubCategory ? `/${targetSubCategory}` : ''} 分类`);
+  // ⚠️ 注意：不删除 regularTasks 模板！
+  // 这样第二天切换日期时，常规任务会重新出现
 };
-
 // 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
 // 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
 // 删除常规任务 - 删除所有日期的该常规任务，并删除模板记录
@@ -15526,18 +15444,13 @@ const editCategoryTime = (catName) => {
 };
 
 const getCategoryTasks = (catName) => {
-  if (catName === '运动') {
-    console.log('=== 调试 getCategoryTasks("运动") ===');
-    console.log('todayTasks 数量:', todayTasks.length);
-    todayTasks.forEach(t => {
-      console.log(`任务: "${t.text}", category: "${t.category}", pinned: ${t.pinned}, type: ${typeof t.pinned}`);
-    });
-  }
-  
+  // 只从当前日期获取任务
   const result = todayTasks.filter(t => 
     t.category === catName && 
-    t.pinned !== true  // 改用 !== true
+    t.pinned !== true
   );
+  
+ 
   
   if (catName === '运动') {
     console.log('过滤后的结果数量:', result.length);
@@ -15624,9 +15537,7 @@ const nextWeek = () => {
 };
 
 
-// 在 handleDateSelect 函数中修复
 const handleDateSelect = (selectedDate) => {
-  // 使用本地日期创建 selectedMonday
   const localSelectedDate = new Date(
     selectedDate.getFullYear(), 
     selectedDate.getMonth(), 
@@ -15634,7 +15545,6 @@ const handleDateSelect = (selectedDate) => {
   );
   const selectedMonday = getMonday(localSelectedDate);
   
-  // 修复日期格式，使用本地日期
   const year = localSelectedDate.getFullYear();
   const month = String(localSelectedDate.getMonth() + 1).padStart(2, '0');
   const day = String(localSelectedDate.getDate()).padStart(2, '0');
@@ -15643,10 +15553,63 @@ const handleDateSelect = (selectedDate) => {
   setCurrentMonday(selectedMonday);
   setSelectedDate(newSelectedDate);
   setShowDatePickerModal(false);
+  
+  // ✅ 切换日期时，确保该日期有所有常规任务
+  addRegularTasksToDate(newSelectedDate);
 };
-
-
-
+// 为指定日期添加缺失的常规任务（每天独立）
+const addRegularTasksToDate = useCallback((date) => {
+  setTasksByDate(prev => {
+    // 从 regularTasks 状态获取所有常规任务模板
+    if (regularTasks.length === 0) return prev;
+    
+    const dateTasks = prev[date] || [];
+    
+    // 找出这个日期缺少的常规任务
+    const missingTemplates = regularTasks.filter(template => {
+      // 检查这个日期是否已经有这个常规任务
+      const exists = dateTasks.some(t => 
+        t.isRegularTask && t.text === template.text
+      );
+      return !exists;
+    });
+    
+    if (missingTemplates.length === 0) return prev;
+    
+    // 为每个缺失的模板创建新的任务实例（done = false）
+    const newTasks = missingTemplates.map(template => ({
+      id: `${template.id}_${date}_${Date.now()}`,
+      originalId: template.id,
+      text: template.text,
+      targetCategory: template.targetCategory || "校内",
+      targetSubCategory: template.targetSubCategory || "",
+      category: "常规任务",
+      done: false,  // ✅ 每天都是未完成状态
+      timeSpent: 0,
+      subTasks: [],
+      note: template.note || "",
+      reflection: "",
+      image: null,
+      scheduledTime: "",
+      pinned: false,
+      tags: template.tags || [],
+      isRegularTask: true,
+      progress: {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      }
+    }));
+    
+    console.log(`📋 为日期 ${date} 添加 ${missingTemplates.length} 个常规任务:`, missingTemplates.map(t => t.text));
+    
+    return {
+      ...prev,
+      [date]: [...dateTasks, ...newTasks]
+    };
+  });
+}, [regularTasks]);
 
 // 清空所有数据
 const clearAllData = async () => {
@@ -17021,7 +16984,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 常规任务区域 */}
+{/* 常规任务区域 - 只显示未完成的常规任务 */}
 <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", border: "2px solid #FF9800", backgroundColor: "#fff" }}>
   <div 
     style={{ 
@@ -17037,19 +17000,19 @@ if (isInitialized && todayTasks.length === 0) {
     onClick={() => setCollapsedCategories(prev => ({ ...prev, "常规任务": !prev["常规任务"] }))}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span>常规任务 ({todayTasks.filter(t => t.isRegularTask).length})</span>
+      {/* 只统计未完成的常规任务 */}
+      <span>常规任务 ({todayTasks.filter(t => t.isRegularTask && !t.done).length})</span>
     </div>
     
     {/* 按钮组 */}
     <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-      {/* 排序按钮 - 背景色固定，只有文字变化 */}
+      {/* 排序按钮 */}
       <div
         onClick={(e) => { 
           e.stopPropagation();
           setIsSortingRegularTasks(!isSortingRegularTasks);
         }}
         style={{
-         
           borderRadius: 4,
           color: "#fff",
           cursor: "pointer",
@@ -17065,13 +17028,14 @@ if (isInitialized && todayTasks.length === 0) {
         {isSortingRegularTasks ? "✓" : "☰"}
       </div>
       
+      {/* 添加按钮 */}
       <div 
         onClick={(e) => { 
           e.stopPropagation(); 
           setShowRegularTaskModal(true); 
         }}
         style={{ 
-          background: "rgba(255,255,255,0.2)",  // 固定背景色
+          background: "rgba(255,255,255,0.2)",
           border: "1px solid rgba(255,255,255,0.5)",
           borderRadius: 4,
           color: "#fff",
@@ -17092,7 +17056,8 @@ if (isInitialized && todayTasks.length === 0) {
   
   {!collapsedCategories["常规任务"] && (
     <RegularTaskSortableList
-      tasks={todayTasks.filter(t => t.isRegularTask)}
+      // 只传递未完成的常规任务
+      tasks={todayTasks.filter(t => t.isRegularTask && !t.done)}
       categories={categories}
       onToggle={toggleRegularTask}
       onDelete={deleteRegularTaskByText}
@@ -17105,7 +17070,6 @@ if (isInitialized && todayTasks.length === 0) {
     />
   )}
 </div>
-
 
 
 
