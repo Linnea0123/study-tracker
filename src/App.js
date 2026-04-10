@@ -10689,7 +10689,9 @@ const [newMonthTask, setNewMonthTask] = useState({
 // 常规任务相关状态 - 添加在这里
 const [regularTasks, setRegularTasks] = useState(() => {
   const saved = localStorage.getItem('regular_tasks');
-  return saved ? JSON.parse(saved) : [];
+  const parsed = saved ? JSON.parse(saved) : [];
+  console.log('📂 从 localStorage 加载 regularTasks:', parsed.map(t => t.text));
+  return parsed;
 });
 const [showRegularTaskModal, setShowRegularTaskModal] = useState(false);
 
@@ -10764,31 +10766,25 @@ const isAddingTask = useRef(false);
 const deleteRegularTaskByText = (taskText) => {
   console.log('🗑️ 删除常规任务:', taskText);
   
-  // 1. 从所有日期中删除该常规任务的实例
+  // 1. 从所有日期中删除实例
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
-    
     Object.keys(newTasksByDate).forEach(date => {
       newTasksByDate[date] = newTasksByDate[date].filter(task => {
-        // 删除匹配的常规任务（已完成或未完成的都删除）
         return !(task.isRegularTask && task.text === taskText);
       });
     });
-    
     return newTasksByDate;
   });
   
-  // 2. ✅ 关键：从 regularTasks 模板中删除
-  setRegularTasks(prev => prev.filter(task => task.text !== taskText));
-  
-  // 3. ✅ 同时删除 localStorage 中的排序记录（可选）
-  const savedOrder = localStorage.getItem('regular_tasks_order');
-  if (savedOrder) {
-    const orderIds = JSON.parse(savedOrder);
-    // 这里不需要特殊处理，因为下次重新添加时会重新排序
-  }
-  
-  console.log(`✅ 已删除常规任务 "${taskText}" 的所有实例和模板`);
+  // 2. 从 regularTasks 状态中删除模板
+  setRegularTasks(prev => {
+    const newRegularTasks = prev.filter(task => task.text !== taskText);
+    // ✅ 立即保存到 localStorage
+    localStorage.setItem('regular_tasks', JSON.stringify(newRegularTasks));
+    console.log('已更新 localStorage 中的 regular_tasks:', newRegularTasks);
+    return newRegularTasks;
+  });
 };
 // 在 App 组件中添加状态
 const [reminderText, setReminderText] = useState(() => {
@@ -11412,9 +11408,10 @@ window.testWeekDays = () => {
 
 
 
-// 保存常规任务到 localStorage - 添加在这里
+// 保存常规任务到 localStorage
 useEffect(() => {
   localStorage.setItem('regular_tasks', JSON.stringify(regularTasks));
+  console.log('💾 保存 regularTasks 到 localStorage:', regularTasks.map(t => t.text));
 }, [regularTasks]);
 
 // 保存常规任务排序顺序
