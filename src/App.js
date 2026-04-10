@@ -10546,7 +10546,8 @@ useEffect(() => {
     setSubCategoryTaskOrder(JSON.parse(savedOrder));
   }
 }, []);
-
+// 在 App 组件中，其他 useState 附近添加（约在第 5300 行）
+const deletedRegularTasksRef = useRef(new Set());
 // 保存排序顺序
 const saveSubCategoryOrder = (subCategory, orderedTaskIds) => {
   const newOrder = {
@@ -10753,12 +10754,13 @@ const isAddingTask = useRef(false);
 
 
 
-
-// 通过任务文本删除常规任务（更可靠）
 const deleteRegularTaskByText = (taskText) => {
   console.log('🗑️ 通过文本删除常规任务:', taskText);
   
-  // 1. 从 tasksByDate 中删除所有匹配的任务
+  // ✅ 关键：记录被删除的任务，永久禁止重新创建
+  deletedRegularTasksRef.current.add(taskText);
+  
+  // 1. 从 tasksByDate 中删除所有日期的匹配任务
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     let deletedCount = 0;
@@ -10774,15 +10776,16 @@ const deleteRegularTaskByText = (taskText) => {
       });
     });
     
-    console.log(`✅ 共删除 ${deletedCount} 个常规任务实例`);
+    console.log(`✅ 共删除 ${deletedCount} 个常规任务实例（所有日期）`);
     return newTasksByDate;
   });
   
   // 2. 删除 regularTasks 状态中的记录
   setRegularTasks(prev => prev.filter(task => task.text !== taskText));
+  
+  // 3. 可选：显示提示
+  alert(`✅ 已永久删除常规任务 "${taskText}"`);
 };
-
-
 
 // 在 App 组件中添加状态
 const [reminderText, setReminderText] = useState(() => {
@@ -13438,7 +13441,7 @@ useEffect(() => {
 
 
 
-// 处理新日期的常规任务复制
+// 处理新日期的常规任务复制 - 修改后
 useEffect(() => {
   if (!isInitialized) return;
   
@@ -13454,6 +13457,11 @@ useEffect(() => {
       tasks.forEach(task => {
         // 只收集常规任务，并且去重
         if (task.isRegularTask && !seenTaskTexts.has(task.text)) {
+          // ✅ 关键：跳过用户已删除的任务，永远不再创建
+          if (deletedRegularTasksRef.current.has(task.text)) {
+            console.log(`⏭️ 跳过已删除的任务，不再创建: ${task.text}`);
+            return;
+          }
           seenTaskTexts.add(task.text);
           regularTaskTemplates.push({
             text: task.text,
@@ -13521,8 +13529,6 @@ useEffect(() => {
     };
   });
 }, [selectedDate, isInitialized]);
-
-
 
 
 
