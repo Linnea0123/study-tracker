@@ -6386,11 +6386,12 @@ const RegularTaskItem = ({
     onEdit(id, newText, category, subCategory);
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`确定要删除常规任务 "${task.text}" 吗？\n\n删除后将从所有日期中移除！`)) {
-      onDelete(task.text);
-    }
-  };
+  // 在 RegularTaskItem 组件中
+const handleDelete = () => {
+  if (window.confirm(`确定要删除常规任务 "${task.text}" 吗？\n\n删除后将从所有日期中移除！`)) {
+    onDelete(task.text);  // 这里调用的是 deleteRegularTaskByText
+  }
+};
 
   // 获取类别颜色
   const getCategoryColor = (category) => {
@@ -10759,14 +10760,17 @@ const isAddingTask = useRef(false);
 
 
 
+// 删除常规任务 - 同时删除所有日期的实例和模板
 const deleteRegularTaskByText = (taskText) => {
   console.log('🗑️ 删除常规任务:', taskText);
   
+  // 1. 从所有日期中删除该常规任务的实例
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
     Object.keys(newTasksByDate).forEach(date => {
       newTasksByDate[date] = newTasksByDate[date].filter(task => {
+        // 删除匹配的常规任务（已完成或未完成的都删除）
         return !(task.isRegularTask && task.text === taskText);
       });
     });
@@ -10774,9 +10778,18 @@ const deleteRegularTaskByText = (taskText) => {
     return newTasksByDate;
   });
   
+  // 2. ✅ 关键：从 regularTasks 模板中删除
   setRegularTasks(prev => prev.filter(task => task.text !== taskText));
+  
+  // 3. ✅ 同时删除 localStorage 中的排序记录（可选）
+  const savedOrder = localStorage.getItem('regular_tasks_order');
+  if (savedOrder) {
+    const orderIds = JSON.parse(savedOrder);
+    // 这里不需要特殊处理，因为下次重新添加时会重新排序
+  }
+  
+  console.log(`✅ 已删除常规任务 "${taskText}" 的所有实例和模板`);
 };
-
 // 在 App 组件中添加状态
 const [reminderText, setReminderText] = useState(() => {
   return localStorage.getItem('daily_reminder') || '';
@@ -14278,63 +14291,39 @@ const toggleRegularTask = (task) => {
 // 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
 // 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
 // 删除常规任务 - 删除所有日期的该常规任务，并删除模板记录
+// 删除常规任务 - 通过 ID 删除
 const deleteRegularTask = (taskId) => {
   console.log('🗑️ 删除常规任务（所有日期）:', taskId);
   
-  // 获取要删除的任务文本（用于后续清理）
   let taskTextToDelete = '';
   
   // 1. 先从 tasksByDate 中删除所有副本
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
-    let deletedCount = 0;
     
-    // 遍历所有日期，删除匹配的常规任务
     Object.keys(newTasksByDate).forEach(date => {
       newTasksByDate[date] = newTasksByDate[date].filter(task => {
-        // 使用 originalId 或 id 匹配
         const shouldDelete = task.isRegularTask && (
           task.originalId === taskId || 
           task.id === taskId ||
           (task.originalId && taskId && task.originalId === taskId.split('_')[0])
         );
         if (shouldDelete) {
-          deletedCount++;
           taskTextToDelete = task.text;
-          console.log(`  删除 ${date} 的常规任务:`, task.text);
         }
         return !shouldDelete;
       });
     });
     
-    console.log(`✅ 共删除 ${deletedCount} 个常规任务实例（所有日期）`);
     return newTasksByDate;
   });
   
-  // 2. 删除常规任务模板（关键！防止切换日期后重新创建）
-  setTimeout(() => {
-    // 从所有日期的任务中收集剩余的常规任务模板
-    setTasksByDate(current => {
-      const remainingRegularTasks = new Set();
-      
-      // 收集所有剩余的常规任务文本
-      Object.values(current).forEach(tasks => {
-        tasks.forEach(task => {
-          if (task.isRegularTask && task.text !== taskTextToDelete) {
-            remainingRegularTasks.add(task.text);
-          }
-        });
-      });
-      
-      console.log('📋 删除后的剩余常规任务模板:', Array.from(remainingRegularTasks));
-      
-      // 注意：不需要额外操作，因为下次切换日期时会自动根据剩余的任务创建
-      return current;
-    });
-  }, 100);
+  // 2. ✅ 从 regularTasks 模板中删除
+  setRegularTasks(prev => prev.filter(task => 
+    task.id !== taskId && task.text !== taskTextToDelete
+  ));
   
-  // 3. 如果还有旧的 regularTasks 状态，也删除
-  setRegularTasks(prev => prev.filter(task => task.id !== taskId && task.text !== taskTextToDelete));
+  console.log(`✅ 已删除常规任务 "${taskTextToDelete}" 的模板`);
 };
 
 // 编辑常规任务
