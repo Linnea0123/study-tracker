@@ -266,32 +266,74 @@ return (
     overflow: 'hidden'
   }}>
     {/* 👇 把 style 标签放在这里 */}
-    <style>{`
-      /* 强制覆盖 App.css 的悬浮效果 */
-      .grade-modal button:hover,
-      .grade-modal button:active,
-      .grade-modal button:focus,
-      .grade-modal button:active:hover,
-      .grade-modal button:focus:hover {
-        background-color: inherit !important;
-        opacity: 1 !important;
-        transform: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-        border: none !important;
-      }
-      
-      /* 保留选中状态的蓝色背景 */
-      .grade-modal button[style*="background-color: #1a73e8"]:hover,
-      .grade-modal button[style*="background: #1a73e8"]:hover {
-        background-color: #1a73e8 !important;
-      }
-      
-      /* 保留未选中状态的灰色背景 */
-      .grade-modal button[style*="background-color: #f0f0f0"]:hover {
-        background-color: #f0f0f0 !important;
-      }
-    `}</style>
+<style>{`
+  /* 完全禁用所有按钮的 hover 效果 */
+  .grade-modal button:hover,
+  .grade-modal button:active,
+  .grade-modal button:focus,
+  .grade-modal button:active:hover,
+  .grade-modal button:focus:hover {
+    background-color: inherit !important;
+    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  
+  /* 添加新成绩按钮 - 始终保持蓝色 */
+  .grade-modal button.add-grade-btn,
+  .grade-modal button.add-grade-btn:hover,
+  .grade-modal button.add-grade-btn:active,
+  .grade-modal button.add-grade-btn:focus {
+    background-color: #1a73e8 !important;
+    color: white !important;
+  }
+  
+  /* 管理子分类按钮 - 始终保持紫色 */
+  .grade-modal button.manage-subcat-btn,
+  .grade-modal button.manage-subcat-btn:hover,
+  .grade-modal button.manage-subcat-btn:active,
+  .grade-modal button.manage-subcat-btn:focus {
+    background-color: #9C27B0 !important;
+    color: white !important;
+  }
+  
+  /* 科目按钮 - 选中状态保持蓝色 */
+  .grade-modal button.subject-btn-selected,
+  .grade-modal button.subject-btn-selected:hover,
+  .grade-modal button.subject-btn-selected:active,
+  .grade-modal button.subject-btn-selected:focus {
+    background-color: #1a73e8 !important;
+    color: white !important;
+  }
+  
+  /* 科目按钮 - 未选中状态保持灰色 */
+  .grade-modal button.subject-btn-unselected,
+  .grade-modal button.subject-btn-unselected:hover,
+  .grade-modal button.subject-btn-unselected:active,
+  .grade-modal button.subject-btn-unselected:focus {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+  }
+  
+  /* 子分类按钮 - 选中状态保持蓝色 */
+  .grade-modal button.subcat-btn-selected,
+  .grade-modal button.subcat-btn-selected:hover,
+  .grade-modal button.subcat-btn-selected:active,
+  .grade-modal button.subcat-btn-selected:focus {
+    background-color: #1a73e8 !important;
+    color: white !important;
+  }
+  
+  /* 子分类按钮 - 未选中状态保持灰色 */
+  .grade-modal button.subcat-btn-unselected,
+  .grade-modal button.subcat-btn-unselected:hover,
+  .grade-modal button.subcat-btn-unselected:active,
+  .grade-modal button.subcat-btn-unselected:focus {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+  }
+`}</style>
 
     <div className="grade-modal" style={{
       backgroundColor: '#f5faff',
@@ -349,7 +391,9 @@ return (
           gap: '10px',
           marginBottom: '16px'
         }}>
-          <button
+  {/* 添加新成绩按钮 */}
+<button
+  className="add-grade-btn"
   onClick={() => {
     setShowAddForm(!showAddForm);
     if (!showAddForm) {
@@ -371,7 +415,9 @@ return (
   {showAddForm ? '取消添加' : '+ 添加新成绩'}
 </button>
 
+{/* 管理子分类按钮 */}
 <button
+  className="manage-subcat-btn"
   onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
   style={{
     flex: 1,
@@ -397,72 +443,72 @@ return (
 }}>
   {mainSubjects.map(subject => (
     <button
-  key={`${subject}-${selectedSubject}`}
-  onClick={() => handleSubjectClick(subject)}
-  style={{
-    flex: 1,
-    padding: '8px 12px',
-    backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
-    color: selectedSubject === subject ? 'white' : '#333',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    // 添加这行防止移动端点击闪烁
-    WebkitTapHighlightColor: 'transparent'
-  }}
->
-  {subject}
-</button>
+      key={subject}
+      className={selectedSubject === subject ? 'subject-btn-selected' : 'subject-btn-unselected'}
+      onClick={() => handleSubjectClick(subject)}
+      style={{
+        flex: 1,
+        padding: '8px 12px',
+        backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
+        color: selectedSubject === subject ? 'white' : '#333',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        WebkitTapHighlightColor: 'transparent'
+      }}
+    >
+      {subject}
+    </button>
   ))}
 </div>
 
 
-        {/* 子分类按钮区域 */}
-        {currentSubCategories.length > 0 && (
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            marginBottom: '20px',
-            flexWrap: 'wrap',
-            justifyContent: 'center'
-          }}>
+{currentSubCategories.length > 0 && (
+  <div style={{
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
+    justifyContent: 'center'
+  }}>
     <button
-  key={`all-${selectedSubCategory}`}
-  onClick={() => handleSubCategoryClick(null)}
-  style={{
-    padding: '6px 14px',
-    backgroundColor: selectedSubCategory === null ? '#1a73e8' : '#f0f0f0',
-    color: selectedSubCategory === null ? 'white' : '#333',
-    border: 'none',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    WebkitTapHighlightColor: 'transparent'
-  }}
->
-  全部
-</button>
-            {currentSubCategories.map(subCat => (
-  <button
-  key={`${subCat}-${selectedSubCategory}`}
-  onClick={() => handleSubCategoryClick(subCat)}
-  style={{
-    padding: '6px 14px',
-    backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
-    color: selectedSubCategory === subCat ? 'white' : '#333',
-    border: 'none',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    WebkitTapHighlightColor: 'transparent'
-  }}
->
-  {subCat}
-</button>
-))}
-          </div>
-        )}
+      className={selectedSubCategory === null ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
+      onClick={() => handleSubCategoryClick(null)}
+      style={{
+        padding: '6px 14px',
+        backgroundColor: selectedSubCategory === null ? '#1a73e8' : '#f0f0f0',
+        color: selectedSubCategory === null ? 'white' : '#333',
+        border: 'none',
+        borderRadius: '20px',
+        cursor: 'pointer',
+        fontSize: '13px',
+        WebkitTapHighlightColor: 'transparent'
+      }}
+    >
+      全部
+    </button>
+    {currentSubCategories.map(subCat => (
+      <button
+        key={subCat}
+        className={selectedSubCategory === subCat ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
+        onClick={() => handleSubCategoryClick(subCat)}
+        style={{
+          padding: '6px 14px',
+          backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
+          color: selectedSubCategory === subCat ? 'white' : '#333',
+          border: 'none',
+          borderRadius: '20px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          WebkitTapHighlightColor: 'transparent'
+        }}
+      >
+        {subCat}
+      </button>
+    ))}
+  </div>
+)}
 
 
 
