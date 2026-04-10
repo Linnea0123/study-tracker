@@ -9495,7 +9495,7 @@ const TaskItem = ({
       }}
     >
       {/* 第一行：任务内容 + 复选框 */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 2 }}>
      <input
   type="checkbox"
   checked={task.done}
@@ -9510,30 +9510,42 @@ const TaskItem = ({
     }
   }}
   onClick={(e) => e.stopPropagation()}
-  style={{ marginTop: "2px", cursor: "pointer" }}
-/>
-        
+      style={{ 
+      margin: 0,
+      marginTop: "2px",  // 恢复这个，让复选框稍微下移
+      cursor: "pointer", 
+      flexShrink: 0,
+      width: "16px",
+      height: "16px"
+    }}
+  />
+
         {/* 任务文字 */}
-        <div style={{ display: "flex", alignItems: "center", flex: 1, flexWrap: "wrap", gap: "4px" }}>
-          
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center", 
+    flex: 1, 
+    flexWrap: "wrap", 
+    gap: "4px",
+    minWidth: 0  // 添加这行，允许内容收缩
+  }}>  
  <div
   onClick={(e) => {
     e.stopPropagation();
     onOpenEditModal(task);
   }}
   style={{
-    wordBreak: "break-word",
-    cursor: "pointer",
-    color: task.done ? "#999" : "#000",
-    fontWeight: task.pinned ? "bold" : "normal",
-    fontSize: "14px",
-    lineHeight: 1.4,
-    whiteSpace: "pre-wrap",
-    wordWrap: "break-word",
-    display: "inline-flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "4px"
+        wordBreak: "break-word",
+        cursor: "pointer",
+        color: task.done ? "#999" : "#000",
+        fontWeight: task.pinned ? "bold" : "normal",
+        fontSize: "14px",
+        lineHeight: "1.4",
+        whiteSpace: "pre-wrap",
+        wordWrap: "break-word",
+        display: "inline",  // 改为 inline，而不是 inline-flex
+        flex: "1",  // 添加这行
+        minWidth: "0"  // 添加这行
   }}
 >
   <span>{task.text}</span>
@@ -9652,7 +9664,8 @@ const TaskItem = ({
               fontSize: '16px',
               padding: '0 4px',
               marginLeft: 'auto',
-              lineHeight: 1
+              lineHeight: 1,
+      flexShrink: 0  // 添加这行，防止删除按钮被挤压
             }}
             title="删除任务"
           >
