@@ -14691,6 +14691,7 @@ useEffect(() => {
 
 // 带持续时间的导入函数
 // 带持续时间的导入函数
+// 带持续时间的导入函数
 const handleImportTasksWithDuration = () => {
   console.log('🎯 === 开始批量导入（带持续时间） ===');
   console.log('预览任务列表:', bulkPreviewTasks);
@@ -14700,7 +14701,7 @@ const handleImportTasksWithDuration = () => {
     return;
   }
   
-  const allTasks = [];
+  const allTasksByDate = {}; // 改为按日期分组存储
   const currentYear = new Date().getFullYear();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -14710,12 +14711,13 @@ const handleImportTasksWithDuration = () => {
     console.log(`处理任务 ${taskIndex + 1}: "${task.text}", 时长: ${task.duration}分钟`);
     
     // 解析日期范围
-    let targetDates = [selectedDate];
+    let targetDates = [selectedDate]; // 默认只有当前日期
     
     if (task.dateRange) {
       console.log('检测到日期范围:', task.dateRange);
       
       if (task.dateRange.type === 'weekend') {
+        // 周末：周五、周六、周日
         const dayOfWeek = today.getDay();
         const daysToFriday = (5 - dayOfWeek + 7) % 7;
         const friday = new Date(today);
@@ -14779,44 +14781,15 @@ const handleImportTasksWithDuration = () => {
     
     console.log(`任务 "${task.text}" 将添加到 ${targetDates.length} 个日期:`, targetDates);
     
-    // ✅ 修复：为每个日期创建任务，不要重复循环
-    if (targetDates.length > 1) {
-      // 跨日期任务：为每个日期创建独立的任务，但共享 crossDateId
-      const crossDateId = `cross_${Date.now()}_${taskIndex}`;
+    // 为每个目标日期创建任务
+    targetDates.forEach(date => {
+      if (!allTasksByDate[date]) {
+        allTasksByDate[date] = [];
+      }
       
-      targetDates.forEach(date => {
-        const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-        
-        // 在 handleImportTasksWithDuration 函数中修改
-allTasks.push({
-  id: uniqueId,
-  text: task.text,
-  category: task.category || "校内",
-  subCategory: task.subCategory || "",
-  done: false,
-  timeSpent: taskDuration,
-  note: task.note || "",
-  image: null,
-  hasImage: task.hasImage || false,  // ✅ 添加这行
-  scheduledTime: "",
-  pinned: false,
-  reflection: "",
-  tags: [...(bulkTags || [])],
-  subTasks: [],
-  progress: {
-    initial: 0,
-    current: 0,
-    target: 0,
-    unit: "%"
-  },
-  createdAt: new Date().toISOString(),
-  dateRange: null
-});
-      });
-    } else {
-      // 单天任务
-      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-      allTasks.push({
+      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`;
+      
+      allTasksByDate[date].push({
         id: uniqueId,
         text: task.text,
         category: task.category || "校内",
@@ -14825,8 +14798,8 @@ allTasks.push({
         timeSpent: taskDuration,
         note: task.note || "",
         image: null,
+        hasImage: task.hasImage || false,
         scheduledTime: "",
-        hasImage: task.hasImage || false,  // ✅ 添加这行
         pinned: false,
         reflection: "",
         tags: [...(bulkTags || [])],
@@ -14840,42 +14813,34 @@ allTasks.push({
         createdAt: new Date().toISOString(),
         dateRange: null
       });
-    }
+    });
   });
   
-  console.log(`共创建 ${allTasks.length} 个任务实例`);
+  // 统计总任务数
+  const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
+  console.log(`共创建 ${totalTasksCount} 个任务实例，分布在 ${Object.keys(allTasksByDate).length} 天`);
   
-  if (allTasks.length === 0) {
+  if (totalTasksCount === 0) {
     alert('没有创建任何任务');
     return;
   }
   
-  // 更新状态
+  // 更新状态 - 合并到现有的 tasksByDate
   setTasksByDate(prev => {
     const updated = { ...prev };
     
-    allTasks.forEach(newTask => {
-      let targetDate;
-      if (newTask.dateRange) {
-        // 跨日期任务：从任务的 dateRange 中获取日期，或者使用 selectedDate
-        targetDate = newTask.dateRange.start;
-      } else {
-        targetDate = selectedDate;
+    Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
+      if (!updated[date]) {
+        updated[date] = [];
       }
-      
-      console.log(`添加任务到 ${targetDate}: "${newTask.text}"`);
-      
-      if (!updated[targetDate]) {
-        updated[targetDate] = [];
-      }
-      
-      updated[targetDate].push(newTask);
+      updated[date] = [...updated[date], ...newTasks];
+      console.log(`添加到 ${date}: ${newTasks.length} 个任务`);
     });
     
     return updated;
   });
   
-  console.log(`✅ 成功添加 ${allTasks.length} 个任务实例`);
+  console.log(`✅ 成功添加 ${totalTasksCount} 个任务实例`);
   
   // 清空表单
   setBulkText("");
@@ -14886,9 +14851,8 @@ allTasks.push({
   setBulkPreviewTasks([]);
   setShowBulkInput(false);
   
-  alert(`已导入 ${bulkPreviewTasks.length} 个任务，共 ${allTasks.length} 个任务实例`);
+  alert(`已导入 ${bulkPreviewTasks.length} 个任务，共 ${totalTasksCount} 个任务实例，分布在 ${Object.keys(allTasksByDate).length} 天`);
 };
-
 
 const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 ===');
