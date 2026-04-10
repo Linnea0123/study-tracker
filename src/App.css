@@ -6,7 +6,14 @@
   margin: 0;
   padding: 0;
 }
-
+/* 删除按钮始终灰色，无 hover 效果 */
+button[title="删除任务"]:hover,
+button[title="删除任务"]:active,
+button[title="删除任务"]:focus {
+  background-color: transparent !important;
+  color: #888 !important;
+  transform: none !important;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   background-color: #f5faff;
