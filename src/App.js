@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, 
 
 
 const GradeModal = ({ onClose, isVisible }) => {
+  const STORAGE_KEY = 'study-tracker-PAGE_A-v2';
   const [grades, setGrades] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('数学');
   const [selectedSubCategory, setSelectedSubCategory] = useState(null);
@@ -52,33 +53,40 @@ const GradeModal = ({ onClose, isVisible }) => {
   }, [subjectSubCategories]);
 
   // 初始化加载成绩数据
-  useEffect(() => {
-    const loadGrades = async () => {
-      try {
-        const savedGrades = await loadMainData('grades');
-        if (savedGrades) {
-          const normalizedGrades = savedGrades.map(grade => ({
-            ...grade,
-            scoreType: grade.scoreType || '100分制',
-            subCategory: grade.subCategory || ''
-          }));
-          setGrades(normalizedGrades);
-        }
-      } catch (error) {
-        console.error('加载成绩数据失败:', error);
+ useEffect(() => {
+  const loadGrades = () => {
+    try {
+      const storageKey = `${STORAGE_KEY}_grades`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const savedGrades = JSON.parse(saved);
+        const normalizedGrades = savedGrades.map(grade => ({
+          ...grade,
+          scoreType: grade.scoreType || '100分制',
+          subCategory: grade.subCategory || ''
+        }));
+        setGrades(normalizedGrades);
       }
-    };
-    
-    if (isVisible) {
-      loadGrades();
+    } catch (error) {
+      console.error('加载成绩数据失败:', error);
     }
-  }, [isVisible]);
+  };
+  
+  if (isVisible) {
+    loadGrades();
+  }
+}, [isVisible]);
 
   // 保存成绩数据
-  const saveGrades = async (updatedGrades) => {
-    setGrades(updatedGrades);
-    await saveMainData('grades', updatedGrades);
-  };
+ const saveGrades = (updatedGrades) => {
+  setGrades(updatedGrades);
+  try {
+    const storageKey = `${STORAGE_KEY}_grades`;
+    localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
+  } catch (error) {
+    console.error('保存成绩数据失败:', error);
+  }
+};
 
   // 添加新成绩记录
   const handleAddGrade = () => {
@@ -1568,206 +1576,7 @@ return (
   );
 };
 
-// 完全重写 RegularTaskSortableList 组件
-// 修复后的 RegularTaskSortableList 组件
-// 完全重写 RegularTaskSortableList 组件 - 修复拖拽排序
-const RegularTaskSortableList = ({ tasks, categories, onToggle, onDelete, onEdit, isSortingMode, onSortingEnd }) => {
-  const [taskList, setTaskList] = useState([]);
-  const dragItemIndex = useRef(null);
-  const dragOverIndex = useRef(null);
-  
-  // 初始化任务列表 - 使用保存的顺序
-  useEffect(() => {
-    const savedOrder = localStorage.getItem('regular_tasks_order');
-    const taskMap = new Map();
-    
-    tasks.forEach(task => {
-      const taskId = task.originalId || task.id;
-      taskMap.set(taskId, task);
-    });
-    
-    if (savedOrder && tasks.length > 0) {
-      const orderIds = JSON.parse(savedOrder);
-      const ordered = [];
-      
-      orderIds.forEach(id => {
-        if (taskMap.has(id)) {
-          ordered.push(taskMap.get(id));
-          taskMap.delete(id);
-        }
-      });
-      
-      // 添加新任务（不在保存顺序中的）
-      ordered.push(...taskMap.values());
-      setTaskList(ordered);
-    } else {
-      setTaskList([...tasks]);
-    }
-  }, [tasks]);
-  
-  // 当外部 tasks 变化时，保持原有顺序
-  useEffect(() => {
-    if (tasks.length > 0 && taskList.length > 0) {
-      const existingIds = new Set(taskList.map(t => t.originalId || t.id));
-      const newTasks = tasks.filter(t => !existingIds.has(t.originalId || t.id));
-      
-      if (newTasks.length > 0) {
-        setTaskList(prev => [...prev, ...newTasks]);
-      }
-      
-      const currentIds = new Set(tasks.map(t => t.originalId || t.id));
-      const removedTasks = taskList.filter(t => !currentIds.has(t.originalId || t.id));
-      
-      if (removedTasks.length > 0) {
-        setTaskList(prev => prev.filter(t => currentIds.has(t.originalId || t.id)));
-      }
-    } else if (tasks.length > 0 && taskList.length === 0) {
-      setTaskList([...tasks]);
-    }
-  }, [tasks, taskList.length]);
-  
-  if (taskList.length === 0) {
-    return <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>暂无常规任务</div>;
-  }
-  
-  // 分成两列
-  const mid = Math.ceil(taskList.length / 2);
-  const leftTasks = taskList.slice(0, mid);
-  const rightTasks = taskList.slice(mid);
-  
-  const handleDragStart = (e, index) => {
-    if (!isSortingMode) {
-      e.preventDefault();
-      return;
-    }
-    dragItemIndex.current = index;
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    // 设置拖拽图标
-    if (e.target.style) {
-      e.target.style.opacity = '0.5';
-    }
-  };
-  
-  const handleDragEnd = (e) => {
-    if (e.target.style) {
-      e.target.style.opacity = '';
-    }
-    dragItemIndex.current = null;
-    dragOverIndex.current = null;
-  };
-  
-  const handleDragOver = (e, targetIndex) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    if (dragItemIndex.current === null) return;
-    if (dragItemIndex.current === targetIndex) return;
-    
-    // 更新拖拽经过的索引
-    dragOverIndex.current = targetIndex;
-    
-    // 实时更新列表顺序（视觉反馈）
-    const newList = [...taskList];
-    const draggedItem = newList[dragItemIndex.current];
-    newList.splice(dragItemIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTaskList(newList);
-    dragItemIndex.current = targetIndex;
-  };
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    
-    // 获取最终排序后的任务ID列表
-    const newOrder = taskList.map(t => t.originalId || t.id);
-    
-    // 保存到 localStorage
-    localStorage.setItem('regular_tasks_order', JSON.stringify(newOrder));
-    
-    // 调用父组件的回调
-    if (onSortingEnd) {
-      onSortingEnd(newOrder);
-    }
-    
-    // 重置拖拽状态
-    dragItemIndex.current = null;
-    dragOverIndex.current = null;
-  };
-  
-  // 渲染单个任务项（带拖拽手柄）
-  const renderTaskItem = (task, index) => (
-    <div
-      key={task.id}
-      draggable={isSortingMode}
-      onDragStart={(e) => handleDragStart(e, index)}
-      onDragEnd={handleDragEnd}
-      onDragOver={(e) => handleDragOver(e, index)}
-      style={{ 
-        cursor: isSortingMode ? 'grab' : 'default',
-        marginBottom: '8px',
-        position: 'relative',
-        opacity: dragItemIndex.current === index ? 0.5 : 1,
-        transition: 'opacity 0.2s ease'
-      }}
-    >
-      {/* 拖拽手柄 - 排序模式下始终显示在左侧 */}
-      {isSortingMode && (
-        <div
-          style={{
-            position: 'absolute',
-            left: '-20px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            cursor: 'grab',
-            color: '#999',
-            fontSize: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '20px',
-            height: '28px',
-            background: 'rgba(255,255,255,0.9)',
-            borderRadius: '4px',
-            userSelect: 'none'
-          }}
-          title="拖拽调整顺序"
-        >
-          ⋮⋮
-        </div>
-      )}
-      
-      <RegularTaskItem
-        task={task}
-        categories={categories}
-        onToggle={onToggle}
-        onDelete={onDelete}
-        onEdit={onEdit}
-        isDraggable={isSortingMode}
-      />
-    </div>
-  );
-  
-  return (
-    <div 
-      style={{ padding: '8px', position: 'relative' }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        {/* 左列 */}
-        <div>
-          {leftTasks.map((task, idx) => renderTaskItem(task, idx))}
-        </div>
-        {/* 右列 */}
-        <div>
-          {rightTasks.map((task, idx) => renderTaskItem(task, leftTasks.length + idx))}
-        </div>
-      </div>
-    </div>
-  );
-};
+
 
 
 // 重命名文件顶部的 categories 为 baseCategories
@@ -1790,7 +1599,31 @@ const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
 
 
 
+// 统一的存储函数
+const saveMainData = async (key, data) => {
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    // 将数据转换为JSON字符串
+    const jsonData = JSON.stringify(data);
+    localStorage.setItem(storageKey, jsonData);
+    console.log(`数据保存成功: ${key}`, data ? '有数据' : '无数据');
+  } catch (error) {
+    console.error(`数据保存失败: ${key}`, error);
+    
+  }
+};
 
+
+const loadMainData = async (key) => {
+  const storageKey = `${STORAGE_KEY}_${key}`;
+  try {
+    const data = localStorage.getItem(storageKey);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`数据加载失败: ${key}`, error);
+    return null;
+  }
+};
 
 
 
@@ -3015,31 +2848,6 @@ const getWeekNumber = (date) => {
 
 
 // 统一的存储函数
-// 统一的存储函数
-const saveMainData = async (key, data) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
-  try {
-    // 将数据转换为JSON字符串
-    const jsonData = JSON.stringify(data);
-    localStorage.setItem(storageKey, jsonData);
-    console.log(`数据保存成功: ${key}`, data ? '有数据' : '无数据');
-  } catch (error) {
-    console.error(`数据保存失败: ${key}`, error);
-    
-  }
-};
-
-
-const loadMainData = async (key) => {
-  const storageKey = `${STORAGE_KEY}_${key}`;
-  try {
-    const data = localStorage.getItem(storageKey);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error(`数据加载失败: ${key}`, error);
-    return null;
-  }
-};
 
 
 
@@ -4477,71 +4285,224 @@ const TimeModal = ({ config, onSave, onClose }) => {
 };
 
 
-const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = baseCategories,
-  setCategories }) => {
-  const [templateName, setTemplateName] = useState('');
-  const [templateCategory, setTemplateCategory] = useState(baseCategories[0].name);
-  const [templateContent, setTemplateContent] = useState('');
-  const [templateTags, setTemplateTags] = useState([]);
-  const [templateScheduledTime, setTemplateScheduledTime] = useState('');
-  const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('#e0e0e0');
-  const [templateSubCategory, setTemplateSubCategory] = useState('');
-  const [templateProgress, setTemplateProgress] = useState({
-    initial: 0,
-    current: 0,
-    target: 0,
-    unit: "%"
-  });
-  const [repeatFrequency, setRepeatFrequency] = useState('');
-  const [repeatDays, setRepeatDays] = useState([false, false, false, false, false, false, false]);
-  const [templateImage, setTemplateImage] = useState(null);
 
+const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = baseCategories, setCategories }) => {
+  // 表单数据 - 与 TaskEditModal 保持一致
+  const [formData, setFormData] = useState({
+    text: '',
+    category: '校内',
+    subCategory: '',
+    note: '',
+    
+    tags: [],
+    scheduledTime: '',
+    reminderYear: '',
+    reminderMonth: '',
+    reminderDay: '',
+    reminderHour: '',
+    reminderMinute: '',
+    repeatFrequency: '',
+    repeatDays: [false, false, false, false, false, false, false],
+    subTasks: [],
+    targetCategory: '',
+    targetSubCategory: '',
+    startHour: '',
+    startMinute: '',
+    endHour: '',
+    endMinute: '',
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    image: null,
+    newTagName: '',
+    newTagColor: '#e0e0e0',
+    newSubTask: ''
+  });
+  const formTopRef = useRef(null);
+  const [showMoreConfig, setShowMoreConfig] = useState(false);
+  const [editingTemplateIndex, setEditingTemplateIndex] = useState(null);
   const fileInputRef = useRef(null);
 
-
-const resetForm = () => {
-  setTemplateContent('');
-  setTemplateTags([]);
-  setTemplateScheduledTime('');
-  setTemplateSubCategory('');
-  setTemplateProgress({
-    initial: 0,
-    current: 0,
-    target: 0,
-    unit: "%"
-  });
-  setRepeatFrequency('');
-  setRepeatDays([false, false, false, false, false, false, false]);
-  setTemplateImage(null);
-  // 确保没有 setTemplateName('')
-};
-
-
-const handleSave = () => {
-  if (!templateContent.trim()) {
-    alert('任务内容不能为空！');
-    return;
-  }
-
-  const templateData = {
-    name: templateName || templateContent.slice(0, 20),
-    text: templateContent,
-    category: templateCategory,
-    subCategory: templateSubCategory,
-    tags: templateTags,
-    scheduledTime: templateScheduledTime,
-    progress: templateProgress,
-    repeatFrequency: repeatFrequency,
-    repeatDays: repeatDays,
-    image: templateImage
+  // 重置表单
+  const resetForm = () => {
+    setFormData({
+      text: '',
+      category: '校内',
+      subCategory: '',
+      note: '',
+      
+      tags: [],
+      scheduledTime: '',
+      reminderYear: '',
+      reminderMonth: '',
+      reminderDay: '',
+      reminderHour: '',
+      reminderMinute: '',
+      repeatFrequency: '',
+      repeatDays: [false, false, false, false, false, false, false],
+      subTasks: [],
+      targetCategory: '',
+      targetSubCategory: '',
+      startHour: '',
+      startMinute: '',
+      endHour: '',
+      endMinute: '',
+      progress: {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      },
+      image: null,
+      newTagName: '',
+      newTagColor: '#e0e0e0',
+      newSubTask: ''
+    });
+    setEditingTemplateIndex(null);
+    setShowMoreConfig(false);
   };
 
-  // 直接保存 templateData，不要使用未定义的 editData
-  onSave(templateData);
-  onClose();
+  // 编辑模板 - 加载数据到表单
+ // 编辑模板 - 加载数据到表单
+// 编辑模板 - 加载数据到表单
+const handleEditTemplate = (index, template) => {
+  // 解析计划时间
+  let startHour = '', startMinute = '', endHour = '', endMinute = '';
+  if (template.scheduledTime) {
+    const parts = template.scheduledTime.split('-');
+    if (parts.length === 2) {
+      const start = parts[0].split(':');
+      const end = parts[1].split(':');
+      startHour = start[0] || '';
+      startMinute = start[1] || '';
+      endHour = end[0] || '';
+      endMinute = end[1] || '';
+    }
+  }
+
+  // 解析提醒时间
+  let reminderYear = '', reminderMonth = '', reminderDay = '', reminderHour = '', reminderMinute = '';
+  if (template.reminderTime) {
+    reminderYear = template.reminderTime.year?.toString() || '';
+    reminderMonth = template.reminderTime.month?.toString() || '';
+    reminderDay = template.reminderTime.day?.toString() || '';
+    reminderHour = template.reminderTime.hour?.toString() || '';
+    reminderMinute = template.reminderTime.minute?.toString() || '';
+  }
+
+  setFormData({
+    text: template.text || '',
+    category: template.category || '校内',
+    subCategory: template.subCategory || '',
+    note: template.note || '',
+    tags: template.tags || [],
+    scheduledTime: template.scheduledTime || '',
+    reminderYear,
+    reminderMonth,
+    reminderDay,
+    reminderHour,
+    reminderMinute,
+    repeatFrequency: template.repeatFrequency || '',
+    repeatDays: template.repeatDays || [false, false, false, false, false, false, false],
+    subTasks: template.subTasks || [],
+    targetCategory: template.targetCategory || '',
+    targetSubCategory: template.targetSubCategory || '',
+    startHour,
+    startMinute,
+    endHour,
+    endMinute,
+    progress: template.progress || {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    image: template.image || null,
+    newTagName: '',
+    newTagColor: '#e0e0e0',
+    newSubTask: ''
+  });
+  
+  setEditingTemplateIndex(index);
+  
+  // 滚动到表单顶部
+   // 滚动到容器顶部
+  setTimeout(() => {
+    if (formTopRef.current) {
+      formTopRef.current.scrollTop = 0;  // ← 设置 scrollTop 为 0
+    }
+  }, 100);
 };
 
+  // 保存模板
+  const handleSave = () => {
+    if (!formData.text.trim()) {
+      alert('任务内容不能为空！');
+      return;
+    }
+
+    // 构建计划时间
+    let scheduledTime = '';
+    if (formData.startHour && formData.startMinute && formData.endHour && formData.endMinute) {
+      scheduledTime = `${formData.startHour.padStart(2, '0')}:${formData.startMinute.padStart(2, '0')}-${formData.endHour.padStart(2, '0')}:${formData.endMinute.padStart(2, '0')}`;
+    }
+
+    // 构建提醒时间
+    let reminderTime = null;
+    if (formData.reminderMonth && formData.reminderDay) {
+      reminderTime = {
+        year: formData.reminderYear ? parseInt(formData.reminderYear) : new Date().getFullYear(),
+        month: parseInt(formData.reminderMonth),
+        day: parseInt(formData.reminderDay),
+        hour: parseInt(formData.reminderHour) || 0,
+        minute: parseInt(formData.reminderMinute) || 0
+      };
+    }
+
+    const templateData = {
+      name: formData.text.slice(0, 20),
+      text: formData.text,
+      category: formData.category,
+      subCategory: formData.subCategory,
+      note: formData.note,
+      reflection: formData.reflection,
+      tags: formData.tags,
+      scheduledTime: scheduledTime,
+      reminderTime: reminderTime,
+      repeatFrequency: formData.repeatFrequency,
+      repeatDays: formData.repeatDays,
+      subTasks: formData.subTasks,
+      targetCategory: formData.targetCategory,
+      targetSubCategory: formData.targetSubCategory,
+      progress: formData.progress,
+      image: formData.image
+    };
+
+    if (editingTemplateIndex !== null) {
+      // 更新现有模板
+      const updatedTemplates = [...templates];
+      updatedTemplates[editingTemplateIndex] = templateData;
+      onSave(updatedTemplates);
+    } else {
+      // 添加新模板
+      onSave(templateData);
+    }
+    
+    resetForm();
+    onClose();
+  };
+
+  const handleDelete = (index) => {
+    if (window.confirm('确定要删除这个模板吗？')) {
+      onDelete(index);
+      if (editingTemplateIndex === index) {
+        resetForm();
+      }
+    }
+  };
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -4553,21 +4514,15 @@ const handleSave = () => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setTemplateImage(event.target.result);
+      setFormData({ ...formData, image: event.target.result });
     };
     reader.readAsDataURL(file);
   };
 
   const handleDeleteImage = () => {
-    setTemplateImage(null);
+    setFormData({ ...formData, image: null });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
-    }
-  };
-
-  const handleDelete = (index) => {
-    if (window.confirm('确定要删除这个模板吗？')) {
-      onDelete(index);
     }
   };
 
@@ -4582,8 +4537,6 @@ const handleSave = () => {
     { name: '背诵', color: '#795548', textColor: '#fff' },
     { name: '练习', color: '#607d8b', textColor: '#fff' }
   ];
-
-
 
   return (
     <div style={{
@@ -4600,20 +4553,25 @@ const handleSave = () => {
       padding: 10,
       overflow: 'hidden'
     }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '20px 15px',
-        borderRadius: 16,
-        width: '98%',
-        maxWidth: 450,
-        maxHeight: '85vh',
-        overflow: 'auto',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        border: '1px solid #e0e0e0',
-        position: 'relative'
-      }}>
-
-        {/* 标题栏 */}
+    
+<div
+  ref={formTopRef}   // ← ref 放在 style 之前
+  style={{
+    backgroundColor: 'white',
+    padding: '20px 15px',
+    borderRadius: 16,
+    width: '98%',
+    maxWidth: 450,
+    maxHeight: '85vh',
+    overflow: 'auto',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    border: '1px solid #e0e0e0',
+    position: 'relative'
+  }}
+>
+ 
+ 
+  {/* 标题栏 */}
         <div style={{
           display: "flex",
           justifyContent: "space-between",
@@ -4628,12 +4586,10 @@ const handleSave = () => {
             fontSize: 18,
             fontWeight: "600"
           }}>
-            任务模板
+            {editingTemplateIndex !== null ? '编辑模板' : '新建模板'}
           </h3>
 
-          {/* 右上角按钮组 */}
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {/* 添加图片按钮 */}
             <button
               onClick={handleImageClick}
               style={{
@@ -4656,7 +4612,6 @@ const handleSave = () => {
               🖼️
             </button>
 
-            {/* 保存按钮 */}
             <button
               onClick={handleSave}
               style={{
@@ -4668,16 +4623,12 @@ const handleSave = () => {
                 height: '32px',
                 cursor: "pointer",
                 fontSize: 12,
-                fontWeight: "600",
-                transition: "all 0.2s ease"
+                fontWeight: "600"
               }}
-              onMouseOver={(e) => e.target.style.backgroundColor = "#0b5ed7"}
-              onMouseOut={(e) => e.target.style.backgroundColor = "#1a73e8"}
             >
-              保存
+              {editingTemplateIndex !== null ? '更新' : '保存'}
             </button>
 
-            {/* 关闭按钮 */}
             <button
               onClick={onClose}
               style={{
@@ -4691,8 +4642,7 @@ const handleSave = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRadius: "50%",
-                transition: "all 0.2s ease"
+                borderRadius: "50%"
               }}
             >
               ×
@@ -4707,14 +4657,14 @@ const handleSave = () => {
         }}>
 
           {/* 模板图片预览 */}
-          {templateImage && (
+          {formData.image && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 }}>
                 模板图片预览
               </div>
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <img
-                  src={templateImage}
+                  src={formData.image}
                   alt="模板预览"
                   style={{
                     maxWidth: '100%',
@@ -4745,8 +4695,6 @@ const handleSave = () => {
             </div>
           )}
 
-          
-
           {/* 任务内容 */}
           <div>
             <label style={{
@@ -4759,8 +4707,8 @@ const handleSave = () => {
               📄 任务内容
             </label>
             <textarea
-              value={templateContent}
-              onChange={(e) => setTemplateContent(e.target.value)}
+              value={formData.text}
+              onChange={(e) => setFormData({ ...formData, text: e.target.value })}
               placeholder="请输入任务内容..."
               style={{
                 width: '100%',
@@ -4771,12 +4719,11 @@ const handleSave = () => {
                 backgroundColor: '#fafafa',
                 fontFamily: 'inherit',
                 boxSizing: 'border-box',
-                height: templateContent && templateContent.split('\n').length > 1 ? 'auto' : '44px',
+                height: '44px',
                 minHeight: '44px',
-                resize: templateContent && templateContent.split('\n').length > 1 ? 'vertical' : 'none',
+                resize: 'vertical',
                 outline: 'none',
-                lineHeight: '1.4',
-                overflow: 'hidden'
+                lineHeight: '1.4'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#1a73e8';
@@ -4789,602 +4736,125 @@ const handleSave = () => {
             />
           </div>
 
-
-
-
-{/* 类别和子类别在同一行 - 两个选择框等长，总宽度与输入框一致 */}
-<div
-  style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',  // 两列等宽
-    gap: 12,
-    alignItems: 'start',
-    marginBottom: 16,
-  }}
->
-  {/* 任务类别 */}
-  <div>
-    <label
-      style={{
-        display: 'block',
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14,
-      }}
-    >
-      类别
-    </label>
-
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <select
-  value={templateCategory}  // ✅ 改为 templateCategory
-  onChange={(e) => setTemplateCategory(e.target.value)}  // ✅ 直接设置
-  style={{
-    flex: 1,
-    height: 36,
-    padding: '0 10px',
-    border: '1px solid #ccc',
-    borderRadius: 6,
-    fontSize: 14,
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-  }}
->
-  {categories.map((cat) => (
-    <option key={cat.name} value={cat.name}>
-      {cat.name}
-    </option>
-  ))}
-</select>
-      
-
-      <button
-        type="button"
-        onClick={() => {
-          const newCategory = window.prompt('输入新类别名称:');
-          if (newCategory && newCategory.trim()) {
-            const exists = categories.find(cat => cat.name === newCategory.trim());
-            if (exists) {
-              alert('该类别已存在！');
-              return;
-            }
-            const newCat = {
-              name: newCategory.trim(),
-              color: '#1a73e8',
-              subCategories: []
-            };
-            const updatedCategories = [...categories, newCat];
-            setCategories(updatedCategories);
-            saveMainData('categories', updatedCategories);
-            setEditData({ ...editData, category: newCategory.trim() });
-            alert(`新类别 "${newCategory}" 添加成功！`);
-          }
-        }}
-        style={{
-          height: 36,
-          width: 36,
-          backgroundColor: '#f9f9f9',
-          color: '#333',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          cursor: 'pointer',
-          fontSize: 18,
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box',
-          flexShrink: 0,
-        }}
-        title="添加新类别"
-      >
-        +
-      </button>
-    </div>
-  </div>
-
-  {/* 子类别选择 - 仅校内类别显示 */}
-  {(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
-    <div>
-      <label
-        style={{
-          display: 'block',
-          marginBottom: 8,
-          fontWeight: 600,
-          color: '#333',
-          fontSize: 14,
-        }}
-      >
-        子类别
-      </label>
-
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <select
-  value={templateSubCategory || ''}  // ✅ 改为 templateSubCategory
-  onChange={(e) => setTemplateSubCategory(e.target.value)}  // ✅ 直接设置
-  style={{
-    flex: 1,
-    height: 36,
-    padding: '0 10px',
-    border: '1px solid #ccc',
-    borderRadius: 6,
-    fontSize: 14,
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-  }}
->
-  <option value="">选择子类别</option>
-  {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
-    <option key={subCat} value={subCat}>
-      {subCat}
-    </option>
-  ))}
-</select>
-
-        <button
-          type="button"
-          onClick={() => {
-            const newSubCategory = window.prompt('输入新子类别名称:');
-            if (newSubCategory && newSubCategory.trim()) {
-              const schoolCategory = categories.find(c => c.name === '校内');
-              if (schoolCategory && schoolCategory.subCategories.includes(newSubCategory.trim())) {
-                alert('该子类别已存在！');
-                return;
-              }
-              
-              const updatedCategories = categories.map(cat => {
-                if (cat.name === '校内') {
-                  return {
-                    ...cat,
-                    subCategories: [...(cat.subCategories || []), newSubCategory.trim()]
-                  };
-                }
-                return cat;
-              });
-              
-              setCategories(updatedCategories);
-              saveMainData('categories', updatedCategories);
-              
-              if (editData.isRegularTask) {
-                setEditData({ ...editData, targetSubCategory: newSubCategory.trim() });
-              } else {
-                setEditData({ ...editData, subCategory: newSubCategory.trim() });
-              }
-              
-              alert(`新子类别 "${newSubCategory}" 添加成功！`);
-            }
-          }}
-          style={{
-            height: 36,
-            width: 36,
-            backgroundColor: '#f9f9f9',
-            color: '#333',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 18,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-            flexShrink: 0,
-          }}
-          title="添加新子类别"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  )}
-</div>
-
-        
-
-          
-
- 
- 
- {/* 标签编辑 - 合并成一排 */}
-<div style={{
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  marginBottom: 28,  // 👈 改成 28，增大标签到常用标签的距离
-}}>
-  <div style={{
-    display: 'flex',
-    gap: 8,
-    alignItems: 'flex-start',
-    width: '100%'
-  }}>
-    {/* 添加新标签 - 左侧 */}
-    <div style={{ flex: 1 }}>
-      <label style={{
-        display: 'block',
-        marginBottom: 6,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 13,
-      }}>
-        添加标签
-      </label>
-      <div style={{
-        display: 'flex',
-        gap: 6,
-        alignItems: 'center',
-      }}>
-        <input
-          type="text"
-          placeholder="标签名称"
-          value={editData.newTagName || ''}
-          onChange={(e) => setEditData({ ...editData, newTagName: e.target.value })}
-          style={{
-            flex: 1,
-            height: 32,
-            padding: '0 8px',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            fontSize: 13,
-            backgroundColor: '#fff',
-            boxSizing: 'border-box',
-            minWidth: 0,
-          }}
-        />
-        <input
-          type="color"
-          value={editData.newTagColor || '#e0e0e0'}
-          onChange={(e) => setEditData({ ...editData, newTagColor: e.target.value })}
-          style={{
-            width: 32,
-            height: 32,
-            padding: 0,
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            cursor: 'pointer',
-            backgroundColor: '#fff',
-            boxSizing: 'border-box',
-            flexShrink: 0,
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            if (editData.newTagName?.trim()) {
-              const newTag = {
-                name: editData.newTagName.trim(),
-                color: editData.newTagColor || '#e0e0e0',
-                textColor: '#333',
-              };
-              const updatedTags = [...(editData.tags || []), newTag];
-              setEditData({
-                ...editData,
-                tags: updatedTags,
-                newTagName: '',
-                newTagColor: '#e0e0e0',
-              });
-            }
-          }}
-          style={{
-            height: 32,
-            width: 32,
-            backgroundColor: '#f9f9f9',
-            color: '#333',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 16,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-            flexShrink: 0,
-          }}
-        >
-          +
-        </button>
-      </div>
-    </div>
-
-    {/* 当前标签 - 右侧 */}
-    <div style={{ flex: 1 }}>
-      <label style={{
-        display: 'block',
-        marginBottom: 6,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 13,
-      }}>
-        当前标签
-      </label>
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 4,
-        minHeight: 32,
-        padding: '4px 8px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        backgroundColor: '#fafafa',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        maxHeight: 40,
-        overflow: 'hidden',
-      }}>
-        {editData.tags?.map((tag, index) => (
-          <span
-            key={index}
-            style={{
-              fontSize: 11,
-              padding: '3px 6px',
-              backgroundColor: tag.color,
-              color: tag.textColor || '#fff',
-              borderRadius: 10,
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              flexShrink: 0,
-            }}
-          >
-            {tag.name}
-            <button
-              type="button"
-              onClick={() => {
-                const newTags = [...editData.tags];
-                newTags.splice(index, 1);
-                setEditData({ ...editData, tags: newTags });
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 11,
-                padding: 0,
-                width: 12,
-                height: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'inherit',
-                opacity: 0.8,
-              }}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {(!editData.tags || editData.tags.length === 0) && (
-          <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>
-            暂无标签
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
-</div>
-
-{/* 常用标签 */}
-<div style={{ marginBottom: 32 }}>  {/* 👈 改成 32，增大距离 */}
-  <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>常用标签:</div>
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-    {commonTags.map((tag, index) => (
-      <button
-        key={index}
-        type="button"
-        onClick={() => {
-          const existingTags = editData.tags || [];
-          const isAlreadyAdded = existingTags.some(t => t.name === tag.name);
-          if (!isAlreadyAdded) {
-            setEditData({
-              ...editData,
-              tags: [...existingTags, tag]
-            });
-          }
-        }}
-        style={{
-          padding: '6px 12px',
-          backgroundColor: tag.color,
-          color: tag.textColor,
-          border: 'none',
-          borderRadius: 16,
-          cursor: 'pointer',
-          fontSize: 11,
-          fontWeight: '500'
-        }}
-      >
-        {tag.name}
-      </button>
-    ))}
-  </div>
-</div>
-
-
-
-      {/* 重复设置 */}
-<div style={{ marginBottom: 15 }}>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14,
-  }}>
-    🔄 重复设置
-  </label>
-  
-  {/* 重复频率按钮 - 删除了"重复频率"标签 */}
-  <div style={{ marginBottom: 10 }}>
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
-          color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
-      >
-        每天
-      </button>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
-          color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
-      >
-        每周
-      </button>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
-          color: !editData.repeatFrequency ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
-      >
-        不重复
-      </button>
-    </div>
-  </div>
-
-  {/* 星期选择 */}
-  {editData.repeatFrequency === 'weekly' && (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: 4,
-        justifyContent: 'space-between',
-        overflowX: 'auto'
-      }}>
-        {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-          <button
-            key={day}
-            type="button"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
-              color: editData.repeatDays?.[index] ? '#fff' : '#000',
-              border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
-              fontSize: 12,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-            onClick={() => {
-              const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
-              const newRepeatDays = [...currentRepeatDays];
-              newRepeatDays[index] = !newRepeatDays[index];
-              setEditData({ 
-                ...editData, 
-                repeatDays: newRepeatDays 
-              });
-            }}
-            title={`周${day}`}
-          >
-            {day}
-          </button>
-        ))}
-      </div>
-    </div>
-  )}
-
-  {/* 说明文字 */}
-  {editData.repeatFrequency && (
-    <div style={{
-      fontSize: 11,
-      color: '#666',
-      textAlign: 'center',
-      padding: '6px 8px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: 4
-    }}>
-      {editData.repeatFrequency === 'daily' 
-        ? '任务将在未来7天重复创建' 
-        : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
-          ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
-          : '请选择重复的星期'
-      }
-    </div>
-  )}
-</div>
-      
-
-          {/* 计划时间 */}
+          {/* 备注 */}
           <div>
             <label style={{
               display: 'block',
               marginBottom: 8,
               fontWeight: '600',
               color: '#333',
-              fontSize: 14,
+              fontSize: 14
             }}>
-              ⏰ 计划时间
+              备注
             </label>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'space-between' }}>
-              <input
-                type="time"
-                value={templateScheduledTime.split('-')[0] || ''}
-                onChange={(e) => {
-                  const startTime = e.target.value;
-                  const endTime = templateScheduledTime.split('-')[1] || '';
-                  setTemplateScheduledTime(`${startTime}-${endTime}`);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 6,
-                  fontSize: 14
-                }}
-              />
-              <span style={{ color: '#666' }}>至</span>
-              <input
-                type="time"
-                value={templateScheduledTime.split('-')[1] || ''}
-                onChange={(e) => {
-                  const startTime = templateScheduledTime.split('-')[0] || '';
-                  const endTime = e.target.value;
-                  setTemplateScheduledTime(`${startTime}-${endTime}`);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: 6,
-                  fontSize: 14
-                }}
-              />
-            </div>
+            <textarea
+              value={formData.note}
+              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              placeholder="输入备注..."
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e0e0e0',
+                borderRadius: 8,
+                fontSize: 14,
+                backgroundColor: '#fafafa',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                height: '44px',
+                minHeight: '44px',
+                resize: 'vertical',
+                outline: 'none',
+                lineHeight: '1.4'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#1a73e8';
+                e.target.style.backgroundColor = '#fff';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e0e0e0';
+                e.target.style.backgroundColor = '#fafafa';
+              }}
+            />
           </div>
 
-          {/* 进度跟踪 */}
+        
+
+          {/* 类别和子类别 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 12,
+            alignItems: 'start'
+          }}>
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: 8,
+                fontWeight: 600,
+                color: '#333',
+                fontSize: 14,
+              }}>
+                类别
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value, subCategory: '' })}
+                style={{
+                  width: '100%',
+                  height: 36,
+                  padding: '0 10px',
+                  border: '1px solid #ccc',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  backgroundColor: '#fff',
+                  cursor: 'pointer'
+                }}
+              >
+                {categories.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {formData.category === '校内' && (
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: 8,
+                  fontWeight: 600,
+                  color: '#333',
+                  fontSize: 14,
+                }}>
+                  子类别
+                </label>
+                <select
+                  value={formData.subCategory}
+                  onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 36,
+                    padding: '0 10px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    backgroundColor: '#fff',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">选择子类别</option>
+                  {(categories.find((c) => c.name === '校内')?.subCategories || []).map((subCat) => (
+                    <option key={subCat} value={subCat}>
+                      {subCat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* 📊 进度跟踪 */}
           <div>
             <label style={{
               display: 'block',
@@ -5395,105 +4865,97 @@ const handleSave = () => {
             }}>
               📊 进度跟踪
             </label>
-
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: 12,
               alignItems: 'end',
             }}>
-              {/* 初始值 */}
               <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>
-                  初始值
-                </div>
+                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>初始值</div>
                 <input
                   type="number"
-                  value={templateProgress.initial || ''}
-                  onChange={(e) => setTemplateProgress({
-                    ...templateProgress,
-                    initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
+                  value={formData.progress?.initial || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    progress: { ...formData.progress, initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
                   })}
                   style={{
                     width: '100%',
-                    padding: '8px 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff'
-                  }}
-                />
-              </div>
-
-              {/* 当前值 */}
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>
-                  当前值
-                </div>
-                <input
-                  type="number"
-                  value={templateProgress.current || ''}
-                  onChange={(e) => setTemplateProgress({
-                    ...templateProgress,
-                    current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff'
-                  }}
-                />
-              </div>
-
-              {/* 目标值 */}
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>
-                  目标值
-                </div>
-                <input
-                  type="number"
-                  value={templateProgress.target || ''}
-                  onChange={(e) => setTemplateProgress({
-                    ...templateProgress,
-                    target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff'
-                  }}
-                />
-              </div>
-
-              {/* 单位 */}
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>
-                  单位
-                </div>
-                <select
-                  value={templateProgress.unit || '%'}
-                  onChange={(e) => setTemplateProgress({
-                    ...templateProgress,
-                    unit: e.target.value
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 6px',
+                    height: 36,
+                    padding: '0 6px',
                     border: '1px solid #ccc',
                     borderRadius: 6,
                     fontSize: 14,
                     textAlign: 'center',
                     backgroundColor: '#fff',
-                    cursor: 'pointer'
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>当前值</div>
+                <input
+                  type="number"
+                  value={formData.progress?.current || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    progress: { ...formData.progress, current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
+                  })}
+                  style={{
+                    width: '100%',
+                    height: 36,
+                    padding: '0 6px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>目标值</div>
+                <input
+                  type="number"
+                  value={formData.progress?.target || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    progress: { ...formData.progress, target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
+                  })}
+                  style={{
+                    width: '100%',
+                    height: 36,
+                    padding: '0 6px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>单位</div>
+                <select
+                  value={formData.progress?.unit || '%'}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    progress: { ...formData.progress, unit: e.target.value }
+                  })}
+                  style={{
+                    width: '100%',
+                    height: 36,
+                    padding: '0 6px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <option value="%">%</option>
@@ -5508,152 +4970,669 @@ const handleSave = () => {
             </div>
           </div>
 
-          {/* 隐藏的文件输入 */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            style={{ display: 'none' }}
-          />
-        </div>
+          {/* 更多配置按钮 */}
+          <div
+            onClick={() => setShowMoreConfig(!showMoreConfig)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px',
+              backgroundColor: '#f0f0f0',
+              borderRadius: 8,
+              cursor: 'pointer',
+              marginTop: 8,
+              userSelect: 'none'
+            }}
+          >
+            <span style={{ fontSize: 14, color: '#333' }}>
+              {showMoreConfig ? '▼ 收起更多配置' : '▶ 更多配置'}
+            </span>
+          </div>
 
-        {/* 现有模板列表 */}
-        <div style={{ marginTop: 20 }}>
-          <h4 style={{
-            margin: '0 0 16px 0',
-            color: '#333',
-            fontSize: '14px',
-            fontWeight: '600'
-          }}>
-            现有模板 ({templates.length})
-          </h4>
-
-          {templates.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              color: '#666',
-              fontSize: '13px',
-              padding: '32px 16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px'
-            }}>
-              暂无模板
-            </div>
-          ) : (
-            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-              {templates.map((template, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    padding: '16px',
-                    border: `1px solid #e0e0e0`,
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    backgroundColor: '#f8f9fa',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#F3F4F6';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f8f9fa';
-                  }}
-                >
+          {/* 更多配置内容 */}
+          {showMoreConfig && (
+            <div>
+              {/* 标签编辑 */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                marginBottom: 12,
+              }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '6px'
-                    }}>
-                      <span style={{
-  fontWeight: '600',
-  fontSize: '13px',
-  color: '#333'
-}}>
-  {template.name || template.text}
-</span>
-                      <span style={{
-                        fontSize: '11px',
-                        padding: '2px 6px',
-                        backgroundColor: '#1a73e8',
-                        color: '#FFFFFF',
-                        borderRadius: '4px'
-                      }}>
-                        {template.category}
-                      </span>
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#666',
-                      marginBottom: '8px'
-                    }}>
-                      {template.content}
-                    </div>
-                    {/* 显示模板图片 */}
-                    {template.image && (
-                      <img
-                        src={template.image}
-                        alt="模板图片"
+                    <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: 13 }}>
+                      添加标签
+                    </label>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        placeholder="标签名称"
+                        value={formData.newTagName}
+                        onChange={(e) => setFormData({ ...formData, newTagName: e.target.value })}
                         style={{
-                          maxWidth: '50px',
-                          maxHeight: '50px',
-                          borderRadius: 4,
-                          marginBottom: '4px'
+                          flex: 1,
+                          height: 32,
+                          padding: '0 8px',
+                          border: '1px solid #ccc',
+                          borderRadius: 6,
+                          fontSize: 13,
+                          backgroundColor: '#fff',
+                          boxSizing: 'border-box',
                         }}
                       />
-                    )}
+                      <input
+                        type="color"
+                        value={formData.newTagColor}
+                        onChange={(e) => setFormData({ ...formData, newTagColor: e.target.value })}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          border: '1px solid #ccc',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          backgroundColor: '#fff',
+                          boxSizing: 'border-box',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (formData.newTagName?.trim()) {
+                            const newTag = {
+                              name: formData.newTagName.trim(),
+                              color: formData.newTagColor,
+                              textColor: '#fff',
+                            };
+                            setFormData({
+                              ...formData,
+                              tags: [...formData.tags, newTag],
+                              newTagName: '',
+                              newTagColor: '#e0e0e0',
+                            });
+                          }
+                        }}
+                        style={{
+                          height: 32,
+                          width: 32,
+                          backgroundColor: '#f9f9f9',
+                          color: '#333',
+                          border: '1px solid #ccc',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontSize: 16,
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxSizing: 'border-box',
+                          flexShrink: 0,
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: 13 }}>
+                      当前标签
+                    </label>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 4,
+                      minHeight: 32,
+                      padding: '4px 8px',
+                      border: '1px solid #ccc',
+                      borderRadius: 6,
+                      backgroundColor: '#fafafa',
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                    }}>
+                      {formData.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            fontSize: 11,
+                            padding: '3px 6px',
+                            backgroundColor: tag.color,
+                            color: tag.textColor || '#fff',
+                            borderRadius: 10,
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                        >
+                          {tag.name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newTags = [...formData.tags];
+                              newTags.splice(index, 1);
+                              setFormData({ ...formData, tags: newTags });
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: 11,
+                              padding: 0,
+                              width: 12,
+                              height: 12,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'inherit',
+                              opacity: 0.8,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      {formData.tags.length === 0 && (
+                        <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>暂无标签</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 常用标签 */}
+              <div style={{ marginBottom: 15 }}>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>常用标签:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {commonTags.map((tag, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        const isAlreadyAdded = formData.tags.some(t => t.name === tag.name);
+                        if (!isAlreadyAdded) {
+                          setFormData({ ...formData, tags: [...formData.tags, tag] });
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: tag.color,
+                        color: tag.textColor,
+                        border: 'none',
+                        borderRadius: 16,
+                        cursor: 'pointer',
+                        fontSize: 11,
+                        fontWeight: '500'
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 重复设置 */}
+              <div style={{ marginBottom: 15 }}>
+                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
+                  🔄 重复设置
+                </label>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        background: formData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
+                        color: formData.repeatFrequency === 'daily' ? '#fff' : '#000',
+                        border: 'none',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setFormData({ ...formData, repeatFrequency: 'daily' })}
+                    >
+                      每天
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        background: formData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
+                        color: formData.repeatFrequency === 'weekly' ? '#fff' : '#000',
+                        border: 'none',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setFormData({ ...formData, repeatFrequency: 'weekly' })}
+                    >
+                      每周
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        background: !formData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
+                        color: !formData.repeatFrequency ? '#fff' : '#000',
+                        border: 'none',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setFormData({ ...formData, repeatFrequency: '' })}
+                    >
+                      不重复
+                    </button>
+                  </div>
+                </div>
+
+                {formData.repeatFrequency === 'weekly' && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'nowrap',
+                      gap: 4,
+                      justifyContent: 'space-between',
+                    }}>
+                      {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+                        <button
+                          key={day}
+                          type="button"
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background: formData.repeatDays[index] ? '#1a73e8' : '#f0f0f0',
+                            color: formData.repeatDays[index] ? '#fff' : '#000',
+                            border: formData.repeatDays[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                          onClick={() => {
+                            const newRepeatDays = [...formData.repeatDays];
+                            newRepeatDays[index] = !newRepeatDays[index];
+                            setFormData({ ...formData, repeatDays: newRepeatDays });
+                          }}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.repeatFrequency && (
+                  <div style={{
+                    fontSize: 11,
+                    color: '#666',
+                    textAlign: 'center',
+                    padding: '6px 8px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 4
+                  }}>
+                    {formData.repeatFrequency === 'daily' 
+                      ? '任务将在未来7天重复创建' 
+                      : formData.repeatFrequency === 'weekly' && formData.repeatDays.some(day => day)
+                        ? `已选择：${formData.repeatDays.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
+                        : '请选择重复的星期'
+                    }
+                  </div>
+                )}
+              </div>
+
+              {/* 计划时间 */}
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
+                  ⏰ 计划时间
+                </label>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      placeholder="时"
+                      value={formData.startHour}
+                      onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
+                      style={{
+                        width: '100%',
+                        height: 36,
+                        padding: '0 4px',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        fontSize: 14,
+                        textAlign: 'center',
+                        backgroundColor: '#fff',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <span style={{ color: '#666' }}>:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="分"
+                      value={formData.startMinute}
+                      onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
+                      style={{
+                        width: '100%',
+                        height: 36,
+                        padding: '0 4px',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        fontSize: 14,
+                        textAlign: 'center',
+                        backgroundColor: '#fff',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <span style={{ color: '#666', fontSize: 12 }}>至</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      placeholder="时"
+                      value={formData.endHour}
+                      onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
+                      style={{
+                        width: '100%',
+                        height: 36,
+                        padding: '0 4px',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        fontSize: 14,
+                        textAlign: 'center',
+                        backgroundColor: '#fff',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <span style={{ color: '#666' }}>:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="分"
+                      value={formData.endMinute}
+                      onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
+                      style={{
+                        width: '100%',
+                        height: 36,
+                        padding: '0 4px',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        fontSize: 14,
+                        textAlign: 'center',
+                        backgroundColor: '#fff',
+                        boxSizing: 'border-box',
+                      }}
+                    />
                   </div>
                   <button
-                    onClick={() => handleDelete(index)}
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        startHour: '',
+                        startMinute: '',
+                        endHour: '',
+                        endMinute: '',
+                        scheduledTime: ''
+                      });
+                    }}
                     style={{
-                      background: 'transparent',
-                      border: 'none',
+                      height: 36,
+                      padding: '0 12px',
+                      backgroundColor: '#f0f0f0',
                       color: '#666',
+                      border: '1px solid #ccc',
+                      borderRadius: 6,
                       cursor: 'pointer',
-                      fontSize: '14px',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.color = '#EF4444';
-                      e.target.style.backgroundColor = '#FEF2F2';
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.color = '#666';
-                      e.target.style.backgroundColor = 'transparent';
+                      fontSize: 12,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
                     }}
                   >
-                    🗑️
+                    取消
                   </button>
-        
-    
-
-
-
-
-
-
-
-
-
-
-
-
                 </div>
-              ))}
+                {formData.startHour && formData.startMinute && formData.endHour && formData.endMinute && (
+                  <div style={{
+                    fontSize: 12,
+                    color: '#28a745',
+                    textAlign: 'center',
+                    marginTop: 6,
+                    padding: 4,
+                    backgroundColor: '#e8f5e8',
+                    borderRadius: 4
+                  }}>
+                    计划时间: {formData.startHour}:{formData.startMinute} - {formData.endHour}:{formData.endMinute}
+                  </div>
+                )}
+              </div>
+
+              {/* 提醒时间 */}
+              <div>
+                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
+                  🔔 提醒时间
+                </label>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', width: '100%' }}>
+                  <input
+                    type="number"
+                    min="2024"
+                    max="2030"
+                    placeholder="年"
+                    value={formData.reminderYear}
+                    onChange={(e) => setFormData({ ...formData, reminderYear: e.target.value })}
+                    style={{ flex: 1.2, minWidth: '60px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    placeholder="月"
+                    value={formData.reminderMonth}
+                    onChange={(e) => setFormData({ ...formData, reminderMonth: e.target.value })}
+                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="日"
+                    value={formData.reminderDay}
+                    onChange={(e) => setFormData({ ...formData, reminderDay: e.target.value })}
+                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    placeholder="时"
+                    value={formData.reminderHour}
+                    onChange={(e) => setFormData({ ...formData, reminderHour: e.target.value })}
+                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    placeholder="分"
+                    value={formData.reminderMinute}
+                    onChange={(e) => setFormData({ ...formData, reminderMinute: e.target.value })}
+                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        reminderYear: '',
+                        reminderMonth: '',
+                        reminderDay: '',
+                        reminderHour: '',
+                        reminderMinute: ''
+                      });
+                    }}
+                    style={{
+                      height: 36,
+                      padding: '0 12px',
+                      backgroundColor: '#f0f0f0',
+                      color: '#666',
+                      border: '1px solid #ccc',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+
+              {/* 子任务 */}
+              <div>
+                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
+                  📋 子任务
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+                  <input
+                    type="text"
+                    placeholder="输入子任务内容"
+                    value={formData.newSubTask}
+                    onChange={(e) => setFormData({ ...formData, newSubTask: e.target.value })}
+                    style={{ flex: 1, height: 36, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, backgroundColor: '#fff', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (formData.newSubTask?.trim()) {
+                        setFormData({
+                          ...formData,
+                          subTasks: [...formData.subTasks, { text: formData.newSubTask.trim(), done: false }],
+                          newSubTask: ''
+                        });
+                      }
+                    }}
+                    style={{ height: 36, width: 36, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 18, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    +
+                  </button>
+                </div>
+                {formData.subTasks.length > 0 && (
+                  <div>
+                    {formData.subTasks.map((subTask, index) => (
+                      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <input type="checkbox" checked={subTask.done} onChange={(e) => {
+                          const newSubTasks = [...formData.subTasks];
+                          newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked };
+                          setFormData({ ...formData, subTasks: newSubTasks });
+                        }} style={{ transform: 'scale(1.2)', cursor: 'pointer' }} />
+                        <input
+                          type="text"
+                          value={subTask.text}
+                          onChange={(e) => {
+                            const newSubTasks = [...formData.subTasks];
+                            newSubTasks[index] = { ...newSubTasks[index], text: e.target.value };
+                            setFormData({ ...formData, subTasks: newSubTasks });
+                          }}
+                          style={{ flex: 1, height: 36, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, backgroundColor: '#fff', boxSizing: 'border-box' }}
+                        />
+                        <button onClick={() => {
+                          setFormData({ ...formData, subTasks: formData.subTasks.filter((_, i) => i !== index) });
+                        }} style={{ height: 36, width: 48, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer' }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
+
+          {/* 现有模板列表 */}
+          <div style={{ marginTop: 20 }}>
+            <h4 style={{ margin: '0 0 16px 0', color: '#333', fontSize: '14px', fontWeight: '600' }}>
+              现有模板 ({templates.length})
+            </h4>
+
+            {templates.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#666', fontSize: '13px', padding: '32px 16px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                暂无模板
+              </div>
+            ) : (
+              <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+                {templates.map((template, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleEditTemplate(index, template)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px',
+                      border: editingTemplateIndex === index ? '2px solid #1a73e8' : '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: editingTemplateIndex === index ? '#e8f0fe' : '#f8f9fa',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+  <span style={{ fontWeight: '600', fontSize: '13px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    {template.name || template.text?.slice(0, 15) || `模板${index + 1}`}
+  </span>
+  <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#1a73e8', color: '#fff', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+    {template.category}
+  </span>
+</div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(index);
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '16px', padding: '4px 8px' }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {templates.length > 0 && (
+              <div style={{ fontSize: '11px', color: '#999', marginTop: '8px', textAlign: 'center', padding: '4px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+                💡 点击模板可编辑内容
+              </div>
+            )}
+          </div>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          style={{ display: 'none' }}
+        />
       </div>
     </div>
   );
 };
+
+
 
 // 操作菜单模态框
 const ActionMenuModal = ({ task, onClose, setShowCrossDateModal, onEditText, onEditNote, onEditReflection, onTogglePinned, onImageUpload, setShowDeleteModal,
@@ -6444,157 +6423,7 @@ const RegularTaskEditModal = ({ task, onClose, onSave, categories }) => {
   );
 };
 
-const RegularTaskItem = ({ 
-  task, 
-  onToggle, 
-  onDelete, 
-  onEdit, 
-  categories,
-  isDraggable = false
-}) => {
-  const [showEditModal, setShowEditModal] = useState(false);
 
-  const handleEdit = (id, newText, category, subCategory) => {
-    onEdit(id, newText, category, subCategory);
-  };
-
-  // 在 RegularTaskItem 组件中
-const handleDelete = () => {
-  if (window.confirm(`确定要删除常规任务 "${task.text}" 吗？\n\n删除后将从所有日期中移除！`)) {
-    onDelete(task.text);  // 这里调用的是 deleteRegularTaskByText
-  }
-};
-
-  // 获取类别颜色
-  const getCategoryColor = (category) => {
-    const colorMap = {
-      '语文': '#FF0000',
-      '数学': '#0000FF',
-      '英语': '#008000',
-      '运动': '#FFA500',
-      '科学': '#800080',
-      '校内': '#1a73e8'
-    };
-    return colorMap[category] || '#FF9800';
-  };
-
-  const displayCategory = task.targetCategory || task.category;
-  const displaySubCategory = task.targetSubCategory || task.subCategory;
-
-  return (
-    <>
-      <li
-        draggable={isDraggable}
-        style={{
-          position: "relative",
-          background: "#fff3e0",
-          borderRadius: 6,
-          minHeight: "24px",
-          marginBottom: 4,
-          padding: "8px",
-          border: "1px solid #FFB74D",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 3,
-          flexWrap: "wrap",
-          cursor: isDraggable ? 'grab' : 'default',
-          transition: 'all 0.2s ease'
-        }}
-      >
-        {/* 左侧内容 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, flex: 1, minWidth: 0 }}>
-          {/* 复选框：用于标记完成，点击时调用 onToggle */}
-          <input
-            type="checkbox"
-            checked={task.done || false}
-            onChange={() => onToggle(task)}
-            style={{ margin: 0, cursor: "pointer", flexShrink: 0 }}
-          />
-          
-          {/* 任务文字：点击打开编辑模态框 */}
-          <span
-            onClick={() => setShowEditModal(true)}
-            style={{
-              wordBreak: "break-word",
-              cursor: "pointer",
-              color: task.done ? "#999" : "#333",
-              textDecoration: task.done ? "line-through" : "none",
-              fontSize: "13px",
-              flex: 1
-            }}
-          >
-            {task.text}
-          </span>
-        </div>
-
-        {/* 右侧：标签、删除按钮、拖拽手柄 */}
-        <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
-          {displayCategory && displayCategory !== "常规任务" && !isDraggable && (
-            <span style={{
-              fontSize: "10px",
-              padding: "2px 5px",
-              borderRadius: "8px",
-              backgroundColor: getCategoryColor(displayCategory),
-              color: "#fff",
-              whiteSpace: "nowrap"
-            }}>
-              {displayCategory === "校内" && displaySubCategory 
-                ? `校内/${displaySubCategory}` 
-                : displayCategory}
-            </span>
-          )}
-          
-          {!isDraggable && (
-            <button
-              onClick={handleDelete}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#bbb',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '0 2px',
-                lineHeight: 1,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              title="删除任务"
-            >
-              ×
-            </button>
-          )}
-          
-          {isDraggable && (
-            <div
-              style={{
-                cursor: 'grab',
-                color: '#999',
-                fontSize: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                userSelect: 'none',
-                paddingLeft: '4px'
-              }}
-              title="拖拽调整顺序"
-            >
-              ⋮⋮
-            </div>
-          )}
-        </div>
-      </li>
-
-      {showEditModal && (
-        <RegularTaskEditModal
-          task={task}
-          categories={categories}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleEdit}
-        />
-      )}
-    </>
-  );
-};
 
 
 
@@ -10417,10 +10246,6 @@ const TaskItem = ({
 
 
 
-
-
-
-
 // SortableTaskList 组件 - 删除提示信息后的版本
 const SortableTaskList = ({ 
   tasks, 
@@ -10609,996 +10434,316 @@ const SortableTaskList = ({
 };
 
 
-function App() {
-const [bulkDateRange, setBulkDateRange] = useState('today');
-const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
-  return new Date().toISOString().split('T')[0];
-});
-const [bulkDateRangeEnd, setBulkDateRangeEnd] = useState(() => {
-  return new Date().toISOString().split('T')[0];
-});
-const [bulkPreviewTasks, setBulkPreviewTasks] = useState([]);
+  // 统计页面
+  const StatsPage = () => {
+    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
+    const fontSize = window.innerWidth <= 768 ? 10 : 12;
 
-const isAddingRegularTask = useRef(false);
-const [subCategoryTaskOrder, setSubCategoryTaskOrder] = useState({}); // 存储每个子分类的任务顺序
-// 在 App 组件中，找到其他 useState 定义的位置，添加：
-const [sortingSubCategory, setSortingSubCategory] = useState(null); // { category: '校内', subCategory: '数学' }
-const [draggedSubTaskIndex, setDraggedSubTaskIndex] = useState(null);
-// 加载保存的排序顺序
-useEffect(() => {
-  const savedOrder = localStorage.getItem('subcategory_task_order');
-  if (savedOrder) {
-    setSubCategoryTaskOrder(JSON.parse(savedOrder));
-  }
-}, []);
-// 在 App 组件中，其他 useState 附近添加（约在第 5300 行）
-const deletedRegularTasksRef = useRef(new Set());
-// 保存排序顺序
-const saveSubCategoryOrder = (subCategory, orderedTaskIds) => {
-  const newOrder = {
-    ...subCategoryTaskOrder,
-    [subCategory]: orderedTaskIds
-  };
-  setSubCategoryTaskOrder(newOrder);
-  localStorage.setItem('subcategory_task_order', JSON.stringify(newOrder));
-};
 
-// 获取排序后的任务列表
-const getSortedSubCategoryTasks = (subCategory, tasks) => {
-  const savedOrder = subCategoryTaskOrder[subCategory];
-  if (!savedOrder || savedOrder.length === 0) return tasks;
+
+    
+    return (
+      <div style={{
+        maxWidth: 600,
+        margin: "0 auto",
+        padding: 15,
+        fontFamily: "sans-serif",
+        backgroundColor: "#f5faff"
+      }}>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20
+        }}>
+          <button
+            onClick={() => setShowStats(false)}
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 20
+            }}
+          >
+            ⬅️
+          </button>
+          <h1 style={{
+            textAlign: "center",
+            color: "#1a73e8",
+            fontSize: 20
+          }}>
+            {statsMode === "week" ? "本周统计" : statsMode === "month" ? "本月统计" : "自选统计"}
+          </h1>
+          <div style={{ width: 20 }}></div>
+        </div>
+
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 10,
+          marginBottom: 20
+        }}>
+          <button
+            onClick={() => setStatsMode("week")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "week" ? "#1a73e8" : "#eee",
+              color: statsMode === "week" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            本周
+          </button>
+          <button
+            onClick={() => setStatsMode("month")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "month" ? "#1a73e8" : "#eee",
+              color: statsMode === "month" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            本月
+          </button>
+          <button
+            onClick={() => setStatsMode("custom")}
+            style={{
+              padding: "6px 12px",
+              background: statsMode === "custom" ? "#1a73e8" : "#eee",
+              color: statsMode === "custom" ? "#fff" : "#000",
+              border: "none",
+              borderRadius: 4
+            }}
+          >
+            自选
+          </button>
+        </div>
+
+        {statsMode === "custom" && (
+          <div style={{
+            backgroundColor: "#fff",
+            padding: 15,
+            borderRadius: 10,
+            marginBottom: 20
+          }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 5 }}>选择日期范围:</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input type="date" style={{ flex: 1, padding: 8 }} />
+                <span style={{ lineHeight: "36px" }}>至</span>
+                <input type="date" style={{ flex: 1, padding: 8 }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 5 }}>选择类别:</div>
+              <select style={{ width: "100%", padding: 8 }}>
+                <option value="">全部类别</option>
+                {categories.map(c => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              style={{
+                width: "100%",
+                padding: 10,
+                background: "#1a73e8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 5
+              }}
+            >
+              生成统计
+            </button>
+          </div>
+        )}
+
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 20,
+          padding: "8px 0",
+          backgroundColor: "#e8f0fe",
+          borderRadius: 10
+        }}>
+          {[
+            { label: "📊 平均完成率", value: `${avgCompletion}%` },
+            { label: "⏱️ 日均时长", value: `${avgDailyTime}m` }
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 12,
+                borderRight: idx < 1 ? "1px solid #cce0ff" : "none",
+                padding: "4px 0"
+              }}
+            >
+              <div>{item.label}</div>
+              <div style={{ fontWeight: "bold", marginTop: 2 }}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+
+<div style={{ height: chartHeight, marginBottom: 30 }}>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    每日学习时间（排除运动）
+  </h3>
+  <ResponsiveContainer width="100%" height="80%">
+    <BarChart 
+      data={dailyStudyData} 
+      margin={{ top: 20, right: 10, left: -20, bottom: 5 }} // 增加顶部边距
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" tick={{ fontSize }} />
+      <YAxis 
+        tick={{ fontSize }} 
+        domain={[0, 'dataMax + 20']} // 给Y轴更多空间
+      />
+      <Bar
+        dataKey="time"
+        fill="#1a73e8"
+        radius={[4, 4, 0, 0]}
+        label={{ 
+          position: "top", 
+          fontSize: fontSize - 1, // 稍微减小字体
+          formatter: (value) => `${value}分钟`,
+          fill: "#333", // 确保标签颜色可见
+          offset: 8 // 增加标签与柱子的距离
+        }}
+      />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+       {/* 校内子分类学习时间 */}
+<div style={{ height: chartHeight, marginBottom: 30 }}>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    校内子分类学习时间
+  </h3>
   
-  const taskMap = new Map();
-  tasks.forEach(task => {
-    taskMap.set(task.id, task);
-  });
-  
-  const ordered = [];
-  savedOrder.forEach(id => {
-    if (taskMap.has(id)) {
-      ordered.push(taskMap.get(id));
-      taskMap.delete(id);
-    }
-  });
-  
-  // 添加新任务（不在保存顺序中的）
-  ordered.push(...taskMap.values());
-  return ordered;
-};
-
-// 开始排序子分类
-const startSortingSubCategory = (subCategory) => {
-  setSortingSubCategory(subCategory);
-};
-
-// 结束排序并保存
-const endSortingSubCategory = (subCategory, orderedTasks) => {
-  const orderedIds = orderedTasks.map(task => task.id);
-  saveSubCategoryOrder(subCategory, orderedIds);
-  setSortingSubCategory(null);
-};
-
-// 在 App 组件中，找到其他 useRef 的位置，添加：
-
-
-
-
-const [showRegularTaskEditModal, setShowRegularTaskEditModal] = useState(null);
-const [chartView, setChartView] = useState('month');
-const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
-const [editingTemplate, setEditingTemplate] = useState(null);
-const [templateFormData, setTemplateFormData] = useState({
-  text: '',
-  category: '校内',
-  subCategory: ''
-});
-// 在 App 组件的状态定义区域添加
-const [regularTasksOrder, setRegularTasksOrder] = useState(() => {
-  const saved = localStorage.getItem('regular_tasks_order');
-  return saved ? JSON.parse(saved) : [];
-});
-const [isSortingRegularTasks, setIsSortingRegularTasks] = useState(false);
-const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
-  const [tasksByDate, setTasksByDate] = useState({});
-  // 获取跨日期任务在指定日期的完成类型
-const getTaskCompletionType = useCallback((task, date) => {
-  // 检查这个任务是否在该日期被实际完成过
-  const dayTasks = tasksByDate[date] || [];
-  
-  // 查找是否有同文本的任务是被实际完成的
-  const actualCompletedTask = dayTasks.find(t => 
-    t.text === task.text && 
-    t.actualCompletedDate === date  // 标记实际完成的日期
-  );
-  
-  if (actualCompletedTask && actualCompletedTask.actualCompletedDate === date) {
-    return { completed: true, type: 'actual' };
-  }
-  
-  // 否则返回同步完成状态
-  return { completed: task.done, type: task.done ? 'synced' : 'none' };
-}, [tasksByDate]);
-
-  const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
-  const [showGradeModal, setShowGradeModal] = useState(false);
-  const hasAttemptedRestore = useRef(false);  // 添加这一行
-  // 在现有状态定义区域添加
-  // 在现有的状态定义区域添加
-const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  
-  const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [newTaskText, setNewTaskText] = useState("");
- 
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [showReflectionModal, setShowReflectionModal] = useState(false);
-  const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
-  const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
-  const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
-  const [showBulkInput, setShowBulkInput] = useState(false); // 控制是否显示批量导入框
-  const [newTaskCategory, setNewTaskCategory] = useState(baseCategories[0].name);
-  const [bulkText, setBulkText] = useState("");
-  const [showAddInput, setShowAddInput] = useState(false);
-  const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
-  const [showStats, setShowStats] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(null);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [templates, setTemplates] = useState([]);
-  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
-  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
-  const [showMoveModal, setShowMoveModal] = useState(null);
-  // 在现有的状态定义区域添加
-const [showWeekTaskModal, setShowWeekTaskModal] = useState(false);
-const [showMonthTaskModal, setShowMonthTaskModal] = useState(false);
-const [monthTasks, setMonthTasks] = useState([]); // 本月任务
-const [newMonthTask, setNewMonthTask] = useState({
-  text: '',
-  category: '校内',
-  subCategory: '',
-  deadline: '',
-  progress: 0,
-  target: 100,
-  unit: '%',
-  important: false,
-  note: ''
-});
-  const reflectionTextareaRef = useRef(null);
-  const addInputRef = useRef(null);
-  const bulkInputRef = useRef(null);
-  // 临时保留旧变量避免错误
-// 常规任务相关状态 - 添加在这里
-const [regularTasks, setRegularTasks] = useState(() => {
-  const saved = localStorage.getItem('regular_tasks');
-  const parsed = saved ? JSON.parse(saved) : [];
-  console.log('📂 从 localStorage 加载 regularTasks:', parsed.map(t => t.text));
-  return parsed;
-});
-const [showRegularTaskModal, setShowRegularTaskModal] = useState(false);
-
-// 替换为：
-// 获取当前日期的任务列表（用于显示）
-const todayTasks = useMemo(() => {
-  const dateTasks = tasksByDate[selectedDate] || [];
-  
-  // 常规任务只显示未完成的（因为完成后会从常规任务区域移除）
-  // 其他分类的任务正常显示
-  return dateTasks.map(task => {
-    // 如果是已完成的常规任务，不显示在常规任务区域（它已经在其他分类了）
-    return task;
-  });
-}, [tasksByDate, selectedDate]);
-const handleSaveCategories = (updatedCategories) => {
-  setCategories(updatedCategories);
-  saveMainData('categories', updatedCategories);
-};
-const [isInitialized, setIsInitialized] = useState(false);
-const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
-const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
-
-const [categories, setCategories] = useState(baseCategories.map(cat => ({
-  ...cat,
-  subCategories: []
-})));
-
-// 添加这个状态 - 用于控制各个分类的折叠/展开
-const [collapsedCategories, setCollapsedCategories] = useState({
-  "本周任务": false,
-  "常规任务": true,
-  "语文": false,
-  "数学": false,
-  "英语": false,
-  "科学": false,
-  "运动": false,
-  "校内": false
-});
-
-const isAddingTask = useRef(false);
-  const [showSchedule, setShowSchedule] = useState(false);
-  const [showBackupModal, setShowBackupModal] = useState(false);
-  const [statsMode, setStatsMode] = useState("week");
-  const [showImageModal, setShowImageModal] = useState(null);
-  const [showHonorModal, setShowHonorModal] = useState(false);
-  const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
-  const [showDailyLogModal, setShowDailyLogModal] = useState(null);
-  const [showReminderModal, setShowReminderModal] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [dailyRatings, setDailyRatings] = useState({});
-  const [dailyReflections, setDailyReflections] = useState({});
-  
-  const [showCrossDateModal, setShowCrossDateModal] = useState(null);
-  const [repeatConfig, setRepeatConfig] = useState({
-  frequency: "", // 改为空字符串，默认不重复
-  days: [false, false, false, false, false, false, false],
-  startHour: "",
-  startMinute: "",
-  endHour: "",
-  endMinute: "",
-  reminderYear: "",
-  reminderMonth: "",
-  reminderDay: "",
-  reminderHour: "",
-  reminderMinute: "",
-});
-
-
-
-// 删除常规任务 - 同时删除所有日期的实例和模板
-const deleteRegularTaskByText = (taskText) => {
-  console.log('🗑️ 删除常规任务:', taskText);
-  
-  // 1. 从所有日期中删除实例
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    Object.keys(newTasksByDate).forEach(date => {
-      newTasksByDate[date] = newTasksByDate[date].filter(task => {
-        return !(task.isRegularTask && task.text === taskText);
-      });
-    });
-    return newTasksByDate;
-  });
-  
-  // 2. 从 regularTasks 状态中删除模板
-  setRegularTasks(prev => {
-    const newRegularTasks = prev.filter(task => task.text !== taskText);
-    // ✅ 立即保存到 localStorage
-    localStorage.setItem('regular_tasks', JSON.stringify(newRegularTasks));
-    console.log('已更新 localStorage 中的 regular_tasks:', newRegularTasks);
-    return newRegularTasks;
-  });
-};
-// 在 App 组件中添加状态
-const [reminderText, setReminderText] = useState(() => {
-  return localStorage.getItem('daily_reminder') || '';
-});
-
-// 添加保存提醒文本的函数
-const handleReminderChange = (text) => {
-  setReminderText(text);
-  localStorage.setItem('daily_reminder', text);
-};
-
-
-// 添加编辑和删除函数
-const handleEditMonthTask = (updatedTask) => {
-  setMonthTasks(prev => prev.map(task => 
-    task.id === updatedTask.id ? updatedTask : task
-  ));
-};
-
-const handleDeleteMonthTask = (taskId) => {
-  setMonthTasks(prev => prev.filter(task => task.id !== taskId));
-};
-
-
-
-// 🔽 在这里添加获取Gist列表的函数 🔽
-  const getLatestStudyTrackerGist = async (token) => {
-    try {
-      const response = await fetch('https://api.github.com/gists', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) throw new Error('无法获取Gist列表');
-      
-      const gists = await response.json();
-      
-      // 过滤出学习跟踪器的gist，按更新时间排序
-      const studyGists = gists
-        .filter(gist => {
-          const files = Object.values(gist.files);
-          return files.some(file => 
-            file.filename.includes('study-tracker') || 
-            file.filename.includes('json')
-          );
-        })
-        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-      
-      return studyGists[0]; // 返回最新的一个
-    } catch (error) {
-      console.error('获取Gist列表失败:', error);
-      return null;
-    }
-  };
-
-
-  
-const restoreFromGitHub = useCallback(async () => {
-  console.log('🔍 开始恢复流程');
-  
-  const token = localStorage.getItem('github_token');
-  let gistId = localStorage.getItem('github_gist_id');
-  
-  console.log('Token:', token ? '已设置' : '未设置');
-  console.log('Gist ID:', gistId || '未设置');
-  
-  if (!token) {
-    alert('请先设置 GitHub Token');
-    setShowGitHubSyncModal(true);
-    return;
-  }
-
-  // 如果没有 Gist ID，让用户输入
-  if (!gistId) {
-    gistId = window.prompt('请输入 Gist ID（在之前浏览器的同步设置中可以找到）');
-    console.log('用户输入的 Gist ID:', gistId);
-    if (!gistId) return;
-  }
-
-  try {
-    console.log('📡 开始请求 Gist 数据...');
-    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log('响应状态:', response.status);
-    
-    if (!response.ok) {
-      throw new Error(`获取数据失败: ${response.status}`);
-    }
-
-    const gist = await response.json();
-    console.log('Gist 获取成功:', gist);
-    
-    const content = gist.files['study-tracker-data.json'].content;
-    const backupData = JSON.parse(content);
-    console.log('备份数据:', backupData);
-
-    if (window.confirm(`确定要恢复 ${new Date(backupData.syncTime).toLocaleString()} 的备份数据吗？这将覆盖当前所有数据！`)) {
-      console.log('用户确认恢复，开始设置状态...');
-      
-      // 立即保存到 localStorage
-      await saveMainData('tasks', backupData.tasksByDate || {});
-      await saveMainData('templates', backupData.templates || []);
-    
-      
-      console.log('数据已保存到 localStorage');
-      
-      // 然后设置状态
-      setTasksByDate(backupData.tasksByDate || {});
-      setTemplates(backupData.templates || []);
-  
-      
-      // 保存 Gist ID
-      localStorage.setItem('github_gist_id', gistId);
-      
-      console.log('状态设置完成，准备重新加载...');
-      
-      alert('数据恢复成功！页面将重新加载。');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('恢复失败:', error);
-    alert('恢复失败: ' + error.message);
-  }
-}, []);
-
-
-
-
-
-// 在 App 组件的状态中找到 useState 部分，添加：
-const [syncConfig, setSyncConfig] = useState({
-  token: localStorage.getItem('github_token') || '',
-  gistId: localStorage.getItem('github_gist_id') || '',
-  autoSync: localStorage.getItem('github_auto_sync') === 'true',
-  lastSync: localStorage.getItem('github_last_sync') || ''
-});
-
-
-
-
-
-
-
-
-// 获取当前日期的心情和评价
-
-const getCurrentDailyRating = useCallback(() => {
-  return dailyRatings[selectedDate] || 0;
-}, [dailyRatings, selectedDate]);
-
-
-// 在 App 组件的函数区域添加
-const handleDeleteImage = (task) => {
-  if (task.isWeekTask) {
-    // 本周任务需要更新所有日期
-    const updatedTasksByDate = { ...tasksByDate };
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-        t.isWeekTask && t.text === task.text ? { ...t, image: null } : t
-      );
-    });
-    setTasksByDate(updatedTasksByDate);
-  } else {
-    // 普通任务只更新当前日期
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? { ...t, image: null } : t
-      )
-    }));
-  }
-};
-
-
-// 设置当前日期的评价
-
-const setCurrentDailyRating = (rating) => {
-  setDailyRatings(prev => ({
-    ...prev,
-    [selectedDate]: rating
-  }));
-};
-
-const dailyRating = getCurrentDailyRating();
-// 获取当前选中日期的复盘内容
-const getCurrentDailyReflection = () => {
-  return dailyReflections[selectedDate] || '';
-};
-
-// 设置当前选中日期的复盘内容
-const setCurrentDailyReflection = (reflection) => {
-  setDailyReflections(prev => ({
-    ...prev,
-    [selectedDate]: reflection
-  }));
-};
-
-
-// 保存每日数据（包括评分、复盘）
-const saveDailyData = useCallback(async (date = selectedDate) => {
-  const dailyData = {
-    rating: dailyRatings[date] || 0,
-    reflection: dailyReflections[date] || '',
-    date: date
-  };
-  
-  await saveMainData(`daily_${date}`, dailyData);
-  console.log(`💾 已保存 ${date} 的每日数据:`, dailyData);
-}, [dailyRatings, dailyReflections, selectedDate]);
-
-
-
-
-
-
-// 找到 handleRestoreData 函数，添加 reminderText 的恢复
-const handleRestoreData = useCallback(async (backupData) => {
-  try {
-    console.log('🔄 开始恢复数据...', backupData);
-
-     // ✅ 新增：恢复排序数据
-    if (backupData.taskOrders) {
-      Object.entries(backupData.taskOrders).forEach(([key, order]) => {
-        localStorage.setItem(key, JSON.stringify(order));
-      });
-      console.log('✅ 恢复任务排序:', Object.keys(backupData.taskOrders).length);
-    }
-    
-    if (backupData.subCategoryOrders) {
-      Object.entries(backupData.subCategoryOrders).forEach(([key, order]) => {
-        localStorage.setItem(key, JSON.stringify(order));
-      });
-      console.log('✅ 恢复子分类排序:', Object.keys(backupData.subCategoryOrders).length);
-    }
-    
-    if (backupData.regularTasksOrder) {
-      localStorage.setItem('regular_tasks_order', JSON.stringify(backupData.regularTasksOrder));
-      setRegularTasksOrder(backupData.regularTasksOrder);
-      console.log('✅ 恢复常规任务排序');
-    }
-
-    // 恢复核心数据
-    if (backupData.tasksByDate) {
-      setTasksByDate(backupData.tasksByDate);
-      await saveMainData('tasks', backupData.tasksByDate);
-    }
-    
-    if (backupData.templates) {
-      setTemplates(backupData.templates);
-      await saveMainData('templates', backupData.templates);
-    }
-    
-    // 恢复本月任务
-    if (backupData.monthTasks) {
-      setMonthTasks(backupData.monthTasks);
-      await saveMainData('monthTasks', backupData.monthTasks);
-    }
-    
-    // 恢复每日数据
-    if (backupData.dailyRatings) {
-      setDailyRatings(backupData.dailyRatings);
-    }
-    
-    if (backupData.dailyReflections) {
-      console.log('📝 恢复复盘数据:', {
-        天数: Object.keys(backupData.dailyReflections).length,
-        示例: Object.entries(backupData.dailyReflections).slice(0, 2)
-      });
-      
-      setDailyReflections(backupData.dailyReflections);
-      
-      // 保存每个日期的复盘到 localStorage
-      Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
-        const dailyData = {
-          rating: backupData.dailyRatings?.[date] || 0,
-          reflection: reflection,
-          date: date
-        };
-        saveMainData(`daily_${date}`, dailyData);
-      });
-    }
-    
-    // 恢复每日提醒文本 - 新增
-    if (backupData.reminderText !== undefined) {
-      setReminderText(backupData.reminderText);
-      localStorage.setItem('daily_reminder', backupData.reminderText);
-      console.log('📢 恢复每日提醒:', backupData.reminderText || '无');
-    }
-    
-    // 恢复类别配置
-    if (backupData.categories) {
-      setCategories(backupData.categories);
-      await saveMainData('categories', backupData.categories);
-    }
-    
-    // 恢复成绩记录
-    if (backupData.grades) {
-      await saveMainData('grades', backupData.grades);
-    }
-    
-    // 恢复最后选中的日期
-    if (backupData.lastSelectedDate) {
-      setSelectedDate(backupData.lastSelectedDate);
-    }
-    
-    if (backupData.lastCurrentMonday) {
-      setCurrentMonday(new Date(backupData.lastCurrentMonday));
-    }
-
-    console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
-    
-    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个\n每日提醒: ${backupData.reminderText ? '已恢复' : '无'}`);
-
-  } catch (error) {
-    console.error('恢复失败:', error);
-    alert('恢复失败: ' + error.message);
-  }
-}, []);
-// 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
-// eslint-disable-next-line no-unused-vars
-
-
-
-
-
-const syncToGitHub = useCallback(async () => {
-  const token = localStorage.getItem('github_token');
-  if (!token) {
-    setShowGitHubSyncModal(true);
-    alert('请先设置 GitHub Token');
-    return;
-  }
-
-  setIsSyncing(true);
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  try {
-    // 先保存当前日期的数据
-    await saveDailyData(selectedDate);
-    
-    // ✅ 在这里添加收集排序数据的代码（不要删除上面的 saveDailyData）
-    
-  // ✅ 正确代码
-const allTaskOrders = {};
-const allSubCategoryOrders = {};  // 先定义
-const allKeys = Object.keys(localStorage);
-
-allKeys.forEach(key => {
-  if (key.startsWith('tasks_order_')) {
-    allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
-  }
-  if (key.startsWith('subcategory_order_')) {
-    allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
-  }
-});
-    
-
-    
-    // 收集常规任务排序顺序
-    const regularTasksOrder = localStorage.getItem('regular_tasks_order');
-    
-    // 收集所有需要同步的数据
-    const syncData = {
-      // 核心数据
-      tasksByDate,
-      templates,
-      
-      // 每日数据（确保包含所有复盘）
-      dailyRatings,
-      dailyReflections,
-      
-      // 本月任务
-      monthTasks,
-      
-      // 类别配置
-      categories,
-      
-      // 成绩记录
-      grades: await loadMainData('grades') || [],
-      
-      // 每日提醒文本 - 新增
-      reminderText: reminderText,  // 添加这行
-
-       taskOrders: allTaskOrders,
-  subCategoryOrders: allSubCategoryOrders,
-  regularTasksOrder: regularTasksOrder ? JSON.parse(regularTasksOrder) : [],
-  
-      
-      // 元数据
-      syncTime: new Date().toISOString(),
-      version: '2.2',  // 更新版本号
-      lastSelectedDate: selectedDate,
-      lastCurrentMonday: currentMonday.toISOString()
-    };
-
-    console.log('📤 准备同步数据:', {
-      任务天数: Object.keys(tasksByDate).length,
-      模板数量: templates.length,
-      有复盘的日期: Object.keys(dailyReflections).length,
-      本月任务: monthTasks.length,
-      每日提醒: reminderText ? '有' : '无'  // 添加日志
-    });
-
-    // 获取或创建 Gist
-    let gistId = localStorage.getItem('github_gist_id');
-    let method = 'POST';
-    let url = 'https://api.github.com/gists';
-    
-    if (gistId) {
-      method = 'PATCH';
-      url = `https://api.github.com/gists/${gistId}`;
-    }
-
-    const gistData = {
-      description: 'Study Tracker Backup - 学习跟踪器备份',
-      public: false,
-      files: {
-        'study-tracker-data.json': {
-          content: JSON.stringify(syncData, null, 2)
-        }
-      }
-    };
-
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(gistData)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`同步失败: ${response.status} - ${errorData.message || '未知错误'}`);
-    }
-
-    const result = await response.json();
-    
-    if (!gistId && result.id) {
-      localStorage.setItem('github_gist_id', result.id);
-      console.log('✅ 新 Gist ID 已保存:', result.id);
-    }
-
-    localStorage.setItem('github_last_sync', new Date().toISOString());
-    
-    const syncTime = new Date().toLocaleString();
-    const taskCount = Object.keys(tasksByDate).length;
-    const reflectionCount = Object.keys(dailyReflections).length;
-    
-    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
-
-  } catch (error) {
-    console.error('同步失败:', error);
-    
-    let errorMessage = '同步失败：';
-    if (error.message.includes('401')) {
-      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
-    } else if (error.message.includes('403')) {
-      errorMessage += '权限不足，请确保 Token 有 gist 权限';
-    } else if (error.message.includes('404')) {
-      errorMessage += 'Gist 不存在，将自动创建新的备份';
-      localStorage.removeItem('github_gist_id');
-    } else {
-      errorMessage += error.message;
-    }
-    
-    alert(errorMessage);
-  } finally {
-    setIsSyncing(false);
-  }
-}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]); // 添加 reminderText 依赖
-
-
-
-
-// 找到 autoRestoreLatestData 函数，确保恢复每日提醒
-const autoRestoreLatestData = useCallback(async () => {
-  const token = localStorage.getItem('github_token');
-  
-  if (!token) {
-    console.log('❌ 没有GitHub Token，跳过自动恢复');
-    return;
-  }
-
-  console.log('🔍 开始自动恢复最新数据...');
-  
-  try {
-    // 1. 先尝试使用保存的gistId
-    const savedGistId = localStorage.getItem('github_gist_id');
-    let targetGistId = savedGistId;
-    
-    if (!savedGistId) {
-      console.log('🔍 搜索最新的学习跟踪器Gist...');
-      const latestGist = await getLatestStudyTrackerGist(token);
-      
-      if (latestGist) {
-        targetGistId = latestGist.id;
-        console.log('✅ 找到最新Gist:', targetGistId);
-      } else {
-        console.log('❌ 未找到学习跟踪器数据');
-        return;
-      }
-    }
-
-    console.log('📁 尝试获取Gist数据:', targetGistId);
-    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`获取数据失败: ${response.status}`);
-    }
-
-    const gist = await response.json();
-    const content = gist.files['study-tracker-data.json']?.content;
-    
-    if (!content) {
-      throw new Error('未找到学习跟踪器数据文件');
-    }
-
-    const backupData = JSON.parse(content);
-    console.log('✅ 获取到备份数据，更新时间:', gist.updated_at);
-    
-    // 检查备份数据是否包含每日提醒
-    const hasReminder = backupData.reminderText !== undefined;
-    console.log('📢 备份数据包含每日提醒:', hasReminder ? '是' : '否');
-    
-    const localDataCount = Object.keys(tasksByDate).length;
-    const cloudDataCount = Object.keys(backupData.tasksByDate || {}).length;
-    
-    const confirmMessage = `发现云端备份数据，是否要恢复？\n\n` +
-      `云端数据：\n` +
-      `• 备份时间：${new Date(backupData.syncTime || gist.updated_at).toLocaleString()}\n` +
-      `• 任务天数：${cloudDataCount}\n` +
-      `• 模板数量：${(backupData.templates || []).length}\n` +
-      `• 每日提醒：${backupData.reminderText ? '有' : '无'}\n\n` +
-      `本地数据：\n` +
-      `• 任务天数：${localDataCount}\n\n` +
-      `恢复将覆盖当前所有本地数据！`;
-
-    if (window.confirm(confirmMessage)) {
-      console.log('用户确认恢复，开始设置状态...');
-      
-      if (!savedGistId) {
-        localStorage.setItem('github_gist_id', targetGistId);
-      }
-      
-      await handleRestoreData(backupData);
-    } else {
-      console.log('用户取消恢复');
-    }
-    
-  } catch (error) {
-    console.error('自动恢复失败:', error);
-    
-    let errorMessage = '恢复失败: ';
-    if (error.message.includes('401') || error.message.includes('403')) {
-      errorMessage += 'Token 无效或权限不足，请检查同步设置';
-    } else if (error.message.includes('404')) {
-      errorMessage += '未找到备份数据，请检查 Gist ID 是否正确';
-    } else {
-      errorMessage += error.message;
-    }
-    
-    alert(errorMessage);
-  }
-}, [tasksByDate, handleRestoreData]);
-
-
-
-
-
-
-
-
-// 调试函数验证星期对应关系
-window.testWeekDays = () => {
-  console.log('=== 星期对应关系测试 ===');
-  const testDate = new Date(); // 今天
-  
-
-
-
-
-
-
-
-
-  // 测试 getMonday 函数
-  const monday = getMonday(testDate);
-  console.log('今天:', testDate.toDateString(), '星期:', ['日','一','二','三','四','五','六'][testDate.getDay()]);
-  console.log('本周一:', monday.toDateString());
-  
-  // 测试一周的每一天
-  for (let i = 0; i < 7; i++) {
-    const dayDate = new Date(monday);
-    dayDate.setDate(monday.getDate() + i);
-    console.log(`索引 ${i}: ${dayDate.toDateString()} (周${['一','二','三','四','五','六','日'][i]})`);
-  }
-  
-  // 测试重复配置
-  console.log('当前重复配置:', repeatConfig);
-  console.log('选择的星期:', repeatConfig.days.map((selected, idx) => 
-    selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
-  ).filter(Boolean));
-};
-
-
-
-// 保存常规任务到 localStorage
-useEffect(() => {
-  localStorage.setItem('regular_tasks', JSON.stringify(regularTasks));
-  console.log('💾 保存 regularTasks 到 localStorage:', regularTasks.map(t => t.text));
-}, [regularTasks]);
-
-// 保存常规任务排序顺序
-useEffect(() => {
-  if (regularTasksOrder.length > 0) {
-    localStorage.setItem('regular_tasks_order', JSON.stringify(regularTasksOrder));
-  }
-}, [regularTasksOrder]); // ✅ 这个是正确的
-
-// 当常规任务变化时，更新排序顺序
-useEffect(() => {
-  if (regularTasks.length > 0 && regularTasksOrder.length === 0) {
-    setRegularTasksOrder(regularTasks.map(task => task.id || task.text));
-  }
-}, [regularTasks, regularTasksOrder.length]); // ✅ 添加了 regularTasksOrder.length
-
-// 在 App 组件中添加调试函数
-useEffect(() => {
-  // 调试函数：查看所有备份
-  window.checkBackups = () => {
-    console.log('=== 备份检查 ===');
-    const allKeys = Object.keys(localStorage);
-    const backupKeys = allKeys.filter(key => key.includes(AUTO_BACKUP_CONFIG.backupPrefix));
-    
-    if (backupKeys.length === 0) {
-      console.log('❌ 没有找到任何备份文件');
-      return;
-    }
-    
-    console.log(`找到 ${backupKeys.length} 个备份文件:`);
-    backupKeys.sort().reverse().forEach((key, index) => {
-      try {
-        const data = JSON.parse(localStorage.getItem(key));
-        console.log(`${index + 1}. ${key}`);
-        console.log(`   备份时间: ${data?.backupTime ? new Date(data.backupTime).toLocaleString() : '未知'}`);
-        console.log(`   任务天数: ${Object.keys(data?.tasks || {}).length}`);
-        console.log(`   模板数量: ${data?.templates?.length || 0}`);
-        console.log(`   复盘天数: ${Object.keys(data?.dailyReflections || {}).length}`);
-      } catch (e) {
-        console.log(`   ${key}: ❌ 损坏的备份`);
-      }
-    });
-  };
-  
-  // 手动触发备份
-  window.forceBackup = () => {
-    console.log('手动触发备份...');
-    window.__manualBackup = true;
-    autoBackup();
-  };
-}, [tasksByDate, templates, categories, monthTasks, dailyRatings, dailyReflections]);
-
-
-// 添加调试函数来检查重复任务创建
-useEffect(() => {
-  window.debugRepeatTasks = () => {
-    console.log('重复配置:', repeatConfig);
-    console.log('任务数据:', tasksByDate);
-    
-    // 检查重复任务
-    const repeatingTasks = Object.entries(tasksByDate).flatMap(([date, tasks]) => 
-      tasks.filter(task => task.isRepeating).map(task => ({ date, task: task.text }))
+  {subCategoryData && subCategoryData.length > 0 ? (
+    <>
+      <div style={{
+        backgroundColor: "#f8f9fa",
+        padding: "8px",
+        borderRadius: "6px",
+        marginBottom: "10px",
+        fontSize: "11px",
+        textAlign: "center",
+        color: "#666"
+      }}>
+        统计校内各科目的学习时间分布
+      </div>
+      <ResponsiveContainer width="100%" height="80%">
+        <BarChart 
+          data={subCategoryData} 
+          margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" tick={{ fontSize }} />
+          <YAxis 
+            tick={{ fontSize }} 
+            domain={[0, 'dataMax + 20']}
+          />
+          <Bar
+            dataKey="time"
+            fill="#1a73e8"
+            radius={[4, 4, 0, 0]}
+            label={{ 
+              position: "top", 
+              fontSize: fontSize - 1,
+              formatter: (value) => `${value}分钟`,
+              fill: "#333",
+              offset: 8
+            }}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </>
+  ) : (
+    <div style={{
+      backgroundColor: "#f8f9fa",
+      padding: "30px 20px",
+      borderRadius: "8px",
+      textAlign: "center",
+      color: "#666",
+      fontSize: "13px"
+    }}>
+      📚 暂无校内子分类学习时间数据
+      <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.4" }}>
+        请在"校内"分类的任务中设置子分类并记录时间<br/>
+        支持的子分类：数学、语文、英语、运动等
+      </div>
+    </div>
+  )}
+</div>
+
+
+
+
+
+        
+        <div style={{ height: chartHeight, marginBottom: 30 }}>
+  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+    各科目学习时间
+  </h3>
+  <ResponsiveContainer width="100%" height="80%">
+    <BarChart 
+      data={categoryData} 
+      margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" tick={{ fontSize }} />
+      <YAxis 
+        tick={{ fontSize }} 
+        domain={[0, 'dataMax + 20']}
+      />
+      <Bar
+        dataKey="time"
+        fill="#4a90e2"
+        radius={[4, 4, 0, 0]}
+        label={{ 
+          position: "top", 
+          fontSize: fontSize - 1,
+          formatter: (value) => `${value}分钟`,
+          fill: "#333",
+          offset: 8
+        }}
+      />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+
+
+
+
+        <div style={{ height: chartHeight }}>
+          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+            每日完成任务数
+          </h3>
+          <ResponsiveContainer width="100%" height="80%">
+            <BarChart data={dailyTasksData} margin={{ left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize }} />
+              <YAxis tick={{ fontSize }} />
+              <Bar
+                dataKey="tasks"
+                fill="#00a854"
+                radius={[4, 4, 0, 0]}
+                label={{ position: "top", fontSize }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     );
-    console.log('重复任务:', repeatingTasks);
   };
-}, [repeatConfig, tasksByDate]);
-
-
-
-
-
-
-
-
-
-
-
-// 在现有的初始化 useEffect 后面添加：
-
-useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
-    console.log('🔄 初始化完成，检查是否需要恢复数据');
-    hasAttemptedRestore.current = true;  // 标记已尝试恢复
-    
-    const timer = setTimeout(() => {
-      autoRestoreLatestData();
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }
-}, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
-
-
-
-
-
-
-
-
-
-
-
-
 
 // 修改 CategoryManagerModal 组件中的子类别管理部分
 const CategoryManagerModal = ({ categories, onSave, onClose }) => {
@@ -12088,6 +11233,938 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
 
 
 
+function App() {
+const [bulkDateRange, setBulkDateRange] = useState('today');
+const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
+  return new Date().toISOString().split('T')[0];
+});
+const [bulkDateRangeEnd, setBulkDateRangeEnd] = useState(() => {
+  return new Date().toISOString().split('T')[0];
+});
+const [bulkPreviewTasks, setBulkPreviewTasks] = useState([]);
+const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+
+const [subCategoryTaskOrder, setSubCategoryTaskOrder] = useState({}); // 存储每个子分类的任务顺序
+// 在 App 组件中，找到其他 useState 定义的位置，添加：
+const [sortingSubCategory, setSortingSubCategory] = useState(null); // { category: '校内', subCategory: '数学' }
+const [draggedSubTaskIndex, setDraggedSubTaskIndex] = useState(null);
+// 加载保存的排序顺序
+useEffect(() => {
+  const savedOrder = localStorage.getItem('subcategory_task_order');
+  if (savedOrder) {
+    setSubCategoryTaskOrder(JSON.parse(savedOrder));
+  }
+}, []);
+// 在 App 组件中，其他 useState 附近添加（约在第 5300 行）
+
+// 保存排序顺序
+const saveSubCategoryOrder = (subCategory, orderedTaskIds) => {
+  const newOrder = {
+    ...subCategoryTaskOrder,
+    [subCategory]: orderedTaskIds
+  };
+  setSubCategoryTaskOrder(newOrder);
+  localStorage.setItem('subcategory_task_order', JSON.stringify(newOrder));
+};
+
+// 获取排序后的任务列表
+const getSortedSubCategoryTasks = (subCategory, tasks) => {
+  const savedOrder = subCategoryTaskOrder[subCategory];
+  if (!savedOrder || savedOrder.length === 0) return tasks;
+  
+  const taskMap = new Map();
+  tasks.forEach(task => {
+    taskMap.set(task.id, task);
+  });
+  
+  const ordered = [];
+  savedOrder.forEach(id => {
+    if (taskMap.has(id)) {
+      ordered.push(taskMap.get(id));
+      taskMap.delete(id);
+    }
+  });
+  
+  // 添加新任务（不在保存顺序中的）
+  ordered.push(...taskMap.values());
+  return ordered;
+};
+
+// 开始排序子分类
+const startSortingSubCategory = (subCategory) => {
+  setSortingSubCategory(subCategory);
+};
+
+// 结束排序并保存
+const endSortingSubCategory = (subCategory, orderedTasks) => {
+  const orderedIds = orderedTasks.map(task => task.id);
+  saveSubCategoryOrder(subCategory, orderedIds);
+  setSortingSubCategory(null);
+};
+
+// 在 App 组件中，找到其他 useRef 的位置，添加：
+
+
+
+
+
+const [chartView, setChartView] = useState('month');
+const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
+const [editingTemplate, setEditingTemplate] = useState(null);
+const [templateFormData, setTemplateFormData] = useState({
+  text: '',
+  category: '校内',
+  subCategory: ''
+});
+// 在 App 组件的状态定义区域添加
+
+  const [tasksByDate, setTasksByDate] = useState({});
+  // 获取跨日期任务在指定日期的完成类型
+const getTaskCompletionType = useCallback((task, date) => {
+  // 检查这个任务是否在该日期被实际完成过
+  const dayTasks = tasksByDate[date] || [];
+  
+  // 查找是否有同文本的任务是被实际完成的
+  const actualCompletedTask = dayTasks.find(t => 
+    t.text === task.text && 
+    t.actualCompletedDate === date  // 标记实际完成的日期
+  );
+  
+  if (actualCompletedTask && actualCompletedTask.actualCompletedDate === date) {
+    return { completed: true, type: 'actual' };
+  }
+  
+  // 否则返回同步完成状态
+  return { completed: task.done, type: task.done ? 'synced' : 'none' };
+}, [tasksByDate]);
+
+  const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const hasAttemptedRestore = useRef(false);  // 添加这一行
+  // 在现有状态定义区域添加
+  // 在现有的状态定义区域添加
+const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  
+  const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [newTaskText, setNewTaskText] = useState("");
+ 
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [bulkTags, setBulkTags] = useState([]); // 当前选中的标签
+  const [bulkNewTagName, setBulkNewTagName] = useState(""); // 新建标签名
+  const [bulkNewTagColor, setBulkNewTagColor] = useState("#e0e0e0"); // 新建标签颜色
+  const [showBulkInput, setShowBulkInput] = useState(false); // 控制是否显示批量导入框
+  const [newTaskCategory, setNewTaskCategory] = useState(baseCategories[0].name);
+  const [bulkText, setBulkText] = useState("");
+  const [showAddInput, setShowAddInput] = useState(false);
+  const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
+  const [showStats, setShowStats] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(null);
+  const [showMoveModal, setShowMoveModal] = useState(null);
+  // 在现有的状态定义区域添加
+const [showWeekTaskModal, setShowWeekTaskModal] = useState(false);
+const [showMonthTaskModal, setShowMonthTaskModal] = useState(false);
+const [monthTasks, setMonthTasks] = useState([]); // 本月任务
+const [newMonthTask, setNewMonthTask] = useState({
+  text: '',
+  category: '校内',
+  subCategory: '',
+  deadline: '',
+  progress: 0,
+  target: 100,
+  unit: '%',
+  important: false,
+  note: ''
+});
+  const reflectionTextareaRef = useRef(null);
+  const addInputRef = useRef(null);
+  const bulkInputRef = useRef(null);
+  // 临时保留旧变量避免错误
+
+// 替换为：
+// 获取当前日期的任务列表（用于显示）
+const todayTasks = useMemo(() => {
+  const dateTasks = tasksByDate[selectedDate] || [];
+  
+  // 常规任务只显示未完成的（因为完成后会从常规任务区域移除）
+  // 其他分类的任务正常显示
+  return dateTasks.map(task => {
+    // 如果是已完成的常规任务，不显示在常规任务区域（它已经在其他分类了）
+    return task;
+  });
+}, [tasksByDate, selectedDate]);
+const handleSaveCategories = (updatedCategories) => {
+  setCategories(updatedCategories);
+  saveMainData('categories', updatedCategories);
+};
+const [isInitialized, setIsInitialized] = useState(false);
+const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
+const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
+
+const [categories, setCategories] = useState(baseCategories.map(cat => ({
+  ...cat,
+  subCategories: []
+})));
+
+// 添加这个状态 - 用于控制各个分类的折叠/展开
+const [collapsedCategories, setCollapsedCategories] = useState({
+  "本周任务": false,
+  "语文": false,
+  "数学": false,
+  "英语": false,
+  "科学": false,
+  "运动": false,
+  "校内": false
+});
+
+
+
+const isAddingTask = useRef(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
+  const [statsMode, setStatsMode] = useState("week");
+  const [showImageModal, setShowImageModal] = useState(null);
+  const [showHonorModal, setShowHonorModal] = useState(false);
+  const [showMoveTaskModal, setShowMoveTaskModal] = useState(null);
+  const [showDailyLogModal, setShowDailyLogModal] = useState(null);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [dailyRatings, setDailyRatings] = useState({});
+  const [dailyReflections, setDailyReflections] = useState({});
+  
+  const [showCrossDateModal, setShowCrossDateModal] = useState(null);
+  const [repeatConfig, setRepeatConfig] = useState({
+  frequency: "", // 改为空字符串，默认不重复
+  days: [false, false, false, false, false, false, false],
+  startHour: "",
+  startMinute: "",
+  endHour: "",
+  endMinute: "",
+  reminderYear: "",
+  reminderMonth: "",
+  reminderDay: "",
+  reminderHour: "",
+  reminderMinute: "",
+});
+
+
+
+
+const [reminderText, setReminderText] = useState(() => {
+  return localStorage.getItem('daily_reminder') || '';
+});
+
+// 添加保存提醒文本的函数
+const handleReminderChange = (text) => {
+  setReminderText(text);
+  localStorage.setItem('daily_reminder', text);
+};
+
+
+// 添加编辑和删除函数
+const handleEditMonthTask = (updatedTask) => {
+  setMonthTasks(prev => prev.map(task => 
+    task.id === updatedTask.id ? updatedTask : task
+  ));
+};
+
+const handleDeleteMonthTask = (taskId) => {
+  setMonthTasks(prev => prev.filter(task => task.id !== taskId));
+};
+
+
+
+// 🔽 在这里添加获取Gist列表的函数 🔽
+  const getLatestStudyTrackerGist = async (token) => {
+    try {
+      const response = await fetch('https://api.github.com/gists', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error('无法获取Gist列表');
+      
+      const gists = await response.json();
+      
+      // 过滤出学习跟踪器的gist，按更新时间排序
+      const studyGists = gists
+        .filter(gist => {
+          const files = Object.values(gist.files);
+          return files.some(file => 
+            file.filename.includes('study-tracker') || 
+            file.filename.includes('json')
+          );
+        })
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      
+      return studyGists[0]; // 返回最新的一个
+    } catch (error) {
+      console.error('获取Gist列表失败:', error);
+      return null;
+    }
+  };
+
+
+  
+const restoreFromGitHub = useCallback(async () => {
+  console.log('🔍 开始恢复流程');
+  
+  const token = localStorage.getItem('github_token');
+  let gistId = localStorage.getItem('github_gist_id');
+  
+  console.log('Token:', token ? '已设置' : '未设置');
+  console.log('Gist ID:', gistId || '未设置');
+  
+  if (!token) {
+    alert('请先设置 GitHub Token');
+    setShowGitHubSyncModal(true);
+    return;
+  }
+
+  // 如果没有 Gist ID，让用户输入
+  if (!gistId) {
+    gistId = window.prompt('请输入 Gist ID（在之前浏览器的同步设置中可以找到）');
+    console.log('用户输入的 Gist ID:', gistId);
+    if (!gistId) return;
+  }
+
+  try {
+    console.log('📡 开始请求 Gist 数据...');
+    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('响应状态:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`获取数据失败: ${response.status}`);
+    }
+
+    const gist = await response.json();
+    console.log('Gist 获取成功:', gist);
+    
+    const content = gist.files['study-tracker-data.json'].content;
+    const backupData = JSON.parse(content);
+    console.log('备份数据:', backupData);
+
+    if (window.confirm(`确定要恢复 ${new Date(backupData.syncTime).toLocaleString()} 的备份数据吗？这将覆盖当前所有数据！`)) {
+      console.log('用户确认恢复，开始设置状态...');
+      
+      // 立即保存到 localStorage
+      await saveMainData('tasks', backupData.tasksByDate || {});
+      await saveMainData('templates', backupData.templates || []);
+    
+      
+      console.log('数据已保存到 localStorage');
+      
+      // 然后设置状态
+      setTasksByDate(backupData.tasksByDate || {});
+      setTemplates(backupData.templates || []);
+  
+      
+      // 保存 Gist ID
+      localStorage.setItem('github_gist_id', gistId);
+      
+      console.log('状态设置完成，准备重新加载...');
+      
+      alert('数据恢复成功！页面将重新加载。');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('恢复失败:', error);
+    alert('恢复失败: ' + error.message);
+  }
+}, []);
+
+
+
+
+
+// 在 App 组件的状态中找到 useState 部分，添加：
+const [syncConfig, setSyncConfig] = useState({
+  token: localStorage.getItem('github_token') || '',
+  gistId: localStorage.getItem('github_gist_id') || '',
+  autoSync: localStorage.getItem('github_auto_sync') === 'true',
+  lastSync: localStorage.getItem('github_last_sync') || ''
+});
+
+
+
+
+
+
+
+
+// 获取当前日期的心情和评价
+
+const getCurrentDailyRating = useCallback(() => {
+  return dailyRatings[selectedDate] || 0;
+}, [dailyRatings, selectedDate]);
+
+
+// 在 App 组件的函数区域添加
+const handleDeleteImage = (task) => {
+  if (task.isWeekTask) {
+    // 本周任务需要更新所有日期
+    const updatedTasksByDate = { ...tasksByDate };
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text ? { ...t, image: null } : t
+      );
+    });
+    setTasksByDate(updatedTasksByDate);
+  } else {
+    // 普通任务只更新当前日期
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: prev[selectedDate].map(t =>
+        t.id === task.id ? { ...t, image: null } : t
+      )
+    }));
+  }
+};
+
+
+// 设置当前日期的评价
+
+const setCurrentDailyRating = (rating) => {
+  setDailyRatings(prev => ({
+    ...prev,
+    [selectedDate]: rating
+  }));
+};
+
+const dailyRating = getCurrentDailyRating();
+// 获取当前选中日期的复盘内容
+const getCurrentDailyReflection = () => {
+  return dailyReflections[selectedDate] || '';
+};
+
+// 设置当前选中日期的复盘内容
+const setCurrentDailyReflection = (reflection) => {
+  setDailyReflections(prev => ({
+    ...prev,
+    [selectedDate]: reflection
+  }));
+};
+
+
+// 保存每日数据（包括评分、复盘）
+const saveDailyData = useCallback(async (date = selectedDate) => {
+  const dailyData = {
+    rating: dailyRatings[date] || 0,
+    reflection: dailyReflections[date] || '',
+    date: date
+  };
+  
+  await saveMainData(`daily_${date}`, dailyData);
+  console.log(`💾 已保存 ${date} 的每日数据:`, dailyData);
+}, [dailyRatings, dailyReflections, selectedDate]);
+
+
+
+
+
+
+// 找到 handleRestoreData 函数，添加 reminderText 的恢复
+const handleRestoreData = useCallback(async (backupData) => {
+  try {
+    console.log('🔄 开始恢复数据...', backupData);
+
+     // ✅ 新增：恢复排序数据
+    if (backupData.taskOrders) {
+      Object.entries(backupData.taskOrders).forEach(([key, order]) => {
+        localStorage.setItem(key, JSON.stringify(order));
+      });
+      console.log('✅ 恢复任务排序:', Object.keys(backupData.taskOrders).length);
+    }
+    
+    if (backupData.subCategoryOrders) {
+      Object.entries(backupData.subCategoryOrders).forEach(([key, order]) => {
+        localStorage.setItem(key, JSON.stringify(order));
+      });
+      console.log('✅ 恢复子分类排序:', Object.keys(backupData.subCategoryOrders).length);
+    }
+    
+  
+
+    // 恢复核心数据
+    if (backupData.tasksByDate) {
+      setTasksByDate(backupData.tasksByDate);
+      await saveMainData('tasks', backupData.tasksByDate);
+    }
+    
+    if (backupData.templates) {
+      setTemplates(backupData.templates);
+      await saveMainData('templates', backupData.templates);
+    }
+    
+    // 恢复本月任务
+    if (backupData.monthTasks) {
+      setMonthTasks(backupData.monthTasks);
+      await saveMainData('monthTasks', backupData.monthTasks);
+    }
+    
+    // 恢复每日数据
+    if (backupData.dailyRatings) {
+      setDailyRatings(backupData.dailyRatings);
+    }
+    
+    if (backupData.dailyReflections) {
+      console.log('📝 恢复复盘数据:', {
+        天数: Object.keys(backupData.dailyReflections).length,
+        示例: Object.entries(backupData.dailyReflections).slice(0, 2)
+      });
+      
+      setDailyReflections(backupData.dailyReflections);
+      
+      // 保存每个日期的复盘到 localStorage
+      Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
+        const dailyData = {
+          rating: backupData.dailyRatings?.[date] || 0,
+          reflection: reflection,
+          date: date
+        };
+        saveMainData(`daily_${date}`, dailyData);
+      });
+    }
+    
+    // 恢复每日提醒文本 - 新增
+    if (backupData.reminderText !== undefined) {
+      setReminderText(backupData.reminderText);
+      localStorage.setItem('daily_reminder', backupData.reminderText);
+      console.log('📢 恢复每日提醒:', backupData.reminderText || '无');
+    }
+    
+    // 恢复类别配置
+    if (backupData.categories) {
+      setCategories(backupData.categories);
+      await saveMainData('categories', backupData.categories);
+    }
+    
+    // 恢复成绩记录
+    if (backupData.grades) {
+      await saveMainData('grades', backupData.grades);
+    }
+    
+    // 恢复最后选中的日期
+    if (backupData.lastSelectedDate) {
+      setSelectedDate(backupData.lastSelectedDate);
+    }
+    
+    if (backupData.lastCurrentMonday) {
+      setCurrentMonday(new Date(backupData.lastCurrentMonday));
+    }
+
+    console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
+    
+    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个\n每日提醒: ${backupData.reminderText ? '已恢复' : '无'}`);
+
+  } catch (error) {
+    console.error('恢复失败:', error);
+    alert('恢复失败: ' + error.message);
+  }
+}, []);
+// 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
+// eslint-disable-next-line no-unused-vars
+
+
+
+
+
+const syncToGitHub = useCallback(async () => {
+  const token = localStorage.getItem('github_token');
+  if (!token) {
+    setShowGitHubSyncModal(true);
+    alert('请先设置 GitHub Token');
+    return;
+  }
+
+  setIsSyncing(true);
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  try {
+    // 先保存当前日期的数据
+    await saveDailyData(selectedDate);
+    
+    // ✅ 在这里添加收集排序数据的代码（不要删除上面的 saveDailyData）
+    
+  // ✅ 正确代码
+const allTaskOrders = {};
+const allSubCategoryOrders = {};  // 先定义
+const allKeys = Object.keys(localStorage);
+
+allKeys.forEach(key => {
+  if (key.startsWith('tasks_order_')) {
+    allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
+  }
+  if (key.startsWith('subcategory_order_')) {
+    allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
+  }
+});
+    
+
+    
+
+    // 收集所有需要同步的数据
+    const syncData = {
+      // 核心数据
+      tasksByDate,
+      templates,
+      
+      // 每日数据（确保包含所有复盘）
+      dailyRatings,
+      dailyReflections,
+      
+      // 本月任务
+      monthTasks,
+      
+      // 类别配置
+      categories,
+      
+      // 成绩记录
+      grades: await loadMainData('grades') || [],
+      
+      // 每日提醒文本 - 新增
+      reminderText: reminderText,  // 添加这行
+
+       taskOrders: allTaskOrders,
+  subCategoryOrders: allSubCategoryOrders,
+  
+      
+      // 元数据
+      syncTime: new Date().toISOString(),
+      version: '2.2',  // 更新版本号
+      lastSelectedDate: selectedDate,
+      lastCurrentMonday: currentMonday.toISOString()
+    };
+
+    console.log('📤 准备同步数据:', {
+      任务天数: Object.keys(tasksByDate).length,
+      模板数量: templates.length,
+      有复盘的日期: Object.keys(dailyReflections).length,
+      本月任务: monthTasks.length,
+      每日提醒: reminderText ? '有' : '无'  // 添加日志
+    });
+
+    // 获取或创建 Gist
+    let gistId = localStorage.getItem('github_gist_id');
+    let method = 'POST';
+    let url = 'https://api.github.com/gists';
+    
+    if (gistId) {
+      method = 'PATCH';
+      url = `https://api.github.com/gists/${gistId}`;
+    }
+
+    const gistData = {
+      description: 'Study Tracker Backup - 学习跟踪器备份',
+      public: false,
+      files: {
+        'study-tracker-data.json': {
+          content: JSON.stringify(syncData, null, 2)
+        }
+      }
+    };
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(gistData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`同步失败: ${response.status} - ${errorData.message || '未知错误'}`);
+    }
+
+    const result = await response.json();
+    
+    if (!gistId && result.id) {
+      localStorage.setItem('github_gist_id', result.id);
+      console.log('✅ 新 Gist ID 已保存:', result.id);
+    }
+
+    localStorage.setItem('github_last_sync', new Date().toISOString());
+    
+    const syncTime = new Date().toLocaleString();
+    const taskCount = Object.keys(tasksByDate).length;
+    const reflectionCount = Object.keys(dailyReflections).length;
+    
+    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
+
+  } catch (error) {
+    console.error('同步失败:', error);
+    
+    let errorMessage = '同步失败：';
+    if (error.message.includes('401')) {
+      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
+    } else if (error.message.includes('403')) {
+      errorMessage += '权限不足，请确保 Token 有 gist 权限';
+    } else if (error.message.includes('404')) {
+      errorMessage += 'Gist 不存在，将自动创建新的备份';
+      localStorage.removeItem('github_gist_id');
+    } else {
+      errorMessage += error.message;
+    }
+    
+    alert(errorMessage);
+  } finally {
+    setIsSyncing(false);
+  }
+}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]); // 添加 reminderText 依赖
+
+
+
+
+// 找到 autoRestoreLatestData 函数，确保恢复每日提醒
+const autoRestoreLatestData = useCallback(async () => {
+  const token = localStorage.getItem('github_token');
+  
+  if (!token) {
+    console.log('❌ 没有GitHub Token，跳过自动恢复');
+    return;
+  }
+
+  console.log('🔍 开始自动恢复最新数据...');
+  
+  try {
+    // 1. 先尝试使用保存的gistId
+    const savedGistId = localStorage.getItem('github_gist_id');
+    let targetGistId = savedGistId;
+    
+    if (!savedGistId) {
+      console.log('🔍 搜索最新的学习跟踪器Gist...');
+      const latestGist = await getLatestStudyTrackerGist(token);
+      
+      if (latestGist) {
+        targetGistId = latestGist.id;
+        console.log('✅ 找到最新Gist:', targetGistId);
+      } else {
+        console.log('❌ 未找到学习跟踪器数据');
+        return;
+      }
+    }
+
+    console.log('📁 尝试获取Gist数据:', targetGistId);
+    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`获取数据失败: ${response.status}`);
+    }
+
+    const gist = await response.json();
+    const content = gist.files['study-tracker-data.json']?.content;
+    
+    if (!content) {
+      throw new Error('未找到学习跟踪器数据文件');
+    }
+
+    const backupData = JSON.parse(content);
+    console.log('✅ 获取到备份数据，更新时间:', gist.updated_at);
+    
+    // 检查备份数据是否包含每日提醒
+    const hasReminder = backupData.reminderText !== undefined;
+    console.log('📢 备份数据包含每日提醒:', hasReminder ? '是' : '否');
+    
+    const localDataCount = Object.keys(tasksByDate).length;
+    const cloudDataCount = Object.keys(backupData.tasksByDate || {}).length;
+    
+    const confirmMessage = `发现云端备份数据，是否要恢复？\n\n` +
+      `云端数据：\n` +
+      `• 备份时间：${new Date(backupData.syncTime || gist.updated_at).toLocaleString()}\n` +
+      `• 任务天数：${cloudDataCount}\n` +
+      `• 模板数量：${(backupData.templates || []).length}\n` +
+      `• 每日提醒：${backupData.reminderText ? '有' : '无'}\n\n` +
+      `本地数据：\n` +
+      `• 任务天数：${localDataCount}\n\n` +
+      `恢复将覆盖当前所有本地数据！`;
+
+    if (window.confirm(confirmMessage)) {
+      console.log('用户确认恢复，开始设置状态...');
+      
+      if (!savedGistId) {
+        localStorage.setItem('github_gist_id', targetGistId);
+      }
+      
+      await handleRestoreData(backupData);
+    } else {
+      console.log('用户取消恢复');
+    }
+    
+  } catch (error) {
+    console.error('自动恢复失败:', error);
+    
+    let errorMessage = '恢复失败: ';
+    if (error.message.includes('401') || error.message.includes('403')) {
+      errorMessage += 'Token 无效或权限不足，请检查同步设置';
+    } else if (error.message.includes('404')) {
+      errorMessage += '未找到备份数据，请检查 Gist ID 是否正确';
+    } else {
+      errorMessage += error.message;
+    }
+    
+    alert(errorMessage);
+  }
+}, [tasksByDate, handleRestoreData]);
+
+
+
+
+
+
+
+
+// 调试函数验证星期对应关系
+window.testWeekDays = () => {
+  console.log('=== 星期对应关系测试 ===');
+  const testDate = new Date(); // 今天
+  
+
+
+
+
+
+
+
+
+  // 测试 getMonday 函数
+  const monday = getMonday(testDate);
+  console.log('今天:', testDate.toDateString(), '星期:', ['日','一','二','三','四','五','六'][testDate.getDay()]);
+  console.log('本周一:', monday.toDateString());
+  
+  // 测试一周的每一天
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(monday);
+    dayDate.setDate(monday.getDate() + i);
+    console.log(`索引 ${i}: ${dayDate.toDateString()} (周${['一','二','三','四','五','六','日'][i]})`);
+  }
+  
+  // 测试重复配置
+  console.log('当前重复配置:', repeatConfig);
+  console.log('选择的星期:', repeatConfig.days.map((selected, idx) => 
+    selected ? `周${['一','二','三','四','五','六','日'][idx]}` : null
+  ).filter(Boolean));
+};
+
+
+
+
+// 在 App 组件中添加调试函数
+useEffect(() => {
+  // 调试函数：查看所有备份
+  window.checkBackups = () => {
+    console.log('=== 备份检查 ===');
+    const allKeys = Object.keys(localStorage);
+    const backupKeys = allKeys.filter(key => key.includes(AUTO_BACKUP_CONFIG.backupPrefix));
+    
+    if (backupKeys.length === 0) {
+      console.log('❌ 没有找到任何备份文件');
+      return;
+    }
+    
+    console.log(`找到 ${backupKeys.length} 个备份文件:`);
+    backupKeys.sort().reverse().forEach((key, index) => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        console.log(`${index + 1}. ${key}`);
+        console.log(`   备份时间: ${data?.backupTime ? new Date(data.backupTime).toLocaleString() : '未知'}`);
+        console.log(`   任务天数: ${Object.keys(data?.tasks || {}).length}`);
+        console.log(`   模板数量: ${data?.templates?.length || 0}`);
+        console.log(`   复盘天数: ${Object.keys(data?.dailyReflections || {}).length}`);
+      } catch (e) {
+        console.log(`   ${key}: ❌ 损坏的备份`);
+      }
+    });
+  };
+  
+  // 手动触发备份
+  window.forceBackup = () => {
+    console.log('手动触发备份...');
+    window.__manualBackup = true;
+    autoBackup();
+  };
+}, [tasksByDate, templates, categories, monthTasks, dailyRatings, dailyReflections]);
+
+
+// 添加调试函数来检查重复任务创建
+useEffect(() => {
+  window.debugRepeatTasks = () => {
+    console.log('重复配置:', repeatConfig);
+    console.log('任务数据:', tasksByDate);
+    
+    // 检查重复任务
+    const repeatingTasks = Object.entries(tasksByDate).flatMap(([date, tasks]) => 
+      tasks.filter(task => task.isRepeating).map(task => ({ date, task: task.text }))
+    );
+    console.log('重复任务:', repeatingTasks);
+  };
+}, [repeatConfig, tasksByDate]);
+
+
+
+
+
+
+
+
+
+
+
+// 在现有的初始化 useEffect 后面添加：
+
+useEffect(() => {
+  if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
+    console.log('🔄 初始化完成，检查是否需要恢复数据');
+    hasAttemptedRestore.current = true;  // 标记已尝试恢复
+    
+    const timer = setTimeout(() => {
+      autoRestoreLatestData();
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }
+}, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 在 handleColorChange 函数旁边添加：
 const handleRenameCategory = (index, newName) => {
   if (newName.trim() && !localCategories.find((cat, i) => i !== index && cat.name === newName.trim())) {
@@ -12322,36 +12399,19 @@ const toggleDone = (task) => {
     const crossDateId = task.crossDateId || task.dateRange?.allDates?.join('_');
     const actualCompletedDate = selectedDate;
     
-    setTasksByDate(prevTasksByDate => {
-      const newTasksByDate = { ...prevTasksByDate };
-      let updatedCount = 0;
-
-      Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].map(t => {
-          const isSameCrossTask = (t.crossDateId && t.crossDateId === crossDateId) ||
-            (t.dateRange && t.dateRange.allDates && 
-             t.text === task.text && 
-             JSON.stringify(t.dateRange.allDates) === JSON.stringify(task.dateRange?.allDates));
-          
-          if (isSameCrossTask) {
-            updatedCount++;
-            const isActualDate = (date === actualCompletedDate);
-            return {
-              ...t,
-              done: !wasDone,
-              pinned: !wasDone ? false : t.pinned,
-              subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks,
-              actualCompletedDate: isActualDate && !wasDone ? actualCompletedDate : 
-                                   (isActualDate && wasDone ? null : t.actualCompletedDate)
-            };
-          }
-          return t;
-        });
-      });
-      
-      console.log(`同步更新了 ${updatedCount} 个跨日期任务`);
-      return newTasksByDate;
-    });
+    setTasksByDate(prev => ({
+  ...prev,
+  [selectedDate]: (prev[selectedDate] || []).map(t =>
+    t.id === task.id 
+      ? { 
+          ...t, 
+          done: !wasDone,
+          pinned: !wasDone ? false : t.pinned,
+          subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+        } 
+      : t
+  )
+}));
     return;
   }
   
@@ -13025,7 +13085,7 @@ useEffect(() => {
   const intervalId = setInterval(checkReminders, 60000);
   checkReminders();
   return () => clearInterval(intervalId);
-}, [tasksByDate]);
+}, [tasksByDate, selectedDate]); 
   // 进度更新函数
 const handleUpdateProgress = (task, newCurrent) => {
   console.log('更新进度:', task.text, '新进度:', newCurrent);
@@ -13325,22 +13385,10 @@ const savedTasks = await loadDataWithFallback('tasks', {});
 console.log('✅ 加载的任务数据:', savedTasks);
 if (savedTasks) {
   setTasksByDate(savedTasks);
-  // ===== 自动清理孤立的常规任务模板 =====
-// 收集所有在 tasksByDate 中实际存在的常规任务文本
-const existingRegularTaskTexts = new Set();
-Object.values(savedTasks).forEach(tasks => {
-  tasks.forEach(task => {
-    if (task.isRegularTask && task.text) {
-      existingRegularTaskTexts.add(task.text);
-    }
-  });
-});
 
-// 获取 localStorage 中的模板
-const storedTemplates = await loadDataWithFallback('regular_tasks', []);
-const templatesToKeep = storedTemplates.filter(template => 
-  existingRegularTaskTexts.has(template.text)
-);
+
+
+
 
 // 如果有孤立的模板，清理它们
 if (templatesToKeep.length !== storedTemplates.length) {
@@ -13350,8 +13398,7 @@ if (templatesToKeep.length !== storedTemplates.length) {
   setRegularTasks(templatesToKeep);
 } else {
   // 如果没有孤立模板，正常加载
-  const savedRegularTasks = await loadDataWithFallback('regular_tasks', []);
-  setRegularTasks(savedRegularTasks);
+  
 }
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
@@ -13552,41 +13599,6 @@ useEffect(() => {
  
 
 
-
-
-// 自动清理孤立的常规任务模板（每次页面加载时执行）
-useEffect(() => {
-  const cleanupOrphanedRegularTasks = () => {
-    // 收集所有实际存在的常规任务文本
-    const existingRegularTaskTexts = new Set();
-    Object.values(tasksByDate).forEach(tasks => {
-      tasks.forEach(task => {
-        if (task.isRegularTask && task.text) {
-          existingRegularTaskTexts.add(task.text);
-        }
-      });
-    });
-    
-    // 获取当前的模板
-    const storedTemplates = localStorage.getItem('regular_tasks');
-    if (storedTemplates) {
-      const parsedTemplates = JSON.parse(storedTemplates);
-      const templatesToKeep = parsedTemplates.filter(template => 
-        existingRegularTaskTexts.has(template.text)
-      );
-      
-      if (templatesToKeep.length !== parsedTemplates.length) {
-        console.log(`🧹 自动清理: 删除 ${parsedTemplates.length - templatesToKeep.length} 个孤立模板`);
-        localStorage.setItem('regular_tasks', JSON.stringify(templatesToKeep));
-        setRegularTasks(templatesToKeep);
-      }
-    }
-  };
-  
-  if (isInitialized && Object.keys(tasksByDate).length > 0) {
-    cleanupOrphanedRegularTasks();
-  }
-}, [isInitialized, tasksByDate]);
 
 
 
@@ -14197,11 +14209,56 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
 };
 
 // 在 handleAddTask 函数附近添加这个函数
+// 直接使用模板添加任务
+// 直接使用模板添加任务（带提示）
 const handleUseTemplate = (template) => {
-  setNewTaskText(template.text || template.content || '');
-  setNewTaskCategory(template.category || '校内');
-  setNewTaskSubCategory(template.subCategory || '');
-  setShowAddInput(true);
+  const newTask = {
+    id: Date.now().toString(),
+    text: template.text || template.content || '',
+    category: template.category || '校内',
+    subCategory: template.subCategory || '',
+    done: false,
+    timeSpent: 0,
+    subTasks: [],
+    note: template.note || "",
+    reflection: "",
+    image: template.image || null,
+    scheduledTime: template.scheduledTime || "",
+    pinned: false,
+    tags: template.tags || [],
+    progress: template.progress || {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    reminderTime: null,
+    createdAt: new Date().toISOString()
+  };
+
+  setTasksByDate(prev => ({
+    ...prev,
+    [selectedDate]: [...(prev[selectedDate] || []), newTask]
+  }));
+
+  // 显示短暂提示（2秒后消失）
+  const toast = document.createElement('div');
+  toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 2000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
 };
 
 // 添加本周任务
@@ -14264,241 +14321,10 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
   });
 };
 
-// 获取常规任务 - 添加在这里
-const getRegularTasks = () => {
-  return regularTasks.filter(task => !task.archived);
-};
 
 // 添加常规任务
 // 添加常规任务 - 修改为添加到所有日期
 
-// 添加常规任务模板 - 立即添加到所有今天及未来的日期
-const handleAddRegularTask = (text, category, subCategory) => {
-  if (!text.trim()) return;
-  
-  if (isAddingRegularTask.current) {
-    console.log('正在添加中，跳过重复调用');
-    return;
-  }
-  
-  const targetCat = category || "校内";
-  const targetSub = subCategory || "";
-  const templateId = `regular_template_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-  
-  // 检查模板是否已存在
-  if (regularTasks.some(t => t.text === text.trim())) {
-    alert('该常规任务已存在！');
-    return;
-  }
-  
-  isAddingRegularTask.current = true;
-  
-  // 1. ✅ 添加到模板列表（关键！这样未来任何新日期都会自动添加）
-  const newTemplate = {
-    id: templateId,
-    text: text.trim(),
-    targetCategory: targetCat,
-    targetSubCategory: targetSub,
-    note: "",
-    tags: [],
-    createdAt: new Date().toISOString()
-  };
-  
-  setRegularTasks(prev => [...prev, newTemplate]);
-  
-  // 2. ✅ 获取今天及未来30天的所有日期（确保覆盖足够远的未来）
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const futureDates = [];
-  for (let i = 0; i < 90; i++) { // 未来90天
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    futureDates.push(dateStr);
-  }
-  
-  // 同时包括当前已存在的所有日期（包括过去的）
-  const existingDates = Object.keys(tasksByDate);
-  const allTargetDates = [...new Set([...existingDates, ...futureDates])].sort();
-  
-  console.log(`📋 添加常规任务 "${text}" 到 ${allTargetDates.length} 个日期（今天及未来90天 + 已有日期）`);
-  
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    
-    allTargetDates.forEach(date => {
-      if (!newTasksByDate[date]) {
-        newTasksByDate[date] = [];
-      }
-      
-      const alreadyExists = newTasksByDate[date].some(
-        t => t.isRegularTask && t.text === text.trim()
-      );
-      
-      if (!alreadyExists) {
-        const newTask = {
-          id: `${templateId}_${date}_${Date.now()}`,
-          originalId: templateId,
-          text: text.trim(),
-          done: false,
-          category: "常规任务",
-          targetCategory: targetCat,
-          targetSubCategory: targetSub,
-          isRegularTask: true,
-          timeSpent: 0,
-          subTasks: [],
-          note: "",
-          reflection: "",
-          image: null,
-          scheduledTime: "",
-          pinned: false,
-          tags: [],
-          progress: {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          }
-        };
-        
-        newTasksByDate[date].push(newTask);
-      }
-    });
-    
-    return newTasksByDate;
-  });
-  
-  setTimeout(() => {
-    isAddingRegularTask.current = false;
-  }, 100);
-};
-
-// 切换常规任务完成状态 - 只从当天常规任务区域移除，不删除模板
-const toggleRegularTask = (task) => {
-  console.log('📝 完成常规任务:', task.text, '日期:', selectedDate);
-  
-  if (task.done) {
-    alert('任务已完成，不能重复完成');
-    return;
-  }
-
-  const targetCategory = task.targetCategory || "校内";
-  const targetSubCategory = task.targetSubCategory || "";
-  
-  setTasksByDate(prev => {
-    const currentDateTasks = prev[selectedDate] || [];
-    
-    // 1. 从当天的常规任务中删除这个任务
-    const filteredTasks = currentDateTasks.filter(t => t.id !== task.id);
-    
-    // 2. 在目标分类中添加已完成的任务（用于记录）
-    const completedTask = {
-      id: `completed_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-      text: task.text,
-      category: targetCategory,
-      subCategory: targetSubCategory,
-      done: true,
-      timeSpent: 0,
-      subTasks: [],
-      note: task.note || "",
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: task.tags || [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      },
-      reminderTime: null,
-      completedFromRegularTask: true,
-      completedDate: selectedDate
-    };
-    
-    console.log(`✅ 任务 "${task.text}" 已完成，已移动到 ${targetCategory}`);
-    
-    return {
-      ...prev,
-      [selectedDate]: [...filteredTasks, completedTask]
-    };
-  });
-  
-  // ⚠️ 注意：不删除 regularTasks 模板！
-  // 这样第二天切换日期时，常规任务会重新出现
-};
-// 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
-// 删除常规任务 - 删除所有日期的该常规任务（使用 originalId）
-// 删除常规任务 - 删除所有日期的该常规任务，并删除模板记录
-// 删除常规任务 - 通过 ID 删除
-const deleteRegularTask = (taskId) => {
-  console.log('🗑️ 删除常规任务（所有日期）:', taskId);
-  
-  let taskTextToDelete = '';
-  
-  // 1. 先从 tasksByDate 中删除所有副本
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    
-    Object.keys(newTasksByDate).forEach(date => {
-      newTasksByDate[date] = newTasksByDate[date].filter(task => {
-        const shouldDelete = task.isRegularTask && (
-          task.originalId === taskId || 
-          task.id === taskId ||
-          (task.originalId && taskId && task.originalId === taskId.split('_')[0])
-        );
-        if (shouldDelete) {
-          taskTextToDelete = task.text;
-        }
-        return !shouldDelete;
-      });
-    });
-    
-    return newTasksByDate;
-  });
-  
-  // 2. ✅ 从 regularTasks 模板中删除
-  setRegularTasks(prev => prev.filter(task => 
-    task.id !== taskId && task.text !== taskTextToDelete
-  ));
-  
-  console.log(`✅ 已删除常规任务 "${taskTextToDelete}" 的模板`);
-};
-
-// 编辑常规任务
-// 编辑常规任务 - 支持编辑类别和子类别
-const editRegularTask = (taskId, newText, newCategory, newSubCategory) => {
-  if (!newText.trim()) return;
-  
-  console.log('编辑常规任务（不改变顺序）:', { taskId, newText, newCategory, newSubCategory });
-  
-  // 更新所有日期中的这个常规任务
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
-    
-    Object.keys(newTasksByDate).forEach(date => {
-      newTasksByDate[date] = newTasksByDate[date].map(task => {
-        // 匹配条件：是常规任务且 ID 匹配或 originalId 匹配
-        if (task.isRegularTask && (task.id === taskId || task.originalId === taskId)) {
-          return {
-            ...task,
-            text: newText.trim(),
-            targetCategory: newCategory,
-            targetSubCategory: newSubCategory || ''
-          };
-        }
-        return task;
-      });
-    });
-    
-    return newTasksByDate;
-  });
-  
-  // 重要：不要修改 regularTasksOrder，保持原有顺序
-  // 顺序由 localStorage 中的 regular_tasks_order 决定
-};
 
  // 拖拽开始
   const handleDragStart = (index) => {
@@ -14691,8 +14517,7 @@ useEffect(() => {
 
 // 带持续时间的导入函数
 const handleImportTasksWithDuration = () => {
-  console.log('🎯 === 开始批量导入（带持续时间） ===');
-  console.log('预览任务列表:', bulkPreviewTasks);
+ 
   
   if (bulkPreviewTasks.length === 0) {
     alert('没有有效的任务内容');
@@ -15095,11 +14920,7 @@ const togglePinned = (task) => {
 
 // 删除任务
 const deleteTask = (task, deleteOption = 'today') => {
-  console.log('=== deleteTask 被调用 ===');
-  console.log('任务:', task);
-  console.log('任务类型:', task.isWeekTask ? '本周任务' : '普通任务');
-  console.log('删除选项:', deleteOption);
-  console.log('当前选中日期:', selectedDate);
+  
   
   const updatedTasksByDate = { ...tasksByDate };
   
@@ -15669,62 +15490,9 @@ const handleDateSelect = (selectedDate) => {
   setSelectedDate(newSelectedDate);
   setShowDatePickerModal(false);
   
-  // ✅ 切换日期时，确保该日期有所有常规任务
-  addRegularTasksToDate(newSelectedDate);
+  
 };
-// 为指定日期添加缺失的常规任务（每天独立）
-const addRegularTasksToDate = useCallback((date) => {
-  setTasksByDate(prev => {
-    // 从 regularTasks 状态获取所有常规任务模板
-    if (regularTasks.length === 0) return prev;
-    
-    const dateTasks = prev[date] || [];
-    
-    // 找出这个日期缺少的常规任务
-    const missingTemplates = regularTasks.filter(template => {
-      // 检查这个日期是否已经有这个常规任务
-      const exists = dateTasks.some(t => 
-        t.isRegularTask && t.text === template.text
-      );
-      return !exists;
-    });
-    
-    if (missingTemplates.length === 0) return prev;
-    
-    // 为每个缺失的模板创建新的任务实例（done = false）
-    const newTasks = missingTemplates.map(template => ({
-      id: `${template.id}_${date}_${Date.now()}`,
-      originalId: template.id,
-      text: template.text,
-      targetCategory: template.targetCategory || "校内",
-      targetSubCategory: template.targetSubCategory || "",
-      category: "常规任务",
-      done: false,  // ✅ 每天都是未完成状态
-      timeSpent: 0,
-      subTasks: [],
-      note: template.note || "",
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: template.tags || [],
-      isRegularTask: true,
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      }
-    }));
-    
-    console.log(`📋 为日期 ${date} 添加 ${missingTemplates.length} 个常规任务:`, missingTemplates.map(t => t.text));
-    
-    return {
-      ...prev,
-      [date]: [...dateTasks, ...newTasks]
-    };
-  });
-}, [regularTasks]);
+
 
 // 清空所有数据
 const clearAllData = async () => {
@@ -15842,316 +15610,6 @@ const todayStats = calculateTodayStats();
 
 
   
-  // 统计页面
-  const StatsPage = () => {
-    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
-    const fontSize = window.innerWidth <= 768 ? 10 : 12;
-
-
-
-    
-    return (
-      <div style={{
-        maxWidth: 600,
-        margin: "0 auto",
-        padding: 15,
-        fontFamily: "sans-serif",
-        backgroundColor: "#f5faff"
-      }}>
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20
-        }}>
-          <button
-            onClick={() => setShowStats(false)}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 20
-            }}
-          >
-            ⬅️
-          </button>
-          <h1 style={{
-            textAlign: "center",
-            color: "#1a73e8",
-            fontSize: 20
-          }}>
-            {statsMode === "week" ? "本周统计" : statsMode === "month" ? "本月统计" : "自选统计"}
-          </h1>
-          <div style={{ width: 20 }}></div>
-        </div>
-
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 10,
-          marginBottom: 20
-        }}>
-          <button
-            onClick={() => setStatsMode("week")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "week" ? "#1a73e8" : "#eee",
-              color: statsMode === "week" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            本周
-          </button>
-          <button
-            onClick={() => setStatsMode("month")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "month" ? "#1a73e8" : "#eee",
-              color: statsMode === "month" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            本月
-          </button>
-          <button
-            onClick={() => setStatsMode("custom")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "custom" ? "#1a73e8" : "#eee",
-              color: statsMode === "custom" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            自选
-          </button>
-        </div>
-
-        {statsMode === "custom" && (
-          <div style={{
-            backgroundColor: "#fff",
-            padding: 15,
-            borderRadius: 10,
-            marginBottom: 20
-          }}>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ marginBottom: 5 }}>选择日期范围:</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <input type="date" style={{ flex: 1, padding: 8 }} />
-                <span style={{ lineHeight: "36px" }}>至</span>
-                <input type="date" style={{ flex: 1, padding: 8 }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ marginBottom: 5 }}>选择类别:</div>
-              <select style={{ width: "100%", padding: 8 }}>
-                <option value="">全部类别</option>
-                {categories.map(c => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              style={{
-                width: "100%",
-                padding: 10,
-                background: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 5
-              }}
-            >
-              生成统计
-            </button>
-          </div>
-        )}
-
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 20,
-          padding: "8px 0",
-          backgroundColor: "#e8f0fe",
-          borderRadius: 10
-        }}>
-          {[
-            { label: "📊 平均完成率", value: `${avgCompletion}%` },
-            { label: "⏱️ 日均时长", value: `${avgDailyTime}m` }
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: 12,
-                borderRight: idx < 1 ? "1px solid #cce0ff" : "none",
-                padding: "4px 0"
-              }}
-            >
-              <div>{item.label}</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-
-<div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    每日学习时间（排除运动）
-  </h3>
-  <ResponsiveContainer width="100%" height="80%">
-    <BarChart 
-      data={dailyStudyData} 
-      margin={{ top: 20, right: 10, left: -20, bottom: 5 }} // 增加顶部边距
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" tick={{ fontSize }} />
-      <YAxis 
-        tick={{ fontSize }} 
-        domain={[0, 'dataMax + 20']} // 给Y轴更多空间
-      />
-      <Bar
-        dataKey="time"
-        fill="#1a73e8"
-        radius={[4, 4, 0, 0]}
-        label={{ 
-          position: "top", 
-          fontSize: fontSize - 1, // 稍微减小字体
-          formatter: (value) => `${value}分钟`,
-          fill: "#333", // 确保标签颜色可见
-          offset: 8 // 增加标签与柱子的距离
-        }}
-      />
-    </BarChart>
-  </ResponsiveContainer>
-</div>
-       {/* 校内子分类学习时间 */}
-<div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    校内子分类学习时间
-  </h3>
-  
-  {subCategoryData && subCategoryData.length > 0 ? (
-    <>
-      <div style={{
-        backgroundColor: "#f8f9fa",
-        padding: "8px",
-        borderRadius: "6px",
-        marginBottom: "10px",
-        fontSize: "11px",
-        textAlign: "center",
-        color: "#666"
-      }}>
-        统计校内各科目的学习时间分布
-      </div>
-      <ResponsiveContainer width="100%" height="80%">
-        <BarChart 
-          data={subCategoryData} 
-          margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" tick={{ fontSize }} />
-          <YAxis 
-            tick={{ fontSize }} 
-            domain={[0, 'dataMax + 20']}
-          />
-          <Bar
-            dataKey="time"
-            fill="#1a73e8"
-            radius={[4, 4, 0, 0]}
-            label={{ 
-              position: "top", 
-              fontSize: fontSize - 1,
-              formatter: (value) => `${value}分钟`,
-              fill: "#333",
-              offset: 8
-            }}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </>
-  ) : (
-    <div style={{
-      backgroundColor: "#f8f9fa",
-      padding: "30px 20px",
-      borderRadius: "8px",
-      textAlign: "center",
-      color: "#666",
-      fontSize: "13px"
-    }}>
-      📚 暂无校内子分类学习时间数据
-      <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.4" }}>
-        请在"校内"分类的任务中设置子分类并记录时间<br/>
-        支持的子分类：数学、语文、英语、运动等
-      </div>
-    </div>
-  )}
-</div>
-
-
-
-
-
-        
-        <div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    各科目学习时间
-  </h3>
-  <ResponsiveContainer width="100%" height="80%">
-    <BarChart 
-      data={categoryData} 
-      margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" tick={{ fontSize }} />
-      <YAxis 
-        tick={{ fontSize }} 
-        domain={[0, 'dataMax + 20']}
-      />
-      <Bar
-        dataKey="time"
-        fill="#4a90e2"
-        radius={[4, 4, 0, 0]}
-        label={{ 
-          position: "top", 
-          fontSize: fontSize - 1,
-          formatter: (value) => `${value}分钟`,
-          fill: "#333",
-          offset: 8
-        }}
-      />
-    </BarChart>
-  </ResponsiveContainer>
-</div>
-
-
-
-
-        <div style={{ height: chartHeight }}>
-          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-            每日完成任务数
-          </h3>
-          <ResponsiveContainer width="100%" height="80%">
-            <BarChart data={dailyTasksData} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize }} />
-              <YAxis tick={{ fontSize }} />
-              <Bar
-                dataKey="tasks"
-                fill="#00a854"
-                radius={[4, 4, 0, 0]}
-                label={{ position: "top", fontSize }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    );
-  };
 
   // 如果显示时间表页面
   if (showSchedule) {
@@ -16329,16 +15787,23 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-      {showTemplateModal && (
-        <TemplateModal
-          templates={templates}
-          onSave={handleAddTemplate}
-          categories={categories}
-          onClose={() => setShowTemplateModal(false)}
-          onDelete={handleDeleteTemplate}
-          setCategories={setCategories} // 添加这行
-        />
-      )}
+{showTemplateModal && (
+  <TemplateModal
+    templates={templates}
+    onSave={(templateData) => {
+      // 支持数组更新（编辑模板时传入整个数组）
+      if (Array.isArray(templateData)) {
+        setTemplates(templateData);
+      } else {
+        handleAddTemplate(templateData);
+      }
+    }}
+    categories={categories}
+    onClose={() => setShowTemplateModal(false)}
+    onDelete={handleDeleteTemplate}
+    setCategories={setCategories}
+  />
+)}
 
 
 {showGitHubSyncModal && (
@@ -16806,60 +16271,403 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
-
-{/* 在星期显示区域之后，任务列表之前添加这个跑马灯提醒区域 */}
+{/* 跑马灯提醒 + 两个小按钮 */}
 <div style={{
-  marginBottom: 10,
-  padding: '0 12px',
-  backgroundColor: '#ffebee', // 浅红色背景
-  borderRadius: 8,
-  height: '28px',
-  display: 'flex',
-  alignItems: 'center',
-  position: 'relative',
-  overflow: 'hidden',
-  boxShadow: '0 2px 4px rgba(244, 67, 54, 0.1)',
-  cursor: 'pointer'
-}} onClick={() => {
-  const newText = window.prompt('编辑提醒内容：', reminderText);
-  if (newText !== null) {
-    handleReminderChange(newText);
-  }
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  marginBottom: 10
 }}>
-  {/* 跑马灯文字容器 */}
-  <div style={{
-    flex: 1,
-    overflow: 'hidden',
-    position: 'relative',
-    height: '100%'
-  }}>
-    {reminderText ? (
-      <div
-        style={{
-          position: 'absolute',
-          whiteSpace: 'nowrap',
-          fontSize: '14px',
-          color: '#c62828',
-          fontWeight: '500',
-          lineHeight: '28px',
-          animation: 'rightToLeft 30s linear infinite'
-        }}
-      >
-        {reminderText}
-      </div>
-    ) : (
-      <div style={{
-        fontSize: '14px',
-        color: '#ef5350',
-        fontStyle: 'italic',
-        lineHeight: '28px',
-        textAlign: 'center'
-      }}>
-        点击添加每日提醒...
-      </div>
-    )}
+  {/* 跑马灯提醒 - 点击可编辑 */}
+  <div
+    onClick={() => {
+      const newText = window.prompt('编辑提醒内容：', reminderText);
+      if (newText !== null) {
+        handleReminderChange(newText);
+      }
+    }}
+    style={{
+      flex: 1,
+      padding: '0 12px',
+      backgroundColor: '#ffebee',
+      borderRadius: 8,
+      height: '32px',
+      display: 'flex',
+      alignItems: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      boxShadow: '0 2px 4px rgba(244, 67, 54, 0.1)',
+      cursor: 'pointer'
+    }}
+  >
+    <div style={{
+      flex: 1,
+      overflow: 'hidden',
+      position: 'relative',
+      height: '100%'
+    }}>
+      {reminderText ? (
+        <div
+          style={{
+            position: 'absolute',
+            whiteSpace: 'nowrap',
+            fontSize: '13px',
+            color: '#c62828',
+            fontWeight: '500',
+            lineHeight: '32px',
+            animation: 'rightToLeft 30s linear infinite'
+          }}
+        >
+          {reminderText}
+        </div>
+      ) : (
+        <div style={{
+          fontSize: '13px',
+          color: '#ef5350',
+          fontStyle: 'italic',
+          lineHeight: '32px',
+          textAlign: 'center'
+        }}>
+          点击添加每日提醒...
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* 添加任务小按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setShowAddInput(!showAddInput);
+      setShowBulkInput(false);
+    }}
+    style={{
+      width: '48px',
+      height: '32px',
+      backgroundColor: showAddInput ? '#adb5bd' : '#1a73e8',
+      color: '#fff',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '13px',
+      fontWeight: '500',
+      userSelect: 'none',
+      transition: 'all 0.2s ease'
+    }}
+  >
+    {showAddInput ? "取消" : "添加"}
+  </div>
+
+  {/* 批量导入小按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setShowBulkInput(!showBulkInput);
+      setShowAddInput(false);
+    }}
+    style={{
+      width: '48px',
+      height: '32px',
+      backgroundColor: showBulkInput ? '#adb5bd' : '#1a73e8',
+      color: '#fff',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '13px',
+      fontWeight: '500',
+      userSelect: 'none',
+      transition: 'all 0.2s ease'
+    }}
+  >
+    {showBulkInput ? "取消" : "批量"}
   </div>
 </div>
+
+{/* 跑马灯动画样式 */}
+<style>{`
+  @keyframes rightToLeft {
+    0% {
+      left: 100%;
+      transform: translateX(0);
+    }
+    100% {
+      left: 0%;
+      transform: translateX(-100%);
+    }
+  }
+`}</style>
+
+{showAddInput && (
+  <div ref={addInputRef} style={{ marginTop: 8, marginBottom: 12 }}>
+    {/* 第一行：任务输入框 + 确认按钮 */}
+    <div style={{
+      display: "flex",
+      gap: 6,
+      marginBottom: 8
+    }}>
+      <input
+        type="text"
+        value={newTaskText}
+        onChange={(e) => setNewTaskText(e.target.value)}
+        placeholder="输入任务"
+        style={{
+          flex: 1,
+          padding: 8,
+          borderRadius: 6,
+          border: "1px solid #ccc",
+          fontSize: "14px"
+        }}
+      />
+      
+      {/* 确认按钮 */}
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddTask();
+        }}
+        style={{
+          padding: "6px 12px",
+          backgroundColor: "#28a745",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none",
+          fontSize: "13px",
+          display: "flex",
+          alignItems: "center"
+        }}
+      >
+        确认
+      </div>
+    </div>
+
+    {/* 第二行：分类选择 */}
+    <div style={{
+      display: "flex",
+      gap: 8,
+      marginBottom: 8,
+      alignItems: "center",
+      flexWrap: "wrap"
+    }}>
+      <span style={{ fontSize: 12, color: "#666" }}>分类：</span>
+      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+        {categories.map((c) => (
+          <div
+            key={c.name}
+            onClick={() => {
+              setNewTaskCategory(c.name);
+              setNewTaskSubCategory('');
+            }}
+            style={{
+              padding: "4px 10px",
+              borderRadius: 16,
+              backgroundColor: newTaskCategory === c.name ? "#1a73e8" : "#f0f0f0",
+              color: newTaskCategory === c.name ? "#fff" : "#333",
+              fontSize: "12px",
+              cursor: "pointer",
+              position: "relative",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {c.name}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* 第三行：子分类选择 - 仅当选择"校内"时显示 */}
+    {newTaskCategory === '校内' && (
+      <div style={{
+        display: "flex",
+        gap: 8,
+        marginBottom: 8,
+        alignItems: "center",
+        flexWrap: "wrap"
+      }}>
+        <span style={{ fontSize: 12, color: "#666" }}>子分类：</span>
+        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+          {['数学', '语文', '英语', '运动'].map(sub => (
+            <div
+              key={sub}
+              onClick={() => setNewTaskSubCategory(sub)}
+              style={{
+                padding: "4px 10px",
+                borderRadius: 16,
+                backgroundColor: newTaskSubCategory === sub ? "#1a73e8" : "#f0f0f0",
+                color: newTaskSubCategory === sub ? "#fff" : "#333",
+                fontSize: "12px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+            >
+              {sub}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* 模板按钮 */}
+    <div style={{ 
+      display: "flex", 
+      gap: 6, 
+      flexWrap: "wrap", 
+      fontSize: "12px",
+      alignItems: "center"
+    }}>
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          setShowTemplateModal(true);
+        }}
+        style={{
+          padding: "4px 8px",
+          backgroundColor: "#6c757d",
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none",
+          fontSize: "11px"
+        }}
+      >
+        + 新建模板
+      </div>
+
+      {templates.slice(0, 5).map((template, index) => (
+        <div
+          key={index}
+          onClick={(e) => {
+            e.preventDefault();
+            handleUseTemplate(template);
+          }}
+          style={{
+            padding: "4px 8px",
+            backgroundColor: "#17a2b8",
+            color: "#fff",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontSize: "11px",
+            userSelect: "none"
+          }}
+        >
+          {template.name || template.text?.slice(0, 8) || `模板${index + 1}`}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
+{/* ========== 批量导入输入框（展开时显示） ========== */}
+{showBulkInput && (
+  <div 
+    ref={bulkInputRef} 
+    style={{ marginTop: 8, marginBottom: 12 }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    {/* 批量文本输入框 */}
+    <textarea
+      value={bulkText}
+      onChange={(e) => setBulkText(e.target.value)}
+      placeholder="第一行：类别（如：数学、语文、英语）&#10;第二行起：任务内容"
+      style={{
+        width: "100%",
+        minHeight: 120,
+        padding: 8,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        fontSize: "14px",
+        fontFamily: "monospace",
+        resize: "vertical",
+        boxSizing: "border-box",
+        marginBottom: 8
+      }}
+    />
+
+    {/* 日期范围选择 + 确认导入按钮 - 放在同一行 */}
+    <div style={{
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      flexWrap: "wrap",
+      justifyContent: "space-between"
+    }}>
+      {/* 左侧：日期范围选择 */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "#666" }}>日期范围：</span>
+        <select
+          value={bulkDateRange}
+          onChange={(e) => {
+            setBulkDateRange(e.target.value);
+            if (e.target.value === 'custom') {
+              const today = new Date();
+              const todayStr = today.toISOString().split('T')[0];
+              setBulkDateRangeStart(todayStr);
+              setBulkDateRangeEnd(todayStr);
+            }
+          }}
+          style={{
+            padding: "6px 10px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: "13px",
+            backgroundColor: "#fff"
+          }}
+        >
+          <option value="today">仅今天（默认）</option>
+          <option value="next3">未来3天（含今天）</option>
+          <option value="next4">未来4天（含今天）</option>
+          <option value="custom">自定义</option>
+        </select>
+        
+        {bulkDateRange === 'custom' && (
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input
+              type="date"
+              value={bulkDateRangeStart}
+              onChange={(e) => setBulkDateRangeStart(e.target.value)}
+              style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
+            />
+            <span>至</span>
+            <input
+              type="date"
+              value={bulkDateRangeEnd}
+              onChange={(e) => setBulkDateRangeEnd(e.target.value)}
+              style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 右侧：确认导入按钮 */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleImportTasksWithDuration();
+        }}
+        style={{
+          padding: "6px 16px",
+          backgroundColor: "#28a745",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+          fontWeight: "bold",
+          fontSize: "13px",
+          whiteSpace: "nowrap"
+        }}
+      >
+        确认导入
+      </button>
+    </div>
+  </div>
+)}
 
 {/* 添加动画样式 */}
 <style>{`
@@ -17098,95 +16906,6 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
-
-{/* 常规任务区域 - 只显示未完成的常规任务 */}
-<div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", border: "2px solid #FF9800", backgroundColor: "#fff" }}>
-  <div 
-    style={{ 
-      backgroundColor: "#FF9800", 
-      color: "#fff", 
-      padding: "3px 8px", 
-      fontWeight: "bold", 
-      display: "flex", 
-      justifyContent: "space-between", 
-      alignItems: "center",
-      cursor: "pointer"
-    }}
-    onClick={() => setCollapsedCategories(prev => ({ ...prev, "常规任务": !prev["常规任务"] }))}
-  >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {/* 只统计未完成的常规任务 */}
-      <span>常规任务 ({todayTasks.filter(t => t.isRegularTask && !t.done).length})</span>
-    </div>
-    
-    {/* 按钮组 */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-      {/* 排序按钮 */}
-      <div
-        onClick={(e) => { 
-          e.stopPropagation();
-          setIsSortingRegularTasks(!isSortingRegularTasks);
-        }}
-        style={{
-          borderRadius: 4,
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: "11px",
-          padding: "2px 6px",
-          display: "flex",
-          alignItems: "center",
-          gap: 3,
-          minWidth: "25px",
-          userSelect: "none"
-        }}
-      >
-        {isSortingRegularTasks ? "✓" : "☰"}
-      </div>
-      
-      {/* 添加按钮 */}
-      <div 
-        onClick={(e) => { 
-          e.stopPropagation(); 
-          setShowRegularTaskModal(true); 
-        }}
-        style={{ 
-          background: "rgba(255,255,255,0.2)",
-          border: "1px solid rgba(255,255,255,0.5)",
-          borderRadius: 4,
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: "14px",
-          padding: "0px 6px",
-          display: "flex",
-          alignItems: "center",
-          gap: 3,
-          minWidth: "25px",
-          userSelect: "none"
-        }}
-      >
-        +
-      </div>
-    </div>
-  </div>
-  
-  {!collapsedCategories["常规任务"] && (
-    <RegularTaskSortableList
-  tasks={todayTasks.filter(t => t.isRegularTask && !t.done)}
-  categories={categories}
-  onToggle={toggleRegularTask}
-  onDelete={deleteRegularTaskByText}
-  onEdit={editRegularTask}
-  isSortingMode={isSortingRegularTasks}
-  onSortingEnd={(newOrder) => {
-    // 保存排序顺序
-    setRegularTasksOrder(newOrder);
-    localStorage.setItem('regular_tasks_order', JSON.stringify(newOrder));
-    // 退出排序模式
-    setIsSortingRegularTasks(false);
-  }}
-/>
-  )}
-</div>
 
 
 
@@ -17638,14 +17357,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 常规任务模态框 - 添加在这里 */}
-{showRegularTaskModal && (
-  <RegularTaskModal
-    onClose={() => setShowRegularTaskModal(false)}
-    onAdd={handleAddRegularTask}
-    categories={categories}  // 添加这行
-  />
-)}
+
 
 {showReflectionModal && (
   <div style={{
@@ -17800,307 +17512,15 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-<div style={{
-  display: "flex",
-  gap: 10,
-  marginTop: 10,
-  fontSize: "12px"
-}}>
-  {/* 添加任务按钮 */}
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setShowAddInput(!showAddInput);
-      setShowBulkInput(false);
-    }}
-    style={{
-      flex: 1,
-      padding: 8,
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      borderRadius: 6,
-      cursor: "pointer",
-      textAlign: "center",
-      userSelect: "none"
-    }}
-  >
-    {showAddInput ? "取消添加" : "添加任务"}
-  </div>
-  
-  {/* 批量导入按钮 */}
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setShowBulkInput(!showBulkInput);
-      setShowAddInput(false);
-    }}
-    style={{
-      flex: 1,
-      padding: 8,
-      backgroundColor: "#1a73e8",
-      color: "#fff",
-      borderRadius: 6,
-      cursor: "pointer",
-      textAlign: "center",
-      userSelect: "none"
-    }}
-  >
-    {showBulkInput ? "取消批量" : "批量导入"}
-  </div>
-</div>
 
 
 
 
 
-{showBulkInput && (
-  <div 
-    ref={bulkInputRef} 
-    style={{ marginTop: 8 }}
-    onClick={(e) => e.stopPropagation()}
-  >
-    {/* 批量文本输入框 */}
-    <textarea
-      value={bulkText}
-      onChange={(e) => setBulkText(e.target.value)}
-      placeholder="第一行：类别
-第二行起：任务内容"
-      style={{
-        width: "100%",
-        minHeight: 120,
-        padding: 8,
-        borderRadius: 6,
-        border: "1px solid #ccc",
-        fontSize: "14px",
-        fontFamily: "monospace",
-        resize: "vertical"
-      }}
-    />
 
-    {/* 日期范围选择 */}
-<div style={{
-  display: "flex",
-  gap: 8,
-  marginTop: 8,
-  alignItems: "center",
-  flexWrap: "wrap"
-}}>
-  <span style={{ fontSize: 12, color: "#666" }}>日期范围：</span>
-  <select
-    value={bulkDateRange}
-    onChange={(e) => {
-      setBulkDateRange(e.target.value);
-      // 当选择自定义时，自动设置开始日期为今天
-      if (e.target.value === 'custom') {
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        setBulkDateRangeStart(todayStr);
-        setBulkDateRangeEnd(todayStr);
-      }
-    }}
-    style={{
-      padding: "6px 10px",
-      borderRadius: 6,
-      border: "1px solid #ccc",
-      fontSize: "13px",
-      backgroundColor: "#fff"
-    }}
-  >
-    <option value="today">仅今天（默认）</option>
-    <option value="next3">未来3天（含今天）</option>
-    <option value="next4">未来4天（含今天）</option>
-    <option value="custom">自定义</option>
-  </select>
-  
-  {bulkDateRange === 'custom' && (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <input
-        type="date"
-        value={bulkDateRangeStart}
-        onChange={(e) => setBulkDateRangeStart(e.target.value)}
-        style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
-      />
-      <span>至</span>
-      <input
-        type="date"
-        value={bulkDateRangeEnd}
-        onChange={(e) => setBulkDateRangeEnd(e.target.value)}
-        style={{ padding: "5px", borderRadius: 4, border: "1px solid #ccc", fontSize: "12px" }}
-      />
-    </div>
-  )}
-</div>
-
-    {/* 导入按钮 */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        handleImportTasksWithDuration();
-      }}
-      style={{
-        marginTop: 12,
-        padding: "10px",
-        width: "100%",
-        backgroundColor: "#1a73e8",
-        color: "#fff",
-        border: "none",
-        borderRadius: 6,
-        cursor: "pointer",
-        fontWeight: "bold"
-      }}
-    >
-      导入任务
-    </button>
-  </div>
-)}
 
       {/* 添加任务输入框（展开时显示） */}
-     {/* 添加任务输入框内的功能按钮 */}
-{showAddInput && (
-  <div ref={addInputRef} style={{ marginTop: 8 }}>
-    <div style={{
-      display: "flex",
-      gap: 6,
-      marginBottom: 8
-      
-    }}>
-      <input
-        type="text"
-        value={newTaskText}
-        onChange={(e) => setNewTaskText(e.target.value)}
-        placeholder="输入任务"
-        style={{
-          flex: 1,
-          padding: 6,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-          fontSize: "14px"
-        }}
-      />
-      <select
-        value={newTaskCategory}
-        onChange={(e) => setNewTaskCategory(e.target.value)}
-        style={{ padding: 6 }}
-      >
-        {categories.map((c) => (
-          <option key={c.name} value={c.name}>{c.name}</option>
-        ))}
-      </select>
-      <div
-        onClick={(e) => {
-          e.preventDefault();
-          handleAddTask();
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-       
-          userSelect: "none"
-          
-        }}
-      >
-        确认
-      </div>
-    </div>
 
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: "12px" }}>
-      <div
-        onClick={(e) => {
-          e.preventDefault();
-          setShowRepeatModal(true);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-          userSelect: "none"
-        }}
-      >
-        重复
-      </div>
-
-      <div
-        onClick={(e) => {
-          e.preventDefault();
-          setShowTimeModal(true);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-          userSelect: "none"
-        }}
-      >
-        计划时间
-      </div>
-
-      <div
-        onClick={(e) => {
-          e.preventDefault();
-          setShowReminderModal(true);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-          userSelect: "none"
-        }}
-      >
-        提醒
-      </div>
-
-      <div
-        onClick={(e) => {
-          e.preventDefault();
-          setShowTemplateModal(true);
-        }}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a73e8",
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-          userSelect: "none"
-        }}
-      >
-        模板
-      </div>
-
-      {templates.map((template, index) => (
-        <div
-          key={index}
-          onClick={(e) => {
-            e.preventDefault();
-            handleUseTemplate(template);
-          }}
-          style={{
-            padding: "6px 10px",
-            backgroundColor: "#6c757d",
-            color: "#fff",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontSize: "12px",
-            userSelect: "none"
-          }}
-          title={`${template.name}: ${template.content}`}
-        >
-          {template.name}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
 
      
    
