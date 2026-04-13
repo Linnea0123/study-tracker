@@ -16027,11 +16027,22 @@ if (isInitialized && todayTasks.length === 0) {
       ⬅️
     </button>
 
-    <span style={{
-      fontWeight: "bold",
-      margin: "0 4px",
-      fontSize: "13px"
-    }}>
+    {/* 修改这里：把日期文字变成可点击的 */}
+    <span 
+      onClick={() => setShowDatePickerModal(true)}  // ✅ 添加点击事件
+      style={{
+        fontWeight: "bold",
+        margin: "0 4px",
+        fontSize: "13px",
+        cursor: "pointer",  // ✅ 添加手型光标
+        padding: "4px 8px",  // ✅ 增加点击区域
+        borderRadius: "6px",  // ✅ 圆角
+        transition: "background-color 0.2s",  // ✅ 过渡效果
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+      title="点击选择日期"
+    >
       {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
     </span>
 
@@ -16056,23 +16067,10 @@ if (isInitialized && todayTasks.length === 0) {
       ➡️
     </button>
 
-    <button
-      onClick={() => setShowDatePickerModal(true)}
-      style={{
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "14px",
-        marginLeft: "4px",
-        padding: "6px"
-      }}
-      title="选择日期"
-    >
-      📅
-    </button>
+    {/* ✅ 删除原来的月历按钮 */}
   </div>
 
-  {/* 右侧：四个小按钮 */}
+  {/* 右侧：四个小按钮（保持不变） */}
   <div style={{ display: "flex", gap: "6px" }}>
     <div
       onClick={() => setShowWeekTaskModal(true)}
