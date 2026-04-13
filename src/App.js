@@ -12406,6 +12406,8 @@ const toggleDone = (task) => {
   const wasDone = task.done;
   console.log('=== toggleDone 开始 ===');
   console.log('任务:', task.text);
+  console.log('是否是跨日期任务:', !!task.crossDateId);
+  console.log('是否有日期范围:', !!task.dateRange);
 
   // 如果是跨日期任务，同步所有日期的状态
   if (task.crossDateId || (task.dateRange && task.dateRange.allDates)) {
@@ -12428,7 +12430,6 @@ const toggleDone = (task) => {
               done: !wasDone,
               pinned: !wasDone ? false : t.pinned,
               subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks,
-              // 记录实际完成的日期
               actualCompletedDate: !wasDone ? actualCompletedDate : undefined
             };
           }
@@ -12441,9 +12442,30 @@ const toggleDone = (task) => {
     return;
   }
   
-  // ... 后面的普通任务处理代码保持不变
-}
-
+  // 处理普通任务
+  console.log('📝 处理普通任务:', task.text);
+  
+  setTasksByDate(prev => {
+    const currentDateTasks = prev[selectedDate] || [];
+    const updatedTasks = currentDateTasks.map(t => {
+      if (t.id === task.id) {
+        console.log('找到匹配任务，切换完成状态:', !wasDone);
+        return { 
+          ...t, 
+          done: !wasDone,
+          pinned: !wasDone ? false : t.pinned,
+          subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+        };
+      }
+      return t;
+    });
+    
+    return {
+      ...prev,
+      [selectedDate]: updatedTasks
+    };
+  });
+};
 
 // 迁移任务函数
 const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
