@@ -6460,6 +6460,7 @@ const handleAddTask = () => {
     subCategory: selectedSubCategory,
     deadline: deadline,
     progress: 0,
+    timeSpent: 0,  
     target: target,
     unit: unit,
     createdAt: new Date().toISOString()
@@ -9378,192 +9379,178 @@ const TaskItem = ({
   border: task.done ? "0.5px solid #eee" : "0.5px solid #e0e0e0",
 }}
   >
-    {/* 第一行：任务内容 + 复选框 */}
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 2 }}>
-      <input
-        type="checkbox"
-        checked={task.done}
-        onChange={(e) => {
-          e.stopPropagation();
-          if (typeof toggleDone === 'function') {
-            toggleDone(task);
-          }
-        }}
-        onClick={(e) => e.stopPropagation()}
-        style={{ 
-          margin: 0,
-          marginTop: "2px",
-          cursor: "pointer", 
-          flexShrink: 0,
-          width: "16px",
-          height: "16px"
-        }}
-      />
 
-      {/* 任务文字 */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        flex: 1, 
-        flexWrap: "wrap", 
-        gap: "4px",
-        minWidth: 0
-      }}>  
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEditModal(task);
-          }}
-          style={{
-            wordBreak: "break-word",
-            cursor: "pointer",
-            color: task.done ? "#999" : "#000",  // ✅ 完成后文字变灰
-            fontWeight: task.pinned ? "bold" : "normal",
-            fontSize: "14px",
-            lineHeight: "1.4",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-            display: "inline",
-            flex: "1",
-            minWidth: "0"
-          }}
-        >
-          <span>{task.text}</span>
+{/* 第一行：复选框 + 任务内容 + 删除按钮 + 时间 */}
+<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+  <input
+    type="checkbox"
+    checked={task.done}
+    onChange={(e) => {
+      e.stopPropagation();
+      if (typeof toggleDone === 'function') {
+        toggleDone(task);
+      }
+    }}
+    onClick={(e) => e.stopPropagation()}
+    style={{ 
+      margin: 0,
+      cursor: "pointer", 
+      flexShrink: 0,
+      width: "16px",
+      height: "16px"
+    }}
+  />
 
-
- {/* 日期范围标签 */}
-  {task.dateRange && task.dateRange.start && task.dateRange.end && (
-    <span
+  {/* 任务文字区域 - 弹性增长 */}
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center", 
+    flex: 1, 
+    flexWrap: "wrap", 
+    gap: "4px",
+    minWidth: 0
+  }}>  
+    {/* 任务文字 - 可点击编辑 */}
+    <div
       onClick={(e) => {
         e.stopPropagation();
-        // 切换展开/收起子任务列表
-        const subTaskContainer = e.currentTarget.closest('.task-item')?.querySelector('.date-range-subtasks');
-        if (subTaskContainer) {
-          subTaskContainer.style.display = subTaskContainer.style.display === 'none' ? 'block' : 'none';
-        }
+        onOpenEditModal(task);
       }}
       style={{
-        fontSize: "10px",
-        padding: "2px 6px",
-        backgroundColor: "#e3f2fd",
-        color: "#1a73e8",
-        borderRadius: "12px",
+        wordBreak: "break-word",
         cursor: "pointer",
-        whiteSpace: "nowrap",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "2px"
+        color: task.done ? "#999" : "#000",
+        fontWeight: task.pinned ? "bold" : "normal",
+        fontSize: "14px",
+        lineHeight: "1.4",
+        whiteSpace: "pre-wrap",
+        wordWrap: "break-word",
+        flex: "1",
+        minWidth: "50px"
       }}
-      title="点击查看每天的完成情况"
     >
-      📅 {task.dateRange.start.slice(5)} - {task.dateRange.end.slice(5)}
-    </span>
-  )}
-  
+      <span>{task.text}</span>
 
+      {/* 日期范围标签 */}
+      {task.dateRange && task.dateRange.start && task.dateRange.end && (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            const subTaskContainer = e.currentTarget.closest('.task-item')?.querySelector('.date-range-subtasks');
+            if (subTaskContainer) {
+              subTaskContainer.style.display = subTaskContainer.style.display === 'none' ? 'block' : 'none';
+            }
+          }}
+          style={{
+            fontSize: "10px",
+            padding: "2px 6px",
+            backgroundColor: "#e3f2fd",
+            color: "#1a73e8",
+            borderRadius: "12px",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2px",
+            marginLeft: "6px"
+          }}
+          title="点击查看每天的完成情况"
+        >
+          📅 {task.dateRange.start.slice(5)} - {task.dateRange.end.slice(5)}
+        </span>
+      )}
 
-  {task.isWeekTask && <span>🌟</span>}
-  {/* 修改这里：同时检查 task.image 和 task.hasImage */}
-  {(task.image || task.hasImage) && (
-  <span style={{
-    color: "#ff4444",
-    fontSize: "12px",
-    fontWeight: "normal",
-    backgroundColor: "#ffe5e5",
-    padding: "2px 6px",
-    borderRadius: "4px",
-    marginLeft: "4px",
-    display: "inline-block"
-  }}>
-    【图片】
-  </span>
-)}
+      {task.isWeekTask && <span style={{ marginLeft: "4px" }}>🌟</span>}
+      
+      {(task.image || task.hasImage) && (
+        <span style={{
+          color: "#ff4444",
+          fontSize: "12px",
+          fontWeight: "normal",
+          backgroundColor: "#ffe5e5",
+          padding: "2px 6px",
+          borderRadius: "4px",
+          marginLeft: "4px",
+          display: "inline-block"
+        }}>
+          【图片】
+        </span>
+      )}
+    </div>
+
+    {/* 右侧按钮组：删除按钮 + 时间（纵向对齐） */}
+    {/* 右侧按钮组：删除按钮 + 时间 */}
+<div style={{
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+  flexShrink: 0
+}}>
+  {/* 删除按钮 */}
+  <button
+    className="task-delete-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
+        if (typeof onDeleteTask === 'function') {
+          onDeleteTask(task, 'today');
+        }
+      }
+    }}
+    style={{
+      background: 'transparent',
+      border: 'none',
+      color: '#888',
+      cursor: 'pointer',
+      fontSize: '16px',
+      padding: '0',
+      width: '20px',
+      height: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      lineHeight: 1,
+      marginRight: '0px'  // ✅ 添加这行，向右移动
+    }}
+    title="删除任务"
+  >
+    ×
+  </button>
+
+  {/* 时间显示 */}
+  {(() => {
+    const minutes = Math.floor((task.timeSpent || 0) / 60);
+    return (
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          onEditTime(task);
+        }}
+        style={{
+          fontSize: '11px',
+          color: '#666',
+          cursor: 'pointer',
+          fontFamily: 'Calibri, "微软雅黑", sans-serif',
+          padding: '2px 6px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '4px',
+          backgroundColor: '#f5f5f5',
+          whiteSpace: 'nowrap',
+          display: 'inline-block',
+          lineHeight: 'normal'
+        }}
+        title="点击修改时间"
+      >
+        {minutes}m
+      </span>
+    );
+  })()}
 </div>
-          
-         
+  </div>
+</div>
 
 
-{/* 只有常规任务且 showCategoryTag 为 true 时才显示标签 */}
-{/* 只有常规任务且 showCategoryTag 为 true 时才显示标签 */}
-{showCategoryTag && task.isRegularTask && task.targetCategory && (
-  <span style={{
-    fontSize: "10px",
-    padding: "2px 6px",
-    borderRadius: "10px",
-    backgroundColor: (() => {
-      if (task.targetCategory === "校内" && task.targetSubCategory) {
-        const subCategoryColors = {
-          "数学": "#0000FF",
-          "语文": "#FF0000",
-          "英语": "#008000",
-          "运动": "#FFA500",
-          "科学": "#800080"
-        };
-        return subCategoryColors[task.targetSubCategory] || "#1a73e8";
-      }
-      // 颜色映射配置
-// 颜色映射配置 - 更浅的版本
-const categoryColors = {
-  '语文': { bg: '#FFFDE7', border: '#FFF59D', text: '#333' },     // 更浅的黄
-  '数学': { bg: '#E8F5E9', border: '#C8E6C9', text: '#333' },     // 更浅的绿
-  '英语': { bg: '#FCE4EC', border: '#F8BBD0', text: '#333' },     // 更浅的粉
-  '科学': { bg: '#E1F5FE', border: '#B3E5FC', text: '#333' },     // 更浅的蓝
-  '运动': { bg: '#E3F2FD', border: '#BBDEFB', text: '#333' },     // 更浅的蓝
-  '校内': { bg: '#F0F8FF', border: '#BBDEFB', text: '#333' },     // 浅蓝白
-  '未分类': { bg: '#FAFAFA', border: '#EEEEEE', text: '#999' }    // 更浅的灰
-};
 
-// 子分类颜色（与大分类保持一致）
-const subCategoryColors = {
-  '数学': '#E8F5E9',   // 与大分类数学一致
-  '语文': '#FFFDE7',   // 与大分类语文一致
-  '英语': '#FCE4EC',   // 与大分类英语一致
-  '运动': '#E3F2FD'    // 与大分类运动一致
-};
-      return categoryColors[task.targetCategory] || "#FF9800";
-    })(),
-    color: "#fff",
-    whiteSpace: "nowrap",
-    lineHeight: 1.4,
-    marginLeft: "4px"
-  }}>
-    {/* 修改这里：显示 "校内/数学" 格式 */}
-    {task.targetCategory === "校内" && task.targetSubCategory 
-      ? `${task.targetCategory}/${task.targetSubCategory}` 
-      : task.targetCategory}
-  </span>
-)}
-
-
-          {/* 删除按钮 */}
-
-<button
-  className="task-delete-btn"  // 添加这个 class
-  onClick={(e) => {
-    e.stopPropagation();
-    if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
-      if (typeof onDeleteTask === 'function') {
-        onDeleteTask(task, 'today');
-      }
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    color: '#888',
-    cursor: 'pointer',
-    fontSize: '16px',
-    padding: '0 4px',
-    marginLeft: 'auto',
-    lineHeight: 1,
-    flexShrink: 0
-  }}
-  title="删除任务"
->
-  ×
-</button>
-        </div>
-      </div>
 
       {/* 第二行：备注和感想 */}
       {(task.note || task.reflection) && (
@@ -10375,28 +10362,32 @@ const SortableTaskList = ({
           }}
         >
           {/* 排序模式显示拖拽手柄 - 始终显示 */}
-          {isSortingMode && (
-            <div
-              style={{
-                position: 'absolute',
-                right: '4px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                cursor: 'grab',
-                color: '#999',
-                fontSize: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                zIndex: 10,
-                background: 'rgba(255,255,255,0.9)',
-                padding: '2px 4px',
-                borderRadius: '3px'
-              }}
-              title="拖拽调整顺序"
-            >
-              ⋮⋮
-            </div>
-          )}
+         {/* 排序模式显示拖拽手柄 - 始终显示 */}
+{isSortingMode && (
+  <div
+    style={{
+      position: 'absolute',
+      right: '4px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      cursor: 'grab',
+      color: '#999',
+      fontSize: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+      background: 'rgba(255,255,255,0.9)',
+      padding: '2px 4px',
+      borderRadius: '3px',
+      width: '20px',
+      height: '20px'
+    }}
+    title="拖拽调整顺序"
+  >
+    ⋮⋮
+  </div>
+)}
           
           <TaskItem
             task={task}
@@ -13269,7 +13260,7 @@ const formatCategoryTime = (seconds) => {
   return `${minutes}m`;
 };
 
-// 格式化时间为小时（使用实际时间，不强制递增）
+// ✅ 添加这个缺失的函数 - 格式化时间为小时
 const formatTimeInHours = (seconds) => {
   const totalMinutes = Math.floor(seconds / 60);
   const hours = (totalMinutes / 60).toFixed(1);
@@ -15435,6 +15426,7 @@ const handleImageUpload = (e, task) => {
 };
 
 // 修改分类总时间 - 只支持分钟
+// 修改分类总时间 - 支持分钟
 const editCategoryTime = (catName) => {
   const currentTime = totalTime(catName);
   const currentMinutes = Math.floor(currentTime / 60);
@@ -15463,7 +15455,7 @@ const editCategoryTime = (catName) => {
             
             newTasksByDate[selectedDate] = todayTasks.map(t =>
               t.category === catName 
-                ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
+                ? { ...t, timeSpent: Math.max(0, (t.timeSpent || 0) + timePerTask) }
                 : t
             );
           } else {
@@ -15480,7 +15472,15 @@ const editCategoryTime = (catName) => {
               note: "时间记录",
               image: null,
               scheduledTime: "",
-              pinned: false
+              pinned: false,
+              subTasks: [],
+              tags: [],
+              progress: {
+                initial: 0,
+                current: 0,
+                target: 0,
+                unit: "%"
+              }
             });
           }
 
@@ -15490,7 +15490,6 @@ const editCategoryTime = (catName) => {
     }
   }
 };
-
 const getCategoryTasks = (catName) => {
   // 只从当前日期获取任务
   const result = todayTasks.filter(t => 
@@ -17187,55 +17186,56 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
               
               {/* 时间显示 */}
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const newTime = window.prompt(
-                    `修改 ${subCat} 子类别总时间（单位：分钟，例如 30 表示30分钟）`,
-                    Math.floor(subCategoryTotalTime / 60).toString()
-                  );
-                  
-                  if (newTime !== null) {
-                    const minutes = parseInt(newTime) || 0;
-                    const newSeconds = minutes * 60;
-                    
-                    if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
-                      const timeDifference = newSeconds - subCategoryTotalTime;
-                      
-                      if (timeDifference !== 0 && subCatTasks.length > 0) {
-                        const timePerTask = Math.floor(timeDifference / subCatTasks.length);
-                        
-                        setTasksByDate(prev => {
-                          const newTasksByDate = { ...prev };
-                          const todayTasks = newTasksByDate[selectedDate] || [];
-                          
-                          newTasksByDate[selectedDate] = todayTasks.map(t => 
-                            t.category === c.name && t.subCategory === subCat 
-                              ? { ...t, timeSpent: (t.timeSpent || 0) + timePerTask }
-                              : t
-                          );
-                          
-                          return newTasksByDate;
-                        });
-                      }
-                    }
-                  }
-                }}
-                style={{
-                  fontSize: '11px',
-                  color: '#666',
-                  cursor: 'pointer',
-                  fontFamily: 'Calibri, "微软雅黑", sans-serif',
-                  padding: '2px 6px',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '4px',
-                  backgroundColor: '#f5f5f5',
-                  whiteSpace: 'nowrap'
-                }}
-                title="点击修改子类别总时间（单位：分钟）"
-              >
-                {formatCategoryTime(subCategoryTotalTime)}
-              </span>
+              
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    const newTime = window.prompt(
+      `修改 ${subCat} 子类别总时间（单位：分钟，例如 30 表示30分钟）`,
+      Math.floor(subCategoryTotalTime / 60).toString()
+    );
+    
+    if (newTime !== null) {
+      const minutes = parseInt(newTime) || 0;
+      const newSeconds = minutes * 60;
+      
+      if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
+        const timeDifference = newSeconds - subCategoryTotalTime;
+        
+        if (timeDifference !== 0 && subCatTasks.length > 0) {
+          const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+          
+          setTasksByDate(prev => {
+            const newTasksByDate = { ...prev };
+            const todayTasks = newTasksByDate[selectedDate] || [];
+            
+            newTasksByDate[selectedDate] = todayTasks.map(t => 
+              t.category === c.name && t.subCategory === subCat 
+                ? { ...t, timeSpent: Math.max(0, (t.timeSpent || 0) + timePerTask) }
+                : t
+            );
+            
+            return newTasksByDate;
+          });
+        }
+      }
+    }
+  }}
+  style={{
+    fontSize: '11px',
+    color: '#666',
+    cursor: 'pointer',
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',
+    padding: '2px 6px',
+    border: '1px solid #e0e0e0',
+    borderRadius: '4px',
+    backgroundColor: '#f5f5f5',
+    whiteSpace: 'nowrap'
+  }}
+  title="点击修改子类别总时间（单位：分钟）"
+>
+  {formatCategoryTime(subCategoryTotalTime)}
+</span>
             </div>
           </div>
           
