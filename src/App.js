@@ -1580,19 +1580,19 @@ return (
 
 
 // 重命名文件顶部的 categories 为 baseCategories
+// 修改 baseCategories 的颜色
 const baseCategories = [
   { 
     name: "校内", 
-    color: "#1a73e8",
+    color: "#1a73e8",  // 保持蓝色不变
     subCategories: ["数学", "语文", "英语", "运动"]
   },
-  { name: "语文", color: "#5b8def" },
-  { name: "数学", color: "#397ef6" },
-  { name: "英语", color: "#739df9" },
-  { name: "科学", color: "#4db9e8" },
-  { name: "运动", color: "#7baaf7" }
-]
-;
+  { name: "语文", color: "#FFFDE7", textColor: "#333" },
+  { name: "数学", color: "#E8F5E9", textColor: "#333" },
+  { name: "英语", color: "#FCE4EC", textColor: "#333" },
+  { name: "科学", color: "#E1F5FE", textColor: "#333" },
+  { name: "运动", color: "#E3F2FD", textColor: "#333" }
+];
 // 保持这样就行
 const PAGE_ID = 'PAGE_A'; 
 const STORAGE_KEY = `study-tracker-${PAGE_ID}-v2`;
@@ -9366,33 +9366,16 @@ const TaskItem = ({
   };
 
   return (
-    <li
+     <li
       className="task-item"
       style={{
         position: "relative",
-        background: (() => {
-          if (task.tags && task.tags.length > 0) {
-            const tagColor = task.tags[0].color;
-            const hexToRgba = (hex, alpha) => {
-              const r = parseInt(hex.slice(1, 3), 16);
-              const g = parseInt(hex.slice(3, 5), 16);
-              const b = parseInt(hex.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            };
-            if (tagColor && tagColor.startsWith('#')) {
-              return hexToRgba(tagColor, 0.10);
-            }
-            return tagColor ? tagColor.replace(')', ', 0.15)').replace('rgb', 'rgba') : (task.pinned ? "#fff9e6" : "#fff");
-          }
-          return task.pinned ? "#fff9e6" : "#fff";
-        })(),
+        background: "#fff",  // ✅ 纯白色背景
         borderRadius: 6,
         minHeight: "24px",
         marginBottom: 4,
         padding: "8px",
-        border: task.tags && task.tags.length > 0 
-          ? `1px solid ${task.tags[0].color}`
-          : "0.5px solid #e0e0e0",
+        border: "0.5px solid #e0e0e0",  // 浅灰色边框
       }}
     >
       {/* 第一行：任务内容 + 复选框 */}
@@ -9522,13 +9505,25 @@ const TaskItem = ({
         };
         return subCategoryColors[task.targetSubCategory] || "#1a73e8";
       }
-      const categoryColors = {
-        "语文": "#FF0000",
-        "数学": "#0000FF",
-        "英语": "#008000",
-        "运动": "#FFA500",
-        "科学": "#008080"
-      };
+      // 颜色映射配置
+// 颜色映射配置 - 更浅的版本
+const categoryColors = {
+  '语文': { bg: '#FFFDE7', border: '#FFF59D', text: '#333' },     // 更浅的黄
+  '数学': { bg: '#E8F5E9', border: '#C8E6C9', text: '#333' },     // 更浅的绿
+  '英语': { bg: '#FCE4EC', border: '#F8BBD0', text: '#333' },     // 更浅的粉
+  '科学': { bg: '#E1F5FE', border: '#B3E5FC', text: '#333' },     // 更浅的蓝
+  '运动': { bg: '#E3F2FD', border: '#BBDEFB', text: '#333' },     // 更浅的蓝
+  '校内': { bg: '#F0F8FF', border: '#BBDEFB', text: '#333' },     // 浅蓝白
+  '未分类': { bg: '#FAFAFA', border: '#EEEEEE', text: '#999' }    // 更浅的灰
+};
+
+// 子分类颜色（与大分类保持一致）
+const subCategoryColors = {
+  '数学': '#E8F5E9',   // 与大分类数学一致
+  '语文': '#FFFDE7',   // 与大分类语文一致
+  '英语': '#FCE4EC',   // 与大分类英语一致
+  '运动': '#E3F2FD'    // 与大分类运动一致
+};
       return categoryColors[task.targetCategory] || "#FF9800";
     })(),
     color: "#fff",
@@ -16868,11 +16863,21 @@ if (isInitialized && todayTasks.length === 0) {
     >
  
 
-{/* 分类标题 */}
+{/* 分类标题 - 只改背景色，文字用黑色 */}
 <div
   style={{
-    backgroundColor: isComplete ? "#f0f0f0" : c.color,
-    color: isComplete ? "#888" : "#fff",
+    backgroundColor: isComplete ? "#f0f0f0" : (() => {
+      switch(c.name) {
+        case '语文': return '#FFFDE7';  // 浅黄
+        case '数学': return '#E8F5E9';  // 浅绿
+        case '英语': return '#FCE4EC';  // 浅粉
+        case '科学': return '#E1F5FE';  // 浅蓝
+        case '运动': return '#E3F2FD';  // 浅蓝
+        case '校内': return '#1a73e8';  // 保持蓝色不变
+        default: return '#f0f0f0';      // 浅灰
+      }
+    })(),
+    color: isComplete ? "#888" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 8px",
     fontWeight: "bold",
@@ -17003,21 +17008,33 @@ if (isInitialized && todayTasks.length === 0) {
       
       return (
         <div key={subCat} style={{ marginBottom: 8 }}>
-          <div
-            style={{
-              backgroundColor: allDone ? '#e8f5e8' : '#f0f0f0',
-              color: '#333',
-              padding: '4px 8px',
-              fontWeight: 'bold',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderRadius: '6px',
-              fontSize: '12px',
-              marginBottom: '4px',
-              border: allDone ? '1px solid #4CAF50' : 'none'
-            }}
-          >
+         
+         {/* 校内子分类标题 */}
+{/* 校内子分类标题 - 只改背景色 */}
+<div
+  style={{
+    backgroundColor: allDone ? '#e8f5e8' : (() => {
+      switch(subCat) {
+        case '数学': return '#E8F5E9';   // 浅绿，与大分类数学一致
+        case '语文': return '#FFFDE7';   // 浅黄，与大分类语文一致
+        case '英语': return '#FCE4EC';   // 浅粉，与大分类英语一致
+        case '运动': return '#E3F2FD';   // 浅蓝，与大分类运动一致
+        default: return '#F5F5F5';       // 浅灰
+      }
+    })(),
+    color: '#333',
+    padding: '4px 8px',
+    fontWeight: 'bold',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: '6px',
+    fontSize: '12px',
+    marginBottom: '4px',
+    border: allDone ? '1px solid #4CAF50' : 'none'
+  }}
+>
+
             {/* 左侧：标题（可点击折叠） */}
             <span
               onClick={() => setCollapsedSubCategories(prev => ({
