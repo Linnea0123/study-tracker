@@ -10358,28 +10358,14 @@ const SortableTaskList = ({
     dragItemIndex.current = null;
   };
   
-return (
-  <ul
-    style={{
-      listStyle: "none",
-      padding: subCategory ? "0 0 0 8px" : 0,
-      margin: 0,
-      borderLeft: subCategory ? `2px solid ${(() => {
-        // 获取分类颜色
-        const categoryColor = baseCategories.find(cat => cat.name === category)?.color || '#1a73e8';
-        // 如果是子分类，返回子分类对应的颜色
-        if (subCategory) {
-          const subCategoryColors = {
-            '数学': '#0000FF',
-            '语文': '#FF0000',
-            '英语': '#008000',
-            '运动': '#FFA500'
-          };
-          return subCategoryColors[subCategory] || categoryColor;
-        }
-        return categoryColor;
-      })()}` : "none"
-    }}
+  return (
+    <ul
+      style={{
+        listStyle: "none",
+        padding: subCategory ? "0 0 0 8px" : 0,
+        margin: 0,
+        borderLeft: subCategory ? "2px solid #e0e0e0" : "none"
+      }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
@@ -12466,6 +12452,7 @@ const toggleDone = (task) => {
     };
   });
 };
+
 
 // 迁移任务函数
 const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
@@ -16029,60 +16016,70 @@ if (isInitialized && todayTasks.length === 0) {
   alignItems: "center",
   marginBottom: 10
 }}>
+  {/* 左侧：周次显示 */}
+  <div style={{ display: "flex", alignItems: "center" }}>
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        prevWeek();
+      }}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "6px",
+        fontSize: "14px"
+      }}
+      title="上一周"
+    >
+      ⬅️
+    </button>
 
-<div style={{ display: "flex", alignItems: "center" }}>
-  <button
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      prevWeek();
-    }}
-    style={{
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      padding: "6px",
-      fontSize: "14px"
-    }}
-    title="上一周"
-  >
-    ⬅️
-  </button>
-
-  <span
-    onClick={() => setShowDatePickerModal(true)}
-    style={{
+    <span style={{
       fontWeight: "bold",
       margin: "0 4px",
-      fontSize: "13px",
-      cursor: "pointer"
-    }}
-    title="点击选择日期"
-  >
-    {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
-  </span>
+      fontSize: "13px"
+    }}>
+      {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
+    </span>
 
-  <button
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      nextWeek();
-    }}
-    style={{
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      padding: "6px",
-      fontSize: "14px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-    title="下一周"
-  >
-    ➡️
-  </button>
-</div>
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nextWeek();
+      }}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "6px",
+        fontSize: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+      title="下一周"
+    >
+      ➡️
+    </button>
+
+    <button
+      onClick={() => setShowDatePickerModal(true)}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "14px",
+        marginLeft: "4px",
+        padding: "6px"
+      }}
+      title="选择日期"
+    >
+      📅
+    </button>
+  </div>
 
   {/* 右侧：四个小按钮 */}
   <div style={{ display: "flex", gap: "6px" }}>
@@ -16118,7 +16115,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowAddTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#1a73e8",
+        backgroundColor: "#28a745",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -16131,7 +16128,7 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => setShowBulkImportModal(true)}
       style={{
-        padding: "4px 4px",
+        padding: "4px 10px",
         backgroundColor: "#17a2b8",
         color: "#fff",
         borderRadius: "4px",
