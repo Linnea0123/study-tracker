@@ -14511,8 +14511,11 @@ const parseBulkTextToPreview = useCallback(() => {
   return tasks;
 }, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories]);
 
-// 修复后的批量导入函数
+
+// 修复后的批量导入函数 - 直接导入，无需确认
 const handleImportTasksWithDuration = () => {
+  console.log('🎯 === 开始批量导入 ===');
+  
   if (!bulkText.trim()) {
     alert('请输入要导入的任务内容');
     return;
@@ -14525,7 +14528,7 @@ const handleImportTasksWithDuration = () => {
     return;
   }
 
-  // ✅ 修复：从第一行中识别关键字，而不是整行作为类别
+  // 第一行是子分类标识
   const firstLine = lines[0];
   
   // 固定类别为"校内"
@@ -14534,23 +14537,45 @@ const handleImportTasksWithDuration = () => {
   
   // 获取校内子分类列表
   const schoolCategory = categories.find(c => c.name === '校内');
-  const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+  const schoolSubCategories = schoolCategory?.subCategories || [];
+  const defaultSubCategories = ['数学', '语文', '英语', '运动'];
+  const allSubCategories = [...new Set([...schoolSubCategories, ...defaultSubCategories])];
   
-  // ✅ 正确做法：遍历关键字列表，检查第一行是否包含这些关键字
-  for (const subCat of schoolSubCategories) {
+  // 遍历关键字列表，检查第一行是否包含这些关键字
+  let matchedSubCategory = null;
+  for (const subCat of allSubCategories) {
     if (firstLine.includes(subCat)) {
-      subCategory = subCat;
+      matchedSubCategory = subCat;
       break;
     }
   }
   
-  // 如果没有匹配到任何关键字，使用第一行作为提示（可选：默认为"未分类"）
-  if (!subCategory) {
-    console.log('⚠️ 未识别到子分类，第一行内容:', firstLine);
-    subCategory = "未分类";  // 或者可以弹出提示让用户选择
+  // 如果没有匹配到，尝试模糊匹配
+  if (!matchedSubCategory) {
+    const keywordMap = {
+      '数学': ['数学', '数', 'math'],
+      '语文': ['语文', '语', 'chinese'],
+      '英语': ['英语', '英文', 'english'],
+      '运动': ['运动', '体育', 'sport', '锻炼', '跑步', '跳绳']
+    };
+    
+    for (const [subCat, keywords] of Object.entries(keywordMap)) {
+      for (const keyword of keywords) {
+        if (firstLine.toLowerCase().includes(keyword.toLowerCase())) {
+          matchedSubCategory = subCat;
+          break;
+        }
+      }
+      if (matchedSubCategory) break;
+    }
   }
   
-  console.log('📌 识别的类别:', category, '子分类:', subCategory);
+  // 如果还是没有匹配到，使用"未分类"
+  if (!matchedSubCategory) {
+    matchedSubCategory = '未分类';
+  }
+  
+  subCategory = matchedSubCategory;
   
   const allTasksByDate = {};
   const currentYear = new Date().getFullYear();
@@ -14654,7 +14679,7 @@ const handleImportTasksWithDuration = () => {
   while (i < lines.length) {
     let line = lines[i];
     
-    // 检测图片标记（独立一行的 [图片]）
+    // 检测图片标记
     let hasImage = false;
     while (line === '[图片]' || line.includes('[图片]')) {
       hasImage = true;
@@ -14665,22 +14690,17 @@ const handleImportTasksWithDuration = () => {
     
     if (i >= lines.length) break;
     
-    // 当前行是任务内容
     let taskLine = line;
-    
-    // 检查是否有内置日期范围
     let taskDates = parseDateRangeFromText(taskLine);
     let cleanTaskLine = taskLine;
     
     if (taskDates) {
-      // 移除日期范围标记
       const rangePattern = /@\d{1,2}[./月]\d{1,2}[日]?\s*-\s*\d{1,2}[./月]\d{1,2}[日]?|@周末/g;
       cleanTaskLine = taskLine.replace(rangePattern, '').trim();
     } else {
       taskDates = [...defaultDates];
     }
     
-    // 解析任务文本和备注
     let taskText = cleanTaskLine;
     let note = "";
     const parts = cleanTaskLine.split("|").map(s => s.trim());
@@ -14689,7 +14709,6 @@ const handleImportTasksWithDuration = () => {
       note = parts[1];
     }
     
-    // 清理任务文本
     taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
     
     if (taskText) {
@@ -14704,20 +14723,18 @@ const handleImportTasksWithDuration = () => {
     i++;
   }
   
-  // 判断是否是每日独立任务（不需要联动）
+  // 判断是否是每日独立任务
   const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '阅读', '听英语', '口算'];
   
   // 创建任务
   taskInfos.forEach((taskInfo, idx) => {
     const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
     
-    // 判断是否创建联动（跨日期任务）
     const isDailyTask = dailyTaskKeywords.some(keyword => taskText.includes(keyword));
     const crossDateId = (!isDailyTask && taskDates.length > 1) 
       ? `cross_${Date.now()}_${idx}_${crossDateGroupIndex++}` 
       : null;
     
-    // 为每个目标日期创建任务
     taskDates.forEach(date => {
       if (!allTasksByDate[date]) {
         allTasksByDate[date] = [];
@@ -14749,7 +14766,6 @@ const handleImportTasksWithDuration = () => {
         createdAt: new Date().toISOString()
       };
       
-      // 如果是跨日期任务，添加跨日期标识
       if (crossDateId && taskDates.length > 1) {
         newTask.crossDateId = crossDateId;
         newTask.crossDates = [...taskDates];
@@ -14764,7 +14780,6 @@ const handleImportTasksWithDuration = () => {
     });
   });
   
-  // 统计总任务数
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
   const crossDateCount = Object.values(allTasksByDate).flat().filter(t => t.crossDateId).length;
   
@@ -14773,19 +14788,15 @@ const handleImportTasksWithDuration = () => {
     return;
   }
   
-  console.log(`共创建 ${totalTasksCount} 个任务实例，其中跨日期任务 ${crossDateCount} 个`);
-  
-  // 更新状态 - 合并到现有的 tasksByDate
+  // 更新状态
   setTasksByDate(prev => {
     const updated = { ...prev };
-    
     Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
       if (!updated[date]) {
         updated[date] = [];
       }
       updated[date] = [...updated[date], ...newTasks];
     });
-    
     return updated;
   });
   
@@ -14797,9 +14808,9 @@ const handleImportTasksWithDuration = () => {
   setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
   setShowBulkImportModal(false);
   
-  alert(`✅ 导入成功！\n共 ${taskInfos.length} 个任务，${totalTasksCount} 个任务实例${crossDateCount > 0 ? `，其中 ${crossDateCount} 个跨日期任务会联动完成` : ''}\n类别：${category} / ${subCategory}`);
+  // ✅ 直接显示导入结果，无需确认
+  alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个${crossDateCount > 0 ? `\n🔗 跨日期联动：${crossDateCount} 个` : ''}`);
 };
-
 
 const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 ===');
