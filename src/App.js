@@ -16063,7 +16063,7 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => setShowWeekTaskModal(true)}
       style={{
-        padding: "4px 10px",
+        padding: "4px 4px",
         backgroundColor: "#1a73e8",
         color: "#fff",
         borderRadius: "4px",
@@ -16077,7 +16077,7 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => setShowMonthTaskModal(true)}
       style={{
-        padding: "4px 10px",
+        padding: "4px 4px",
         backgroundColor: "#1a73e8",
         color: "#fff",
         borderRadius: "4px",
@@ -16091,7 +16091,7 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => setShowAddTaskModal(true)}
       style={{
-        padding: "4px 10px",
+        padding: "4px 4px",
         backgroundColor: "#28a745",
         color: "#fff",
         borderRadius: "4px",
