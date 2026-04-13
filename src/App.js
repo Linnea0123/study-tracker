@@ -7915,7 +7915,50 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
         }}>
          
           {/* 任务内容 */}
+{/* 在 TaskEditModal 组件中，找到备注字段的位置，在它之前添加： */}
 
+{/* 任务内容 - 添加这个字段 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    📝 任务内容
+  </label>
+  <textarea
+    value={editData.text}
+    onChange={(e) => setEditData({ ...editData, text: e.target.value })}
+    placeholder="请输入任务内容..."
+    style={{
+      width: '100%',
+      padding: '12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      height: '44px',
+      minHeight: '44px',
+      resize: 'vertical',
+      outline: 'none',
+      lineHeight: '1.4'
+    }}
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+    }}
+  />
+</div>
+
+{/* 备注字段保持原样放在后面 */}
 
 
 {/* 备注 */}
@@ -9483,7 +9526,7 @@ const TaskItem = ({
 <div style={{
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: "8px",
   flexShrink: 0
 }}>
   {/* 删除按钮 */}
