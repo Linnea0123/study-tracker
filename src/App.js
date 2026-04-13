@@ -9366,73 +9366,69 @@ const TaskItem = ({
   };
 
   return (
-     <li
-      className="task-item"
-      style={{
-        position: "relative",
-        background: "#fff",  // ✅ 纯白色背景
-        borderRadius: 6,
-        minHeight: "24px",
-        marginBottom: 4,
-        padding: "8px",
-        border: "0.5px solid #e0e0e0",  // 浅灰色边框
-      }}
-    >
-      {/* 第一行：任务内容 + 复选框 */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 2 }}>
-     <input
-  type="checkbox"
-  checked={task.done}
-  onChange={(e) => {
-    e.stopPropagation();
-    console.log('toggleDone 存在吗？', typeof toggleDone);
-    console.log('task:', task.text);
-    if (typeof toggleDone === 'function') {
-      toggleDone(task);
-    } else {
-      console.error('toggleDone 不是函数！');
-    }
-  }}
-  onClick={(e) => e.stopPropagation()}
-      style={{ 
-      margin: 0,
-      marginTop: "2px",  // 恢复这个，让复选框稍微下移
-      cursor: "pointer", 
-      flexShrink: 0,
-      width: "16px",
-      height: "16px"
-    }}
-  />
+  <li
+    className="task-item"
+    style={{
+  position: "relative",
+  background: task.done ? "#fafafa" : "#fff",  // ✅ 完成后 #fafafa（更浅）
+  borderRadius: 6,
+  minHeight: "24px",
+  marginBottom: 4,
+  padding: "8px",
+  border: task.done ? "0.5px solid #eee" : "0.5px solid #e0e0e0",
+}}
+  >
+    {/* 第一行：任务内容 + 复选框 */}
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 2 }}>
+      <input
+        type="checkbox"
+        checked={task.done}
+        onChange={(e) => {
+          e.stopPropagation();
+          if (typeof toggleDone === 'function') {
+            toggleDone(task);
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          margin: 0,
+          marginTop: "2px",
+          cursor: "pointer", 
+          flexShrink: 0,
+          width: "16px",
+          height: "16px"
+        }}
+      />
 
-        {/* 任务文字 */}
-  <div style={{ 
-    display: "flex", 
-    alignItems: "center", 
-    flex: 1, 
-    flexWrap: "wrap", 
-    gap: "4px",
-    minWidth: 0  // 添加这行，允许内容收缩
-  }}>  
- <div
-  onClick={(e) => {
-    e.stopPropagation();
-    onOpenEditModal(task);
-  }}
-  style={{
-        wordBreak: "break-word",
-        cursor: "pointer",
-        color: task.done ? "#999" : "#000",
-        fontWeight: task.pinned ? "bold" : "normal",
-        fontSize: "14px",
-        lineHeight: "1.4",
-        whiteSpace: "pre-wrap",
-        wordWrap: "break-word",
-        display: "inline",  // 改为 inline，而不是 inline-flex
-        flex: "1",  // 添加这行
-        minWidth: "0"  // 添加这行
-  }}
->
-  <span>{task.text}</span>
+      {/* 任务文字 */}
+      <div style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        flex: 1, 
+        flexWrap: "wrap", 
+        gap: "4px",
+        minWidth: 0
+      }}>  
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal(task);
+          }}
+          style={{
+            wordBreak: "break-word",
+            cursor: "pointer",
+            color: task.done ? "#999" : "#000",  // ✅ 完成后文字变灰
+            fontWeight: task.pinned ? "bold" : "normal",
+            fontSize: "14px",
+            lineHeight: "1.4",
+            whiteSpace: "pre-wrap",
+            wordWrap: "break-word",
+            display: "inline",
+            flex: "1",
+            minWidth: "0"
+          }}
+        >
+          <span>{task.text}</span>
 
 
  {/* 日期范围标签 */}
@@ -16110,7 +16106,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowAddTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#28a745",
+        backgroundColor: "#1a73e8",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -16123,8 +16119,8 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => setShowBulkImportModal(true)}
       style={{
-        padding: "4px 10px",
-        backgroundColor: "#17a2b8",
+        padding: "4px 4px",
+        backgroundColor: "#1a73e8",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -16863,24 +16859,24 @@ if (isInitialized && todayTasks.length === 0) {
     >
  
 
-{/* 分类标题 - 只改背景色，文字用黑色 */}
+{/* 分类标题 */}
 <div
   style={{
-    backgroundColor: isComplete ? "#f0f0f0" : (() => {
+    backgroundColor: isComplete ? "#f5f5f5" : (() => {  // ✅ 更浅的灰色 #f5f5f5
       switch(c.name) {
-        case '语文': return '#FFFDE7';  // 浅黄
-        case '数学': return '#E8F5E9';  // 浅绿
-        case '英语': return '#FCE4EC';  // 浅粉
-        case '科学': return '#E1F5FE';  // 浅蓝
-        case '运动': return '#E3F2FD';  // 浅蓝
-        case '校内': return '#1a73e8';  // 保持蓝色不变
-        default: return '#f0f0f0';      // 浅灰
+        case '语文': return '#FFFDE7';
+        case '数学': return '#E8F5E9';
+        case '英语': return '#FCE4EC';
+        case '科学': return '#E1F5FE';
+        case '运动': return '#E3F2FD';
+        case '校内': return '#1a73e8';
+        default: return '#f0f0f0';
       }
     })(),
-    color: isComplete ? "#888" : (c.name === "校内" ? "#fff" : "#333"),
+    color: isComplete ? "#bbb" : (c.name === "校内" ? "#fff" : "#333"),  // ✅ 完成后文字 #bbb
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 8px",
-    fontWeight: "bold",
+    fontWeight: isComplete ? "normal" : "bold",  // ✅ 完成后不加粗
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -17009,29 +17005,33 @@ if (isInitialized && todayTasks.length === 0) {
       return (
         <div key={subCat} style={{ marginBottom: 8 }}>
          
-         {/* 校内子分类标题 */}
-{/* 校内子分类标题 - 只改背景色 */}
 <div
   style={{
-    backgroundColor: allDone ? '#e8f5e8' : (() => {
+    backgroundColor: allDone ? "#f5f5f5" : (() => {
       switch(subCat) {
-        case '数学': return '#E8F5E9';   // 浅绿，与大分类数学一致
-        case '语文': return '#FFFDE7';   // 浅黄，与大分类语文一致
-        case '英语': return '#FCE4EC';   // 浅粉，与大分类英语一致
-        case '运动': return '#E3F2FD';   // 浅蓝，与大分类运动一致
-        default: return '#F5F5F5';       // 浅灰
+        case '数学': return '#E8F5E9';
+        case '语文': return '#FFFDE7';
+        case '英语': return '#FCE4EC';
+        case '运动': return '#E3F2FD';
+        default: return '#F5F5F5';
       }
     })(),
-    color: '#333',
+    color: allDone ? '#bbb' : '#333',
     padding: '4px 8px',
-    fontWeight: 'bold',
+    fontWeight: allDone ? "normal" : "bold",
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderRadius: '6px',
     fontSize: '12px',
     marginBottom: '4px',
-    border: allDone ? '1px solid #4CAF50' : 'none'
+    border: 'none',  // ✅ 去掉边框，避免高度变化
+    // 固定高度
+    height: '32px',  // ✅ 固定高度
+    minHeight: '32px',  // ✅ 最小高度
+    maxHeight: '32px',  // ✅ 最大高度
+    lineHeight: '24px',  // ✅ 行高固定
+    boxSizing: 'border-box',  // ✅ 确保高度计算包含内边距
   }}
 >
 
