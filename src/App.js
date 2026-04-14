@@ -9410,26 +9410,29 @@ const TaskItem = ({
   };
 
   return (
- <li
+
+
+    // TaskItem 组件 - 修复高度中心对齐
+<li
   className="task-item"
   style={{
     position: "relative",
-    background: task.done ? "#fafafa" : "#fff",
+      background: "transparent",        // 透明背景
     borderRadius: 6,
     marginBottom: 4,
-    padding: "2px 8px",  // 上下2px，非常紧凑
-    border: task.done ? "0.5px solid #eee" : "0.5px solid #e0e0e0",
+    padding: "2px 8px",
+    border: "0.5px solid #e0e0e0",
     boxSizing: "border-box"
   }}
 >
-  {/* 第一行 */}
+  {/* 主要内容行 */}
   <div style={{ 
     display: "flex", 
-    alignItems: "center",  // 关键：垂直居中对齐
+    alignItems: "center",  // 保持居中
     gap: 6,
-    height: "28px",  // 固定高度，确保一致性
-    lineHeight: "28px"
+    minHeight: "28px"      // 稍微增加一点高度
   }}>
+    
     {/* 复选框 */}
     <input
       type="checkbox"
@@ -9441,140 +9444,86 @@ const TaskItem = ({
         }
       }}
       onClick={(e) => e.stopPropagation()}
-        style={{ 
-    margin: 0,
-    cursor: "pointer", 
-    flexShrink: 0,
-    width: "14px",      // 从 16px 改为 14px
-    height: "14px",     // 从 16px 改为 14px
-    minWidth: "14px",
-    minHeight: "14px",
-    verticalAlign: "middle"
-  }}
-/>
-        {/* 任务文字区域 - 弹性增长 */}
-        <div style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          flex: 1, 
-          flexWrap: "wrap", 
-          gap: "4px",
-          minWidth: 0
-        }}>  
-          {/* 任务文字 - 可点击编辑 */}
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenEditModal(task);
-            }}
-            style={{
-              wordBreak: "break-word",
-              cursor: "pointer",
-              color: task.done ? "#999" : "#000",
-              fontWeight: task.pinned ? "bold" : "normal",
-              fontSize: "14px",
-              lineHeight: "1.4",
-              whiteSpace: "pre-wrap",
-              wordWrap: "break-word",
-              flex: "1",
-              minWidth: "50px"
-            }}
-          >
-            <span>{task.text}</span>
-
-            {/* 日期范围标签 */}
-            {task.dateRange && task.dateRange.start && task.dateRange.end && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const subTaskContainer = e.currentTarget.closest('.task-item')?.querySelector('.date-range-subtasks');
-                  if (subTaskContainer) {
-                    subTaskContainer.style.display = subTaskContainer.style.display === 'none' ? 'block' : 'none';
-                  }
-                }}
-                style={{
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  backgroundColor: "#e3f2fd",
-                  color: "#1a73e8",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "2px",
-                  marginLeft: "6px"
-                }}
-                title="点击查看每天的完成情况"
-              >
-                📅 {task.dateRange.start.slice(5)} - {task.dateRange.end.slice(5)}
-              </span>
-            )}
-
-            {task.isWeekTask && <span style={{ marginLeft: "4px" }}>🌟</span>}
-            
-            {(task.image || task.hasImage) && (
-              <span style={{
-                color: "#ff4444",
-                fontSize: "12px",
-                fontWeight: "normal",
-                backgroundColor: "#ffe5e5",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                marginLeft: "4px",
-                display: "inline-block"
-              }}>
-                【图片】
-              </span>
-            )}
-          </div>
-
-          {/* 右侧按钮组 */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            flexShrink: 0
-          }}>
-
-
-
-{/* 时间显示 - 正常模式显示（包括0m），排序模式完全不显示 */}
-{/* 任务时间显示 - 无背景无边框 */}
-{/* 时间显示区域 - 始终占位，排序模式下透明不可见 */}
-{(() => {
-  const minutes = Math.floor((task.timeSpent || 0) / 60);
-  return (
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!isSortingMode) {
-          onEditTime(task);
-        }
+      style={{ 
+        margin: 0,
+        cursor: "pointer", 
+        flexShrink: 0,
+        width: "14px",
+        height: "14px",
+        verticalAlign: "middle"
       }}
-      style={{
-        fontSize: '11px',
-        color: isSortingMode ? 'transparent' : '#999',  // 排序模式下透明
-        cursor: isSortingMode ? 'default' : 'pointer',
-        fontFamily: 'Calibri, "微软雅黑", sans-serif',
-        padding: '0',
-        marginLeft: '8px',
-        background: 'transparent',
-        border: 'none',
-        minWidth: '35px',  // 固定最小宽度，防止布局变化
-        display: 'inline-block',
-        textAlign: 'right',
-        pointerEvents: isSortingMode ? 'none' : 'auto'  // 排序模式下禁止点击
-      }}
-      title={isSortingMode ? "" : "点击修改时间"}
-    >
-      {minutes}m
-    </span>
-  );
-})()}
-          </div>
-        </div>
+    />
+
+    {/* 任务文字区域 */}
+    <div style={{ 
+      display: "flex", 
+      alignItems: "center",  // 保持居中
+      flex: 1, 
+      flexWrap: "wrap", 
+      gap: "6px",
+      minWidth: 0
+    }}>  
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenEditModal(task);
+        }}
+        style={{
+          wordBreak: "break-word",
+          cursor: "pointer",
+          color: task.done ? "#999" : "#000",
+          fontWeight: task.pinned ? "bold" : "normal",
+          fontSize: "13px",
+          lineHeight: "1.3",
+          flex: "1",
+          minWidth: "50px",
+          // 关键：使用 flex 居中而不是依赖 lineHeight
+          display: "flex",
+          alignItems: "center"
+        }}
+      >
+        {task.text}
       </div>
+
+      {/* 右侧时间显示 */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        flexShrink: 0,
+        height: "28px"  // 固定高度，确保内部元素垂直居中
+      }}>
+        {(() => {
+          const minutes = Math.floor((task.timeSpent || 0) / 60);
+          return (
+           <span
+  onClick={(e) => {
+    e.stopPropagation();
+    if (!isSortingMode) {
+      onEditTime(task);
+    }
+  }}
+  style={{
+    fontSize: "11px",
+    color: isSortingMode ? "transparent" : "#666",
+    cursor: isSortingMode ? "default" : "pointer",
+    minWidth: "45px",        // 统一宽度
+    width: "45px",
+    textAlign: "right",      // 右对齐
+    pointerEvents: isSortingMode ? "none" : "auto",
+    lineHeight: "28px",
+    display: "inline-block",
+    fontFamily: 'Calibri, "微软雅黑", sans-serif'
+  }}
+>
+  {minutes}m
+</span>
+          );
+        })()}
+      </div>
+    </div>
+  </div>
+  
 
 
 
@@ -10412,18 +10361,17 @@ const SortableTaskList = ({
       transform: 'translateY(-50%)',
       display: 'flex',
       alignItems: 'center',
-      gap: '0px',
+      gap: '-5px',
       zIndex: 10,
       background: 'transparent',
       padding: '2px 4px'
     }}
   >
-    {/* 删除按钮 - 灰色 × */}
+    {/* 删除按钮 - SVG 版本 */}
     <button
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
-        
         if (window.confirm(`确定要删除任务 "${task.text}" 吗？\n\n此操作不可撤销！`)) {
           if (onDeleteTask && typeof onDeleteTask === 'function') {
             onDeleteTask(task, 'today');
@@ -10434,40 +10382,65 @@ const SortableTaskList = ({
         background: 'transparent',
         border: 'none',
         cursor: 'pointer',
-        fontSize: '18px',
-        fontWeight: 'normal',
-        color: '#999',
-        padding: '0',
-        width: '24px',
+        padding: 0,
+        width: '18px',
         height: '24px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        lineHeight: 1
+        justifyContent: 'center'
       }}
       title="删除任务"
     >
-      ×
+      <svg 
+        width="14" 
+        height="14" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: 'block' }}
+      >
+        <path 
+          d="M18 6L6 18" 
+          stroke="#999" 
+          strokeWidth="2" 
+          strokeLinecap="square"
+          strokeLinejoin="miter"
+        />
+        <path 
+          d="M6 6L18 18" 
+          stroke="#999" 
+          strokeWidth="2" 
+          strokeLinecap="square"
+          strokeLinejoin="miter"
+        />
+      </svg>
     </button>
     
-    {/* 拖拽手柄 */}
-    <div
-      style={{
-        cursor: 'grab',
-        color: '#ccc',
-        fontSize: '19px',
-        fontWeight: 'normal',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '24px',
-        height: '24px',
-        lineHeight: 1
-      }}
-      title="拖拽调整顺序"
-    >
-      ≡
-    </div>
+  
+  {/* 拖拽手柄 - 三条横线版本（间距加大） */}
+<div
+  style={{
+    cursor: 'grab',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'right',
+    width: '18px',      // 与复选框宽度一致
+    height: '18px'      // 与复选框高度一致
+  }}
+  title="拖拽调整顺序"
+>
+  <svg 
+    width="14" 
+    height="14" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <line x1="5" y1="6" x2="19" y2="6" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="5" y1="12" x2="19" y2="12" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="5" y1="18" x2="19" y2="18" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+</div>
   </div>
 )}
 
@@ -16987,7 +16960,7 @@ if (isInitialized && todayTasks.length === 0) {
     })(),
     color: isComplete ? "#bbb" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
-    padding: "3px 8px",
+    padding: "3px 12px",
     fontWeight: isComplete ? "normal" : "bold",
     display: "flex",
     justifyContent: "space-between",
@@ -17009,11 +16982,12 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 
   {/* 右侧：排序按钮 + 时间显示 */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
     {/* 排序按钮 - 校内类别不显示排序按钮 */}
-    {/* 排序按钮 - 校内类别不显示排序按钮 */}
+
 {/* 排序按钮 - 校内类别不显示排序按钮 */}
-{/* 排序按钮 - 校内类别不显示排序按钮 */}
+{/* 分类标题右侧的排序按钮 - 修改这里 */}
+{/* 分类标题右侧的排序按钮 - 激活状态显示黑色对勾 */}
 {c.name !== '校内' && (
   <div
     onClick={(e) => {
@@ -17030,46 +17004,80 @@ if (isInitialized && todayTasks.length === 0) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      minWidth: "24px",
-      width: "24px",
-      height: "22px",
+      width: "18px",
+      height: "18px",
       userSelect: "none"
     }}
   >
     {sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory ? (
-      <SquareCheckMark show={true} size={11} color="#333" />
+      // 已激活排序模式 - 显示黑色对勾
+      <svg 
+        width="14" 
+        height="14" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: 'block' }}
+      >
+        <path 
+          d="M20 6L9 17L4 12" 
+          stroke="#333" 
+          strokeWidth="3" 
+          strokeLinecap="square"
+          strokeLinejoin="miter"
+          fill="none"
+        />
+      </svg>
     ) : (
-      <span style={{ color: "#999", fontSize: "14px", lineHeight: 1, marginTop: "-2px" }}>☰</span>
+      // 未激活 - 显示三条横线
+      <svg 
+        width="14" 
+        height="14" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: 'block' }}
+      >
+        <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+      </svg>
     )}
   </div>
 )}
 
     {/* 时间显示 */}
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        editCategoryTime(c.name);
-      }}
-      style={{
-        fontSize: 11,
-        color: isComplete ? "#888" : "#fff",
-        fontStyle: 'Calibri, "微软雅黑", sans-serif',
-        cursor: "pointer",
-        padding: "2px 6px",
-        borderRadius: "4px",
-        backgroundColor: "rgba(255,255,255,0.2)",
-        minWidth: "25px",
-        maxWidth: "70px",
-        textAlign: "center",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        flexShrink: 0
-      }}
-      title="点击修改总时间"
-    >
-      {formatCategoryTime(totalTime(c.name))}
-    </span>
+ {/* 主分类标题时间显示 - 黑色，右对齐 */}
+{/* 主分类标题时间显示 - 校内白色，其他黑色 */}
+{/* 校内大分类时间显示 - 未完成白色，完成后黑色 */}
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    editCategoryTime(c.name);
+  }}
+  style={{
+    fontSize: '11px',
+    color: c.name === '校内' 
+      ? (isComplete ? '#333' : '#fff')  // 校内：完成时黑色，未完成白色
+      : '#333',                          // 其他分类：始终黑色
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',
+    cursor: "pointer",
+    minWidth: "32px",
+    width: "32px",
+    textAlign: "right",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    fontWeight: "normal",
+    display: "inline-block"
+  }}
+  title="点击修改总时间"
+>
+  {formatCategoryTime(totalTime(c.name))}
+</span>
   </div>
 </div>
 
@@ -17164,6 +17172,7 @@ if (isInitialized && todayTasks.length === 0) {
             {/* 右侧：排序按钮 + 时间显示 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
 
+{/* 校内子分类标题右侧的排序按钮 */}
 <div
   onClick={(e) => {
     e.stopPropagation();
@@ -17179,24 +17188,50 @@ if (isInitialized && todayTasks.length === 0) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    minWidth: "24px",
-    width: "24px",
-    height: "22px",
+   
     userSelect: "none",
     transition: "none"
   }}
   title={sortingSubCategory?.subCategory === subCat ? "完成排序" : "调整顺序"}
 >
-  {sortingSubCategory?.subCategory === subCat ? (
-    <SquareCheckMark show={true} size={11} color="#333" />
-  ) : (
-    <span style={{ color: "#999", fontSize: "14px", lineHeight: 1, marginTop: "-2px" }}>☰</span>
-  )}
+ {sortingSubCategory?.subCategory === subCat ? (
+  // 已激活排序模式 - 显示黑色对勾
+  <svg 
+    width="14" 
+    height="14" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path 
+      d="M20 6L9 17L4 12" 
+      stroke="#333" 
+      strokeWidth="3" 
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      fill="none"
+    />
+  </svg>
+) : (
+  // 未激活 - 显示三条横线
+  <svg 
+    width="14" 
+    height="14" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+)}
 </div>
               
               {/* 时间显示 */}
               
 {/* 校内子分类标题右侧的时间显示 - 无背景无边框 */}
+{/* 校内子分类时间显示 - 白色，右对齐 */}
 <span
   onClick={(e) => {
     e.stopPropagation();
@@ -17233,13 +17268,16 @@ if (isInitialized && todayTasks.length === 0) {
   }}
   style={{
     fontSize: '11px',
-    color: '#666',
+    color: '#333',           // 白色
     cursor: 'pointer',
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
-    padding: '0',
-    marginLeft: '8px',
+    minWidth: '15px',        // 统一宽度
+    width: '30px',
+    textAlign: 'right',      // 右对齐
     background: 'transparent',
-    border: 'none'
+    border: 'none',
+    fontWeight: "normal",
+    display: "inline-block"
   }}
   title="点击修改子类别总时间（单位：分钟）"
 >
