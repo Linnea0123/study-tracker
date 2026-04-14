@@ -9410,39 +9410,48 @@ const TaskItem = ({
   };
 
   return (
-    <li
-      className="task-item"
-      style={{
-        position: "relative",
-        background: task.done ? "#fafafa" : "#fff",
-        borderRadius: 6,
-        minHeight: "24px",
-        marginBottom: 4,
-        padding: "8px",
-        border: task.done ? "0.5px solid #eee" : "0.5px solid #e0e0e0",
+ <li
+  className="task-item"
+  style={{
+    position: "relative",
+    background: task.done ? "#fafafa" : "#fff",
+    borderRadius: 6,
+    marginBottom: 4,
+    padding: "2px 8px",  // 上下2px，非常紧凑
+    border: task.done ? "0.5px solid #eee" : "0.5px solid #e0e0e0",
+    boxSizing: "border-box"
+  }}
+>
+  {/* 第一行 */}
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center",  // 关键：垂直居中对齐
+    gap: 6,
+    height: "28px",  // 固定高度，确保一致性
+    lineHeight: "28px"
+  }}>
+    {/* 复选框 */}
+    <input
+      type="checkbox"
+      checked={task.done}
+      onChange={(e) => {
+        e.stopPropagation();
+        if (typeof toggleDone === 'function') {
+          toggleDone(task);
+        }
       }}
-    >
-      {/* 第一行：复选框 + 任务内容 + 删除按钮 + 时间 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-        <input
-          type="checkbox"
-          checked={task.done}
-          onChange={(e) => {
-            e.stopPropagation();
-            if (typeof toggleDone === 'function') {
-              toggleDone(task);
-            }
-          }}
-          onClick={(e) => e.stopPropagation()}
-          style={{ 
-            margin: 0,
-            cursor: "pointer", 
-            flexShrink: 0,
-            width: "16px",
-            height: "16px"
-          }}
-        />
-
+      onClick={(e) => e.stopPropagation()}
+        style={{ 
+    margin: 0,
+    cursor: "pointer", 
+    flexShrink: 0,
+    width: "14px",      // 从 16px 改为 14px
+    height: "14px",     // 从 16px 改为 14px
+    minWidth: "14px",
+    minHeight: "14px",
+    verticalAlign: "middle"
+  }}
+/>
         {/* 任务文字区域 - 弹性增长 */}
         <div style={{ 
           display: "flex", 
@@ -9532,25 +9541,32 @@ const TaskItem = ({
 
 {/* 时间显示 - 正常模式显示（包括0m），排序模式完全不显示 */}
 {/* 任务时间显示 - 无背景无边框 */}
-{!isSortingMode && (() => {
+{/* 时间显示区域 - 始终占位，排序模式下透明不可见 */}
+{(() => {
   const minutes = Math.floor((task.timeSpent || 0) / 60);
   return (
     <span
       onClick={(e) => {
         e.stopPropagation();
-        onEditTime(task);
+        if (!isSortingMode) {
+          onEditTime(task);
+        }
       }}
       style={{
         fontSize: '11px',
-        color: '#999',
-        cursor: 'pointer',
+        color: isSortingMode ? 'transparent' : '#999',  // 排序模式下透明
+        cursor: isSortingMode ? 'default' : 'pointer',
         fontFamily: 'Calibri, "微软雅黑", sans-serif',
         padding: '0',
         marginLeft: '8px',
         background: 'transparent',
-        border: 'none'
+        border: 'none',
+        minWidth: '35px',  // 固定最小宽度，防止布局变化
+        display: 'inline-block',
+        textAlign: 'right',
+        pointerEvents: isSortingMode ? 'none' : 'auto'  // 排序模式下禁止点击
       }}
-      title="点击修改时间"
+      title={isSortingMode ? "" : "点击修改时间"}
     >
       {minutes}m
     </span>
@@ -9559,6 +9575,10 @@ const TaskItem = ({
           </div>
         </div>
       </div>
+
+
+
+      
 
       {/* 第二行：备注和感想 */}
       {(task.note || task.reflection) && (
@@ -10388,11 +10408,10 @@ const SortableTaskList = ({
     style={{
       position: 'absolute',
       right: '4px',
-      top: 0,
-      bottom: 0,
+      top: '50%',
+      transform: 'translateY(-50%)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
       gap: '0px',
       zIndex: 10,
       background: 'transparent',
@@ -10419,8 +10438,8 @@ const SortableTaskList = ({
         fontWeight: 'normal',
         color: '#999',
         padding: '0',
-        width: '20px',
-        height: '20px',
+        width: '24px',
+        height: '24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -10431,7 +10450,7 @@ const SortableTaskList = ({
       ×
     </button>
     
-    {/* 拖拽手柄 - 使用三个横线符号 ≡，微调位置 */}
+    {/* 拖拽手柄 */}
     <div
       style={{
         cursor: 'grab',
@@ -10441,11 +10460,9 @@ const SortableTaskList = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '20px',
-        height: '20px',
-        lineHeight: 1,
-        position: 'relative',
-        top: '-1.8px'  // 微调 ≡ 向下偏移 1px，与 × 中心对齐
+        width: '24px',
+        height: '24px',
+        lineHeight: 1
       }}
       title="拖拽调整顺序"
     >
@@ -11279,6 +11296,45 @@ const CategoryManagerModal = ({ categories, onSave, onClose }) => {
   );
 };
 
+
+
+// 方方正正的对勾组件 - 使用 SVG 绘制
+// 方方正正的对勾组件 - 支持自定义颜色
+// 方方正正的对勾组件 - 默认颜色改为灰色
+const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
+  if (!show) return null;
+  
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: `${size}px`,
+      height: `${size}px`,
+      marginLeft: '4px',
+      position: 'relative',
+      top: '1px'
+    }}>
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: 'block' }}
+      >
+        <path 
+          d="M20 6L9 17L4 12" 
+          stroke={color} 
+          strokeWidth="3" 
+          strokeLinecap="square"
+          strokeLinejoin="miter"
+          fill="none"
+        />
+      </svg>
+    </span>
+  );
+};
 
 
 function App() {
@@ -16916,10 +16972,9 @@ if (isInitialized && todayTasks.length === 0) {
     >
  
 
-{/* 分类标题 */}
 <div
   style={{
-    backgroundColor: isComplete ? "#f5f5f5" : (() => {  // ✅ 更浅的灰色 #f5f5f5
+    backgroundColor: isComplete ? "#f5f5f5" : (() => {
       switch(c.name) {
         case '语文': return '#FFFDE7';
         case '数学': return '#E8F5E9';
@@ -16930,10 +16985,10 @@ if (isInitialized && todayTasks.length === 0) {
         default: return '#f0f0f0';
       }
     })(),
-    color: isComplete ? "#bbb" : (c.name === "校内" ? "#fff" : "#333"),  // ✅ 完成后文字 #bbb
+    color: isComplete ? "#bbb" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 8px",
-    fontWeight: isComplete ? "normal" : "bold",  // ✅ 完成后不加粗
+    fontWeight: isComplete ? "normal" : "bold",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -16946,70 +17001,77 @@ if (isInitialized && todayTasks.length === 0) {
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
     <span
       onClick={() => setCollapsedCategories(prev => ({ ...prev, [c.name]: !prev[c.name] }))}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
     >
       {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
-      {isComplete && " ✓"}
+      {isComplete && <SquareCheckMark show={true} size={12} color="#bbb" />}
     </span>
   </div>
 
-{/* 右侧：排序按钮 + 时间显示 */}
-<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-  {/* 排序按钮 - 校内类别不显示 */}
-  {c.name !== '校内' && (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isSortingMode) {
-          setSortingSubCategory(null);
-        } else {
-          setSortingSubCategory({ category: c.name, subCategory: null });
-        }
-      }}
-      style={{
-        
-        borderRadius: 4,
-        color: "#fff",
-        cursor: "pointer",
-        fontSize: "11px",
-        padding: "2px 6px",
-        display: "flex",
-        alignItems: "center",
-        gap: 3,
-        minWidth: "25px",
-        userSelect: "none"
-      }}
-    >
-      {isSortingMode ? "✓" : "☰"}
-    </div>
-  )}
-
- 
+  {/* 右侧：排序按钮 + 时间显示 */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    {/* 排序按钮 - 校内类别不显示排序按钮 */}
+    {/* 排序按钮 - 校内类别不显示排序按钮 */}
+{/* 排序按钮 - 校内类别不显示排序按钮 */}
+{/* 排序按钮 - 校内类别不显示排序按钮 */}
+{c.name !== '校内' && (
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      if (sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory) {
+        setSortingSubCategory(null);
+      } else {
+        setSortingSubCategory({ category: c.name, subCategory: null });
+      }
+    }}
+    style={{
+      borderRadius: 4,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "24px",
+      width: "24px",
+      height: "22px",
+      userSelect: "none"
+    }}
+  >
+    {sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory ? (
+      <SquareCheckMark show={true} size={11} color="#333" />
+    ) : (
+      <span style={{ color: "#999", fontSize: "14px", lineHeight: 1, marginTop: "-2px" }}>☰</span>
+    )}
+  </div>
+)}
 
     {/* 时间显示 */}
-   {/* 大分类标题右侧的时间显示 - 无背景无边框 */}
-<span
-  onClick={(e) => {
-    e.stopPropagation();
-    editCategoryTime(c.name);
-  }}
-  style={{
-    fontSize: '11px',
-    color: isComplete ? "#aaa" : "#fff",
-    fontFamily: 'Calibri, "微软雅黑", sans-serif',
-    cursor: "pointer",
-    padding: "0",
-    marginLeft: "8px",
-    background: "transparent",
-    border: "none"
-  }}
-  title="点击修改总时间"
->
-  {formatCategoryTime(totalTime(c.name))}
-</span>
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        editCategoryTime(c.name);
+      }}
+      style={{
+        fontSize: 11,
+        color: isComplete ? "#888" : "#fff",
+        fontStyle: 'Calibri, "微软雅黑", sans-serif',
+        cursor: "pointer",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        backgroundColor: "rgba(255,255,255,0.2)",
+        minWidth: "25px",
+        maxWidth: "70px",
+        textAlign: "center",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        flexShrink: 0
+      }}
+      title="点击修改总时间"
+    >
+      {formatCategoryTime(totalTime(c.name))}
+    </span>
   </div>
 </div>
-
 
 
 
@@ -17089,46 +17151,47 @@ if (isInitialized && todayTasks.length === 0) {
 
             {/* 左侧：标题（可点击折叠） */}
             <span
-              onClick={() => setCollapsedSubCategories(prev => ({
-                ...prev,
-                [subCatKey]: !isSubCollapsed
-              }))}
-              style={{ cursor: 'pointer' }}
-            >
-              {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
-              {allDone && " ✓"}
-            </span>
+  onClick={() => setCollapsedSubCategories(prev => ({
+    ...prev,
+    [subCatKey]: !isSubCollapsed
+  }))}
+  style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+>
+  {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+  {allDone && <SquareCheckMark show={true} size={12} color="#bbb" />}
+</span>
             
             {/* 右侧：排序按钮 + 时间显示 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
 
-{/* 排序按钮 - 点击前后样式相同 */}
 <div
   onClick={(e) => {
     e.stopPropagation();
-    if (isSortingMode) {
+    if (sortingSubCategory?.subCategory === subCat) {
       setSortingSubCategory(null);
     } else {
       setSortingSubCategory({ category: c.name, subCategory: subCat });
     }
   }}
   style={{
-    
     borderRadius: 4,
-    color: "#666",  // 固定文字颜色
     cursor: "pointer",
-    fontSize: "11px",
-    padding: "2px 6px",
     display: "flex",
     alignItems: "center",
-    gap: 3,
-    minWidth: "25px",
+    justifyContent: "center",
+    minWidth: "24px",
+    width: "24px",
+    height: "22px",
     userSelect: "none",
     transition: "none"
   }}
-  title={isSortingMode ? "完成排序" : "调整顺序"}
+  title={sortingSubCategory?.subCategory === subCat ? "完成排序" : "调整顺序"}
 >
-  {isSortingMode ? "✓" : "☰"}
+  {sortingSubCategory?.subCategory === subCat ? (
+    <SquareCheckMark show={true} size={11} color="#333" />
+  ) : (
+    <span style={{ color: "#999", fontSize: "14px", lineHeight: 1, marginTop: "-2px" }}>☰</span>
+  )}
 </div>
               
               {/* 时间显示 */}
