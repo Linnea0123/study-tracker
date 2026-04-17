@@ -9463,7 +9463,10 @@ const TaskItem = ({
       gap: "6px",
       minWidth: 0
     }}>  
-      <div
+
+
+
+<div
   onClick={(e) => {
     e.stopPropagation();
     onOpenEditModal(task);
@@ -9474,31 +9477,30 @@ const TaskItem = ({
     color: task.done ? "#999" : "#000",
     fontWeight: task.pinned ? "bold" : "normal",
     fontSize: "13px",
-    lineHeight: "1.3",
+    lineHeight: "1.5",
     flex: "1",
     minWidth: "50px",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px"  // 添加间隙
+    // 移除 display: flex 和 align-items，让内容自然流动
   }}
 >
-  <span>{task.text}</span>
-  
-  {/* 红色【图片】标识 - 当 hasImage 为 true 时显示 */}
-   {task.hasImage && (
-    <span
-      style={{
-        fontSize: "12px",
-        color: "#ff4444",
-        fontWeight: "bold",
-        whiteSpace: "nowrap",
-        lineHeight: "1.2"
-      }}
-      title="需要添加图片"
-    >
-      【图片】
-    </span>
-  )}
+  {/* 文字和图片标识放在同一个内联容器中 */}
+  <span>
+    {task.text}
+    {task.hasImage && (
+      <span
+        style={{
+          fontSize: "12px",
+          color: "#ff4444",
+          fontWeight: "bold",
+          marginLeft: "4px",
+          whiteSpace: "nowrap"
+        }}
+        title="需要添加图片"
+      >
+        【图片】
+      </span>
+    )}
+  </span>
 </div>
 
       {/* 右侧时间显示 */}
@@ -9523,8 +9525,8 @@ const TaskItem = ({
     fontSize: "11px",
     color: isSortingMode ? "transparent" : "#666",
     cursor: isSortingMode ? "default" : "pointer",
-    minWidth: "45px",        // 统一宽度
-    width: "45px",
+    minWidth: "30px",        // 统一宽度
+    width: "30px",
     textAlign: "right",      // 右对齐
     pointerEvents: isSortingMode ? "none" : "auto",
     lineHeight: "28px",
