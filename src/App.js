@@ -9464,26 +9464,42 @@ const TaskItem = ({
       minWidth: 0
     }}>  
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenEditModal(task);
-        }}
-        style={{
-          wordBreak: "break-word",
-          cursor: "pointer",
-          color: task.done ? "#999" : "#000",
-          fontWeight: task.pinned ? "bold" : "normal",
-          fontSize: "13px",
-          lineHeight: "1.3",
-          flex: "1",
-          minWidth: "50px",
-          // 关键：使用 flex 居中而不是依赖 lineHeight
-          display: "flex",
-          alignItems: "center"
-        }}
-      >
-        {task.text}
-      </div>
+  onClick={(e) => {
+    e.stopPropagation();
+    onOpenEditModal(task);
+  }}
+  style={{
+    wordBreak: "break-word",
+    cursor: "pointer",
+    color: task.done ? "#999" : "#000",
+    fontWeight: task.pinned ? "bold" : "normal",
+    fontSize: "13px",
+    lineHeight: "1.3",
+    flex: "1",
+    minWidth: "50px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px"  // 添加间隙
+  }}
+>
+  <span>{task.text}</span>
+  
+  {/* 红色【图片】标识 - 当 hasImage 为 true 时显示 */}
+   {task.hasImage && (
+    <span
+      style={{
+        fontSize: "12px",
+        color: "#ff4444",
+        fontWeight: "bold",
+        whiteSpace: "nowrap",
+        lineHeight: "1.2"
+      }}
+      title="需要添加图片"
+    >
+      【图片】
+    </span>
+  )}
+</div>
 
       {/* 右侧时间显示 */}
       <div style={{
@@ -14598,7 +14614,9 @@ const parseBulkTextToPreview = useCallback(() => {
 }, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories]);
 
 
-// 修复后的批量导入函数 - 直接导入，无需确认
+
+// 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
+// 修复批量导入中的图片识别功能 - 图片标记作用于上面的任务（标记行在下，任务在上）
 const handleImportTasksWithDuration = () => {
   console.log('🎯 === 开始批量导入 ===');
   
@@ -14627,7 +14645,7 @@ const handleImportTasksWithDuration = () => {
   const defaultSubCategories = ['数学', '语文', '英语', '运动'];
   const allSubCategories = [...new Set([...schoolSubCategories, ...defaultSubCategories])];
   
-  // 遍历关键字列表，检查第一行是否包含这些关键字
+  // 匹配子分类
   let matchedSubCategory = null;
   for (const subCat of allSubCategories) {
     if (firstLine.includes(subCat)) {
@@ -14636,7 +14654,6 @@ const handleImportTasksWithDuration = () => {
     }
   }
   
-  // 如果没有匹配到，尝试模糊匹配
   if (!matchedSubCategory) {
     const keywordMap = {
       '数学': ['数学', '数', 'math'],
@@ -14656,12 +14673,7 @@ const handleImportTasksWithDuration = () => {
     }
   }
   
-  // 如果还是没有匹配到，使用"未分类"
-  if (!matchedSubCategory) {
-    matchedSubCategory = '未分类';
-  }
-  
-  subCategory = matchedSubCategory;
+  subCategory = matchedSubCategory || '未分类';
   
   const allTasksByDate = {};
   const currentYear = new Date().getFullYear();
@@ -14669,7 +14681,6 @@ const handleImportTasksWithDuration = () => {
   today.setHours(0, 0, 0, 0);
   let crossDateGroupIndex = 0;
   
-  // 获取默认日期范围
   const getDefaultDates = () => {
     const dates = [];
     const todayDate = new Date();
@@ -14718,7 +14729,6 @@ const handleImportTasksWithDuration = () => {
   
   const defaultDates = getDefaultDates();
   
-  // 解析日期范围的函数
   const parseDateRangeFromText = (text) => {
     const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
     const match = text.match(rangePattern);
@@ -14759,23 +14769,35 @@ const handleImportTasksWithDuration = () => {
     return null;
   };
   
-  // 预处理：先收集所有任务信息
+  // ========== 关键修复：图片标记作用于上面的任务 ==========
+  // 格式：
+  // 任务1
+  // 【图片】
+  // 任务2   ← 图片标记属于任务1（上面的任务）
+  
   const taskInfos = [];
+  let pendingImageForPreviousTask = false;  // 上一个任务是否需要图片
+  
   let i = 1;
   while (i < lines.length) {
     let line = lines[i];
     
-    // 检测图片标记
-    let hasImage = false;
-    while (line === '[图片]' || line.includes('[图片]')) {
-      hasImage = true;
+    // 检查是否是图片标记行（单独的 [图片] 或 【图片】）
+    if (line === '[图片]' || line === '【图片】') {
+      // 图片标记：标记上一个任务需要图片
+      // 如果还没有任何任务，则跳过（标记无效）
+      if (taskInfos.length > 0) {
+        const lastTask = taskInfos[taskInfos.length - 1];
+        lastTask.hasImage = true;
+        console.log(`📷 图片标记应用于上一个任务: "${lastTask.text}"`);
+      } else {
+        console.log('⚠️ 图片标记无效：没有上一个任务');
+      }
       i++;
-      if (i >= lines.length) break;
-      line = lines[i];
+      continue;
     }
     
-    if (i >= lines.length) break;
-    
+    // 处理任务行
     let taskLine = line;
     let taskDates = parseDateRangeFromText(taskLine);
     let cleanTaskLine = taskLine;
@@ -14802,17 +14824,17 @@ const handleImportTasksWithDuration = () => {
         text: taskText,
         note: note,
         dates: taskDates,
-        hasImage: hasImage
+        hasImage: false  // 初始没有图片
       });
+      
+      console.log(`📝 添加任务: "${taskText}"`);
     }
     
     i++;
   }
   
-  // 判断是否是每日独立任务
   const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '阅读', '听英语', '口算'];
   
-  // 创建任务
   taskInfos.forEach((taskInfo, idx) => {
     const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
     
@@ -14837,7 +14859,7 @@ const handleImportTasksWithDuration = () => {
         timeSpent: 0,
         note: note,
         image: null,
-        hasImage: hasImage,
+        hasImage: hasImage,  // 保存图片标记
         scheduledTime: "",
         pinned: false,
         reflection: "",
@@ -14867,14 +14889,13 @@ const handleImportTasksWithDuration = () => {
   });
   
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
-  const crossDateCount = Object.values(allTasksByDate).flat().filter(t => t.crossDateId).length;
+  const tasksWithImage = Object.values(allTasksByDate).flat().filter(t => t.hasImage).length;
   
   if (totalTasksCount === 0) {
     alert('没有创建任何任务');
     return;
   }
   
-  // 更新状态
   setTasksByDate(prev => {
     const updated = { ...prev };
     Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
@@ -14886,7 +14907,6 @@ const handleImportTasksWithDuration = () => {
     return updated;
   });
   
-  // 清空表单
   setBulkText("");
   setBulkTags([]);
   setBulkDateRange("today");
@@ -14894,9 +14914,9 @@ const handleImportTasksWithDuration = () => {
   setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
   setShowBulkImportModal(false);
   
-  // ✅ 直接显示导入结果，无需确认
-  alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个${crossDateCount > 0 ? `\n🔗 跨日期联动：${crossDateCount} 个` : ''}`);
+  alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
 };
+
 
 const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 ===');
