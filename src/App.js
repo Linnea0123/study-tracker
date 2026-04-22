@@ -9606,7 +9606,7 @@ const TaskItem = ({
                 marginBottom: "4px",
               }}
             >
-              💭 {task.reflection}
+              ❗ {task.reflection}
             </div>
           )}
 
@@ -10140,7 +10140,7 @@ const TaskItem = ({
                         }}
                         title="点击编辑备注"
                       >
-                        💭 {subTask.note}
+                        ❗ {subTask.note}
                       </div>
                     )}
                   </div>
@@ -11329,7 +11329,8 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
-const [bulkDateRange, setBulkDateRange] = useState('today');
+// 默认使用当前选中的日期，而不是系统当天
+const [bulkDateRange, setBulkDateRange] = useState('selected');
 const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
   return new Date().toISOString().split('T')[0];
 });
@@ -13467,16 +13468,7 @@ if (savedTasks) {
 
 
 
-// 如果有孤立的模板，清理它们
-if (templatesToKeep.length !== storedTemplates.length) {
-  console.log(`🧹 清理孤立常规任务模板: ${storedTemplates.length} -> ${templatesToKeep.length}`);
-  await saveMainData('regular_tasks', templatesToKeep);
-  // 同时更新 regularTasks 状态
-  setRegularTasks(templatesToKeep);
-} else {
-  // 如果没有孤立模板，正常加载
-  
-}
+
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
   // ===== 修改：确保每个日期都有独立的常规任务 =====
@@ -14619,7 +14611,8 @@ const parseBulkTextToPreview = useCallback(() => {
 
 // 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
 // 修复批量导入中的图片识别功能 - 图片标记作用于上面的任务（标记行在下，任务在上）
-const handleImportTasksWithDuration = () => {
+
+const handleImportTasksWithDuration = async () => {
   console.log('🎯 === 开始批量导入 ===');
   
   if (!bulkText.trim()) {
@@ -14685,31 +14678,31 @@ const handleImportTasksWithDuration = () => {
   
   const getDefaultDates = () => {
     const dates = [];
-    const todayDate = new Date();
-    
+
+    // 使用当前选中的日期（selectedDate）作为基准
+    const baseDate = new Date(selectedDate);
+    baseDate.setHours(0, 0, 0, 0);
+
     switch (bulkDateRange) {
-      case 'today': {
-        const dateStr = todayDate.toISOString().split('T')[0];
-        dates.push(dateStr);
+      case 'selected':
+        // 仅添加到当前选中的日期
+        dates.push(selectedDate);
         break;
-      }
-      case 'next3': {
+      case 'next3':
         for (let i = 0; i < 3; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
+          const date = new Date(baseDate);
+          date.setDate(baseDate.getDate() + i);
           dates.push(date.toISOString().split('T')[0]);
         }
         break;
-      }
-      case 'next4': {
+      case 'next4':
         for (let i = 0; i < 4; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
+          const date = new Date(baseDate);
+          date.setDate(baseDate.getDate() + i);
           dates.push(date.toISOString().split('T')[0]);
         }
         break;
-      }
-      case 'custom': {
+      case 'custom':
         if (bulkDateRangeStart && bulkDateRangeEnd) {
           const start = new Date(bulkDateRangeStart);
           const end = new Date(bulkDateRangeEnd);
@@ -14719,12 +14712,11 @@ const handleImportTasksWithDuration = () => {
             current.setDate(current.getDate() + 1);
           }
         } else {
-          dates.push(todayDate.toISOString().split('T')[0]);
+          dates.push(selectedDate);
         }
         break;
-      }
       default:
-        dates.push(todayDate.toISOString().split('T')[0]);
+        dates.push(selectedDate);
     }
     return dates;
   };
@@ -14771,29 +14763,18 @@ const handleImportTasksWithDuration = () => {
     return null;
   };
   
-  // ========== 关键修复：图片标记作用于上面的任务 ==========
-  // 格式：
-  // 任务1
-  // 【图片】
-  // 任务2   ← 图片标记属于任务1（上面的任务）
-  
+  // 处理任务行，图片标记作用于上面的任务
   const taskInfos = [];
-  let pendingImageForPreviousTask = false;  // 上一个任务是否需要图片
-  
   let i = 1;
   while (i < lines.length) {
     let line = lines[i];
     
-    // 检查是否是图片标记行（单独的 [图片] 或 【图片】）
+    // 检查是否是图片标记行
     if (line === '[图片]' || line === '【图片】') {
-      // 图片标记：标记上一个任务需要图片
-      // 如果还没有任何任务，则跳过（标记无效）
       if (taskInfos.length > 0) {
         const lastTask = taskInfos[taskInfos.length - 1];
         lastTask.hasImage = true;
         console.log(`📷 图片标记应用于上一个任务: "${lastTask.text}"`);
-      } else {
-        console.log('⚠️ 图片标记无效：没有上一个任务');
       }
       i++;
       continue;
@@ -14826,7 +14807,7 @@ const handleImportTasksWithDuration = () => {
         text: taskText,
         note: note,
         dates: taskDates,
-        hasImage: false  // 初始没有图片
+        hasImage: false
       });
       
       console.log(`📝 添加任务: "${taskText}"`);
@@ -14861,7 +14842,7 @@ const handleImportTasksWithDuration = () => {
         timeSpent: 0,
         note: note,
         image: null,
-        hasImage: hasImage,  // 保存图片标记
+        hasImage: hasImage,
         scheduledTime: "",
         pinned: false,
         reflection: "",
@@ -14897,28 +14878,55 @@ const handleImportTasksWithDuration = () => {
     alert('没有创建任何任务');
     return;
   }
-  
-  setTasksByDate(prev => {
-    const updated = { ...prev };
-    Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
-      if (!updated[date]) {
-        updated[date] = [];
-      }
-      updated[date] = [...updated[date], ...newTasks];
-    });
-    return updated;
+
+  // 先构建完整的更新后的数据
+  const updatedTasksByDate = { ...tasksByDate };
+  Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
+    if (!updatedTasksByDate[date]) {
+      updatedTasksByDate[date] = [];
+    }
+    updatedTasksByDate[date] = [...updatedTasksByDate[date], ...newTasks];
   });
-  
+
+  // 更新状态
+  setTasksByDate(updatedTasksByDate);
+
+  // 使用统一的保存函数保存到 localStorage
+  try {
+    await saveMainData('tasks', updatedTasksByDate);
+    
+    // 双重保险：直接写入 localStorage
+    const storageKey = `${STORAGE_KEY}_tasks`;
+    const jsonData = JSON.stringify(updatedTasksByDate);
+    localStorage.setItem(storageKey, jsonData);
+    
+    console.log('💾 批量导入任务已同步保存，大小:', jsonData.length, '字符');
+    console.log('✅ 保存的日期:', Object.keys(updatedTasksByDate));
+    
+    // 验证保存成功
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const savedData = JSON.parse(saved);
+      console.log('✅ 验证保存成功，包含日期:', Object.keys(savedData).length);
+    } else {
+      console.error('❌ 保存验证失败！');
+    }
+  } catch (error) {
+    console.error('保存失败:', error);
+    alert('保存失败，请重试');
+    return;
+  }
+
+  // 清空表单
   setBulkText("");
   setBulkTags([]);
-  setBulkDateRange("today");
+  setBulkDateRange("selected");
   setBulkDateRangeStart(new Date().toISOString().split('T')[0]);
   setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
   setShowBulkImportModal(false);
   
   alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
 };
-
 
 const handleImportTasks = () => {
   console.log('🎯 === 开始批量导入 ===');
@@ -16641,31 +16649,32 @@ if (isInitialized && todayTasks.length === 0) {
       {/* 日期范围选择 */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: '#666', marginBottom: 5 }}>日期范围：</div>
+        
         <select
-          value={bulkDateRange}
-          onChange={(e) => {
-            setBulkDateRange(e.target.value);
-            if (e.target.value === 'custom') {
-              const today = new Date();
-              const todayStr = today.toISOString().split('T')[0];
-              setBulkDateRangeStart(todayStr);
-              setBulkDateRangeEnd(todayStr);
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            fontSize: '13px',
-            backgroundColor: '#fff'
-          }}
-        >
-          <option value="today">仅今天（默认）</option>
-          <option value="next3">未来3天（含今天）</option>
-          <option value="next4">未来4天（含今天）</option>
-          <option value="custom">自定义</option>
-        </select>
+  value={bulkDateRange}
+  onChange={(e) => {
+    setBulkDateRange(e.target.value);
+    if (e.target.value === 'custom') {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      setBulkDateRangeStart(todayStr);
+      setBulkDateRangeEnd(todayStr);
+    }
+  }}
+  style={{
+    width: '100%',
+    padding: '8px',
+    borderRadius: 6,
+    border: '1px solid #ccc',
+    fontSize: '13px',
+    backgroundColor: '#fff'
+  }}
+>
+  <option value="selected">仅当日（根据星期栏选中日期）</option>
+  <option value="next3">未来3天（含当日）</option>
+  <option value="next4">未来4天（含当日）</option>
+  <option value="custom">自定义</option>
+</select>
         
         {bulkDateRange === 'custom' && (
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
