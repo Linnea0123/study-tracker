@@ -14898,25 +14898,35 @@ const handleImportTasksWithDuration = () => {
     return;
   }
   
-  setTasksByDate(prev => {
-    const updated = { ...prev };
-    Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
-      if (!updated[date]) {
-        updated[date] = [];
-      }
-      updated[date] = [...updated[date], ...newTasks];
-    });
-    return updated;
+
+
+  // 更新状态并立即保存到本地存储
+setTasksByDate(prev => {
+  const updated = { ...prev };
+  Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
+    if (!updated[date]) {
+      updated[date] = [];
+    }
+    updated[date] = [...updated[date], ...newTasks];
   });
   
-  setBulkText("");
-  setBulkTags([]);
-  setBulkDateRange("today");
-  setBulkDateRangeStart(new Date().toISOString().split('T')[0]);
-  setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
-  setShowBulkImportModal(false);
+  // 🔥 关键修复：立即保存到 localStorage
+  setTimeout(() => {
+    saveMainData('tasks', updated);
+    console.log('💾 批量导入的任务已保存到本地存储');
+  }, 100);
   
-  alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
+  return updated;
+});
+
+setBulkText("");
+setBulkTags([]);
+setBulkDateRange("selected");
+setBulkDateRangeStart(new Date().toISOString().split('T')[0]);
+setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
+setShowBulkImportModal(false);
+
+alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
 };
 
 
