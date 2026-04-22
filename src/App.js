@@ -1579,6 +1579,7 @@ return (
 
 
 
+
 // 重命名文件顶部的 categories 为 baseCategories
 // 修改 baseCategories 的颜色
 const baseCategories = [
@@ -2511,8 +2512,8 @@ const testGistAccess = async () => {
 
 // ==== 新增：自动备份配置 ====
 const AUTO_BACKUP_CONFIG = {
-  maxBackups: 7,                    // 保留7个备份
-  backupInterval: 10 * 60 * 1000,   // 10分钟（30 * 60 * 1000 毫秒）- 修改这里
+  maxBackups: 2,                    // 保留7个备份
+  backupInterval: 60 * 60 * 1000,  // 1小时备份一次   // 10分钟（30 * 60 * 1000 毫秒）- 修改这里
   backupPrefix: 'auto_backup_'      // 备份文件前缀
 };
 
@@ -9606,7 +9607,7 @@ const TaskItem = ({
                 marginBottom: "4px",
               }}
             >
-              💭 {task.reflection}
+              ❗️ {task.reflection}
             </div>
           )}
 
@@ -10050,7 +10051,7 @@ const TaskItem = ({
                           border: '1px solid #ffd54f',
                           lineHeight: '1.3'
                         }}>
-                          💭 {subTask.note}
+                          ❗️ {subTask.note}
                         </div>
                       )}
                     </div>
@@ -10140,7 +10141,7 @@ const TaskItem = ({
                         }}
                         title="点击编辑备注"
                       >
-                        💭 {subTask.note}
+                        ❗️ {subTask.note}
                       </div>
                     )}
                   </div>
@@ -11329,6 +11330,15 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
+   const loadDataWithFallback = async (key, fallback) => {
+    try {
+      const data = await loadMainData(key);
+      return data !== null ? data : fallback;
+    } catch (error) {
+      console.error(`加载 ${key} 失败:`, error);
+      return fallback;
+    }
+  };
 const [bulkDateRange, setBulkDateRange] = useState('today');
 const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
   return new Date().toISOString().split('T')[0];
@@ -12668,15 +12678,18 @@ const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
       setTasksByDate(updatedTasksByDate);
     } else {
       // 在 toggleDone 函数中，处理普通任务的部分
+
+      // 修复 editSubTask 函数中的这部分
 setTasksByDate(prev => ({
   ...prev,
   [selectedDate]: (prev[selectedDate] || []).map(t =>
     t.id === task.id 
       ? { 
           ...t, 
-          done: !wasDone,
-          pinned: !wasDone ? false : t.pinned,  // ✅ 完成后取消置顶
-          subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+          // 删除这行，editSubTask 不应该修改 done 状态
+          subTasks: t.subTasks ? t.subTasks.map(st => 
+            st.index === subTaskIndex ? { ...st, text: newText.trim(), note: newNote } : st
+          ) : t.subTasks
         } 
       : t
   )
@@ -13442,20 +13455,7 @@ useEffect(() => {
 
 
 
-// 在 initializeApp 函数开始处添加这个辅助函数
-const loadDataWithFallback = async (key, fallback) => {
-  try {
-    const data = await loadMainData(key);
-    return data !== null ? data : fallback;
-  } catch (error) {
-    console.error(`加载 ${key} 失败:`, error);
-    return fallback;
-  }
-};
 
-// 然后替换现有的数据加载代码：
-
-// 加载任务数据
 
 // 加载任务数据
 const savedTasks = await loadDataWithFallback('tasks', {});
@@ -13464,98 +13464,85 @@ if (savedTasks) {
   setTasksByDate(savedTasks);
 
 
+console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
-
-
-// 如果有孤立的模板，清理它们
-if (templatesToKeep.length !== storedTemplates.length) {
-  console.log(`🧹 清理孤立常规任务模板: ${storedTemplates.length} -> ${templatesToKeep.length}`);
-  await saveMainData('regular_tasks', templatesToKeep);
-  // 同时更新 regularTasks 状态
-  setRegularTasks(templatesToKeep);
-} else {
-  // 如果没有孤立模板，正常加载
+// ===== 确保每个日期都有独立的常规任务 =====
+if (savedTasks && Object.keys(savedTasks).length > 0) {
+  // 收集所有常规任务模板（从所有日期中获取，去重）
+  const regularTemplates = [];
+  const seenTexts = new Set();
   
-}
-  console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
-
-  // ===== 修改：确保每个日期都有独立的常规任务 =====
-  if (savedTasks && Object.keys(savedTasks).length > 0) {
-    // 收集所有常规任务模板（从所有日期中获取，去重）
-    const regularTemplates = [];
-    const seenTexts = new Set();
+  // 从已有数据中收集常规任务模板
+  Object.values(savedTasks).forEach(tasks => {
+    tasks.forEach(task => {
+      if (task.isRegularTask && !seenTexts.has(task.text)) {
+        seenTexts.add(task.text);
+        regularTemplates.push({
+          text: task.text,
+          targetCategory: task.targetCategory,
+          targetSubCategory: task.targetSubCategory || '',
+          note: task.note || "",
+          tags: task.tags || []
+        });
+      }
+    });
+  });
+  
+  // 如果有常规任务模板，确保每个日期都有这些任务（独立副本）
+  if (regularTemplates.length > 0) {
+    const allDates = Object.keys(savedTasks);
+    let needsUpdate = false;
     
-    // 从已有数据中收集常规任务模板
-    Object.values(savedTasks).forEach(tasks => {
-      tasks.forEach(task => {
-        if (task.isRegularTask && !seenTexts.has(task.text)) {
-          seenTexts.add(task.text);
-          regularTemplates.push({
-            text: task.text,
-            targetCategory: task.targetCategory,
-            targetSubCategory: task.targetSubCategory || '',
-            note: task.note || "",
-            tags: task.tags || []
-          });
-        }
-      });
+    allDates.forEach(date => {
+      const dateTasks = savedTasks[date] || [];
+      
+      // 获取这个日期已有的常规任务文本
+      const existingRegularTexts = new Set(
+        dateTasks.filter(t => t.isRegularTask).map(t => t.text)
+      );
+      
+      // 找出这个日期缺失的常规任务
+      const missingTemplates = regularTemplates.filter(
+        template => !existingRegularTexts.has(template.text)
+      );
+      
+      if (missingTemplates.length > 0) {
+        needsUpdate = true;
+        const newRegularTasks = missingTemplates.map(template => ({
+          id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
+          text: template.text,
+          targetCategory: template.targetCategory,
+          targetSubCategory: template.targetSubCategory,
+          category: "常规任务",
+          done: false,
+          timeSpent: 0,
+          subTasks: [],
+          note: template.note,
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: template.tags || [],
+          isRegularTask: true,
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          }
+        }));
+        
+        savedTasks[date] = [...dateTasks, ...newRegularTasks];
+      }
     });
     
-    // 如果有常规任务模板，确保每个日期都有这些任务（独立副本）
-    if (regularTemplates.length > 0) {
-      const allDates = Object.keys(savedTasks);
-      let needsUpdate = false;
-      
-      allDates.forEach(date => {
-        const dateTasks = savedTasks[date] || [];
-        
-        // 获取这个日期已有的常规任务文本
-        const existingRegularTexts = new Set(
-          dateTasks.filter(t => t.isRegularTask).map(t => t.text)
-        );
-        
-        // 找出这个日期缺失的常规任务
-        const missingTemplates = regularTemplates.filter(
-          template => !existingRegularTexts.has(template.text)
-        );
-        
-        if (missingTemplates.length > 0) {
-          needsUpdate = true;
-          const newRegularTasks = missingTemplates.map(template => ({
-            id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
-            text: template.text,
-            targetCategory: template.targetCategory,
-            targetSubCategory: template.targetSubCategory,
-            category: "常规任务",
-            done: false,
-            timeSpent: 0,
-            subTasks: [],
-            note: template.note,
-            reflection: "",
-            image: null,
-            scheduledTime: "",
-            pinned: false,
-            tags: template.tags || [],
-            isRegularTask: true,
-            progress: {
-              initial: 0,
-              current: 0,
-              target: 0,
-              unit: "%"
-            }
-          }));
-          
-          savedTasks[date] = [...dateTasks, ...newRegularTasks];
-        }
-      });
-      
-      if (needsUpdate) {
-        console.log('✅ 已为所有日期添加缺失的常规任务（独立副本）');
-        // 更新状态
-        setTasksByDate(savedTasks);
-      }
+    if (needsUpdate) {
+      console.log('✅ 已为所有日期添加缺失的常规任务（独立副本）');
+      // 更新状态
+      setTasksByDate(savedTasks);
     }
   }
+}
 }
 
 else {
