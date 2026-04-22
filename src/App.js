@@ -9606,7 +9606,7 @@ const TaskItem = ({
                 marginBottom: "4px",
               }}
             >
-              💭 {task.reflection}
+              ❗️ {task.reflection}
             </div>
           )}
 
