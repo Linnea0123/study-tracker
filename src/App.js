@@ -13468,16 +13468,7 @@ if (savedTasks) {
 
 
 
-// 如果有孤立的模板，清理它们
-if (templatesToKeep.length !== storedTemplates.length) {
-  console.log(`🧹 清理孤立常规任务模板: ${storedTemplates.length} -> ${templatesToKeep.length}`);
-  await saveMainData('regular_tasks', templatesToKeep);
-  // 同时更新 regularTasks 状态
-  setRegularTasks(templatesToKeep);
-} else {
-  // 如果没有孤立模板，正常加载
-  
-}
+
   console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
 
   // ===== 修改：确保每个日期都有独立的常规任务 =====
@@ -14901,23 +14892,26 @@ const handleImportTasksWithDuration = () => {
 
 
   // 更新状态并立即保存到本地存储
-setTasksByDate(prev => {
-  const updated = { ...prev };
-  Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
-    if (!updated[date]) {
-      updated[date] = [];
-    }
-    updated[date] = [...updated[date], ...newTasks];
-  });
-  
-  // 🔥 关键修复：立即保存到 localStorage
-  setTimeout(() => {
-    saveMainData('tasks', updated);
-    console.log('💾 批量导入的任务已保存到本地存储');
-  }, 100);
-  
-  return updated;
+// 先构建完整的更新后的数据
+const updatedTasksByDate = { ...tasksByDate };
+Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
+  if (!updatedTasksByDate[date]) {
+    updatedTasksByDate[date] = [];
+  }
+  updatedTasksByDate[date] = [...updatedTasksByDate[date], ...newTasks];
 });
+
+// 更新状态
+setTasksByDate(updatedTasksByDate);
+
+// 立即保存到 localStorage（同步执行）
+try {
+  const storageKey = `${STORAGE_KEY}_tasks`;
+  localStorage.setItem(storageKey, JSON.stringify(updatedTasksByDate));
+  console.log('💾 批量导入的任务已保存到本地存储，天数:', Object.keys(updatedTasksByDate).length);
+} catch (error) {
+  console.error('保存批量导入任务失败:', error);
+}
 
 setBulkText("");
 setBulkTags([]);
