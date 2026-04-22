@@ -13677,7 +13677,37 @@ useEffect(() => {
   }
 }, [tasksByDate, isInitialized]);
 
+// 自动保存任务数据
+useEffect(() => {
+  if (isInitialized) {
+    console.log('💾 自动保存任务数据...');
+    saveMainData('tasks', tasksByDate);
+  }
+}, [tasksByDate, isInitialized]);
 
+// 👇 在这里添加清理空日期的 useEffect
+useEffect(() => {
+  if (isInitialized) {
+    setTasksByDate(prev => {
+      const cleaned = {};
+      let cleanedCount = 0;
+      
+      Object.entries(prev).forEach(([date, tasks]) => {
+        if (tasks && tasks.length > 0) {
+          cleaned[date] = tasks;
+        } else {
+          cleanedCount++;
+          console.log(`🧹 清理空日期: ${date}`);
+        }
+      });
+      
+      if (cleanedCount > 0) {
+        console.log(`✅ 清理了 ${cleanedCount} 个空日期`);
+      }
+      return cleaned;
+    });
+  }
+}, [isInitialized]); // 只在初始化时执行一次
 
 
 // 自动保存模板数据
@@ -15129,15 +15159,18 @@ const togglePinned = (task) => {
 // 删除任务 - 确保能正确删除任务
 // 在 App 组件中，找到 deleteTask 函数，确保它正确更新状态
 const deleteTask = (task, deleteOption = 'today') => {
-  console.log('🗑️ deleteTask 被调用:', task.text, deleteOption);
-  
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
-    // 处理普通任务
     if (deleteOption === 'today') {
       if (newTasksByDate[selectedDate]) {
         newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => t.id !== task.id);
+        
+        // ✅ 关键：如果这天没有任务了，删除这个日期键
+        if (newTasksByDate[selectedDate].length === 0) {
+          delete newTasksByDate[selectedDate];
+          console.log(`🗑️ 删除空日期: ${selectedDate}`);
+        }
       }
     } else if (deleteOption === 'future') {
       const today = new Date(selectedDate);
@@ -15148,11 +15181,23 @@ const deleteTask = (task, deleteOption = 'today') => {
         currentDate.setHours(0, 0, 0, 0);
         if (currentDate >= today) {
           newTasksByDate[date] = newTasksByDate[date].filter(t => t.id !== task.id);
+          
+          // ✅ 关键：如果这天没有任务了，删除这个日期键
+          if (newTasksByDate[date].length === 0) {
+            delete newTasksByDate[date];
+            console.log(`🗑️ 删除空日期: ${date}`);
+          }
         }
       });
     } else if (deleteOption === 'all') {
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].filter(t => t.id !== task.id);
+        
+        // ✅ 关键：如果这天没有任务了，删除这个日期键
+        if (newTasksByDate[date].length === 0) {
+          delete newTasksByDate[date];
+          console.log(`🗑️ 删除空日期: ${date}`);
+        }
       });
     }
     
@@ -16113,7 +16158,12 @@ if (isInitialized && todayTasks.length === 0) {
         marginTop: "-5px",      // 确保为0
         marginBottom: 10
       }}>
-        宝贝已打卡 {Object.keys(tasksByDate).length} 天，累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
+        
+宝贝已打卡 {
+  Object.values(tasksByDate).filter(dailyTasks => 
+    dailyTasks.some(task => task.done === true)
+  ).length
+} 天，累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
       </div>
 
 
