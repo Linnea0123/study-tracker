@@ -9606,7 +9606,7 @@ const TaskItem = ({
                 marginBottom: "4px",
               }}
             >
-              ❗️ {task.reflection}
+              💭 {task.reflection}
             </div>
           )}
 
@@ -11329,7 +11329,7 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
-const [bulkDateRange, setBulkDateRange] = useState('selected');
+const [bulkDateRange, setBulkDateRange] = useState('today');
 const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
   return new Date().toISOString().split('T')[0];
 });
@@ -14116,7 +14116,7 @@ const handleAddTemplate = (templateData) => {
 const handleDeleteTemplate = (index) => {
   setTemplates(prev => prev.filter((_, i) => i !== index));
 };
-
+// 添加任务函数
 const handleAddTask = () => {
   if (!newTaskText.trim()) {
     alert('请输入任务内容');
@@ -14130,19 +14130,20 @@ const handleAddTask = () => {
     scheduledTime = `${repeatConfig.startHour.padStart(2, '0')}:${repeatConfig.startMinute.padStart(2, '0')}-${repeatConfig.endHour.padStart(2, '0')}:${repeatConfig.endMinute.padStart(2, '0')}`;
   }
 
-  // 构建提醒时间
-  let reminderTime = null;
-  if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
-    reminderTime = {
-      year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
-      month: parseInt(repeatConfig.reminderMonth),
-      day: parseInt(repeatConfig.reminderDay),
-      hour: parseInt(repeatConfig.reminderHour) || 0,
-      minute: parseInt(repeatConfig.reminderMinute) || 0
-    };
-  }
+ // 在 handleAddTask 函数中（约在第 1620 行附近）
+// 构建提醒时间 - 只有在有月和日时才创建
+let reminderTime = null;
+if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
+  reminderTime = {
+    year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
+    month: parseInt(repeatConfig.reminderMonth),
+    day: parseInt(repeatConfig.reminderDay),
+    hour: parseInt(repeatConfig.reminderHour) || 0,
+    minute: parseInt(repeatConfig.reminderMinute) || 0
+  };
+}
 
-  const baseTask = {
+  const newTask = {
     id: Date.now().toString(),
     text: newTaskText.trim(),
     category: newTaskCategory,
@@ -14168,35 +14169,42 @@ const handleAddTask = () => {
     isRepeating: !!(repeatConfig.frequency)
   };
 
-  // 更新状态
-  let newTasksByDate = { ...tasksByDate };
-  
-  if (baseTask.isRepeating) {
+  // 如果是重复任务，创建重复任务
+  if (newTask.isRepeating) {
     const repeatId = `repeat_${Date.now()}`;
+    newTask.repeatId = repeatId;
+    
     const startDate = new Date(selectedDate);
     
-    // ✅ 修复：使用 for 循环而不是 forEach 内部声明函数
     if (repeatConfig.frequency === 'daily') {
       // 每日重复 - 未来7天
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const dateStr = date.toISOString().split("T")[0];
+      setTasksByDate(prev => {
+        const newTasksByDate = { ...prev };
         
-        if (!newTasksByDate[dateStr]) {
-          newTasksByDate[dateStr] = [];
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(startDate);
+          date.setDate(startDate.getDate() + i);
+          const dateStr = date.toISOString().split("T")[0];
+          
+          if (!newTasksByDate[dateStr]) {
+            newTasksByDate[dateStr] = [];
+          }
+          
+          const existingTask = newTasksByDate[dateStr].find(
+            t => t.repeatId === repeatId
+          );
+          
+          if (!existingTask) {
+            newTasksByDate[dateStr].push({
+              ...newTask,
+              id: `${repeatId}_${dateStr}`,
+              repeatId: repeatId
+            });
+          }
         }
         
-        // 检查是否已存在
-        const existingTask = newTasksByDate[dateStr].find(t => t.repeatId === repeatId);
-        if (!existingTask) {
-          newTasksByDate[dateStr].push({
-            ...baseTask,
-            id: `${repeatId}_${dateStr}`,
-            repeatId: repeatId
-          });
-        }
-      }
+        return newTasksByDate;
+      });
     } else if (repeatConfig.frequency === 'weekly') {
       // 每周重复 - 未来4周
       for (let week = 0; week < 4; week++) {
@@ -14204,13 +14212,11 @@ const handleAddTask = () => {
         weekStart.setDate(startDate.getDate() + (week * 7));
         const weekMonday = getMonday(weekStart);
         
-        // ✅ 修复：使用 for 循环代替 forEach
-        const daysArray = repeatConfig.days || [false, false, false, false, false, false, false];
-        for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
-          const isSelected = daysArray[dayIndex];
+        repeatConfig.days.forEach((isSelected, dayIndex) => {
           if (isSelected) {
             const taskDate = new Date(weekMonday);
             taskDate.setDate(weekMonday.getDate() + dayIndex);
+            
             const dateStr = taskDate.toISOString().split("T")[0];
             const today = new Date(selectedDate);
             today.setHours(0, 0, 0, 0);
@@ -14218,47 +14224,45 @@ const handleAddTask = () => {
             taskDateClean.setHours(0, 0, 0, 0);
             
             if (taskDateClean >= today) {
-              if (!newTasksByDate[dateStr]) {
-                newTasksByDate[dateStr] = [];
-              }
-              const existingTask = newTasksByDate[dateStr].find(t => t.repeatId === repeatId);
-              if (!existingTask) {
-                newTasksByDate[dateStr].push({
-                  ...baseTask,
-                  id: `${repeatId}_${dateStr}`,
-                  repeatId: repeatId
-                });
-              }
+              setTasksByDate(prev => {
+                const newTasksByDate = { ...prev };
+                if (!newTasksByDate[dateStr]) {
+                  newTasksByDate[dateStr] = [];
+                }
+                
+                const existingTask = newTasksByDate[dateStr].find(
+                  t => t.repeatId === repeatId
+                );
+                
+                if (!existingTask) {
+                  newTasksByDate[dateStr].push({
+                    ...newTask,
+                    id: `${repeatId}_${dateStr}`,
+                    repeatId: repeatId
+                  });
+                }
+                
+                return newTasksByDate;
+              });
             }
           }
-        }
+        });
       }
     }
     
-    // 添加今天的任务
-    if (!newTasksByDate[selectedDate]) {
-      newTasksByDate[selectedDate] = [];
-    }
-    newTasksByDate[selectedDate].push({
-      ...baseTask,
-      repeatId: repeatId
-    });
+    // 同时添加今天的任务
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), newTask]
+    }));
     
   } else {
-    // 普通任务
-    newTasksByDate = {
-      ...tasksByDate,
-      [selectedDate]: [...(tasksByDate[selectedDate] || []), baseTask]
-    };
+    // 普通任务：只添加到当前日期
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), newTask]
+    }));
   }
-
-  // 更新状态
-  setTasksByDate(newTasksByDate);
-  
-  // 立即保存到 localStorage
-  saveMainData('tasks', newTasksByDate).catch(err => {
-    console.error('保存任务失败:', err);
-  });
 
   // 清空输入
   setNewTaskText('');
@@ -14277,11 +14281,9 @@ const handleAddTask = () => {
     reminderMinute: "",
   });
   setShowAddInput(false);
-  setShowAddTaskModal(false);
   
-  console.log('✅ 任务添加成功并已保存:', baseTask);
+  console.log('✅ 任务添加成功:', newTask);
 };
-
 
 // 在 handleAddTask 函数附近添加这个函数
 // 直接使用模板添加任务
@@ -14682,53 +14684,50 @@ const handleImportTasksWithDuration = () => {
   let crossDateGroupIndex = 0;
   
   const getDefaultDates = () => {
-  const dates = [];
-  // 使用选中的日期，而不是今天
-  const baseDate = new Date(selectedDate);
-  
-  switch (bulkDateRange) {
-    case 'selected': {
-      const dateStr = baseDate.toISOString().split('T')[0];
-      dates.push(dateStr);
-      break;
-    }
-    case 'next3': {
-      for (let i = 0; i < 3; i++) {
-        const date = new Date(baseDate);
-        date.setDate(baseDate.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
+    const dates = [];
+    const todayDate = new Date();
+    
+    switch (bulkDateRange) {
+      case 'today': {
+        const dateStr = todayDate.toISOString().split('T')[0];
+        dates.push(dateStr);
+        break;
       }
-      break;
-    }
-    case 'next4': {
-      for (let i = 0; i < 4; i++) {
-        const date = new Date(baseDate);
-        date.setDate(baseDate.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
-      }
-      break;
-    }
-    case 'custom': {
-      if (bulkDateRangeStart && bulkDateRangeEnd) {
-        const start = new Date(bulkDateRangeStart);
-        const end = new Date(bulkDateRangeEnd);
-        const current = new Date(start);
-        while (current <= end) {
-          dates.push(current.toISOString().split('T')[0]);
-          current.setDate(current.getDate() + 1);
+      case 'next3': {
+        for (let i = 0; i < 3; i++) {
+          const date = new Date(todayDate);
+          date.setDate(todayDate.getDate() + i);
+          dates.push(date.toISOString().split('T')[0]);
         }
-      } else {
-        dates.push(baseDate.toISOString().split('T')[0]);
+        break;
       }
-      break;
+      case 'next4': {
+        for (let i = 0; i < 4; i++) {
+          const date = new Date(todayDate);
+          date.setDate(todayDate.getDate() + i);
+          dates.push(date.toISOString().split('T')[0]);
+        }
+        break;
+      }
+      case 'custom': {
+        if (bulkDateRangeStart && bulkDateRangeEnd) {
+          const start = new Date(bulkDateRangeStart);
+          const end = new Date(bulkDateRangeEnd);
+          const current = new Date(start);
+          while (current <= end) {
+            dates.push(current.toISOString().split('T')[0]);
+            current.setDate(current.getDate() + 1);
+          }
+        } else {
+          dates.push(todayDate.toISOString().split('T')[0]);
+        }
+        break;
+      }
+      default:
+        dates.push(todayDate.toISOString().split('T')[0]);
     }
-    default:
-      dates.push(baseDate.toISOString().split('T')[0]);
-  }
-  return dates;
-};
-
-
+    return dates;
+  };
   
   const defaultDates = getDefaultDates();
   
@@ -16661,7 +16660,8 @@ if (isInitialized && todayTasks.length === 0) {
             fontSize: '13px',
             backgroundColor: '#fff'
           }}
-        > <option value="selected">当日</option>    {/* ← 新增这行 */}
+        >
+          <option value="today">仅今天（默认）</option>
           <option value="next3">未来3天（含今天）</option>
           <option value="next4">未来4天（含今天）</option>
           <option value="custom">自定义</option>
