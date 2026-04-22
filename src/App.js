@@ -14893,29 +14893,32 @@ const handleImportTasksWithDuration = async () => {
 
   // 使用统一的保存函数保存到 localStorage
   try {
-    await saveMainData('tasks', updatedTasksByDate);
-    
-    // 双重保险：直接写入 localStorage
-    const storageKey = `${STORAGE_KEY}_tasks`;
-    const jsonData = JSON.stringify(updatedTasksByDate);
-    localStorage.setItem(storageKey, jsonData);
-    
-    console.log('💾 批量导入任务已同步保存，大小:', jsonData.length, '字符');
-    console.log('✅ 保存的日期:', Object.keys(updatedTasksByDate));
-    
-    // 验证保存成功
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const savedData = JSON.parse(saved);
-      console.log('✅ 验证保存成功，包含日期:', Object.keys(savedData).length);
-    } else {
-      console.error('❌ 保存验证失败！');
-    }
-  } catch (error) {
-    console.error('保存失败:', error);
-    alert('保存失败，请重试');
-    return;
+  await saveMainData('tasks', updatedTasksByDate);
+  
+  // 双重保险：直接写入 localStorage
+  const storageKey = `${STORAGE_KEY}_tasks`;
+  const jsonData = JSON.stringify(updatedTasksByDate);
+  localStorage.setItem(storageKey, jsonData);
+  
+  console.log('💾 批量导入任务已同步保存，大小:', jsonData.length, '字符');
+  console.log('✅ 保存的日期:', Object.keys(updatedTasksByDate));
+  
+  // 验证保存成功
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    const savedData = JSON.parse(saved);
+    console.log('✅ 验证保存成功，包含日期:', Object.keys(savedData).length);
+  } else {
+    console.error('❌ 保存验证失败！');
+    throw new Error('验证保存失败');
   }
+} catch (error) {
+  console.error('保存失败详情:', error);
+  console.error('错误名称:', error.name);
+  console.error('错误消息:', error.message);
+  alert('保存失败: ' + (error.message || '未知错误，请重试'));
+  return;
+}
 
   // 清空表单
   setBulkText("");
