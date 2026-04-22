@@ -14893,6 +14893,10 @@ const handleImportTasksWithDuration = () => {
 
   // 更新状态并立即保存到本地存储
 // 先构建完整的更新后的数据
+
+// 在 handleImportTasksWithDuration 函数末尾，替换保存部分
+
+// 先构建完整的更新后的数据
 const updatedTasksByDate = { ...tasksByDate };
 Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
   if (!updatedTasksByDate[date]) {
@@ -14904,13 +14908,23 @@ Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
 // 更新状态
 setTasksByDate(updatedTasksByDate);
 
-// 立即保存到 localStorage（同步执行）
+// 🔥 关键：立即同步保存到 localStorage（不使用 setTimeout）
 try {
   const storageKey = `${STORAGE_KEY}_tasks`;
-  localStorage.setItem(storageKey, JSON.stringify(updatedTasksByDate));
-  console.log('💾 批量导入的任务已保存到本地存储，天数:', Object.keys(updatedTasksByDate).length);
+  const jsonData = JSON.stringify(updatedTasksByDate);
+  localStorage.setItem(storageKey, jsonData);
+  console.log('💾 批量导入任务已同步保存，大小:', jsonData.length, '字符');
+  
+  // 立即验证保存成功
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    console.log('✅ 验证保存成功，包含日期:', Object.keys(JSON.parse(saved)).length);
+  } else {
+    console.error('❌ 保存验证失败！');
+  }
 } catch (error) {
-  console.error('保存批量导入任务失败:', error);
+  console.error('保存失败:', error);
+  alert('保存失败，请重试');
 }
 
 setBulkText("");
@@ -14919,7 +14933,6 @@ setBulkDateRange("selected");
 setBulkDateRangeStart(new Date().toISOString().split('T')[0]);
 setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
 setShowBulkImportModal(false);
-
 alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
 };
 
