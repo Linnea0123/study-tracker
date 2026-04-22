@@ -11329,7 +11329,7 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
-const [bulkDateRange, setBulkDateRange] = useState('today');
+const [bulkDateRange, setBulkDateRange] = useState('selected');
 const [bulkDateRangeStart, setBulkDateRangeStart] = useState(() => {
   return new Date().toISOString().split('T')[0];
 });
@@ -14684,50 +14684,53 @@ const handleImportTasksWithDuration = () => {
   let crossDateGroupIndex = 0;
   
   const getDefaultDates = () => {
-    const dates = [];
-    const todayDate = new Date();
-    
-    switch (bulkDateRange) {
-      case 'today': {
-        const dateStr = todayDate.toISOString().split('T')[0];
-        dates.push(dateStr);
-        break;
-      }
-      case 'next3': {
-        for (let i = 0; i < 3; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
-          dates.push(date.toISOString().split('T')[0]);
-        }
-        break;
-      }
-      case 'next4': {
-        for (let i = 0; i < 4; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
-          dates.push(date.toISOString().split('T')[0]);
-        }
-        break;
-      }
-      case 'custom': {
-        if (bulkDateRangeStart && bulkDateRangeEnd) {
-          const start = new Date(bulkDateRangeStart);
-          const end = new Date(bulkDateRangeEnd);
-          const current = new Date(start);
-          while (current <= end) {
-            dates.push(current.toISOString().split('T')[0]);
-            current.setDate(current.getDate() + 1);
-          }
-        } else {
-          dates.push(todayDate.toISOString().split('T')[0]);
-        }
-        break;
-      }
-      default:
-        dates.push(todayDate.toISOString().split('T')[0]);
+  const dates = [];
+  // 使用选中的日期，而不是今天
+  const baseDate = new Date(selectedDate);
+  
+  switch (bulkDateRange) {
+    case 'selected': {
+      const dateStr = baseDate.toISOString().split('T')[0];
+      dates.push(dateStr);
+      break;
     }
-    return dates;
-  };
+    case 'next3': {
+      for (let i = 0; i < 3; i++) {
+        const date = new Date(baseDate);
+        date.setDate(baseDate.getDate() + i);
+        dates.push(date.toISOString().split('T')[0]);
+      }
+      break;
+    }
+    case 'next4': {
+      for (let i = 0; i < 4; i++) {
+        const date = new Date(baseDate);
+        date.setDate(baseDate.getDate() + i);
+        dates.push(date.toISOString().split('T')[0]);
+      }
+      break;
+    }
+    case 'custom': {
+      if (bulkDateRangeStart && bulkDateRangeEnd) {
+        const start = new Date(bulkDateRangeStart);
+        const end = new Date(bulkDateRangeEnd);
+        const current = new Date(start);
+        while (current <= end) {
+          dates.push(current.toISOString().split('T')[0]);
+          current.setDate(current.getDate() + 1);
+        }
+      } else {
+        dates.push(baseDate.toISOString().split('T')[0]);
+      }
+      break;
+    }
+    default:
+      dates.push(baseDate.toISOString().split('T')[0]);
+  }
+  return dates;
+};
+
+
   
   const defaultDates = getDefaultDates();
   
@@ -16660,8 +16663,7 @@ if (isInitialized && todayTasks.length === 0) {
             fontSize: '13px',
             backgroundColor: '#fff'
           }}
-        >
-          <option value="today">仅今天（默认）</option>
+        > <option value="selected">当日</option>    {/* ← 新增这行 */}
           <option value="next3">未来3天（含今天）</option>
           <option value="next4">未来4天（含今天）</option>
           <option value="custom">自定义</option>
