@@ -14116,7 +14116,7 @@ const handleAddTemplate = (templateData) => {
 const handleDeleteTemplate = (index) => {
   setTemplates(prev => prev.filter((_, i) => i !== index));
 };
-// 添加任务函数
+
 const handleAddTask = () => {
   if (!newTaskText.trim()) {
     alert('请输入任务内容');
@@ -14130,20 +14130,19 @@ const handleAddTask = () => {
     scheduledTime = `${repeatConfig.startHour.padStart(2, '0')}:${repeatConfig.startMinute.padStart(2, '0')}-${repeatConfig.endHour.padStart(2, '0')}:${repeatConfig.endMinute.padStart(2, '0')}`;
   }
 
- // 在 handleAddTask 函数中（约在第 1620 行附近）
-// 构建提醒时间 - 只有在有月和日时才创建
-let reminderTime = null;
-if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
-  reminderTime = {
-    year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
-    month: parseInt(repeatConfig.reminderMonth),
-    day: parseInt(repeatConfig.reminderDay),
-    hour: parseInt(repeatConfig.reminderHour) || 0,
-    minute: parseInt(repeatConfig.reminderMinute) || 0
-  };
-}
+  // 构建提醒时间
+  let reminderTime = null;
+  if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
+    reminderTime = {
+      year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
+      month: parseInt(repeatConfig.reminderMonth),
+      day: parseInt(repeatConfig.reminderDay),
+      hour: parseInt(repeatConfig.reminderHour) || 0,
+      minute: parseInt(repeatConfig.reminderMinute) || 0
+    };
+  }
 
-  const newTask = {
+  const baseTask = {
     id: Date.now().toString(),
     text: newTaskText.trim(),
     category: newTaskCategory,
@@ -14169,42 +14168,35 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     isRepeating: !!(repeatConfig.frequency)
   };
 
-  // 如果是重复任务，创建重复任务
-  if (newTask.isRepeating) {
+  // 更新状态
+  let newTasksByDate = { ...tasksByDate };
+  
+  if (baseTask.isRepeating) {
     const repeatId = `repeat_${Date.now()}`;
-    newTask.repeatId = repeatId;
-    
     const startDate = new Date(selectedDate);
     
+    // ✅ 修复：使用 for 循环而不是 forEach 内部声明函数
     if (repeatConfig.frequency === 'daily') {
       // 每日重复 - 未来7天
-      setTasksByDate(prev => {
-        const newTasksByDate = { ...prev };
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dateStr = date.toISOString().split("T")[0];
         
-        for (let i = 0; i < 7; i++) {
-          const date = new Date(startDate);
-          date.setDate(startDate.getDate() + i);
-          const dateStr = date.toISOString().split("T")[0];
-          
-          if (!newTasksByDate[dateStr]) {
-            newTasksByDate[dateStr] = [];
-          }
-          
-          const existingTask = newTasksByDate[dateStr].find(
-            t => t.repeatId === repeatId
-          );
-          
-          if (!existingTask) {
-            newTasksByDate[dateStr].push({
-              ...newTask,
-              id: `${repeatId}_${dateStr}`,
-              repeatId: repeatId
-            });
-          }
+        if (!newTasksByDate[dateStr]) {
+          newTasksByDate[dateStr] = [];
         }
         
-        return newTasksByDate;
-      });
+        // 检查是否已存在
+        const existingTask = newTasksByDate[dateStr].find(t => t.repeatId === repeatId);
+        if (!existingTask) {
+          newTasksByDate[dateStr].push({
+            ...baseTask,
+            id: `${repeatId}_${dateStr}`,
+            repeatId: repeatId
+          });
+        }
+      }
     } else if (repeatConfig.frequency === 'weekly') {
       // 每周重复 - 未来4周
       for (let week = 0; week < 4; week++) {
@@ -14212,11 +14204,13 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
         weekStart.setDate(startDate.getDate() + (week * 7));
         const weekMonday = getMonday(weekStart);
         
-        repeatConfig.days.forEach((isSelected, dayIndex) => {
+        // ✅ 修复：使用 for 循环代替 forEach
+        const daysArray = repeatConfig.days || [false, false, false, false, false, false, false];
+        for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
+          const isSelected = daysArray[dayIndex];
           if (isSelected) {
             const taskDate = new Date(weekMonday);
             taskDate.setDate(weekMonday.getDate() + dayIndex);
-            
             const dateStr = taskDate.toISOString().split("T")[0];
             const today = new Date(selectedDate);
             today.setHours(0, 0, 0, 0);
@@ -14224,45 +14218,47 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
             taskDateClean.setHours(0, 0, 0, 0);
             
             if (taskDateClean >= today) {
-              setTasksByDate(prev => {
-                const newTasksByDate = { ...prev };
-                if (!newTasksByDate[dateStr]) {
-                  newTasksByDate[dateStr] = [];
-                }
-                
-                const existingTask = newTasksByDate[dateStr].find(
-                  t => t.repeatId === repeatId
-                );
-                
-                if (!existingTask) {
-                  newTasksByDate[dateStr].push({
-                    ...newTask,
-                    id: `${repeatId}_${dateStr}`,
-                    repeatId: repeatId
-                  });
-                }
-                
-                return newTasksByDate;
-              });
+              if (!newTasksByDate[dateStr]) {
+                newTasksByDate[dateStr] = [];
+              }
+              const existingTask = newTasksByDate[dateStr].find(t => t.repeatId === repeatId);
+              if (!existingTask) {
+                newTasksByDate[dateStr].push({
+                  ...baseTask,
+                  id: `${repeatId}_${dateStr}`,
+                  repeatId: repeatId
+                });
+              }
             }
           }
-        });
+        }
       }
     }
     
-    // 同时添加今天的任务
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
+    // 添加今天的任务
+    if (!newTasksByDate[selectedDate]) {
+      newTasksByDate[selectedDate] = [];
+    }
+    newTasksByDate[selectedDate].push({
+      ...baseTask,
+      repeatId: repeatId
+    });
     
   } else {
-    // 普通任务：只添加到当前日期
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
+    // 普通任务
+    newTasksByDate = {
+      ...tasksByDate,
+      [selectedDate]: [...(tasksByDate[selectedDate] || []), baseTask]
+    };
   }
+
+  // 更新状态
+  setTasksByDate(newTasksByDate);
+  
+  // 立即保存到 localStorage
+  saveMainData('tasks', newTasksByDate).catch(err => {
+    console.error('保存任务失败:', err);
+  });
 
   // 清空输入
   setNewTaskText('');
@@ -14281,9 +14277,11 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     reminderMinute: "",
   });
   setShowAddInput(false);
+  setShowAddTaskModal(false);
   
-  console.log('✅ 任务添加成功:', newTask);
+  console.log('✅ 任务添加成功并已保存:', baseTask);
 };
+
 
 // 在 handleAddTask 函数附近添加这个函数
 // 直接使用模板添加任务
