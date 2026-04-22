@@ -13677,13 +13677,27 @@ useEffect(() => {
   }
 }, [tasksByDate, isInitialized]);
 
-// 自动保存任务数据
+
+// 👇 放在这下面 👇
 useEffect(() => {
-  if (isInitialized) {
-    console.log('💾 自动保存任务数据...');
-    saveMainData('tasks', tasksByDate);
+  if (!isInitialized) return;
+  
+  // 检查今天是否已经同步过
+  const lastSyncDate = localStorage.getItem('last_auto_sync_date');
+  const today = new Date().toISOString().split('T')[0];
+  
+  if (lastSyncDate !== today) {
+    const token = localStorage.getItem('github_token');
+    if (token) {
+      console.log('☁️ 新的一天，自动同步到云端...');
+      const timer = setTimeout(() => {
+        syncToGitHub();
+        localStorage.setItem('last_auto_sync_date', today);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
   }
-}, [tasksByDate, isInitialized]);
+}, [isInitialized]);
 
 // 👇 在这里添加清理空日期的 useEffect
 useEffect(() => {
