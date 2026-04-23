@@ -4,7 +4,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */  // 添加这一行
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip, LineChart, Line, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+
 
 
 const GradeModal = ({ onClose, isVisible }) => {
@@ -560,244 +561,167 @@ return (
           </div>
         </div>
 
-       
-
-{/* 成绩趋势图表 - 折线图（保持原布局） */}
-{chartData.length > 0 ? (
-  <div style={{
-    marginBottom: '20px',
-    padding: '15px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #e5e7eb'
-  }}>
-    <h3 style={{ 
-      marginBottom: '15px', 
-      fontSize: '14px', 
-      textAlign: 'center', 
-      color: '#333'
-    }}>
-      {selectedSubCategory 
-        ? `${selectedSubject} - ${selectedSubCategory} 成绩趋势`
-        : `${selectedSubject} 成绩趋势`
-      }
-    </h3>
-    
-    {/* SVG 折线图 - 保持原有布局 */}
-    <div style={{ minWidth: '300px', position: 'relative' }}>
-      {chartData.map((item, index) => {
-        const percentage = item.score;
-        
-        const getPointColor = (score) => {
-          if (item.isFullMark) return '#ef4444';
-          if (score >= 90) return '#1a73e8';
-          if (score >= 75) return '#4285f4';
-          if (score >= 60) return '#669df6';
-          return '#a0c4ff';
-        };
-        
-        const pointColor = getPointColor(percentage);
-        const originalGrade = grades.find(g => g.id === item.id);
-        
-        // 计算每个点的 X 坐标（百分比位置）
-        const leftPosition = `${percentage}%`;
-        
-        // 计算相邻两点之间的连线
-        let lineToNext = null;
-        if (index < chartData.length - 1) {
-          const nextItem = chartData[index + 1];
-          const nextPercentage = nextItem.score;
-          lineToNext = {
-            x1: percentage,
-            y1: 0,
-            x2: nextPercentage,
-            y2: 0
-          };
-        }
-        
-        return (
-          <div
-            key={item.id}
-            style={{
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              width: '100%',
-              cursor: 'pointer',
-              position: 'relative'
-            }}
-            onClick={() => {
-              if (originalGrade) {
-                handleEditGrade(originalGrade);
+        {/* 成绩趋势图表 */}
+        {chartData.length > 0 ? (
+          <div style={{
+            marginBottom: '20px',
+            padding: '15px',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb'
+          }}>
+            <h3 style={{ 
+              marginBottom: '15px', 
+              fontSize: '14px', 
+              textAlign: 'center', 
+              color: '#333'
+            }}>
+              {selectedSubCategory 
+                ? `${selectedSubject} - ${selectedSubCategory} 成绩趋势`
+                : `${selectedSubject} 成绩趋势`
               }
-            }}
-          >
-            {/* 左侧标签区域 */}
-            <div style={{
-              width: '100px',
-              flexShrink: 0,
-              fontSize: '11px',
-              color: '#555'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'baseline', 
-                gap: '4px',
-                flexWrap: 'wrap',
-                marginBottom: '2px'
-              }}>
-                <span style={{ fontWeight: 'bold', color: pointColor }}>
-                  {item.label}
-                </span>
-              </div>
-              <div style={{ 
-                fontSize: '9px', 
-                color: '#999',
-                wordBreak: 'break-word',
-                whiteSpace: 'normal',
-                lineHeight: '1.3'
-              }}>
-                {item.testContent}
-              </div>
-            </div>
+            </h3>
             
-            {/* 折线图区域 */}
-            <div style={{
-              flex: 1,
-              position: 'relative',
-              height: '28px'
-            }}>
-              {/* 灰色背景条 */}
-              <div style={{
-                width: '100%',
-                height: '28px',
-                backgroundColor: '#f0f0f0',
-                borderRadius: '14px',
-                position: 'relative'
-              }}>
-                {/* 连线 SVG - 绘制从当前点到下一个点的连线 */}
-                {index < chartData.length - 1 && (() => {
-                  const nextItem = chartData[index + 1];
-                  const currentX = percentage;
-                  const nextX = nextItem.score;
-                  
-                  // 获取当前行和下一行的 Y 坐标偏移
-                  const currentRowTop = index * 40; // 每行约40px高度
-                  const nextRowTop = (index + 1) * 40;
-                  
-                  return (
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
+            <div style={{ minWidth: '300px' }}>
+              {chartData.map((item, index) => {
+                const percentage = item.score;
+                
+                const getBarColor = (score) => {
+                  if (item.isFullMark) return '#4caf50';
+                  if (score >= 90) return '#1a73e8';
+                  if (score >= 75) return '#4285f4';
+                  if (score >= 60) return '#669df6';
+                  return '#a0c4ff';
+                };
+                
+                const barColor = getBarColor(percentage);
+                const originalGrade = grades.find(g => g.id === item.id);
+                
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      width: '100%',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      if (originalGrade) {
+                        handleEditGrade(originalGrade);
+                      }
+                    }}
+                  >
+                    {/* 左侧标签区域 */}
+                    <div style={{
+                      width: '100px',
+                      flexShrink: 0,
+                      fontSize: '11px',
+                      color: '#555'
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'baseline', 
+                        gap: '4px',
+                        flexWrap: 'wrap',
+                        marginBottom: '2px'
+                      }}>
+                        <span style={{ fontWeight: 'bold', color: barColor }}>
+                          {item.label}
+                        </span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '9px', 
+                        color: '#999',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.testContent}
+                      </div>
+                    </div>
+                    
+                    {/* 柱状图区域 */}
+                    <div style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{
                         width: '100%',
-                        height: '40px',
-                        pointerEvents: 'none',
-                        zIndex: 2,
-                        overflow: 'visible'
-                      }}
-                    >
-                      <line
-                        x1={`${currentX}%`}
-                        y1="14"
-                        x2={`${nextX}%`}
-                        y2="54"
-                        stroke="#1a73e8"
-                        strokeWidth="2"
-                        strokeDasharray="none"
-                      />
-                    </svg>
-                  );
-                })()}
-                
-                {/* 圆点 */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: leftPosition,
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: item.isFullMark ? '14px' : '10px',
-                    height: item.isFullMark ? '14px' : '10px',
-                    borderRadius: '50%',
-                    backgroundColor: pointColor,
-                    border: '2px solid white',
-                    boxShadow: `0 0 0 1px ${pointColor}`,
-                    zIndex: 3,
-                    cursor: 'pointer'
-                  }}
-                />
-                
-                {/* 分数标签 */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: leftPosition,
-                    top: '-16px',
-                    transform: 'translateX(-50%)',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    color: pointColor,
-                    whiteSpace: 'nowrap',
-                    zIndex: 2
-                  }}
-                >
-                  {percentage}
-                </div>
+                        height: '28px',
+                        backgroundColor: '#f0f0f0',
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                      }}>
+                        <div style={{
+                          width: `${percentage}%`,
+                          height: '100%',
+                          backgroundColor: barColor,
+                          borderRadius: '14px',
+                          transition: 'width 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          paddingRight: '8px',
+                          color: percentage > 40 ? 'white' : '#333',
+                          fontSize: '11px',
+                          fontWeight: 'bold'
+                        }}>
+                          {percentage}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 图例说明 */}
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '16px',
+              marginTop: '16px',
+              padding: '8px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px',
+              fontSize: '11px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '16px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '5px' }}></div>
+                <span>普通成绩</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '16px', height: '10px', backgroundColor: '#4caf50', borderRadius: '5px' }}></div>
+                <span>满分成绩</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 'bold' }}>共 {chartData.length} 条</span>
               </div>
             </div>
           </div>
-        );
-      })}
-    </div>
-
-    {/* 图例说明 */}
-    <div style={{ 
-      display: 'flex',
-      justifyContent: 'center',
-      gap: '16px',
-      marginTop: '16px',
-      padding: '8px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      fontSize: '11px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '50%' }}></div>
-        <span>满分</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ width: '10px', height: '10px', backgroundColor: '#1a73e8', borderRadius: '50%' }}></div>
-        <span>90分以上</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ width: '10px', height: '10px', backgroundColor: '#4285f4', borderRadius: '50%' }}></div>
-        <span>75-89分</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ width: '10px', height: '10px', backgroundColor: '#a0c4ff', borderRadius: '50%' }}></div>
-        <span>60分以下</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ width: '16px', height: '2px', backgroundColor: '#1a73e8' }}></div>
-        <span>趋势连线</span>
-      </div>
-    </div>
-  </div>
-) : (
-  <div style={{
-    marginBottom: '20px',
-    padding: '40px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '12px',
-    textAlign: 'center',
-    color: '#666'
-  }}>
-    📊 暂无成绩数据
-  </div>
-)}
+        ) : (
+          <div style={{
+            marginBottom: '20px',
+            padding: '40px',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '12px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            📊 暂无成绩数据
+            <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+              {selectedSubCategory 
+                ? `暂无 ${selectedSubject} - ${selectedSubCategory} 的成绩记录`
+                : `暂无 ${selectedSubject} 的成绩记录`
+              }
+            </div>
+          </div>
+        )}
 
         {/* 成绩记录列表 */}
         <div>
