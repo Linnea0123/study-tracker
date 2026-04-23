@@ -20,8 +20,44 @@ const GradeModal = ({ onClose, isVisible }) => {
    const [isSortingSubCategories, setIsSortingSubCategories] = useState(false);
   const [tempSubCategories, setTempSubCategories] = useState([]);
   const dragSubCategoryIndex = useRef(null);
-
+const touchStartIndex = useRef(null);
+  const touchMoveIndex = useRef(null);
   
+
+const handleTouchStart = (e, index) => {
+  if (!isSortingSubCategories) return;
+  e.preventDefault();
+  touchStartIndex.current = index;
+  e.currentTarget.style.opacity = '0.5';
+};
+
+// 触摸拖拽移动
+const handleTouchMove = (e, index) => {
+  if (!isSortingSubCategories) return;
+  if (touchStartIndex.current === null) return;
+  if (touchStartIndex.current === index) return;
+  
+  e.preventDefault();
+  
+  const newList = [...tempSubCategories];
+  const draggedItem = newList[touchStartIndex.current];
+  newList.splice(touchStartIndex.current, 1);
+  newList.splice(index, 0, draggedItem);
+  
+  setTempSubCategories(newList);
+  touchStartIndex.current = index;
+};
+
+// 触摸拖拽结束
+const handleTouchEnd = (e) => {
+  if (!isSortingSubCategories) return;
+  e.preventDefault();
+  if (e.currentTarget) {
+    e.currentTarget.style.opacity = '';
+  }
+  touchStartIndex.current = null;
+};
+
   const mainSubjects = ['数学', '语文', '英语'];
   
   const [subjectSubCategories, setSubjectSubCategories] = useState(() => {
@@ -1511,20 +1547,35 @@ return (
     </div>
   ) : (
     (isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).map((subCat, index) => (
-      <div
+ <div
   key={`${subCat}_${index}`}
-  draggable={isSortingSubCategories}
+  draggable={false}  // 手机上禁用 draggable
+  onTouchStart={(e) => handleTouchStart(e, index)}
+  onTouchMove={(e) => handleTouchMove(e, index)}
+  onTouchEnd={handleTouchEnd}
   onDragStart={(e) => {
+    if (!isSortingSubCategories) {
+      e.preventDefault();
+      return false;
+    }
     e.stopPropagation();
     handleSubCategoryDragStart(e, index);
   }}
-  onDragEnd={handleSubCategoryDragEnd}
+  onDragEnd={(e) => {
+    e.stopPropagation();
+    handleSubCategoryDragEnd(e);
+  }}
   onDragOver={(e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isSortingSubCategories) return;
     handleSubCategoryDragOver(e, index);
   }}
-  onDrop={handleSubCategoryDrop}
+  onDrop={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSubCategoryDrop(e);
+  }}
   style={{
     display: 'flex',
     justifyContent: 'space-between',
@@ -1535,8 +1586,9 @@ return (
     marginBottom: '8px',
     backgroundColor: '#fff',
     cursor: isSortingSubCategories ? 'grab' : 'default',
-    opacity: dragSubCategoryIndex.current === index ? 0.5 : 1,
-    userSelect: isSortingSubCategories ? 'none' : 'auto'
+    opacity: (dragSubCategoryIndex.current === index || touchStartIndex.current === index) ? 0.5 : 1,
+    userSelect: isSortingSubCategories ? 'none' : 'auto',
+    touchAction: isSortingSubCategories ? 'none' : 'auto'  // 手机端关键属性
   }}
 >
         <span style={{ fontSize: '14px' }}>{subCat}</span>
@@ -1553,6 +1605,10 @@ return (
               height: '24px'
             }}
             title="拖拽调整顺序"
+             onMouseDown={(e) => {
+      // 确保点击手柄时能触发拖拽
+      e.stopPropagation();
+    }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <line x1="5" y1="6" x2="19" y2="6" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
@@ -15684,51 +15740,36 @@ const getTasksBySubCategory = (catName) => {
   return grouped;
 };
 
-// ========== 撒花动画函数 - 单种随机emoji版 ==========
+// ========== 大拇指动画函数 ==========
+// ========== 撒花动画函数 - 大号 🎉 从中心绽放 ==========
 const triggerConfetti = (categoryName) => {
-  console.log(`✨ 触发撒花: ${categoryName}`);
+  console.log(`🎉 恭喜！${categoryName} 全部完成！`);
   
   // 获取屏幕中心点坐标
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
   
-  const emojis = ['🎉', '🎊', '✨', '⭐', '🌟', '💪', '🏆', '🎯', '✅', '🌸', '🎈', '🎇', '🎆', '💥'];
-  
-  // 🎲 随机选择 1 种 emoji
-  const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-  
   const parts = [];
   
-  // 粒子数量：25 个
-  for (let i = 0; i < 25; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 15 + Math.random() * 150;  // 速度 15-55
-const duration = 2.0 + Math.random() * 1.0;  // 动画 2-3 秒
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
-    
-    parts.push({
-      id: Date.now() + i + Math.random(),
-      emoji: selectedEmoji,  // 使用随机选中的 1 种 emoji
-      startX: centerX,
-      startY: centerY,
-      vx: vx,
-      vy: vy,
-      delay: Math.random() * 0.2,
-      fontSize: 20 + Math.random() * 24,
-      duration: 0.8 + Math.random() * 0.6,
-      rotation: Math.random() * 360
-    });
-  }
+  // 只生成 1 个大 🎉，从中心出现
+  parts.push({
+    id: Date.now(),
+    emoji: '🎉',  // 撒花 emoji
+    startX: centerX,
+    startY: centerY,
+    fontSize: 100,  // 超大号字体
+    rotation: 0,
+    delay: 0
+  });
   
   setConfettiParts(parts);
   
+  // 2 秒后清除
   setTimeout(() => {
     setConfettiParts([]);
-  }, 1800);
+  }, 2000);
 };
 // ============================================
-
 
 
 
@@ -15748,27 +15789,28 @@ const getCategoryTasks = (catName) => {
 useEffect(() => {
   categories.forEach(cat => {
     const catTasks = getCategoryTasks(cat.name);
-    const wasComplete = lastCompletionStatus.current[cat.name];
-    const isNowComplete = catTasks.length > 0 && catTasks.every(task => task.done === true);
+    // 只有当分类有任务时才检查
+    if (catTasks.length === 0) return;
     
-    if (!wasComplete && isNowComplete && catTasks.length > 0) {
+    const wasComplete = lastCompletionStatus.current[cat.name];
+    const isNowComplete = catTasks.every(task => task.done === true);
+    
+    // 只在状态从 false 变为 true 时触发撒花
+    if (!wasComplete && isNowComplete) {
       console.log(`🎉 恭喜！${cat.name} 全部完成！`);
-      triggerConfetti(cat.name);
+      triggerConfetti(cat.name);  // 改为大拇指
     }
     
     lastCompletionStatus.current[cat.name] = isNowComplete;
   });
-}, [tasksByDate, selectedDate, categories, getCategoryTasks]);
-
+}, [tasksByDate, categories, getCategoryTasks]);  // 移除 selectedDate 依赖
 
 // ========== 检测子分类完成并触发撒花 ==========
 useEffect(() => {
-  // 只检测校内分类的子分类
   const schoolCategory = categories.find(c => c.name === '校内');
   if (!schoolCategory) return;
   
   schoolCategory.subCategories.forEach(subCat => {
-    // 获取该子分类的任务
     const subCatTasks = todayTasks.filter(t => 
       t.category === '校内' && 
       t.subCategory === subCat &&
@@ -15780,15 +15822,14 @@ useEffect(() => {
     const wasComplete = lastCompletionStatus.current[`校内_${subCat}`];
     const isNowComplete = subCatTasks.every(task => task.done === true);
     
-    if (!wasComplete && isNowComplete && subCatTasks.length > 0) {
+    if (!wasComplete && isNowComplete) {
       console.log(`🎉 恭喜！校内 - ${subCat} 全部完成！`);
       triggerConfetti(`校内 - ${subCat}`);
     }
     
     lastCompletionStatus.current[`校内_${subCat}`] = isNowComplete;
   });
-}, [tasksByDate, selectedDate, categories]);
-// ==============================================
+}, [tasksByDate, categories, todayTasks]);  // 移除 selectedDate 依赖
 
 // 切换到上一周
 const prevWeek = () => {
@@ -16721,18 +16762,23 @@ if (isInitialized && todayTasks.length === 0) {
     }
   }
   
-  /* 鞭炮绽放动画 */
-  /* 鞭炮绽放动画 - 舒缓版 */
-@keyframes firework {
+
+  /* 🎉 撒花放大动画 */
+@keyframes confettiPop {
   0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.2);
     opacity: 1;
   }
-  40% {
+  70% {
+    transform: translate(-50%, -30px) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translate(var(--vx), var(--vy)) scale(0.2) rotate(360deg);
+    transform: translate(-50%, -80px) scale(1.5);
     opacity: 0;
   }
 }
@@ -18151,29 +18197,31 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
-{/* 👇 撒花粒子 - 从中心点绽放 */}
+{/* 👇 🎉 撒花动画 */}
 {confettiParts.map(part => (
   <div
     key={part.id}
     style={{
       position: 'fixed',
-      left: `${part.startX}px`,
-      top: `${part.startY}px`,
+      left: '50%',
+      top: '50%',
       fontSize: `${part.fontSize}px`,
       pointerEvents: 'none',
       zIndex: 9999,
-      animation: `firework 0.8s ease-out forwards`,
+      animation: `confettiPop 2s ease-out forwards`,
       animationDelay: `${part.delay}s`,
-      transform: `rotate(${part.rotation}deg)`,
-      '--vx': `${part.vx}px`,
-      '--vy': `${part.vy}px`
+      transform: 'translate(-50%, -50%)',
+      textAlign: 'center',
+      width: '120px',
+      height: '120px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}
   >
     {part.emoji}
   </div>
 ))}
-    
-
 
 {/* 同步状态提示 - 短暂显示 */}
 {lastSyncStatus.message && (
