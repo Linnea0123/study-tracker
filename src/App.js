@@ -10570,8 +10570,17 @@ const SortableTaskList = ({
     const fontSize = window.innerWidth <= 768 ? 10 : 12;
 
 
+// 撒花动画样式 - 放在 return 之前
+const confettiStyle = `
+  @keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+  }
+`;
 
+// 然后在 return 里面，最顶部添加 style 标签
     
+
     return (
       <div style={{
         maxWidth: 600,
@@ -11534,7 +11543,11 @@ const getTaskCompletionType = useCallback((task, date) => {
   // 在现有状态定义区域添加
   // 在现有的状态定义区域添加
 const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  
+  const [confettiParts, setConfettiParts] = useState([]);
+const lastCompletionStatus = useRef({});
+
+
+
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [newTaskText, setNewTaskText] = useState("");
@@ -12620,27 +12633,18 @@ const handleCrossDateTask = (task, targetDates) => {
 
 const toggleDone = (task) => {
   const wasDone = task.done;
-  console.log('=== toggleDone 开始 ===');
-  console.log('任务:', task.text);
-  console.log('是否是跨日期任务:', !!task.crossDateId);
-  console.log('是否有日期范围:', !!task.dateRange);
-
+  
   // 如果是跨日期任务，同步所有日期的状态
   if (task.crossDateId || (task.dateRange && task.dateRange.allDates)) {
     const crossDateId = task.crossDateId;
     const actualCompletedDate = selectedDate;
     
-    console.log('🔄 跨日期任务联动，ID:', crossDateId);
-    
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
       
-      // 遍历所有日期，找到同一个 crossDateId 的任务
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t => {
-          // 匹配同一个跨日期组的所有任务
           if (t.crossDateId === crossDateId) {
-            console.log(`同步任务 ${date}: ${t.text}`, !wasDone);
             return {
               ...t,
               done: !wasDone,
@@ -12659,18 +12663,17 @@ const toggleDone = (task) => {
   }
   
   // 处理普通任务
-  console.log('📝 处理普通任务:', task.text);
-  
   setTasksByDate(prev => {
     const currentDateTasks = prev[selectedDate] || [];
     const updatedTasks = currentDateTasks.map(t => {
       if (t.id === task.id) {
-        console.log('找到匹配任务，切换完成状态:', !wasDone);
+        // 同时更新子任务
+        const newSubTasks = t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks;
         return { 
           ...t, 
           done: !wasDone,
           pinned: !wasDone ? false : t.pinned,
-          subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks
+          subTasks: newSubTasks
         };
       }
       return t;
@@ -14058,6 +14061,8 @@ useEffect(() => {
     document.removeEventListener('keydown', handleKeyDown);
   };
 }, []);
+
+
 
   // 获取本周任务
   // 获取本周任务
@@ -15658,19 +15663,9 @@ const editCategoryTime = (catName) => {
     }
   }
 };
-const getCategoryTasks = (catName) => {
-  // 只从当前日期获取任务
-  const result = todayTasks.filter(t => 
-    t.category === catName && 
-    t.pinned !== true
-  );
-  
- 
-  
 
-  
-  return result;
-};
+
+
 const getTasksBySubCategory = (catName) => {
   const catTasks = todayTasks.filter(t => 
     t.category === catName && 
@@ -15689,12 +15684,111 @@ const getTasksBySubCategory = (catName) => {
   return grouped;
 };
 
+// ========== 撒花动画函数 - 单种随机emoji版 ==========
+const triggerConfetti = (categoryName) => {
+  console.log(`✨ 触发撒花: ${categoryName}`);
+  
+  // 获取屏幕中心点坐标
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  
+  const emojis = ['🎉', '🎊', '✨', '⭐', '🌟', '💪', '🏆', '🎯', '✅', '🌸', '🎈', '🎇', '🎆', '💥'];
+  
+  // 🎲 随机选择 1 种 emoji
+  const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+  
+  const parts = [];
+  
+  // 粒子数量：25 个
+  for (let i = 0; i < 25; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 15 + Math.random() * 150;  // 速度 15-55
+const duration = 2.0 + Math.random() * 1.0;  // 动画 2-3 秒
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    
+    parts.push({
+      id: Date.now() + i + Math.random(),
+      emoji: selectedEmoji,  // 使用随机选中的 1 种 emoji
+      startX: centerX,
+      startY: centerY,
+      vx: vx,
+      vy: vy,
+      delay: Math.random() * 0.2,
+      fontSize: 20 + Math.random() * 24,
+      duration: 0.8 + Math.random() * 0.6,
+      rotation: Math.random() * 360
+    });
+  }
+  
+  setConfettiParts(parts);
+  
+  setTimeout(() => {
+    setConfettiParts([]);
+  }, 1800);
+};
+// ============================================
+
+
+
+
+// 然后下面是 getCategoryTasks
+const getCategoryTasks = (catName) => {
+  const result = todayTasks.filter(t => 
+    t.category === catName && 
+    t.pinned !== true
+  );
+  return result;
+};
 
   // 计算分类总时间
   const totalTime = (catName) =>
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
+useEffect(() => {
+  categories.forEach(cat => {
+    const catTasks = getCategoryTasks(cat.name);
+    const wasComplete = lastCompletionStatus.current[cat.name];
+    const isNowComplete = catTasks.length > 0 && catTasks.every(task => task.done === true);
+    
+    if (!wasComplete && isNowComplete && catTasks.length > 0) {
+      console.log(`🎉 恭喜！${cat.name} 全部完成！`);
+      triggerConfetti(cat.name);
+    }
+    
+    lastCompletionStatus.current[cat.name] = isNowComplete;
+  });
+}, [tasksByDate, selectedDate, categories, getCategoryTasks]);
 
+
+// ========== 检测子分类完成并触发撒花 ==========
+useEffect(() => {
+  // 只检测校内分类的子分类
+  const schoolCategory = categories.find(c => c.name === '校内');
+  if (!schoolCategory) return;
+  
+  schoolCategory.subCategories.forEach(subCat => {
+    // 获取该子分类的任务
+    const subCatTasks = todayTasks.filter(t => 
+      t.category === '校内' && 
+      t.subCategory === subCat &&
+      t.pinned !== true
+    );
+    
+    if (subCatTasks.length === 0) return;
+    
+    const wasComplete = lastCompletionStatus.current[`校内_${subCat}`];
+    const isNowComplete = subCatTasks.every(task => task.done === true);
+    
+    if (!wasComplete && isNowComplete && subCatTasks.length > 0) {
+      console.log(`🎉 恭喜！校内 - ${subCat} 全部完成！`);
+      triggerConfetti(`校内 - ${subCat}`);
+    }
+    
+    lastCompletionStatus.current[`校内_${subCat}`] = isNowComplete;
+  });
+}, [tasksByDate, selectedDate, categories]);
+// ==============================================
 
 // 切换到上一周
 const prevWeek = () => {
@@ -16626,8 +16720,23 @@ if (isInitialized && todayTasks.length === 0) {
       transform: translateX(-100%);
     }
   }
+  
+  /* 鞭炮绽放动画 */
+  /* 鞭炮绽放动画 - 舒缓版 */
+@keyframes firework {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--vx), var(--vy)) scale(0.2) rotate(360deg);
+    opacity: 0;
+  }
+}
 `}</style>
-
 
 
 {/* 添加任务弹窗 */}
@@ -18042,7 +18151,28 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
-{/* 其他设置下拉菜单 */}
+{/* 👇 撒花粒子 - 从中心点绽放 */}
+{confettiParts.map(part => (
+  <div
+    key={part.id}
+    style={{
+      position: 'fixed',
+      left: `${part.startX}px`,
+      top: `${part.startY}px`,
+      fontSize: `${part.fontSize}px`,
+      pointerEvents: 'none',
+      zIndex: 9999,
+      animation: `firework 0.8s ease-out forwards`,
+      animationDelay: `${part.delay}s`,
+      transform: `rotate(${part.rotation}deg)`,
+      '--vx': `${part.vx}px`,
+      '--vy': `${part.vy}px`
+    }}
+  >
+    {part.emoji}
+  </div>
+))}
+    
 
 
 {/* 同步状态提示 - 短暂显示 */}
