@@ -16939,67 +16939,75 @@ if (isInitialized && todayTasks.length === 0) {
   marginBottom: 10
 }}>
   {/* 左侧：周次显示 */}
-  <div style={{ display: "flex", alignItems: "center" }}>
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        prevWeek();
-      }}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: "6px",
-        fontSize: "14px"
-      }}
-      title="上一周"
-    >
-      ⬅️
-    </button>
+ {/* 左侧：周次显示 */}
+<div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
+  <button
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      prevWeek();
+    }}
+    style={{
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      padding: "4px",
+      fontSize: "14px",
+      width: "28px",
+      height: "28px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: "4px"
+    }}
+    title="上一周"
+  >
+    ◀
+  </button>
 
-    {/* 修改这里：把日期文字变成可点击的 */}
-    <span 
-      onClick={() => setShowDatePickerModal(true)}  // ✅ 添加点击事件
-      style={{
-        fontWeight: "bold",
-        margin: "0 4px",
-        fontSize: "13px",
-        cursor: "pointer",  // ✅ 添加手型光标
-        padding: "4px 8px",  // ✅ 增加点击区域
-        borderRadius: "6px",  // ✅ 圆角
-        transition: "background-color 0.2s",  // ✅ 过渡效果
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-      title="点击选择日期"
-    >
-      {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
-    </span>
+  {/* 日期文字 */}
+  <span 
+    onClick={() => setShowDatePickerModal(true)}
+    style={{
+      fontWeight: "bold",
+      margin: "0 2px",
+      fontSize: "13px",
+      cursor: "pointer",
+      padding: "4px 6px",
+      borderRadius: "6px",
+      transition: "background-color 0.2s",
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
+    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+    title="点击选择日期"
+  >
+    {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
+  </span>
 
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        nextWeek();
-      }}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: "6px",
-        fontSize: "14px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      title="下一周"
-    >
-      ➡️
-    </button>
-
-    {/* ✅ 删除原来的月历按钮 */}
-  </div>
+  <button
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nextWeek();
+    }}
+    style={{
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      padding: "4px",
+      fontSize: "14px",
+      width: "28px",
+      height: "28px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: "4px"
+    }}
+    title="下一周"
+  >
+    ▶
+  </button>
+</div>
 
   {/* 右侧：四个小按钮（保持不变） */}
   <div style={{ display: "flex", gap: "6px" }}>
@@ -17178,16 +17186,59 @@ if (isInitialized && todayTasks.length === 0) {
         )}
         
         {/* 👇 添加结束时间显示 - 小小的 */}
-        {studyEndTime && (
-          <div style={{
-            fontSize: "8px",
-            color: "#999",
-            marginTop: "2px",
-            whiteSpace: "nowrap"
-          }}>
-            {studyEndTime}
-          </div>
+       {/* 👇 添加结束时间显示 - 小小的 */}
+{/* 👇 添加结束时间显示 - 小小的 */}
+
+{/* 👇 添加结束时间显示 - 小小的 */}
+{/* 👇 添加结束时间显示 - 小小的 */}
+
+{/* 👇 添加结束时间显示 - 小小的 */}
+{studyEndTime && (() => {
+  const [hour, minute] = studyEndTime.split(':').map(Number);
+  const isLate = hour >= 21;
+  
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: "2px",
+      height: "14px"
+    }}>
+      <div style={{
+        fontSize: "10px",
+        color: isLate ? "#f44336" : "#999",
+        whiteSpace: "nowrap",
+        display: "flex",
+        alignItems: "center",
+        gap: "2px"
+      }}>
+        {isLate ? (
+          <>
+            <svg 
+              width="10" 
+              height="10" 
+              viewBox="0 0 16 16" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ display: "block", transform: "translateY(0.5px)" }}
+            >
+              <path 
+                d="M12 4L4 12M4 4L12 12" 
+                stroke="#f44336" 
+                strokeWidth="2" 
+                strokeLinecap="square"
+              />
+            </svg>
+            <span style={{ lineHeight: "1" }}>{studyEndTime}</span>
+          </>
+        ) : (
+          <span style={{ lineHeight: "1" }}>{studyEndTime}</span>
         )}
+      </div>
+    </div>
+  );
+})()}
       </div>
     );
   })}
