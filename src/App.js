@@ -8,8 +8,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, 
 
 
 
+
 const GradeModal = ({ onClose, isVisible }) => {
-  const [expandedId, setExpandedId] = useState(null);  // 控制哪个成绩详情展开
+  const [expandedId, setExpandedId] = useState(null);
   const STORAGE_KEY = 'study-tracker-PAGE_A-v2';
   const [grades, setGrades] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('数学');
@@ -17,69 +18,12 @@ const GradeModal = ({ onClose, isVisible }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSubCategoryManager, setShowSubCategoryManager] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
-   const [isSortingSubCategories, setIsSortingSubCategories] = useState(false);
+  const [isSortingSubCategories, setIsSortingSubCategories] = useState(false);
   const [tempSubCategories, setTempSubCategories] = useState([]);
   const dragSubCategoryIndex = useRef(null);
-  const dragStartY = useRef(null);  // 👈 添加这一行
-const touchStartIndex = useRef(null);
+  const dragStartY = useRef(null);
+  const touchStartIndex = useRef(null);
   const touchMoveIndex = useRef(null);
-  
-
-// 触摸拖拽开始
-const handleTouchStart = (e, index) => {
-  if (!isSortingSubCategories) return;
-  e.preventDefault();
-  dragSubCategoryIndex.current = index;
-  touchStartY.current = e.touches[0].clientY;
-  e.currentTarget.style.opacity = '0.5';
-};
-
-// 触摸拖拽移动
-const handleTouchMove = (e, index) => {
-  if (!isSortingSubCategories) return;
-  if (dragSubCategoryIndex.current === null) return;
-  e.preventDefault();
-  
-  const touch = e.touches[0];
-  const currentY = touch.clientY;
-  const startY = touchStartY.current;
-  
-  if (startY === null) return;
-
- // 计算目标索引
-  const elements = document.querySelectorAll('[data-drag-index]');
-  let targetIndex = dragSubCategoryIndex.current;
-  
-  for (let i = 0; i < elements.length; i++) {
-    const rect = elements[i].getBoundingClientRect();
-    const centerY = rect.top + rect.height / 2;
-    if (currentY > centerY) {
-      targetIndex = i;
-    }
-  }
-  
-  if (targetIndex !== dragSubCategoryIndex.current) {
-    const newList = [...tempSubCategories];
-    const draggedItem = newList[dragSubCategoryIndex.current];
-    newList.splice(dragSubCategoryIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTempSubCategories(newList);
-    dragSubCategoryIndex.current = targetIndex;
-    touchStartY.current = currentY;
-  }
-};
-
-// 触摸拖拽结束
-const handleTouchEnd = (e) => {
-  if (!isSortingSubCategories) return;
-  e.preventDefault();
-  if (e.currentTarget) {
-    e.currentTarget.style.opacity = '';
-  }
-  dragSubCategoryIndex.current = null;
-  touchStartY.current = null;
-};
 
   const mainSubjects = ['数学', '语文', '英语'];
   
@@ -107,77 +51,124 @@ const handleTouchEnd = (e) => {
     { value: '自定义', label: '自定义', maxScore: null }
   ];
 
-
-  // 在 GradeModal 组件中，替换所有拖拽相关函数为以下版本：
-
-// 开始排序
-const handleStartSorting = () => {
-  const currentList = subjectSubCategories[selectedSubject] || [];
-  setTempSubCategories([...currentList]);
-  setIsSortingSubCategories(true);
-};
-
-// 完成排序并保存
-const handleFinishSorting = () => {
-  setSubjectSubCategories(prev => ({
-    ...prev,
-    [selectedSubject]: [...tempSubCategories]
-  }));
-  setIsSortingSubCategories(false);
-};
-
- // 替换所有拖拽函数为以下版本：
-
-// 在 GradeModal 组件中，替换所有拖拽相关函数：
-
-// 子分类拖拽开始
-const handleSubCategoryDragStart = (e, index) => {
-  if (!isSortingSubCategories) {
+  // 触摸拖拽开始
+  const handleTouchStart = (e, index) => {
+    if (!isSortingSubCategories) return;
     e.preventDefault();
-    return false;
-  }
-  dragSubCategoryIndex.current = index;
-  e.dataTransfer.setData('text/plain', index.toString());
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setDragImage(new Image(), 0, 0);
-  // 添加这一行，让拖拽时元素半透明
-  e.currentTarget.style.opacity = '0.5';
-  return true;
-};
+    dragSubCategoryIndex.current = index;
+    dragStartY.current = e.touches[0].clientY;
+    e.currentTarget.style.opacity = '0.5';
+  };
 
-// 子分类拖拽结束
-const handleSubCategoryDragEnd = (e) => {
-  if (e.currentTarget) {
-    e.currentTarget.style.opacity = '';
-  }
-  dragSubCategoryIndex.current = null;
-};
+  // 触摸拖拽移动
+  const handleTouchMove = (e, index) => {
+    if (!isSortingSubCategories) return;
+    if (dragSubCategoryIndex.current === null) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    const startY = dragStartY.current;
+    
+    if (startY === null) return;
 
-// 子分类拖拽经过
-const handleSubCategoryDragOver = (e, targetIndex) => {
-  e.preventDefault();
-  e.stopPropagation();
-  e.dataTransfer.dropEffect = 'move';
-  
-  if (!isSortingSubCategories) return;
-  if (dragSubCategoryIndex.current === null) return;
-  if (dragSubCategoryIndex.current === targetIndex) return;
-  
-  const newList = [...tempSubCategories];
-  const draggedItem = newList[dragSubCategoryIndex.current];
-  newList.splice(dragSubCategoryIndex.current, 1);
-  newList.splice(targetIndex, 0, draggedItem);
-  
-  setTempSubCategories(newList);
-  dragSubCategoryIndex.current = targetIndex;
-};
+    const elements = document.querySelectorAll('[data-drag-index]');
+    let targetIndex = dragSubCategoryIndex.current;
+    
+    for (let i = 0; i < elements.length; i++) {
+      const rect = elements[i].getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      if (currentY > centerY) {
+        targetIndex = i;
+      }
+    }
+    
+    if (targetIndex !== dragSubCategoryIndex.current) {
+      const newList = [...tempSubCategories];
+      const draggedItem = newList[dragSubCategoryIndex.current];
+      newList.splice(dragSubCategoryIndex.current, 1);
+      newList.splice(targetIndex, 0, draggedItem);
+      
+      setTempSubCategories(newList);
+      dragSubCategoryIndex.current = targetIndex;
+      dragStartY.current = currentY;
+    }
+  };
 
-// 子分类拖拽放置
-const handleSubCategoryDrop = (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  dragSubCategoryIndex.current = null;
-};
+  // 触摸拖拽结束
+  const handleTouchEnd = (e) => {
+    if (!isSortingSubCategories) return;
+    e.preventDefault();
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = '';
+    }
+    dragSubCategoryIndex.current = null;
+    dragStartY.current = null;
+  };
+
+  // 开始排序
+  const handleStartSorting = () => {
+    const currentList = subjectSubCategories[selectedSubject] || [];
+    setTempSubCategories([...currentList]);
+    setIsSortingSubCategories(true);
+  };
+
+  // 完成排序并保存
+  const handleFinishSorting = () => {
+    setSubjectSubCategories(prev => ({
+      ...prev,
+      [selectedSubject]: [...tempSubCategories]
+    }));
+    setIsSortingSubCategories(false);
+  };
+
+  // 子分类拖拽开始
+  const handleSubCategoryDragStart = (e, index) => {
+    if (!isSortingSubCategories) {
+      e.preventDefault();
+      return false;
+    }
+    dragSubCategoryIndex.current = index;
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setDragImage(new Image(), 0, 0);
+    e.currentTarget.style.opacity = '0.5';
+    return true;
+  };
+
+  // 子分类拖拽结束
+  const handleSubCategoryDragEnd = (e) => {
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = '';
+    }
+    dragSubCategoryIndex.current = null;
+  };
+
+  // 子分类拖拽经过
+  const handleSubCategoryDragOver = (e, targetIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (!isSortingSubCategories) return;
+    if (dragSubCategoryIndex.current === null) return;
+    if (dragSubCategoryIndex.current === targetIndex) return;
+    
+    const newList = [...tempSubCategories];
+    const draggedItem = newList[dragSubCategoryIndex.current];
+    newList.splice(dragSubCategoryIndex.current, 1);
+    newList.splice(targetIndex, 0, draggedItem);
+    
+    setTempSubCategories(newList);
+    dragSubCategoryIndex.current = targetIndex;
+  };
+
+  // 子分类拖拽放置
+  const handleSubCategoryDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragSubCategoryIndex.current = null;
+  };
 
   // 保存子分类到localStorage
   useEffect(() => {
@@ -185,41 +176,42 @@ const handleSubCategoryDrop = (e) => {
   }, [subjectSubCategories]);
 
   // 初始化加载成绩数据
- useEffect(() => {
-  const loadGrades = () => {
-    try {
-      const storageKey = `${STORAGE_KEY}_grades`;
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const savedGrades = JSON.parse(saved);
-        const normalizedGrades = savedGrades.map(grade => ({
-          ...grade,
-          scoreType: grade.scoreType || '100分制',
-          subCategory: grade.subCategory || ''
-        }));
-        setGrades(normalizedGrades);
+  useEffect(() => {
+    const loadGrades = () => {
+      try {
+        const storageKey = `${STORAGE_KEY}_grades`;
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const savedGrades = JSON.parse(saved);
+          const normalizedGrades = savedGrades.map(grade => ({
+            ...grade,
+            scoreType: grade.scoreType || '100分制',
+            subCategory: grade.subCategory || ''
+          }));
+          setGrades(normalizedGrades);
+        }
+      } catch (error) {
+        console.error('加载成绩数据失败:', error);
       }
-    } catch (error) {
-      console.error('加载成绩数据失败:', error);
+    };
+    
+    if (isVisible) {
+      loadGrades();
     }
-  };
-  
-  if (isVisible) {
-    loadGrades();
-  }
-}, [isVisible]);
+  }, [isVisible]);
 
   // 保存成绩数据
- const saveGrades = (updatedGrades) => {
-  setGrades(updatedGrades);
-  try {
-    const storageKey = `${STORAGE_KEY}_grades`;
-    localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
-  } catch (error) {
-    console.error('保存成绩数据失败:', error);
-  }
-};
- // 重置表单
+  const saveGrades = (updatedGrades) => {
+    setGrades(updatedGrades);
+    try {
+      const storageKey = `${STORAGE_KEY}_grades`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
+    } catch (error) {
+      console.error('保存成绩数据失败:', error);
+    }
+  };
+
+  // 重置表单
   const resetNewGradeForm = () => {
     setNewGrade({
       date: new Date().toISOString().split('T')[0],
@@ -259,7 +251,7 @@ const handleSubCategoryDrop = (e) => {
   // 开始编辑成绩
   const handleEditGrade = (grade) => {
     setEditingGrade(grade);
-    setSelectedSubject(grade.subject);  // 添加这行，确保科目状态同步
+    setSelectedSubject(grade.subject);
     setNewGrade({
       date: grade.date,
       subject: grade.subject,
@@ -296,8 +288,6 @@ const handleSubCategoryDrop = (e) => {
     setEditingGrade(null);
   };
 
- 
-
   // 删除成绩记录
   const handleDeleteGrade = (id) => {
     if (window.confirm('确定要删除这条成绩记录吗？')) {
@@ -324,23 +314,21 @@ const handleSubCategoryDrop = (e) => {
     return `${score}/${fullScore}`;
   };
 
- const handleSubjectClick = (subject) => {
-  console.log('点击科目:', subject);
-  setSelectedSubject(subject);
-  setSelectedSubCategory(null);
-  // 不需要强制重新渲染，状态改变会自动触发
-};
+  const handleSubjectClick = (subject) => {
+    setSelectedSubject(subject);
+    setSelectedSubCategory(null);
+  };
 
-const handleSubCategoryClick = (subCat) => {
-  setSelectedSubCategory(subCat);
-};
+  const handleSubCategoryClick = (subCat) => {
+    setSelectedSubCategory(subCat);
+  };
 
   // 获取当前科目下的所有子分类
   const getCurrentSubCategories = () => {
     return subjectSubCategories[selectedSubject] || [];
   };
 
-  // 获取筛选后的成绩（根据选中的科目和子分类）
+  // 获取筛选后的成绩
   const getFilteredGrades = () => {
     let filtered = grades.filter(grade => grade.subject === selectedSubject);
     
@@ -351,32 +339,21 @@ const handleSubCategoryClick = (subCat) => {
     return filtered;
   };
 
-// 删除这个函数
-const getRecentWrongQuestions = () => {
-  return getFilteredGrades()
-    .filter(grade => grade.wrongQuestions && grade.wrongQuestions.trim())
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
-};
-
-  // 生成图表数据（按日期排序）
-  // 生成图表数据（按日期倒序排序 - 最新的在前面）
-const getChartData = () => {
-  const filtered = getFilteredGrades();
-  
-  // 按日期倒序排序（从新到旧）
-  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
-  
-  return sorted.map(grade => ({
-    id: grade.id,
-    date: grade.date,
-    label: grade.date.slice(5),
-    score: getPercentageScore(grade),
-    isFullMark: grade.isFullMark,
-    testContent: grade.testContent,
-    subCategory: grade.subCategory
-  }));
-};
+  // 生成图表数据
+  const getChartData = () => {
+    const filtered = getFilteredGrades();
+    const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+    
+    return sorted.map(grade => ({
+      id: grade.id,
+      date: grade.date,
+      label: grade.date.slice(5),
+      score: getPercentageScore(grade),
+      isFullMark: grade.isFullMark,
+      testContent: grade.testContent,
+      subCategory: grade.subCategory
+    }));
+  };
 
   // 统计信息
   const getStats = () => {
@@ -399,119 +376,106 @@ const getChartData = () => {
 
   if (!isVisible) return null;
 
- 
-return (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#f5faff',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-    padding: 0,
-    overflow: 'hidden'
-  }}>
-    {/* 👇 把 style 标签放在这里 */}
-<style>{`
-  /* 完全禁用所有按钮的 hover 效果 */
-  .grade-modal button:hover,
-  .grade-modal button:active,
-  .grade-modal button:focus,
-  .grade-modal button:active:hover,
-  .grade-modal button:focus:hover {
-    background-color: inherit !important;
-    opacity: 1 !important;
-    transform: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-  
-  /* 添加新成绩按钮 - 始终保持蓝色 */
-  .grade-modal button.add-grade-btn,
-  .grade-modal button.add-grade-btn:hover,
-  .grade-modal button.add-grade-btn:active,
-  .grade-modal button.add-grade-btn:focus {
-    background-color: #1a73e8 !important;
-    color: white !important;
-  }
-  
-  /* 管理子分类按钮 - 始终保持紫色 */
-  .grade-modal button.manage-subcat-btn,
-  .grade-modal button.manage-subcat-btn:hover,
-  .grade-modal button.manage-subcat-btn:active,
-  .grade-modal button.manage-subcat-btn:focus {
-    background-color: #9C27B0 !important;
-    color: white !important;
-  }
-  
-  /* 科目按钮 - 选中状态保持蓝色 */
-  .grade-modal button.subject-btn-selected,
-  .grade-modal button.subject-btn-selected:hover,
-  .grade-modal button.subject-btn-selected:active,
-  .grade-modal button.subject-btn-selected:focus {
-    background-color: #1a73e8 !important;
-    color: white !important;
-  }
-  
-  /* 科目按钮 - 未选中状态保持灰色 */
-  .grade-modal button.subject-btn-unselected,
-  .grade-modal button.subject-btn-unselected:hover,
-  .grade-modal button.subject-btn-unselected:active,
-  .grade-modal button.subject-btn-unselected:focus {
-    background-color: #f0f0f0 !important;
-    color: #333 !important;
-  }
-  
-  /* 子分类按钮 - 选中状态保持蓝色 */
-  .grade-modal button.subcat-btn-selected,
-  .grade-modal button.subcat-btn-selected:hover,
-  .grade-modal button.subcat-btn-selected:active,
-  .grade-modal button.subcat-btn-selected:focus {
-    background-color: #1a73e8 !important;
-    color: white !important;
-  }
-    /* 让拖拽元素在拖拽时保持半透明效果 */
-.grade-modal [draggable="true"] {
-  user-select: none;
-  -webkit-user-drag: element;
-}
-
-.grade-modal [draggable="true"]:active {
-  cursor: grabbing;
-}
-
-  
-  /* 子分类按钮 - 未选中状态保持灰色 */
-  .grade-modal button.subcat-btn-unselected,
-  .grade-modal button.subcat-btn-unselected:hover,
-  .grade-modal button.subcat-btn-unselected:active,
-  .grade-modal button.subcat-btn-unselected:focus {
-    background-color: #f0f0f0 !important;
-    color: #333 !important;
-  }
-`}</style>
-
-    <div className="grade-modal" style={{
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       backgroundColor: '#f5faff',
-      padding: '15px',
-      borderRadius: 0,
-      width: '100%',
-      maxWidth: '600px',
-      height: '100%',
-      maxHeight: '100%',
-      overflow: 'auto',
-      WebkitOverflowScrolling: 'touch',
-      margin: '0 auto',
-      position: 'relative',
-      overscrollBehavior: 'contain'
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: 0,
+      overflow: 'hidden'
     }}>
+      <style>{`
+        .grade-modal button:hover,
+        .grade-modal button:active,
+        .grade-modal button:focus,
+        .grade-modal button:active:hover,
+        .grade-modal button:focus:hover {
+          background-color: inherit !important;
+          opacity: 1 !important;
+          transform: none !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+        
+        .grade-modal button.add-grade-btn,
+        .grade-modal button.add-grade-btn:hover,
+        .grade-modal button.add-grade-btn:active,
+        .grade-modal button.add-grade-btn:focus {
+          background-color: #1a73e8 !important;
+          color: white !important;
+        }
+        
+        .grade-modal button.manage-subcat-btn,
+        .grade-modal button.manage-subcat-btn:hover,
+        .grade-modal button.manage-subcat-btn:active,
+        .grade-modal button.manage-subcat-btn:focus {
+          background-color: #9C27B0 !important;
+          color: white !important;
+        }
+        
+        .grade-modal button.subject-btn-selected,
+        .grade-modal button.subject-btn-selected:hover,
+        .grade-modal button.subject-btn-selected:active,
+        .grade-modal button.subject-btn-selected:focus {
+          background-color: #1a73e8 !important;
+          color: white !important;
+        }
+        
+        .grade-modal button.subject-btn-unselected,
+        .grade-modal button.subject-btn-unselected:hover,
+        .grade-modal button.subject-btn-unselected:active,
+        .grade-modal button.subject-btn-unselected:focus {
+          background-color: #f0f0f0 !important;
+          color: #333 !important;
+        }
+        
+        .grade-modal button.subcat-btn-selected,
+        .grade-modal button.subcat-btn-selected:hover,
+        .grade-modal button.subcat-btn-selected:active,
+        .grade-modal button.subcat-btn-selected:focus {
+          background-color: #1a73e8 !important;
+          color: white !important;
+        }
+        
+        .grade-modal [draggable="true"] {
+          user-select: none;
+          -webkit-user-drag: element;
+        }
+        
+        .grade-modal [draggable="true"]:active {
+          cursor: grabbing;
+        }
+        
+        .grade-modal button.subcat-btn-unselected,
+        .grade-modal button.subcat-btn-unselected:hover,
+        .grade-modal button.subcat-btn-unselected:active,
+        .grade-modal button.subcat-btn-unselected:focus {
+          background-color: #f0f0f0 !important;
+          color: #333 !important;
+        }
+      `}</style>
 
-
-        {/* 关闭按钮 */}
+      <div className="grade-modal" style={{
+        backgroundColor: '#f5faff',
+        padding: '15px',
+        borderRadius: 0,
+        width: '100%',
+        maxWidth: '600px',
+        height: '100%',
+        maxHeight: '100%',
+        overflow: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        margin: '0 auto',
+        position: 'relative',
+        overscrollBehavior: 'contain'
+      }}>
         <button
           onClick={onClose}
           style={{
@@ -545,132 +509,125 @@ return (
           成绩记录
         </h2>
 
-        {/* 顶部按钮区域 */}
         <div style={{
           display: 'flex',
           gap: '10px',
           marginBottom: '16px'
         }}>
-  {/* 添加新成绩按钮 */}
-<button
-  className="add-grade-btn"
-  onClick={() => {
-    setShowAddForm(!showAddForm);
-    if (!showAddForm) {
-      resetNewGradeForm();
-      setEditingGrade(null);
-    }
-  }}
-  style={{
-    flex: 1,
-    padding: '10px 12px',
-    backgroundColor: '#1a73e8',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px'
-  }}
->
-  {showAddForm ? '取消添加' : '+ 添加新成绩'}
-</button>
+          <button
+            className="add-grade-btn"
+            onClick={() => {
+              setShowAddForm(!showAddForm);
+              if (!showAddForm) {
+                resetNewGradeForm();
+                setEditingGrade(null);
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              backgroundColor: '#1a73e8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {showAddForm ? '取消添加' : '+ 添加新成绩'}
+          </button>
 
-{/* 管理子分类按钮 */}
-<button
-  className="manage-subcat-btn"
-  onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
-  style={{
-    flex: 1,
-    padding: '10px 12px',
-    backgroundColor: '#9C27B0',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px'
-  }}
->
-  {showSubCategoryManager ? '关闭管理' : '管理子分类'}
-</button>
+          <button
+            className="manage-subcat-btn"
+            onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              backgroundColor: '#9C27B0',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {showSubCategoryManager ? '关闭管理' : '管理子分类'}
+          </button>
         </div>
 
-      
-<div style={{
-  display: 'flex',
-  gap: '12px',
-  marginBottom: '20px',
-  justifyContent: 'center'
-}}>
-  {mainSubjects.map(subject => (
-    <button
-      key={subject}
-      className={selectedSubject === subject ? 'subject-btn-selected' : 'subject-btn-unselected'}
-      onClick={() => handleSubjectClick(subject)}
-      style={{
-        flex: 1,
-        padding: '8px 12px',
-        backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
-        color: selectedSubject === subject ? 'white' : '#333',
-        border: 'none',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        WebkitTapHighlightColor: 'transparent'
-      }}
-    >
-      {subject}
-    </button>
-  ))}
-</div>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '20px',
+          justifyContent: 'center'
+        }}>
+          {mainSubjects.map(subject => (
+            <button
+              key={subject}
+              className={selectedSubject === subject ? 'subject-btn-selected' : 'subject-btn-unselected'}
+              onClick={() => handleSubjectClick(subject)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
+                color: selectedSubject === subject ? 'white' : '#333',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              {subject}
+            </button>
+          ))}
+        </div>
 
-
-{currentSubCategories.length > 0 && (
-  <div style={{
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-    justifyContent: 'center'
-  }}>
-    <button
-      className={selectedSubCategory === null ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
-      onClick={() => handleSubCategoryClick(null)}
-      style={{
-        padding: '6px 14px',
-        backgroundColor: selectedSubCategory === null ? '#1a73e8' : '#f0f0f0',
-        color: selectedSubCategory === null ? 'white' : '#333',
-        border: 'none',
-        borderRadius: '20px',
-        cursor: 'pointer',
-        fontSize: '13px',
-        WebkitTapHighlightColor: 'transparent'
-      }}
-    >
-      全部
-    </button>
-    {currentSubCategories.map(subCat => (
-      <button
-        key={subCat}
-        className={selectedSubCategory === subCat ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
-        onClick={() => handleSubCategoryClick(subCat)}
-        style={{
-          padding: '6px 14px',
-          backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
-          color: selectedSubCategory === subCat ? 'white' : '#333',
-          border: 'none',
-          borderRadius: '20px',
-          cursor: 'pointer',
-          fontSize: '13px',
-          WebkitTapHighlightColor: 'transparent'
-        }}
-      >
-        {subCat}
-      </button>
-    ))}
-  </div>
-)}
-
-
+        {currentSubCategories.length > 0 && (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            <button
+              className={selectedSubCategory === null ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
+              onClick={() => handleSubCategoryClick(null)}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: selectedSubCategory === null ? '#1a73e8' : '#f0f0f0',
+                color: selectedSubCategory === null ? 'white' : '#333',
+                border: 'none',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              全部
+            </button>
+            {currentSubCategories.map(subCat => (
+              <button
+                key={subCat}
+                className={selectedSubCategory === subCat ? 'subcat-btn-selected' : 'subcat-btn-unselected'}
+                onClick={() => handleSubCategoryClick(subCat)}
+                style={{
+                  padding: '6px 14px',
+                  backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
+                  color: selectedSubCategory === subCat ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
+                {subCat}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 统计卡片 */}
         <div style={{
@@ -691,15 +648,15 @@ return (
           </div>
           
           <div style={{
-  padding: '12px',
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  border: '1px solid #e5e7eb',
-  textAlign: 'center'
-}}>
-  <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>平均分</div>
-  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.avgScore}</div>
-</div>
+            padding: '12px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>平均分</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.avgScore}</div>
+          </div>
           
           <div style={{
             padding: '12px',
@@ -735,9 +692,8 @@ return (
             </h3>
             
             <div style={{ minWidth: '300px' }}>
-              {chartData.map((item, index) => {
+              {chartData.map((item) => {
                 const percentage = item.score;
-                
                 const getBarColor = (score) => {
                   if (item.isFullMark) return '#4caf50';
                   if (score >= 90) return '#1a73e8';
@@ -745,7 +701,6 @@ return (
                   if (score >= 60) return '#669df6';
                   return '#a0c4ff';
                 };
-                
                 const barColor = getBarColor(percentage);
                 const originalGrade = grades.find(g => g.id === item.id);
                 
@@ -766,7 +721,6 @@ return (
                       }
                     }}
                   >
-                    {/* 左侧标签区域 */}
                     <div style={{
                       width: '100px',
                       flexShrink: 0,
@@ -795,7 +749,6 @@ return (
                       </div>
                     </div>
                     
-                    {/* 柱状图区域 */}
                     <div style={{
                       flex: 1,
                       display: 'flex',
@@ -832,7 +785,6 @@ return (
               })}
             </div>
 
-            {/* 图例说明 */}
             <div style={{ 
               display: 'flex',
               justifyContent: 'center',
@@ -875,112 +827,107 @@ return (
           </div>
         )}
 
-       
-       
-{/* 复盘记录 */}
-{(() => {
-  const reviewRecords = getFilteredGrades()
-    .filter(grade => grade.analysis && grade.analysis.trim())
-    .sort((a, b) => b.date.localeCompare(a.date));
-  
-  if (reviewRecords.length === 0) return null;
-  
-  return (
-    <div style={{
-      marginBottom: '20px',
-      padding: '15px',
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      border: '1px solid #e5e7eb'
-    }}>
-      <h3 style={{ 
-        fontSize: '14px', 
-        marginBottom: '12px', 
-        color: '#4caf50',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}>
-        <span>📝</span> 复盘记录 ({reviewRecords.length})
-      </h3>
-      
-      {reviewRecords.map((grade, idx) => (
-        <div 
-          key={grade.id} 
-          onClick={() => handleEditGrade(grade)}
-          style={{
-            padding: '12px',
-            borderBottom: idx < reviewRecords.length - 1 ? '1px solid #eee' : 'none',
-            backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white',
-            borderRadius: idx === 0 ? '8px 8px 0 0' : idx === reviewRecords.length - 1 ? '0 0 8px 8px' : '0',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e3f2fd';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fafafa' : 'white';
-          }}
-        >
-          {/* 头部：名称 + 成绩 + 日期 */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '8px',
-            flexWrap: 'wrap',
-            gap: '8px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                {grade.testContent}
-              </span>
-              {grade.subCategory && (
-                <span style={{ 
-                  fontSize: '11px', 
-                  color: '#fff', 
-                  backgroundColor: '#1a73e8',
-                  padding: '2px 6px',
-                  borderRadius: '10px'
-                }}>
-                  {grade.subCategory}
-                </span>
-              )}
-              <span style={{ 
-                fontSize: '14px', 
-                fontWeight: 'bold', 
-                color: '#1a73e8'
-              }}>
-                {getScoreDisplay(grade)}
-              </span>
-            </div>
-            <span style={{ fontSize: '11px', color: '#999' }}>
-              📅 {grade.date}
-            </span>
-          </div>
+        {/* 复盘记录 */}
+        {(() => {
+          const reviewRecords = getFilteredGrades()
+            .filter(grade => grade.analysis && grade.analysis.trim())
+            .sort((a, b) => b.date.localeCompare(a.date));
           
-          {/* 复盘内容 */}
-          <div style={{ 
-            fontSize: '13px', 
-            color: '#333',
-            lineHeight: '1.5',
-            backgroundColor: '#e8f5e9',
-            padding: '10px',
-            borderRadius: '8px',
-            borderLeft: '3px solid #4caf50',
-            marginTop: '6px'
-          }}>
-            💡 {grade.analysis}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-})()}
+          if (reviewRecords.length === 0) return null;
+          
+          return (
+            <div style={{
+              marginBottom: '20px',
+              padding: '15px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h3 style={{ 
+                fontSize: '14px', 
+                marginBottom: '12px', 
+                color: '#4caf50',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <span>📝</span> 复盘记录 ({reviewRecords.length})
+              </h3>
+              
+              {reviewRecords.map((grade, idx) => (
+                <div 
+                  key={grade.id} 
+                  onClick={() => handleEditGrade(grade)}
+                  style={{
+                    padding: '12px',
+                    borderBottom: idx < reviewRecords.length - 1 ? '1px solid #eee' : 'none',
+                    backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white',
+                    borderRadius: idx === 0 ? '8px 8px 0 0' : idx === reviewRecords.length - 1 ? '0 0 8px 8px' : '0',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#e3f2fd';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#fafafa' : 'white';
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        {grade.testContent}
+                      </span>
+                      {grade.subCategory && (
+                        <span style={{ 
+                          fontSize: '11px', 
+                          color: '#fff', 
+                          backgroundColor: '#1a73e8',
+                          padding: '2px 6px',
+                          borderRadius: '10px'
+                        }}>
+                          {grade.subCategory}
+                        </span>
+                      )}
+                      <span style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 'bold', 
+                        color: '#1a73e8'
+                      }}>
+                        {getScoreDisplay(grade)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#999' }}>
+                      📅 {grade.date}
+                    </span>
+                  </div>
+                  
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#333',
+                    lineHeight: '1.5',
+                    backgroundColor: '#e8f5e9',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid #4caf50',
+                    marginTop: '6px'
+                  }}>
+                    💡 {grade.analysis}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
-
-        {/* 添加/编辑成绩表单弹窗 - 保持原有代码不变 */}
+        {/* 添加/编辑成绩表单弹窗 */}
         {showAddForm && (
           <div style={{
             position: 'fixed',
@@ -1056,7 +1003,6 @@ return (
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                {/* 日期 */}
                 <div>
                   <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
                     日期
@@ -1081,14 +1027,12 @@ return (
                   />
                 </div>
                
-                {/* 科目和子分类 */}
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: 12,
                   marginBottom: 12
                 }}>
-                  {/* 科目 */}
                   <div>
                     <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
                       科目
@@ -1119,7 +1063,6 @@ return (
                     </select>
                   </div>
 
-                  {/* 子分类 */}
                   <div>
                     <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
                       子分类
@@ -1153,7 +1096,6 @@ return (
                   </div>
                 </div>
 
-                {/* 测试内容 */}
                 <div>
                   <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
                     测试内容
@@ -1175,7 +1117,6 @@ return (
                   />
                 </div>
 
-                {/* 分数类型、得分、满分 */}
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr',
@@ -1284,41 +1225,37 @@ return (
                   </div>
                 </div>
 
-                
-{/* 复盘 */}
-<div>
-  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
-    📝 复盘
-  </label>
-  <textarea
-    value={newGrade.analysis}
-    onChange={(e) => {
-      setNewGrade({...newGrade, analysis: e.target.value});
-      e.target.style.height = 'auto';
-      e.target.style.height = e.target.scrollHeight + 'px';
-    }}
-    placeholder="记录学习总结、经验教训和改进计划..."
-    rows="1"
-    style={{
-      width: '100%',
-      padding: '10px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      resize: 'none',
-      boxSizing: 'border-box',
-      fontFamily: 'inherit',
-      overflow: 'hidden',
-      minHeight: '40px'
-    }}
-    onFocus={(e) => {
-      e.target.style.height = 'auto';
-      e.target.style.height = e.target.scrollHeight + 'px';
-    }}
-  />
-</div>
-
-
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
+                    📝 复盘
+                  </label>
+                  <textarea
+                    value={newGrade.analysis}
+                    onChange={(e) => {
+                      setNewGrade({...newGrade, analysis: e.target.value});
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    placeholder="记录学习总结、经验教训和改进计划..."
+                    rows="1"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      resize: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: 'inherit',
+                      overflow: 'hidden',
+                      minHeight: '40px'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                  />
+                </div>
 
                 <div style={{
                   display: 'flex',
@@ -1381,394 +1318,393 @@ return (
           </div>
         )}
 
-        {/* 子分类管理弹窗 - 保持原有代码不变 */}
-        {/* 子分类管理弹窗 - 保持原有代码不变 */}
-{/* 子分类管理弹窗 - 替换拖拽相关代码 */}
-{showSubCategoryManager && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1200,
-    padding: '10px'
-  }} onClick={() => {
-    setShowSubCategoryManager(false);
-    setIsSortingSubCategories(false);
-    setTempSubCategories([]);
-  }}>
-           
-    <div style={{
-      backgroundColor: 'white',
-      padding: '20px 16px',
-      borderRadius: '16px',
-      width: '100%',
-      maxWidth: '400px',
-      maxHeight: '80vh',
-      overflow: 'auto',
-      position: 'relative',
-      WebkitOverflowScrolling: 'touch'
-    }} onClick={e => e.stopPropagation()}>
-      
-      <button
-        onClick={() => setShowSubCategoryManager(false)}
-        style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          background: 'transparent',
-          border: 'none',
-          fontSize: '24px',
-          cursor: 'pointer',
-          color: '#666',
-          width: '32px',
-          height: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          zIndex: 10
-        }}
-      >
-        ×
-      </button>
-
-      <h3 style={{ 
-        textAlign: 'center', 
-        marginBottom: '20px', 
-        color: '#9C27B0',
-        fontSize: '18px'
-      }}>
-        管理子分类
-      </h3>
-
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ 
-          display: 'block', 
-          marginBottom: '8px', 
-          fontSize: '14px', 
-          fontWeight: '500' 
-        }}>
-          选择科目
-        </label>
-        <select
-          value={selectedSubject}
-          onChange={(e) => {
-            setSelectedSubject(e.target.value);
+        {/* 子分类管理弹窗 */}
+        {showSubCategoryManager && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1200,
+            padding: '10px'
+          }} onClick={() => {
+            setShowSubCategoryManager(false);
             setIsSortingSubCategories(false);
             setTempSubCategories([]);
-          }}
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            fontSize: '14px',
-            backgroundColor: 'white'
-          }}
-        >
-          {mainSubjects.map(subject => (
-            <option key={subject} value={subject}>{subject}</option>
-          ))}
-        </select>
-      </div>
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px 16px',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '400px',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              position: 'relative',
+              WebkitOverflowScrolling: 'touch'
+            }} onClick={e => e.stopPropagation()}>
+              
+              <button
+                onClick={() => setShowSubCategoryManager(false)}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  zIndex: 10
+                }}
+              >
+                ×
+              </button>
 
-      {selectedSubject && (
-        <>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button
-              onClick={() => {
-                const newSubCat = window.prompt(`为 ${selectedSubject} 添加新子分类名称:`);
-                if (newSubCat && newSubCat.trim()) {
-                  setSubjectSubCategories(prev => ({
-                    ...prev,
-                    [selectedSubject]: [...(prev[selectedSubject] || []), newSubCat.trim()]
-                  }));
-                }
-              }}
-              style={{
-                flex: 1,
-                padding: '12px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              + 添加新子分类
-            </button>
+              <h3 style={{ 
+                textAlign: 'center', 
+                marginBottom: '20px', 
+                color: '#9C27B0',
+                fontSize: '18px'
+              }}>
+                管理子分类
+              </h3>
 
-            <button
-              onClick={isSortingSubCategories ? handleFinishSorting : handleStartSorting}
-              style={{
-                flex: 1,
-                padding: '12px',
-                backgroundColor: isSortingSubCategories ? '#1a73e8' : '#f0f0f0',
-                color: isSortingSubCategories ? 'white' : '#333',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}
-            >
-              {isSortingSubCategories ? '✓ 完成排序' : '排序'}
-            </button>
-          </div>
-
-          <div>
-            <div style={{ 
-              marginBottom: '10px', 
-              fontSize: '14px', 
-              fontWeight: '500',
-              color: '#666'
-            }}>
-              现有子分类 ({subjectSubCategories[selectedSubject]?.length || 0})
-            </div>
-            
-            <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-              {(isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '30px', 
-                  color: '#999',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '8px'
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontSize: '14px', 
+                  fontWeight: '500' 
                 }}>
-                  暂无子分类，点击上方按钮添加
-                </div>
-              ) : (
-                (isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).map((subCat, index) => (
-                  <div
-                    key={`${subCat}_${index}`}
-                    data-drag-index={index}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '8px',
-                      marginBottom: '8px',
-                      backgroundColor: dragSubCategoryIndex.current === index ? '#e8f0fe' : '#fff',
-                      cursor: isSortingSubCategories ? 'grab' : 'default',
-                      userSelect: isSortingSubCategories ? 'none' : 'auto',
-                      touchAction: isSortingSubCategories ? 'none' : 'auto',
-                      transition: 'background-color 0.2s'
-                    }}
-                    // 手机端触摸拖拽
-                    onTouchStart={(e) => {
-                      if (!isSortingSubCategories) return;
-                      e.preventDefault();
-                      const touch = e.touches[0];
-                      dragSubCategoryIndex.current = index;
-                      dragStartY.current = touch.clientY;
-                      // 添加视觉反馈
-                      e.currentTarget.style.backgroundColor = '#e8f0fe';
-                      e.currentTarget.style.transform = 'scale(1.01)';
-                    }}
-                    onTouchMove={(e) => {
-                      if (!isSortingSubCategories) return;
-                      if (dragSubCategoryIndex.current === null) return;
-                      e.preventDefault();
-                      
-                      const touch = e.touches[0];
-                      const currentY = touch.clientY;
-                      const startY = dragStartY.current;
-                      
-                      if (startY === null) return;
-                      
-                      // 获取所有可拖拽元素的位置
-                      const elements = document.querySelectorAll('[data-drag-index]');
-                      let targetIndex = dragSubCategoryIndex.current;
-                      
-                      for (let i = 0; i < elements.length; i++) {
-                        const rect = elements[i].getBoundingClientRect();
-                        const centerY = rect.top + rect.height / 2;
-                        if (currentY > centerY) {
-                          targetIndex = i;
+                  选择科目
+                </label>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => {
+                    setSelectedSubject(e.target.value);
+                    setIsSortingSubCategories(false);
+                    setTempSubCategories([]);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: 'white'
+                  }}
+                >
+                  {mainSubjects.map(subject => (
+                    <option key={subject} value={subject}>{subject}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedSubject && (
+                <>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                    <button
+                      onClick={() => {
+                        const newSubCat = window.prompt(`为 ${selectedSubject} 添加新子分类名称:`);
+                        if (newSubCat && newSubCat.trim()) {
+                          setSubjectSubCategories(prev => ({
+                            ...prev,
+                            [selectedSubject]: [...(prev[selectedSubject] || []), newSubCat.trim()]
+                          }));
                         }
-                      }
-                      
-                      if (targetIndex !== dragSubCategoryIndex.current) {
-                        const newList = [...tempSubCategories];
-                        const draggedItem = newList[dragSubCategoryIndex.current];
-                        newList.splice(dragSubCategoryIndex.current, 1);
-                        newList.splice(targetIndex, 0, draggedItem);
-                        
-                        setTempSubCategories(newList);
-                        dragSubCategoryIndex.current = targetIndex;
-                        dragStartY.current = currentY;
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      if (!isSortingSubCategories) return;
-                      e.preventDefault();
-                      if (e.currentTarget) {
-                        e.currentTarget.style.backgroundColor = '';
-                        e.currentTarget.style.transform = '';
-                      }
-                      dragSubCategoryIndex.current = null;
-                      dragStartY.current = null;
-                    }}
-                    // 电脑端鼠标拖拽
-                    draggable={isSortingSubCategories}
-                    onDragStart={(e) => {
-                      if (!isSortingSubCategories) {
-                        e.preventDefault();
-                        return false;
-                      }
-                      dragSubCategoryIndex.current = index;
-                      e.dataTransfer.setData('text/plain', index.toString());
-                      e.dataTransfer.effectAllowed = 'move';
-                      e.dataTransfer.setDragImage(new Image(), 0, 0);
-                      e.currentTarget.style.opacity = '0.5';
-                      return true;
-                    }}
-                    onDragEnd={(e) => {
-                      if (e.currentTarget) {
-                        e.currentTarget.style.opacity = '';
-                      }
-                      dragSubCategoryIndex.current = null;
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      if (!isSortingSubCategories) return;
-                      if (dragSubCategoryIndex.current === null) return;
-                      if (dragSubCategoryIndex.current === index) return;
-                      
-                      const newList = [...tempSubCategories];
-                      const draggedItem = newList[dragSubCategoryIndex.current];
-                      newList.splice(dragSubCategoryIndex.current, 1);
-                      newList.splice(index, 0, draggedItem);
-                      
-                      setTempSubCategories(newList);
-                      dragSubCategoryIndex.current = index;
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      dragSubCategoryIndex.current = null;
-                    }}
-                  >
-                    <span style={{ fontSize: '14px' }}>{subCat}</span>
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      + 添加新子分类
+                    </button>
+
+                    <button
+                      onClick={isSortingSubCategories ? handleFinishSorting : handleStartSorting}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        backgroundColor: isSortingSubCategories ? '#1a73e8' : '#f0f0f0',
+                        color: isSortingSubCategories ? 'white' : '#333',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {isSortingSubCategories ? '✓ 完成排序' : '排序'}
+                    </button>
+                  </div>
+
+                  <div>
+                    <div style={{ 
+                      marginBottom: '10px', 
+                      fontSize: '14px', 
+                      fontWeight: '500',
+                      color: '#666'
+                    }}>
+                      现有子分类 ({subjectSubCategories[selectedSubject]?.length || 0})
+                    </div>
                     
-                    {isSortingSubCategories ? (
-                      <div
-                        style={{
-                          cursor: 'grab',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '28px',
-                          height: '28px',
-                          backgroundColor: '#f0f0f0',
-                          borderRadius: '4px'
-                        }}
-                        title="拖拽调整顺序"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <line x1="5" y1="6" x2="19" y2="6" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                          <line x1="5" y1="12" x2="19" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                          <line x1="5" y1="18" x2="19" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => {
-                            const newSubCat = window.prompt(`编辑子分类 "${subCat}" 的新名称:`, subCat);
-                            if (newSubCat && newSubCat.trim() && newSubCat.trim() !== subCat) {
-                              const trimmedNew = newSubCat.trim();
-                              const currentList = subjectSubCategories[selectedSubject] || [];
+                    <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+                      {(isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).length === 0 ? (
+                        <div style={{ 
+                          textAlign: 'center', 
+                          padding: '30px', 
+                          color: '#999',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '8px'
+                        }}>
+                          暂无子分类，点击上方按钮添加
+                        </div>
+                      ) : (
+                        (isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).map((subCat, index) => (
+                          <div
+                            key={`${subCat}_${index}`}
+                            data-drag-index={index}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '12px',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: '8px',
+                              marginBottom: '8px',
+                              backgroundColor: dragSubCategoryIndex.current === index ? '#e8f0fe' : '#fff',
+                              cursor: isSortingSubCategories ? 'grab' : 'default',
+                              userSelect: isSortingSubCategories ? 'none' : 'auto',
+                              touchAction: isSortingSubCategories ? 'none' : 'auto',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onTouchStart={(e) => {
+                              if (!isSortingSubCategories) return;
+                              e.preventDefault();
+                              const touch = e.touches[0];
+                              dragSubCategoryIndex.current = index;
+                              dragStartY.current = touch.clientY;
+                              e.currentTarget.style.backgroundColor = '#e8f0fe';
+                              e.currentTarget.style.transform = 'scale(1.01)';
+                            }}
+                            onTouchMove={(e) => {
+                              if (!isSortingSubCategories) return;
+                              if (dragSubCategoryIndex.current === null) return;
+                              e.preventDefault();
                               
-                              if (currentList.includes(trimmedNew)) {
-                                alert('该子分类名称已存在！');
-                                return;
+                              const touch = e.touches[0];
+                              const currentY = touch.clientY;
+                              const startY = dragStartY.current;
+                              
+                              if (startY === null) return;
+                              
+                              const elements = document.querySelectorAll('[data-drag-index]');
+                              let targetIndex = dragSubCategoryIndex.current;
+                              
+                              for (let i = 0; i < elements.length; i++) {
+                                const rect = elements[i].getBoundingClientRect();
+                                const centerY = rect.top + rect.height / 2;
+                                if (currentY > centerY) {
+                                  targetIndex = i;
+                                }
                               }
                               
-                              setSubjectSubCategories(prev => {
-                                const updatedList = prev[selectedSubject].map(s => 
-                                  s === subCat ? trimmedNew : s
-                                );
-                                return {
-                                  ...prev,
-                                  [selectedSubject]: updatedList
-                                };
-                              });
+                              if (targetIndex !== dragSubCategoryIndex.current) {
+                                const newList = [...tempSubCategories];
+                                const draggedItem = newList[dragSubCategoryIndex.current];
+                                newList.splice(dragSubCategoryIndex.current, 1);
+                                newList.splice(targetIndex, 0, draggedItem);
+                                
+                                setTempSubCategories(newList);
+                                dragSubCategoryIndex.current = targetIndex;
+                                dragStartY.current = currentY;
+                              }
+                            }}
+                            onTouchEnd={(e) => {
+                              if (!isSortingSubCategories) return;
+                              e.preventDefault();
+                              if (e.currentTarget) {
+                                e.currentTarget.style.backgroundColor = '';
+                                e.currentTarget.style.transform = '';
+                              }
+                              dragSubCategoryIndex.current = null;
+                              dragStartY.current = null;
+                            }}
+                            draggable={isSortingSubCategories}
+                            onDragStart={(e) => {
+                              if (!isSortingSubCategories) {
+                                e.preventDefault();
+                                return false;
+                              }
+                              dragSubCategoryIndex.current = index;
+                              e.dataTransfer.setData('text/plain', index.toString());
+                              e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setDragImage(new Image(), 0, 0);
+                              e.currentTarget.style.opacity = '0.5';
+                              return true;
+                            }}
+                            onDragEnd={(e) => {
+                              if (e.currentTarget) {
+                                e.currentTarget.style.opacity = '';
+                              }
+                              dragSubCategoryIndex.current = null;
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              if (!isSortingSubCategories) return;
+                              if (dragSubCategoryIndex.current === null) return;
+                              if (dragSubCategoryIndex.current === index) return;
                               
-                              const updatedGrades = grades.map(grade => {
-                                if (grade.subject === selectedSubject && grade.subCategory === subCat) {
-                                  return { ...grade, subCategory: trimmedNew };
-                                }
-                                return grade;
-                              });
-                              saveGrades(updatedGrades);
-                            }
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#FFC107',
-                            color: '#333',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}
-                        >
-                          编辑
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`确定要删除子分类 "${subCat}" 吗？\n\n删除后，该分类下的所有成绩记录也会被删除！`)) {
-                              setSubjectSubCategories(prev => ({
-                                ...prev,
-                                [selectedSubject]: prev[selectedSubject].filter(s => s !== subCat)
-                              }));
+                              const newList = [...tempSubCategories];
+                              const draggedItem = newList[dragSubCategoryIndex.current];
+                              newList.splice(dragSubCategoryIndex.current, 1);
+                              newList.splice(index, 0, draggedItem);
                               
-                              const updatedGrades = grades.filter(g => 
-                                !(g.subject === selectedSubject && g.subCategory === subCat)
-                              );
-                              saveGrades(updatedGrades);
-                            }
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#f44336',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          删除
-                        </button>
-                      </div>
-                    )}
+                              setTempSubCategories(newList);
+                              dragSubCategoryIndex.current = index;
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              dragSubCategoryIndex.current = null;
+                            }}
+                          >
+                            <span style={{ fontSize: '14px' }}>{subCat}</span>
+                            
+                            {isSortingSubCategories ? (
+                              <div
+                                style={{
+                                  cursor: 'grab',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '28px',
+                                  height: '28px',
+                                  backgroundColor: '#f0f0f0',
+                                  borderRadius: '4px'
+                                }}
+                                title="拖拽调整顺序"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <line x1="5" y1="6" x2="19" y2="6" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                                  <line x1="5" y1="12" x2="19" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                                  <line x1="5" y1="18" x2="19" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isSortingSubCategories) return;
+                                    const newSubCat = window.prompt(`编辑子分类 "${subCat}" 的新名称:`, subCat);
+                                    if (newSubCat && newSubCat.trim() && newSubCat.trim() !== subCat) {
+                                      const trimmedNew = newSubCat.trim();
+                                      const currentList = subjectSubCategories[selectedSubject] || [];
+                                      
+                                      if (currentList.includes(trimmedNew)) {
+                                        alert('该子分类名称已存在！');
+                                        return;
+                                      }
+                                      
+                                      setSubjectSubCategories(prev => {
+                                        const updatedList = prev[selectedSubject].map(s => 
+                                          s === subCat ? trimmedNew : s
+                                        );
+                                        return {
+                                          ...prev,
+                                          [selectedSubject]: updatedList
+                                        };
+                                      });
+                                      
+                                      const updatedGrades = grades.map(grade => {
+                                        if (grade.subject === selectedSubject && grade.subCategory === subCat) {
+                                          return { ...grade, subCategory: trimmedNew };
+                                        }
+                                        return grade;
+                                      });
+                                      saveGrades(updatedGrades);
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#FFC107',
+                                    color: '#333',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: isSortingSubCategories ? 'not-allowed' : 'pointer',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    opacity: isSortingSubCategories ? 0.5 : 1
+                                  }}
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isSortingSubCategories) return;
+                                    if (window.confirm(`确定要删除子分类 "${subCat}" 吗？\n\n删除后，该分类下的所有成绩记录也会被删除！`)) {
+                                      setSubjectSubCategories(prev => ({
+                                        ...prev,
+                                        [selectedSubject]: prev[selectedSubject].filter(s => s !== subCat)
+                                      }));
+                                      
+                                      const updatedGrades = grades.filter(g => 
+                                        !(g.subject === selectedSubject && g.subCategory === subCat)
+                                      );
+                                      saveGrades(updatedGrades);
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#f44336',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: isSortingSubCategories ? 'not-allowed' : 'pointer',
+                                    fontSize: '12px',
+                                    opacity: isSortingSubCategories ? 0.5 : 1
+                                  }}
+                                >
+                                  删除
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                ))
+                </>
               )}
             </div>
           </div>
-        </>
-      )}
-    </div>
-  </div>
-)}
+        )}
       </div>
     </div>
   );
@@ -1776,9 +1712,6 @@ return (
 
 
 
-
-
-// 重命名文件顶部的 categories 为 baseCategories
 // 修改 baseCategories 的颜色
 const baseCategories = [
   { 
@@ -11544,6 +11477,7 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
+  
   // 在 App 组件中，找到其他 useRef 定义的位置，添加：
 const isUserTogglingRef = useRef(false);
   // 添加这个状态定义
@@ -11580,7 +11514,7 @@ const [subCategoryTaskOrder, setSubCategoryTaskOrder] = useState({}); // 存储�
 // 在 App 组件中，找到其他 useState 定义的位置，添加：
 const [sortingSubCategory, setSortingSubCategory] = useState(null); // { category: '校内', subCategory: '数学' }
 const [draggedSubTaskIndex, setDraggedSubTaskIndex] = useState(null);
-// 加载保存的排序顺序
+const [isDraggingSubCategory, setIsDraggingSubCategory] = useState(false);
 useEffect(() => {
   const savedOrder = localStorage.getItem('subcategory_task_order');
   if (savedOrder) {
@@ -15970,8 +15904,7 @@ const getCategoryTasks = useCallback((catName) => {
 
 // 不需要修改 toggleDone，用更简单的方式
 
-// 在 App 组件添加一个 ref 来记录上次的日期
-const lastDateRef = useRef(selectedDate);
+
 
 // 替换原来的撒花检测 useEffect
 
