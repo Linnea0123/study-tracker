@@ -23,7 +23,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   const dragStartY = useRef(null);  // 👈 添加这一行
 const touchStartIndex = useRef(null);
   const touchMoveIndex = useRef(null);
-  const lastDateRef = useRef(selectedDate);
+  
 
 // 触摸拖拽开始
 const handleTouchStart = (e, index) => {
@@ -1525,7 +1525,7 @@ return (
                 gap: '6px'
               }}
             >
-              {isSortingSubCategories ? '✓ 完成排序' : '⋮⋮ 排序'}
+              {isSortingSubCategories ? '✓ 完成排序' : '排序'}
             </button>
           </div>
 
