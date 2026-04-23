@@ -32,6 +32,9 @@ const GradeModal = ({ onClose, isVisible }) => {
     return saved ? JSON.parse(saved) : {};
   });
 
+
+
+
   const [newGrade, setNewGrade] = useState({
     date: new Date().toISOString().split('T')[0],
     subject: '数学',
@@ -2768,6 +2771,7 @@ const autoBackup = async () => {
       categories: currentCategories,
       monthTasks: currentMonthTasks,
       grades: currentGrades,
+      studyEndTimes: studyEndTimes, 
       dailyRatings: allDailyRatings,
       dailyReflections: allDailyReflections,
       backupTime: new Date().toISOString(),
@@ -4371,45 +4375,78 @@ const TimeModal = ({ config, onSave, onClose }) => {
           </div>
         </div>
 
-        {/* 结束时间 */}
-        <div style={{ marginBottom: 15 }}>
-          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>结束时间:</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <input
-              type="number"
-              placeholder=""
-              min="0"
-              max="23"
-              value={endHour}
-              onChange={(e) => setEndHour(e.target.value)}
-              style={{
-                width: '60px',
-                padding: '8px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 6,
-                fontSize: 14,
-                textAlign: 'center'
-              }}
-            />
-            <span style={{ color: '#666', fontSize: 14 }}>:</span>
-            <input
-              type="number"
-              placeholder=""
-              min="0"
-              max="59"
-              value={endMinute}
-              onChange={(e) => setEndMinute(e.target.value)}
-              style={{
-                width: '60px',
-                padding: '8px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 6,
-                fontSize: 14,
-                textAlign: 'center'
-              }}
-            />
-          </div>
-        </div>
+   {/* 结束时间 */}
+<div style={{ marginBottom: '16px' }}>
+  <label style={{ 
+    display: 'block', 
+    marginBottom: '8px', 
+    color: '#555', 
+    fontSize: '13px',
+    fontWeight: 'bold'
+  }}>
+    ⏰ 学习结束时间
+  </label>
+  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+    <div style={{ flex: 1 }}>
+      <input
+        type="number"
+        placeholder="时"
+        value={studyEndHour}
+        onChange={(e) => {
+          let val = parseInt(e.target.value);
+          if (isNaN(val)) val = '';
+          if (val === '' || (val >= 0 && val <= 23)) setStudyEndHour(val);
+        }}
+        style={{
+          width: '100%',
+          padding: '8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: '14px',
+          textAlign: 'center'
+        }}
+      />
+    </div>
+    <span style={{ fontSize: '16px', color: '#666' }}>:</span>
+    <div style={{ flex: 1 }}>
+      <input
+        type="number"
+        placeholder="分"
+        value={studyEndMinute}
+        onChange={(e) => {
+          let val = parseInt(e.target.value);
+          if (isNaN(val)) val = '';
+          if (val === '' || (val >= 0 && val <= 59)) setStudyEndMinute(val);
+        }}
+        style={{
+          width: '100%',
+          padding: '8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: '14px',
+          textAlign: 'center'
+        }}
+      />
+    </div>
+    <button
+      onClick={() => {
+        setStudyEndHour('');
+        setStudyEndMinute('');
+      }}
+      style={{
+        padding: '8px 12px',
+        backgroundColor: '#f0f0f0',
+        color: '#666',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontSize: '12px'
+      }}
+    >
+      清除
+    </button>
+  </div>
+</div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
           <button
@@ -10876,324 +10913,140 @@ const handleDrop = (e) => {
 
 
   // 统计页面
-  const StatsPage = () => {
-    const chartHeight = window.innerWidth <= 768 ? 200 : 300;
-    const fontSize = window.innerWidth <= 768 ? 10 : 12;
+const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime }) => {
+  const chartHeight = window.innerWidth <= 768 ? 200 : 300;
+  const fontSize = window.innerWidth <= 768 ? 10 : 12;
 
-
-// 撒花动画样式 - 放在 return 之前
-const confettiStyle = `
-  @keyframes confetti {
-    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
-  }
-`;
-
-// 然后在 return 里面，最顶部添加 style 标签
-    
-
-    return (
-      <div style={{
-        maxWidth: 600,
-        margin: "0 auto",
-        padding: 15,
-        fontFamily: "sans-serif",
-        backgroundColor: "#f5faff"
-      }}>
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20
-        }}>
-          <button
-            onClick={() => setShowStats(false)}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 20
-            }}
-          >
-            ⬅️
-          </button>
-          <h1 style={{
-            textAlign: "center",
-            color: "#1a73e8",
-            fontSize: 20
-          }}>
-            {statsMode === "week" ? "本周统计" : statsMode === "month" ? "本月统计" : "自选统计"}
-          </h1>
-          <div style={{ width: 20 }}></div>
-        </div>
-
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 10,
-          marginBottom: 20
-        }}>
-          <button
-            onClick={() => setStatsMode("week")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "week" ? "#1a73e8" : "#eee",
-              color: statsMode === "week" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            本周
-          </button>
-          <button
-            onClick={() => setStatsMode("month")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "month" ? "#1a73e8" : "#eee",
-              color: statsMode === "month" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            本月
-          </button>
-          <button
-            onClick={() => setStatsMode("custom")}
-            style={{
-              padding: "6px 12px",
-              background: statsMode === "custom" ? "#1a73e8" : "#eee",
-              color: statsMode === "custom" ? "#fff" : "#000",
-              border: "none",
-              borderRadius: 4
-            }}
-          >
-            自选
-          </button>
-        </div>
-
-        {statsMode === "custom" && (
-          <div style={{
-            backgroundColor: "#fff",
-            padding: 15,
-            borderRadius: 10,
-            marginBottom: 20
-          }}>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ marginBottom: 5 }}>选择日期范围:</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <input type="date" style={{ flex: 1, padding: 8 }} />
-                <span style={{ lineHeight: "36px" }}>至</span>
-                <input type="date" style={{ flex: 1, padding: 8 }} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ marginBottom: 5 }}>选择类别:</div>
-              <select style={{ width: "100%", padding: 8 }}>
-                <option value="">全部类别</option>
-                {categories.map(c => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              style={{
-                width: "100%",
-                padding: 10,
-                background: "#1a73e8",
-                color: "#fff",
-                border: "none",
-                borderRadius: 5
-              }}
-            >
-              生成统计
-            </button>
-          </div>
-        )}
-
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 20,
-          padding: "8px 0",
-          backgroundColor: "#e8f0fe",
-          borderRadius: 10
-        }}>
-          {[
-            { label: "📊 平均完成率", value: `${avgCompletion}%` },
-            { label: "⏱️ 日均时长", value: `${avgDailyTime}m` }
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: 12,
-                borderRight: idx < 1 ? "1px solid #cce0ff" : "none",
-                padding: "4px 0"
-              }}
-            >
-              <div>{item.label}</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-
-<div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    每日学习时间（排除运动）
-  </h3>
-  <ResponsiveContainer width="100%" height="80%">
-    <BarChart 
-      data={dailyStudyData} 
-      margin={{ top: 20, right: 10, left: -20, bottom: 5 }} // 增加顶部边距
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" tick={{ fontSize }} />
-      <YAxis 
-        tick={{ fontSize }} 
-        domain={[0, 'dataMax + 20']} // 给Y轴更多空间
-      />
-      <Bar
-        dataKey="time"
-        fill="#1a73e8"
-        radius={[4, 4, 0, 0]}
-        label={{ 
-          position: "top", 
-          fontSize: fontSize - 1, // 稍微减小字体
-          formatter: (value) => `${value}分钟`,
-          fill: "#333", // 确保标签颜色可见
-          offset: 8 // 增加标签与柱子的距离
-        }}
-      />
-    </BarChart>
-  </ResponsiveContainer>
-</div>
-       {/* 校内子分类学习时间 */}
-<div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    校内子分类学习时间
-  </h3>
-  
-  {subCategoryData && subCategoryData.length > 0 ? (
-    <>
-      <div style={{
-        backgroundColor: "#f8f9fa",
-        padding: "8px",
-        borderRadius: "6px",
-        marginBottom: "10px",
-        fontSize: "11px",
-        textAlign: "center",
-        color: "#666"
-      }}>
-        统计校内各科目的学习时间分布
-      </div>
-      <ResponsiveContainer width="100%" height="80%">
-        <BarChart 
-          data={subCategoryData} 
-          margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" tick={{ fontSize }} />
-          <YAxis 
-            tick={{ fontSize }} 
-            domain={[0, 'dataMax + 20']}
-          />
-          <Bar
-            dataKey="time"
-            fill="#1a73e8"
-            radius={[4, 4, 0, 0]}
-            label={{ 
-              position: "top", 
-              fontSize: fontSize - 1,
-              formatter: (value) => `${value}分钟`,
-              fill: "#333",
-              offset: 8
-            }}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </>
-  ) : (
+  return (
     <div style={{
-      backgroundColor: "#f8f9fa",
-      padding: "30px 20px",
-      borderRadius: "8px",
-      textAlign: "center",
-      color: "#666",
-      fontSize: "13px"
+      maxWidth: 600,
+      margin: "0 auto",
+      padding: 15,
+      fontFamily: "sans-serif",
+      backgroundColor: "#f5faff"
     }}>
-      📚 暂无校内子分类学习时间数据
-      <div style={{ fontSize: "11px", marginTop: "8px", lineHeight: "1.4" }}>
-        请在"校内"分类的任务中设置子分类并记录时间<br/>
-        支持的子分类：数学、语文、英语、运动等
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 20
+          }}
+        >
+          ⬅️
+        </button>
+        <h1 style={{
+          textAlign: "center",
+          color: "#1a73e8",
+          fontSize: 20
+        }}>
+          学习统计
+        </h1>
+        <div style={{ width: 20 }}></div>
       </div>
-    </div>
-  )}
-</div>
 
+      {/* 统计卡片 */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 20,
+        padding: "8px 0",
+        backgroundColor: "#e8f0fe",
+        borderRadius: 10
+      }}>
+        <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
+          <div>📊 平均完成率</div>
+          <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgCompletion}%</div>
+        </div>
+        <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
+          <div>⏱️ 日均时长</div>
+          <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgDailyTime}m</div>
+        </div>
+      </div>
 
+      {/* 每日学习时间图表 */}
+      <div style={{ height: chartHeight, marginBottom: 30 }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          每日学习时间（排除运动）
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={dailyStudyData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
+            <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
+              label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
-
-
-        
-        <div style={{ height: chartHeight, marginBottom: 30 }}>
-  <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-    各科目学习时间
-  </h3>
-  <ResponsiveContainer width="100%" height="80%">
-    <BarChart 
-      data={categoryData} 
-      margin={{ top: 20, right: 10, left: -20, bottom: 5 }}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" tick={{ fontSize }} />
-      <YAxis 
-        tick={{ fontSize }} 
-        domain={[0, 'dataMax + 20']}
-      />
-      <Bar
-        dataKey="time"
-        fill="#4a90e2"
-        radius={[4, 4, 0, 0]}
-        label={{ 
-          position: "top", 
-          fontSize: fontSize - 1,
-          formatter: (value) => `${value}分钟`,
-          fill: "#333",
-          offset: 8
-        }}
-      />
-    </BarChart>
-  </ResponsiveContainer>
-</div>
-
-
-
-
-        <div style={{ height: chartHeight }}>
-          <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-            每日完成任务数
-          </h3>
+      {/* 校内子分类学习时间图表 */}
+      <div style={{ height: chartHeight, marginBottom: 30 }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          校内子分类学习时间
+        </h3>
+        {subCategoryData && subCategoryData.length > 0 ? (
           <ResponsiveContainer width="100%" height="80%">
-            <BarChart data={dailyTasksData} margin={{ left: -20 }}>
+            <BarChart data={subCategoryData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" tick={{ fontSize }} />
-              <YAxis tick={{ fontSize }} />
-              <Bar
-                dataKey="tasks"
-                fill="#00a854"
-                radius={[4, 4, 0, 0]}
-                label={{ position: "top", fontSize }}
+              <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
+              <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
+                label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
               />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "30px", color: "#666" }}>
+            暂无校内子分类学习时间数据
+          </div>
+        )}
       </div>
-    );
-  };
+
+      {/* 各科目学习时间图表 */}
+      <div style={{ height: chartHeight, marginBottom: 30 }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          各科目学习时间
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={categoryData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
+            <Bar dataKey="time" fill="#4a90e2" radius={[4, 4, 0, 0]} 
+              label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 每日完成任务数图表 */}
+      <div style={{ height: chartHeight }}>
+        <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+          每日完成任务数
+        </h3>
+        <ResponsiveContainer width="100%" height="80%">
+          <BarChart data={dailyTasksData} margin={{ left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{ fontSize }} />
+            <YAxis tick={{ fontSize }} />
+            <Bar dataKey="tasks" fill="#00a854" radius={[4, 4, 0, 0]} 
+              label={{ position: "top", fontSize }} 
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
 
 const CategoryManagerModal = ({ 
   categories, 
@@ -12106,6 +11959,40 @@ const [subCategoryColors, setSubCategoryColors] = useState(() => {
 
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  
+  
+  // 学习结束时间 - 按日期存储
+const [studyEndTimes, setStudyEndTimes] = useState(() => {
+  const saved = localStorage.getItem('daily_study_end_times');
+  return saved ? JSON.parse(saved) : {};
+});
+
+// 获取当前日期的结束时间
+const getCurrentStudyEndTime = useCallback(() => {
+  return studyEndTimes[selectedDate] || '';
+}, [studyEndTimes, selectedDate]);
+
+// 设置当前日期的结束时间
+const setCurrentStudyEndTime = useCallback((timeStr) => {
+  setStudyEndTimes(prev => {
+    const newTimes = { ...prev, [selectedDate]: timeStr };
+    localStorage.setItem('daily_study_end_times', JSON.stringify(newTimes));
+    return newTimes;
+  });
+}, [selectedDate]);
+
+// 当前日期的时分（用于弹窗输入）
+const [studyEndHour, setStudyEndHour] = useState('');
+const [studyEndMinute, setStudyEndMinute] = useState('');
+
+// 当切换日期时，更新弹窗的时分显示
+useEffect(() => {
+  const currentTime = getCurrentStudyEndTime();
+  const parts = currentTime.split(':');
+  setStudyEndHour(parts[0] || '');
+  setStudyEndMinute(parts[1] || '');
+}, [selectedDate, getCurrentStudyEndTime]);
+  
   const [newTaskText, setNewTaskText] = useState("");
  
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -12510,6 +12397,12 @@ const handleRestoreData = useCallback(async (backupData) => {
       console.log('📢 恢复每日提醒:', backupData.reminderText || '无');
     }
     
+    // 恢复学习结束时间（按日期）
+if (backupData.studyEndTimes) {
+  setStudyEndTimes(backupData.studyEndTimes);
+  localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
+  console.log('⏰ 恢复学习结束时间:', Object.keys(backupData.studyEndTimes).length, '天');
+}
     // 恢复类别配置
     if (backupData.categories) {
       setCategories(backupData.categories);
@@ -12605,6 +12498,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       templates,
       dailyRatings,
       dailyReflections,
+      studyEndTimes: studyEndTimes, 
       monthTasks,
       categories,
       grades: await loadMainData('grades') || [],
@@ -12612,7 +12506,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       taskOrders: allTaskOrders,
       subCategoryOrders: allSubCategoryOrders,
       syncTime: new Date().toISOString(),
-      version: '2.2',
+      version: '2.3',
       lastSelectedDate: selectedDate,
       lastCurrentMonday: currentMonday.toISOString()
     };
@@ -16610,10 +16504,19 @@ const todayStats = calculateTodayStats();
   }
 
   // 如果显示统计页面
-  if (showStats) {
-    return <StatsPage />;
-  }
-
+if (showStats) {
+  return (
+    <StatsPage 
+      onClose={() => setShowStats(false)}
+      dailyStudyData={dailyStudyData}
+      categoryData={categoryData}
+      subCategoryData={subCategoryData}
+      dailyTasksData={dailyTasksData}
+      avgCompletion={avgCompletion}
+      avgDailyTime={avgDailyTime}
+    />
+  );
+}
 
 
 
@@ -17008,7 +16911,7 @@ if (isInitialized && todayTasks.length === 0) {
     padding: "10px 0", // 添加上下内边距来垂直居中
     lineHeight: "16px" // 恢复默认行高
   }}>
-    1111学习记录
+    学习记录
   </h1>
 </div>
 
@@ -17185,6 +17088,7 @@ if (isInitialized && todayTasks.length === 0) {
     const hasIncomplete = totalCount > 0 && completedCount < totalCount;
     
     const dailyRating = dailyRatings[dateStr] || 0;
+    const studyEndTime = studyEndTimes[dateStr] || '';  // 👈 获取当前日期的结束时间
     
     const getRatingColor = (rating) => {
       switch(rating) {
@@ -17272,6 +17176,18 @@ if (isInitialized && todayTasks.length === 0) {
             </span>
           </div>
         )}
+        
+        {/* 👇 添加结束时间显示 - 小小的 */}
+        {studyEndTime && (
+          <div style={{
+            fontSize: "8px",
+            color: "#999",
+            marginTop: "2px",
+            whiteSpace: "nowrap"
+          }}>
+            {studyEndTime}
+          </div>
+        )}
       </div>
     );
   })}
@@ -17285,6 +17201,9 @@ if (isInitialized && todayTasks.length === 0) {
   }
   return null;
       })()}
+
+
+
 
 
 
@@ -18438,89 +18357,79 @@ if (isInitialized && todayTasks.length === 0) {
 
 {/* 主界面的复盘框 - 只保留学习状态评价 */}
 {/* 主界面的复盘框 - 只显示评分，不可选择 */}
+{/* 学习结束时间 + 复盘区域 */}
 <div style={{ marginBottom: 8 }}>
+  
+{/* 复盘框 */}
+<div style={{
+  backgroundColor: '#fff',
+  border: '1px solid #e0e0e0',
+  borderRadius: 6,
+  padding: '8px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8
+}}>
   <div style={{
-    backgroundColor: '#fff',
-    border: '1px solid #e0e0e0',
-    borderRadius: 6,
-    padding: '8px 12px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#333',
+    minWidth: '32px',
+    lineHeight: '28px',
+    flexShrink: 0
   }}>
-    <div style={{
-      fontSize: 13,
-      fontWeight: 'bold',
-      color: '#333',
-      minWidth: '32px',
-      lineHeight: '28px',
-      flexShrink: 0
-    }}>
-      复盘
-    </div>
-    
-    {/* 复盘输入框 - 使用flex:1自动占据剩余空间 */}
-    <div style={{ 
-      flex: 1,
-      minWidth: 0 // 允许内容收缩
-    }}>
-      <div
-        onClick={() => setShowReflectionModal(true)}
-        style={{
-          width: '100%',
-          minHeight: '28px',
-          maxHeight: '200px',
-          padding: '4px 12px',
-          border: '1px solid #ddd',
-          borderRadius: 4,
-          fontSize: 13,
-          lineHeight: '20px',
-          backgroundColor: '#fafafa',
-          cursor: 'pointer',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word',
-          overflow: 'hidden',
-          height: (() => {
-            const reflection = getCurrentDailyReflection();
-            const lineCount = reflection ? reflection.split('\n').length : 1;
-            const charCount = reflection ? reflection.length : 0;
-            
-            if (lineCount === 1 && charCount <= 40) {
-              return '28px';
-            }
-            return 'auto';
-          })(),
-          display: 'flex',
-          alignItems: 'center',
-          transition: 'height 0.2s ease',
-          boxSizing: 'border-box'
-        }}
-      >
-        {getCurrentDailyReflection() || <span style={{ color: '#999' }}>点击添加复盘...</span>}
-      </div>
-    </div>
-
-    {/* 右侧：显示评分，数字用黑色，星星用金色 */}
-    <div style={{
-      minWidth: '20px',
-      flexShrink: 0,
-
-      textAlign: 'center'
-    }}>
-      <span style={{
-        fontSize: '12px',
-        fontWeight: 'bold',
-        whiteSpace: 'nowrap'
-      }}>
-        <span style={{ color: '#333' }}>
-          {getCurrentDailyRating() > 0 ? getCurrentDailyRating() : '0'}
-        </span>
-        <span style={{ color: '#FFB800' }}>⭐</span>
-      </span>
+    复盘
+  </div>
+  
+  {/* 复盘输入框 */}
+  <div style={{ 
+    flex: 1,
+    minWidth: 0
+  }}>
+    <div
+      onClick={() => setShowReflectionModal(true)}
+      style={{
+        width: '100%',
+        minHeight: '28px',
+        maxHeight: '200px',
+        padding: '4px 12px',
+        border: '1px solid #ddd',
+        borderRadius: 4,
+        fontSize: 13,
+        lineHeight: '20px',
+        backgroundColor: '#fafafa',
+        cursor: 'pointer',
+        whiteSpace: 'pre-wrap',
+        wordWrap: 'break-word',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}
+    >
+      {getCurrentDailyReflection() || <span style={{ color: '#999' }}>点击添加复盘...</span>}
     </div>
   </div>
-</div>
 
+{/* 右侧：评分 */}
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  flexShrink: 0
+}}>
+  {/* 评分 */}
+  <span style={{
+    fontSize: '12px',
+    fontWeight: 'bold',
+    whiteSpace: 'nowrap'
+  }}>
+    <span style={{ color: '#333' }}>
+      {getCurrentDailyRating() > 0 ? getCurrentDailyRating() : '0'}
+    </span>
+    <span style={{ color: '#FFB800' }}>⭐</span>
+  </span>
+</div>
+</div>
+</div>
 
 
 
@@ -18546,7 +18455,7 @@ if (isInitialized && todayTasks.length === 0) {
       width: '90%',
       maxWidth: '400px',
       maxHeight: '80vh',
-      overflow: 'hidden',
+      overflow: 'auto',
       display: 'flex',
       flexDirection: 'column',
       boxSizing: 'border-box'
@@ -18583,9 +18492,80 @@ if (isInitialized && todayTasks.length === 0) {
         autoFocus
       />
 
-     
+   {/* 结束时间 */}
+<div style={{ marginBottom: '16px' }}>
+  <label style={{ 
+    display: 'block', 
+    marginBottom: '8px', 
+    color: '#555', 
+    fontSize: '13px',
+    fontWeight: 'bold'
+  }}>
+    ⏰ 学习结束时间
+  </label>
+  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+    <div style={{ flex: 1 }}>
+      <input
+        type="number"
+        placeholder="时"
+        value={studyEndHour}
+        onChange={(e) => {
+          let val = parseInt(e.target.value);
+          if (isNaN(val)) val = '';
+          if (val === '' || (val >= 0 && val <= 23)) setStudyEndHour(val);
+        }}
+        style={{
+          width: '100%',
+          padding: '8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: '14px',
+          textAlign: 'center'
+        }}
+      />
+    </div>
+    <span style={{ fontSize: '16px', color: '#666' }}>:</span>
+    <div style={{ flex: 1 }}>
+      <input
+        type="number"
+        placeholder="分"
+        value={studyEndMinute}
+        onChange={(e) => {
+          let val = parseInt(e.target.value);
+          if (isNaN(val)) val = '';
+          if (val === '' || (val >= 0 && val <= 59)) setStudyEndMinute(val);
+        }}
+        style={{
+          width: '100%',
+          padding: '8px',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          fontSize: '14px',
+          textAlign: 'center'
+        }}
+      />
+    </div>
+    <button
+      onClick={() => {
+        setStudyEndHour('');
+        setStudyEndMinute('');
+      }}
+      style={{
+        padding: '8px 12px',
+        backgroundColor: '#f0f0f0',
+        color: '#666',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontSize: '12px'
+      }}
+    >
+      清除
+    </button>
+  </div>
+</div>
 
-      {/* 评分选择 - 新增在这里 */}
+      {/* 评分选择 */}
       <div style={{ marginBottom: '16px' }}>
         <label style={{ 
           display: 'block', 
@@ -18630,11 +18610,7 @@ if (isInitialized && todayTasks.length === 0) {
       </div>
 
       {/* 按钮区域 */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        flexShrink: 0
-      }}>
+      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <button
           onClick={() => setShowReflectionModal(false)}
           style={{
@@ -18651,30 +18627,38 @@ if (isInitialized && todayTasks.length === 0) {
         >
           取消
         </button>
-        <button
-          onClick={() => {
-            saveDailyData(selectedDate);
-            setShowReflectionModal(false);
-          }}
-          style={{
-            flex: 1,
-            padding: '8px',
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '13px',
-            cursor: 'pointer',
-            boxSizing: 'border-box'
-          }}
-        >
-          保存
-        </button>
+<button
+  onClick={() => {
+    // 保存结束时间到当前日期
+    if (studyEndHour !== '' && studyEndMinute !== '') {
+      const timeStr = `${String(studyEndHour).padStart(2, '0')}:${String(studyEndMinute).padStart(2, '0')}`;
+      setCurrentStudyEndTime(timeStr);
+    } else {
+      setCurrentStudyEndTime('');
+    }
+    
+    // 保存复盘内容和评分
+    saveDailyData(selectedDate);
+    setShowReflectionModal(false);
+  }}
+  style={{
+    flex: 1,
+    padding: '8px',
+    backgroundColor: '#1a73e8',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    boxSizing: 'border-box'
+  }}
+>
+  保存
+</button>
       </div>
     </div>
   </div>
 )}
-
 
 
 
@@ -18721,6 +18705,7 @@ if (isInitialized && todayTasks.length === 0) {
       value: `${todayStats.completionRate}%`,
       title: `完成率: ${todayStats.completionRate}%`
     },
+    
     {
       label: "统计汇总",
       value: "",
@@ -18735,7 +18720,7 @@ if (isInitialized && todayTasks.length === 0) {
         flex: 1,
         textAlign: "center",
         fontSize: 12,
-        borderRight: idx < 4 ? "1px solid #cce0ff" : "none",
+        borderRight: idx < 5 ? "1px solid #cce0ff" : "none",
         padding: "4px 0",
         cursor: item.onClick ? "pointer" : "default"
       }}
@@ -18753,7 +18738,6 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
   ))}
 </div>
-
 
 
    
