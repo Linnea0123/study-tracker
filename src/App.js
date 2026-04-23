@@ -1607,7 +1607,7 @@ const saveMainData = async (key, data) => {
     // 将数据转换为JSON字符串
     const jsonData = JSON.stringify(data);
     localStorage.setItem(storageKey, jsonData);
-    console.log(`数据保存成功: ${key}`, data ? '有数据' : '无数据');
+    
   } catch (error) {
     console.error(`数据保存失败: ${key}`, error);
     
@@ -2009,7 +2009,7 @@ const handleManualBackup = async () => {
 
 const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [token, setToken] = useState(config.token || '');
-  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true);
+  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true); // 确保默认为 true
   const [gistId, setGistId] = useState(config.gistId || '');
 
   const handleSave = () => {
@@ -2588,12 +2588,6 @@ const autoBackup = async () => {
       }
     });
     
-    console.log('📊 备份数据统计:', {
-      任务天数: Object.keys(currentTasks).length,
-      模板数量: currentTemplates.length,
-      本月任务: currentMonthTasks.length,
-      复盘天数: Object.keys(allDailyReflections).length
-    });
     
     const backupData = {
       tasks: currentTasks,
@@ -2935,7 +2929,7 @@ const getWeekDates = (monday) => {
       });
     }
     
-    console.log('📅 生成周日期:', weekDates.map(d => d.date));
+    
     return weekDates;
   };
   
@@ -11330,6 +11324,14 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
+
+  const [lastSyncStatus, setLastSyncStatus] = useState({
+  success: false,
+  time: null,
+  message: ''
+});
+
+
    const loadDataWithFallback = async (key, fallback) => {
     try {
       const data = await loadMainData(key);
@@ -11894,69 +11896,73 @@ const handleRestoreData = useCallback(async (backupData) => {
 
 
 
-const syncToGitHub = useCallback(async () => {
+const syncToGitHub = useCallback(async (silent = false) => {
   const token = localStorage.getItem('github_token');
   if (!token) {
-    setShowGitHubSyncModal(true);
-    alert('请先设置 GitHub Token');
+    if (!silent) {
+      setShowGitHubSyncModal(true);
+      alert('请先设置 GitHub Token');
+    } else {
+      console.log('❌ 自动同步失败: 未设置 GitHub Token');
+      setLastSyncStatus({
+        success: false,
+        time: new Date(),
+        message: '未设置 GitHub Token'
+      });
+      setTimeout(() => {
+        setLastSyncStatus(prev => ({ ...prev, message: '' }));
+      }, 3000);
+    }
     return;
   }
 
   setIsSyncing(true);
+  
+   // 静默模式也显示同步中状态（但不弹窗）
+  
+  
   await new Promise(resolve => setTimeout(resolve, 500));
 
   try {
     // 先保存当前日期的数据
     await saveDailyData(selectedDate);
     
-    // ✅ 在这里添加收集排序数据的代码（不要删除上面的 saveDailyData）
-    
-  // ✅ 正确代码
-const allTaskOrders = {};
-const allSubCategoryOrders = {};  // 先定义
-const allKeys = Object.keys(localStorage);
+    // 收集排序数据
+    const allTaskOrders = {};
+    const allSubCategoryOrders = {};
+    const allKeys = Object.keys(localStorage);
 
-allKeys.forEach(key => {
-  if (key.startsWith('tasks_order_')) {
-    allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
-  }
-  if (key.startsWith('subcategory_order_')) {
-    allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
-  }
-});
-    
-
-    
+    allKeys.forEach(key => {
+      if (key.startsWith('tasks_order_')) {
+        try {
+          allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
+        } catch (e) {
+          console.error('解析任务排序失败:', key, e);
+        }
+      }
+      if (key.startsWith('subcategory_order_')) {
+        try {
+          allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
+        } catch (e) {
+          console.error('解析子分类排序失败:', key, e);
+        }
+      }
+    });
 
     // 收集所有需要同步的数据
     const syncData = {
-      // 核心数据
       tasksByDate,
       templates,
-      
-      // 每日数据（确保包含所有复盘）
       dailyRatings,
       dailyReflections,
-      
-      // 本月任务
       monthTasks,
-      
-      // 类别配置
       categories,
-      
-      // 成绩记录
       grades: await loadMainData('grades') || [],
-      
-      // 每日提醒文本 - 新增
-      reminderText: reminderText,  // 添加这行
-
-       taskOrders: allTaskOrders,
-  subCategoryOrders: allSubCategoryOrders,
-  
-      
-      // 元数据
+      reminderText: reminderText,
+      taskOrders: allTaskOrders,
+      subCategoryOrders: allSubCategoryOrders,
       syncTime: new Date().toISOString(),
-      version: '2.2',  // 更新版本号
+      version: '2.2',
       lastSelectedDate: selectedDate,
       lastCurrentMonday: currentMonday.toISOString()
     };
@@ -11966,7 +11972,7 @@ allKeys.forEach(key => {
       模板数量: templates.length,
       有复盘的日期: Object.keys(dailyReflections).length,
       本月任务: monthTasks.length,
-      每日提醒: reminderText ? '有' : '无'  // 添加日志
+      每日提醒: reminderText ? '有' : '无'
     });
 
     // 获取或创建 Gist
@@ -12013,33 +12019,71 @@ allKeys.forEach(key => {
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
     const syncTime = new Date().toLocaleString();
-    const taskCount = Object.keys(tasksByDate).length;
+    // 计算有完成任务的天数（打卡天数）
+const taskCount = Object.values(tasksByDate).filter(dailyTasks => 
+  dailyTasks.some(task => task.done === true)
+).length;
     const reflectionCount = Object.keys(dailyReflections).length;
     
-    alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
+    // 根据是否静默模式决定是否弹窗
+    if (!silent) {
+      alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
+    } else {
+      // 静默模式：显示短暂的成功提示（2秒后消失）
+      console.log(`✅ 自动同步成功 - ${syncTime}`);
+      setLastSyncStatus({
+        success: true,
+        time: new Date(),
+        message: `✅ 同步成功 (${new Date().toLocaleTimeString()})`
+      });
+      setTimeout(() => {
+        setLastSyncStatus(prev => ({ ...prev, message: '' }));
+      }, 2000);
+    }
 
   } catch (error) {
     console.error('同步失败:', error);
     
-    let errorMessage = '同步失败：';
-    if (error.message.includes('401')) {
-      errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
-    } else if (error.message.includes('403')) {
-      errorMessage += '权限不足，请确保 Token 有 gist 权限';
-    } else if (error.message.includes('404')) {
-      errorMessage += 'Gist 不存在，将自动创建新的备份';
-      localStorage.removeItem('github_gist_id');
+    if (!silent) {
+      let errorMessage = '同步失败：';
+      if (error.message.includes('401')) {
+        errorMessage += 'Token 无效或已过期，请重新设置 GitHub Token';
+      } else if (error.message.includes('403')) {
+        errorMessage += '权限不足，请确保 Token 有 gist 权限';
+      } else if (error.message.includes('404')) {
+        errorMessage += 'Gist 不存在，将自动创建新的备份';
+        localStorage.removeItem('github_gist_id');
+      } else {
+        errorMessage += error.message;
+      }
+      alert(errorMessage);
     } else {
-      errorMessage += error.message;
+      // 静默模式：显示失败提示
+      let friendlyMessage = '同步失败';
+      if (error.message.includes('401')) {
+        friendlyMessage = 'Token 已过期，请重新设置';
+      } else if (error.message.includes('403')) {
+        friendlyMessage = '权限不足，请检查 Token';
+      } else if (error.message.includes('404')) {
+        friendlyMessage = 'Gist 不存在，将自动创建';
+        localStorage.removeItem('github_gist_id');
+      } else {
+        friendlyMessage = error.message.slice(0, 30);
+      }
+      
+      setLastSyncStatus({
+        success: false,
+        time: new Date(),
+        message: `❌ ${friendlyMessage}`
+      });
+      setTimeout(() => {
+        setLastSyncStatus(prev => ({ ...prev, message: '' }));
+      }, 3000);
     }
-    
-    alert(errorMessage);
   } finally {
     setIsSyncing(false);
   }
-}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]); // 添加 reminderText 依赖
-
-
+}, [tasksByDate, templates, dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]);
 
 
 // 找到 autoRestoreLatestData 函数，确保恢复每日提醒
@@ -13114,15 +13158,11 @@ useEffect(() => {
 
   // ==== 新增：状态变化监听 ====
   useEffect(() => {
-    console.log('🔄 tasksByDate 状态变化:', {
-      天数: Object.keys(tasksByDate).length,
-      总任务数: Object.values(tasksByDate).flat().length,
-      内容: tasksByDate
-    });
+    
   }, [tasksByDate]);
   
   useEffect(() => {
-    console.log('🔄 templates 状态变化:', templates);
+    
   }, [templates]);
   
 
@@ -13459,7 +13499,7 @@ useEffect(() => {
 
 // 加载任务数据
 const savedTasks = await loadDataWithFallback('tasks', {});
-console.log('✅ 加载的任务数据:', savedTasks);
+
 if (savedTasks) {
   setTasksByDate(savedTasks);
 
@@ -13612,9 +13652,9 @@ if (savedCategories) {
 
       // 设置定时备份
       localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
-      console.log('✅ 初始化状态已保存到存储');
+      
       setIsInitialized(true);
-      console.log('✅ isInitialized 设置为 true');
+      
 
 
 
@@ -13627,39 +13667,38 @@ if (savedCategories) {
 
   initializeApp();
 }, []);
-
-// ===== 修复：将备份定时器移出 initializeApp =====
+// ===== 每天第一次打开页面自动备份一次 =====
 useEffect(() => {
   let backupTimer;
   
   if (isInitialized) {
-    console.log('⏰ 初始化完成，启动自动备份...');
+    // 检查今天是否已经备份过
+    const lastBackupDate = localStorage.getItem('last_auto_backup_date');
+    const today = new Date().toISOString().split('T')[0];
     
-    // 设置定时备份
-    backupTimer = setInterval(() => {
-      console.log('⏰ 执行自动备份...', new Date().toLocaleString());
-      autoBackup();
-    }, AUTO_BACKUP_CONFIG.backupInterval);
-    
-    console.log('✅ 自动备份已启动，间隔:', AUTO_BACKUP_CONFIG.backupInterval / 1000 / 60 + '分钟');
-    
-    // 立即执行第一次备份（延迟5秒确保数据完全加载）
-    setTimeout(() => {
-      console.log('💾 执行首次自动备份...');
-      autoBackup();
-    }, 5000);
+    if (lastBackupDate !== today) {
+      console.log('💾 今天首次打开，执行自动备份...');
+      
+      // 延迟5秒执行备份
+      const timer = setTimeout(() => {
+        autoBackup();
+        localStorage.setItem('last_auto_backup_date', today);
+        console.log('✅ 今日自动备份完成');
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      console.log('✅ 今天已经备份过，跳过自动备份');
+    }
   }
   
   // 清理函数
   return () => {
     if (backupTimer) {
       clearInterval(backupTimer);
-      console.log('🛑 自动备份已停止');
     }
   };
-}, [isInitialized]); // 只在 isInitialized 变化时执行
-      
-
+}, [isInitialized]);
  
 
 
@@ -13672,46 +13711,51 @@ useEffect(() => {
 // 自动保存任务数据
 useEffect(() => {
   if (isInitialized) { // 这里必须使用 isInitialized
-    console.log('💾 自动保存任务数据...');
+    
     saveMainData('tasks', tasksByDate);
   }
 }, [tasksByDate, isInitialized]);
 
 
 // 每天第一次打开页面自动同步到云端
+// 每天第一次打开页面自动同步到云端
+// 每天第一次打开页面自动同步到云端
 useEffect(() => {
-  if (!isInitialized) return;
+  console.log('🔍 自动同步检查 - isInitialized:', isInitialized);
   
-  // 检查今天是否已经同步过
+  if (!isInitialized) {
+    console.log('🔍 等待初始化完成...');
+    return;
+  }
+  
   const lastAutoSyncDate = localStorage.getItem('last_auto_sync_date');
   const today = new Date().toISOString().split('T')[0];
   
-  // 如果今天还没有同步过，则执行自动同步
+  console.log('🔍 同步检查:', { lastAutoSyncDate, today });
+  
   if (lastAutoSyncDate !== today) {
     const token = localStorage.getItem('github_token');
     const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
     
+    console.log('🔍 同步条件:', { token: !!token, autoSyncEnabled });
+    
     if (token && autoSyncEnabled) {
       console.log('☁️ 每天首次打开页面，自动同步到云端...', new Date().toLocaleString());
       
-      // 延迟3秒执行，确保页面完全加载和数据就绪
       const timer = setTimeout(() => {
-        syncToGitHub();
-        // 记录今天已经同步过
+        console.log('🚀 执行 syncToGitHub(true)');
+        syncToGitHub(true);
         localStorage.setItem('last_auto_sync_date', today);
       }, 3000);
       
       return () => clearTimeout(timer);
-    } else if (!token) {
-      console.log('⚠️ 未设置 GitHub Token，跳过自动同步');
-    } else if (!autoSyncEnabled) {
-      console.log('⚠️ 自动同步未开启，跳过');
+    } else {
+      console.log('⚠️ 条件不满足，跳过同步');
     }
   } else {
     console.log('✅ 今天已经同步过，跳过自动同步');
   }
-}, [isInitialized]);
-
+}, [isInitialized]); // 依赖 isInitialized，当它变为 true 时会重新执行
 // 👇 在这里添加清理空日期的 useEffect
 useEffect(() => {
   if (isInitialized) {
@@ -13740,7 +13784,7 @@ useEffect(() => {
 // 自动保存模板数据
 useEffect(() => {
   if (isInitialized) { // 这里必须使用 isInitialized
-    console.log('💾 自动保存模板数据...');
+    
     saveMainData('templates', templates);
   }
 }, [templates, isInitialized]);
@@ -13797,26 +13841,26 @@ const checkDataIntegrity = async () => {
     integrityReport.categories.exists = !!categories;
     integrityReport.categories.count = categories ? categories.length : 0;
 
-    console.log('📊 数据完整性报告:', integrityReport);
+    
     
     // 如果有数据缺失，尝试修复
     if (!integrityReport.tasks.exists) {
-      console.log('⚠️ 任务数据缺失，重新初始化...');
+      
       await saveMainData('tasks', {});
     }
     
     if (!integrityReport.customAchievements.exists) {
-      console.log('⚠️ 自定义成就数据缺失，重新初始化...');
+      
       await saveMainData('customAchievements', []);
     }
     
     if (!integrityReport.unlockedAchievements.exists) {
-      console.log('⚠️ 已解锁成就数据缺失，重新初始化...');
+      
       await saveMainData('unlockedAchievements', []);
     }
 
   } catch (error) {
-    console.error('数据完整性检查失败:', error);
+    
   }
 };
 
@@ -15542,10 +15586,7 @@ const getCategoryTasks = (catName) => {
   
  
   
-  if (catName === '运动') {
-    console.log('过滤后的结果数量:', result.length);
-    console.log('========================');
-  }
+
   
   return result;
 };
@@ -15785,22 +15826,9 @@ const todayStats = calculateTodayStats();
   }
 
 
-// ==== 渲染调试 - 展开详细内容 ====
-console.log('🎨 组件渲染 - 详细状态:', {
-  任务天数: Object.keys(tasksByDate).length,
-  任务数据所有日期: Object.keys(tasksByDate),
-  选中日期: selectedDate,
-  今日任务数量: todayTasks.length,
-  今日任务详情: todayTasks,
-  模板数量: templates.length,
-  是否初始化: isInitialized
-});
 
-// 特别检查今日任务
-console.log('📅 今日任务检查:');
-console.log('  - 选中日期:', selectedDate);
-console.log('  - 任务数据中该日期的任务:', tasksByDate[selectedDate]);
-console.log('  - todayTasks 变量:', todayTasks);
+
+
 
 
 // 如果任务数据为空，显示警告
@@ -15964,9 +15992,9 @@ if (isInitialized && todayTasks.length === 0) {
   <GitHubSyncModal
     config={syncConfig}
     onSave={(newConfig) => {
-      // 保存配置到 localStorage
       localStorage.setItem('github_token', newConfig.token);
       localStorage.setItem('github_auto_sync', newConfig.autoSync.toString());
+      localStorage.setItem('github_gist_id', newConfig.gistId);
       setSyncConfig({ ...syncConfig, ...newConfig });
       setShowGitHubSyncModal(false);
     }}
@@ -17810,7 +17838,7 @@ if (isInitialized && todayTasks.length === 0) {
 <div
   onClick={(e) => {
     e.preventDefault();
-    if (isSyncing) {
+    if (isSyncing) {  // ✅ 检查是否正在同步
       alert('正在同步中，请稍候...');
       return;
     }
@@ -17821,13 +17849,13 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     padding: "6px 10px",
-    backgroundColor: isSyncing ? "#ccc" : "#1a73e8",
+    backgroundColor: isSyncing ? "#ccc" : "#1a73e8",  // ✅ 变灰
     color: "#fff",
     fontSize: 12,
     borderRadius: 6,
     width: "70px",
     height: "30px",
-    cursor: isSyncing ? "not-allowed" : "pointer",
+    cursor: isSyncing ? "not-allowed" : "pointer",  // ✅ 鼠标样式变化
     userSelect: "none",
     boxSizing: "border-box",
     opacity: isSyncing ? 0.7 : 1
@@ -17936,6 +17964,29 @@ if (isInitialized && todayTasks.length === 0) {
 {/* 其他设置下拉菜单 */}
 
 
+{/* 同步状态提示 - 短暂显示 */}
+{lastSyncStatus.message && (
+  <div style={{
+    position: 'fixed',
+    bottom: 80,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: lastSyncStatus.success === true ? '#28a745' : 
+                     lastSyncStatus.success === false ? '#dc3545' : '#ffc107',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    zIndex: 2000,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    fontFamily: 'sans-serif'
+  }}>
+    {lastSyncStatus.message}
+  </div>
+)}
+
 {/* 其他设置弹窗模态框 */}
 {showSettingsMenu && (
   <div style={{
@@ -17970,6 +18021,22 @@ if (isInitialized && todayTasks.length === 0) {
       </h3>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+       
+        {/* 👇 在这里添加最后同步时间的显示 */}
+        <div style={{
+          padding: '8px 12px',
+          fontSize: '12px',
+          color: '#666',
+          borderBottom: '1px solid #eee',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '6px',
+          marginBottom: '4px'
+        }}>
+          📅 最后同步: {localStorage.getItem('github_last_sync') 
+            ? new Date(localStorage.getItem('github_last_sync')).toLocaleString() 
+            : '从未同步'}
+        </div>
+       
         {/* 导出数据 */}
         <div
           onClick={() => {
