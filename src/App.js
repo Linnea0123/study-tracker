@@ -11519,46 +11519,27 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
   );
 };
 
-
-
-// 里程碑界面组件
 const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
   // 里程碑配置
   const milestones = [
-    { count: 50, emoji: "🌱", title: "学习新芽", description: "完成50个学习任务", color: "#4CAF50" },
-    { count: 100, emoji: "📘", title: "小小学霸", description: "完成100个学习任务", color: "#2196F3" },
-    { count: 200, emoji: "🏅", title: "青铜学者", description: "完成200个学习任务", color: "#CD7F32" },
-    { count: 300, emoji: "🥈", title: "白银学者", description: "完成300个学习任务", color: "#C0C0C0" },
-    { count: 500, emoji: "🥇", title: "黄金学者", description: "完成500个学习任务", color: "#FFD700" },
-    { count: 800, emoji: "💎", title: "钻石学者", description: "完成800个学习任务", color: "#00BCD4" },
-    { count: 1000, emoji: "👑", title: "传奇学霸", description: "完成1000个学习任务", color: "#9C27B0" }
+    { count: 50, title: "学习新芽", color: "#4CAF50" },
+    { count: 100, title: "小小学霸", color: "#2196F3" },
+    { count: 200, title: "青铜学者", color: "#CD7F32" },
+    { count: 300, title: "白银学者", color: "#C0C0C0" },
+    { count: 500, title: "黄金学者", color: "#FFD700" },
+    { count: 800, title: "钻石学者", color: "#00BCD4" },
+    { count: 1000, title: "传奇学霸", color: "#9C27B0" }
   ];
 
-  // 计算下一个里程碑
+  // 下一个里程碑
   const nextMilestone = milestones.find(m => m.count > totalCompletedTasks);
-  const currentMilestone = milestones.reduce((prev, curr) => {
-    if (curr.count <= totalCompletedTasks) return curr;
-    return prev;
-  }, null);
-  
-  // 计算到下一个里程碑的进度
-  const progressToNext = nextMilestone 
-    ? ((totalCompletedTasks - (currentMilestone?.count || 0)) / (nextMilestone.count - (currentMilestone?.count || 0))) * 100
-    : 100;
-  
-  // 已解锁的里程碑
-  const unlockedMilestones = milestones.filter(m => m.count <= totalCompletedTasks);
-  // 未解锁的里程碑
-  const lockedMilestones = milestones.filter(m => m.count > totalCompletedTasks);
+  // 当前进度百分比
+  const prevCount = milestones.find(m => m.count <= totalCompletedTasks)?.count || 0;
+  const nextCount = nextMilestone?.count || prevCount;
+  const progress = nextMilestone ? ((totalCompletedTasks - prevCount) / (nextCount - prevCount)) * 100 : 100;
 
-  // 获取鼓励语
-  const getEncouragement = () => {
-    if (!nextMilestone) return "🎉 太厉害了！你已经解锁了所有里程碑！继续保持！";
-    const remaining = nextMilestone.count - totalCompletedTasks;
-    if (remaining <= 10) return `🔥 只差 ${remaining} 个任务就能解锁 ${nextMilestone.title}！加油！`;
-    if (remaining <= 50) return `💪 再完成 ${remaining} 个任务，就能获得 ${nextMilestone.emoji} ${nextMilestone.title}！`;
-    return `🌟 继续努力，距离下一个里程碑还差 ${remaining} 个任务`;
-  };
+  // 已解锁的勋章
+  const unlockedCount = milestones.filter(m => m.count <= totalCompletedTasks).length;
 
   return (
     <div style={{
@@ -11574,236 +11555,148 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
       zIndex: 1000,
       padding: '10px'
     }} onClick={onClose}>
+      {/* 内嵌样式 - 禁用按钮悬浮效果 */}
+      <style>{`
+        .milestone-close-btn,
+        .milestone-close-btn:hover,
+        .milestone-close-btn:active,
+        .milestone-close-btn:focus {
+          background-color: transparent !important;
+          color: #999 !important;
+          transform: none !important;
+          opacity: 1 !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+      `}</style>
+      
       <div style={{
         backgroundColor: '#fff',
-        borderRadius: '20px',
+        borderRadius: '12px',
         width: '100%',
-        maxWidth: '500px',
-        maxHeight: '85vh',
-        overflow: 'auto',
-        position: 'relative',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+        maxWidth: '350px',
+        overflow: 'hidden',
+        position: 'relative'
       }} onClick={e => e.stopPropagation()}>
         
-        {/* 头部背景 */}
+        {/* 右上角关闭按钮 - 无背景色 */}
+        <button
+          className="milestone-close-btn"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            width: '28px',
+            height: '28px',
+            backgroundColor: 'transparent',
+            color: '#999',
+            border: 'none',
+            borderRadius: '50%',
+            fontSize: '18px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10
+          }}
+        >
+          ×
+        </button>
+
+        {/* 头部 */}
         <div style={{
-          background: 'linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)',
           padding: '20px',
           textAlign: 'center',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          color: '#fff'
+          borderBottom: '1px solid #eee'
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏆</div>
-          <h2 style={{ margin: 0, fontSize: '20px' }}>学习里程碑</h2>
-          <div style={{ fontSize: '13px', opacity: 0.9, marginTop: '4px' }}>
-            已完成 {totalCompletedTasks} 个学习任务
+          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏆</div>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+            已完成 {totalCompletedTasks} 个任务
           </div>
         </div>
 
-        {/* 下一个里程碑进度 */}
+        {/* 进度条 */}
         {nextMilestone && (
-          <div style={{
-            padding: '16px',
-            backgroundColor: '#f8f9fa',
-            margin: '16px',
-            borderRadius: '16px',
-            border: `2px solid ${nextMilestone.color}20`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '32px' }}>{nextMilestone.emoji}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 'bold', fontSize: '16px', color: nextMilestone.color }}>
-                  下一个目标：{nextMilestone.title}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  完成 {nextMilestone.count} 个任务
-                </div>
-              </div>
+          <div style={{ padding: '16px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              fontSize: '12px',
+              color: '#666',
+              marginBottom: '6px'
+            }}>
+              <span>{prevCount}</span>
+              <span>↓ {nextCount - totalCompletedTasks} 个任务 → {nextMilestone.title}</span>
+              <span>{nextCount}</span>
             </div>
-            
-            {/* 进度条 */}
             <div style={{
               width: '100%',
-              height: '10px',
+              height: '6px',
               backgroundColor: '#e0e0e0',
-              borderRadius: '5px',
+              borderRadius: '3px',
               overflow: 'hidden'
             }}>
               <div style={{
-                width: `${Math.min(progressToNext, 100)}%`,
+                width: `${Math.min(progress, 100)}%`,
                 height: '100%',
                 backgroundColor: nextMilestone.color,
-                borderRadius: '5px',
-                transition: 'width 0.5s ease'
+                borderRadius: '3px'
               }} />
             </div>
-            
-            <div style={{
-              fontSize: '13px',
-              color: '#1a73e8',
-              textAlign: 'center',
-              marginTop: '10px',
-              fontWeight: 'bold'
-            }}>
-              {getEncouragement()}
-            </div>
           </div>
         )}
 
-        {/* 已解锁里程碑 */}
-        {unlockedMilestones.length > 0 && (
-          <div style={{ padding: '0 16px' }}>
-            <h3 style={{
-              fontSize: '14px',
-              color: '#333',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <span>✅</span> 已解锁 ({unlockedMilestones.length}/{milestones.length})
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-              {unlockedMilestones.map(milestone => (
+        {/* 勋章列表 */}
+        <div style={{ padding: '0 16px 20px 16px' }}>
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#999', 
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            已获得 {unlockedCount}/{milestones.length} 枚勋章
+          </div>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+            {milestones.map(m => {
+              const isUnlocked = m.count <= totalCompletedTasks;
+              return (
                 <div
-                  key={milestone.count}
+                  key={m.count}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px',
-                    backgroundColor: `${milestone.color}15`,
-                    borderRadius: '12px',
-                    border: `1px solid ${milestone.color}30`
+                    width: '70px',
+                    padding: '8px 4px',
+                    textAlign: 'center',
+                    backgroundColor: isUnlocked ? `${m.color}15` : '#f5f5f5',
+                    borderRadius: '8px',
+                    opacity: isUnlocked ? 1 : 0.5
                   }}
                 >
-                  <div style={{ fontSize: '28px' }}>{milestone.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '15px', color: milestone.color }}>
-                      {milestone.title}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>{milestone.description}</div>
-                  </div>
-                  <div style={{
-                    backgroundColor: milestone.color,
-                    color: '#fff',
-                    padding: '4px 8px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 'bold'
+                  <div style={{ 
+                    fontSize: '20px',
+                    marginBottom: '4px',
+                    filter: isUnlocked ? 'none' : 'grayscale(1)'
                   }}>
-                    已达成
+                    {isUnlocked ? '🏅' : '🔒'}
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 未解锁里程碑 */}
-        {lockedMilestones.length > 0 && (
-          <div style={{ padding: '0 16px' }}>
-            <h3 style={{
-              fontSize: '14px',
-              color: '#999',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <span>🔒</span> 未解锁
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-              {lockedMilestones.map(milestone => (
-                <div
-                  key={milestone.count}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '12px',
-                    opacity: 0.7
-                  }}
-                >
-                  <div style={{ fontSize: '28px', filter: 'grayscale(0.5)' }}>{milestone.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#999' }}>
-                      {milestone.title}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>{milestone.description}</div>
-                  </div>
-                  <div style={{
-                    backgroundColor: '#ccc',
-                    color: '#fff',
-                    padding: '4px 8px',
-                    borderRadius: '20px',
-                    fontSize: '11px'
+                  <div style={{ 
+                    fontSize: '11px', 
+                    fontWeight: isUnlocked ? 'bold' : 'normal',
+                    color: isUnlocked ? m.color : '#999'
                   }}>
-                    需 {milestone.count} 个
+                    {m.title}
                   </div>
+                  <div style={{ fontSize: '10px', color: '#aaa' }}>{m.count}</div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 统计卡片 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '10px',
-          margin: '16px',
-          padding: '12px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a73e8' }}>
-              {totalCompletedTasks}
-            </div>
-            <div style={{ fontSize: '10px', color: '#666' }}>完成任务</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a73e8' }}>
-              {unlockedMilestones.length}
-            </div>
-            <div style={{ fontSize: '10px', color: '#666' }}>已获勋章</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a73e8' }}>
-              {nextMilestone ? nextMilestone.count - totalCompletedTasks : 0}
-            </div>
-            <div style={{ fontSize: '10px', color: '#666' }}>下个目标</div>
+              );
+            })}
           </div>
         </div>
-
-        {/* 关闭按钮 */}
-        <button
-          onClick={onClose}
-          style={{
-            width: '90%',
-            margin: '0 auto 20px auto',
-            display: 'block',
-            padding: '12px',
-            backgroundColor: '#1a73e8',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '30px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          继续努力 🎓
-        </button>
       </div>
     </div>
   );
 };
-
 
 function App() {
   // 在 App 组件开头，其他 useState 附近添加
@@ -16815,21 +16708,21 @@ if (isInitialized && todayTasks.length === 0) {
   <button
     onClick={() => setShowMilestoneModal(true)}
     style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: 36,
-      height: 36,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      fontSize: "22px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 36,
+    height: 36,
+    backgroundColor: "transparent", // 改为透明
+    border: "none", // 去掉边框
+    cursor: "pointer",
+    fontSize: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    padding: 0 // 确保没有内边距
+  }}
     title="里程碑"
   >
     🏆
