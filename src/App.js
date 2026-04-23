@@ -23,30 +23,51 @@ const GradeModal = ({ onClose, isVisible }) => {
   const dragStartY = useRef(null);  // 👈 添加这一行
 const touchStartIndex = useRef(null);
   const touchMoveIndex = useRef(null);
-  
+  const lastDateRef = useRef(selectedDate);
 
+// 触摸拖拽开始
 const handleTouchStart = (e, index) => {
   if (!isSortingSubCategories) return;
   e.preventDefault();
-  touchStartIndex.current = index;
+  dragSubCategoryIndex.current = index;
+  touchStartY.current = e.touches[0].clientY;
   e.currentTarget.style.opacity = '0.5';
 };
 
 // 触摸拖拽移动
 const handleTouchMove = (e, index) => {
   if (!isSortingSubCategories) return;
-  if (touchStartIndex.current === null) return;
-  if (touchStartIndex.current === index) return;
-  
+  if (dragSubCategoryIndex.current === null) return;
   e.preventDefault();
   
-  const newList = [...tempSubCategories];
-  const draggedItem = newList[touchStartIndex.current];
-  newList.splice(touchStartIndex.current, 1);
-  newList.splice(index, 0, draggedItem);
+  const touch = e.touches[0];
+  const currentY = touch.clientY;
+  const startY = touchStartY.current;
   
-  setTempSubCategories(newList);
-  touchStartIndex.current = index;
+  if (startY === null) return;
+
+ // 计算目标索引
+  const elements = document.querySelectorAll('[data-drag-index]');
+  let targetIndex = dragSubCategoryIndex.current;
+  
+  for (let i = 0; i < elements.length; i++) {
+    const rect = elements[i].getBoundingClientRect();
+    const centerY = rect.top + rect.height / 2;
+    if (currentY > centerY) {
+      targetIndex = i;
+    }
+  }
+  
+  if (targetIndex !== dragSubCategoryIndex.current) {
+    const newList = [...tempSubCategories];
+    const draggedItem = newList[dragSubCategoryIndex.current];
+    newList.splice(dragSubCategoryIndex.current, 1);
+    newList.splice(targetIndex, 0, draggedItem);
+    
+    setTempSubCategories(newList);
+    dragSubCategoryIndex.current = targetIndex;
+    touchStartY.current = currentY;
+  }
 };
 
 // 触摸拖拽结束
@@ -56,7 +77,8 @@ const handleTouchEnd = (e) => {
   if (e.currentTarget) {
     e.currentTarget.style.opacity = '';
   }
-  touchStartIndex.current = null;
+  dragSubCategoryIndex.current = null;
+  touchStartY.current = null;
 };
 
   const mainSubjects = ['数学', '语文', '英语'];
@@ -88,21 +110,21 @@ const handleTouchEnd = (e) => {
 
   // 在 GradeModal 组件中，替换所有拖拽相关函数为以下版本：
 
-  // 开始排序
-  const handleStartSorting = () => {
-    const currentList = subjectSubCategories[selectedSubject] || [];
-    setTempSubCategories([...currentList]);
-    setIsSortingSubCategories(true);
-  };
+// 开始排序
+const handleStartSorting = () => {
+  const currentList = subjectSubCategories[selectedSubject] || [];
+  setTempSubCategories([...currentList]);
+  setIsSortingSubCategories(true);
+};
 
-  // 完成排序并保存
-  const handleFinishSorting = () => {
-    setSubjectSubCategories(prev => ({
-      ...prev,
-      [selectedSubject]: [...tempSubCategories]
-    }));
-    setIsSortingSubCategories(false);
-  };
+// 完成排序并保存
+const handleFinishSorting = () => {
+  setSubjectSubCategories(prev => ({
+    ...prev,
+    [selectedSubject]: [...tempSubCategories]
+  }));
+  setIsSortingSubCategories(false);
+};
 
  // 替换所有拖拽函数为以下版本：
 
@@ -10458,40 +10480,53 @@ const SortableTaskList = ({
     return null;
   }
   
-  const handleDragStart = (e, index) => {
-    if (!isSortingMode) return;
-    dragItemIndex.current = index;
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    e.target.style.opacity = '0.5';
-  };
-  
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '';
-    dragItemIndex.current = null;
-  };
-  
-  const handleDragOver = (e, targetIndex) => {
+// 拖拽开始
+// 拖拽开始
+const handleDragStart = (e, index) => {
+  if (!isSortingMode) {
     e.preventDefault();
-    if (!isSortingMode) return;
-    if (dragItemIndex.current === null) return;
-    if (dragItemIndex.current === targetIndex) return;
-    
-    const newList = [...taskList];
-    const draggedItem = newList[dragItemIndex.current];
-    newList.splice(dragItemIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTaskList(newList);
-    dragItemIndex.current = targetIndex;
-  };
+    return false;
+  }
+  dragItemIndex.current = index;
+  e.dataTransfer.setData('text/plain', index.toString());
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setDragImage(new Image(), 0, 0);
+  e.currentTarget.style.opacity = '0.5';
+  return true;
+};
+
+// 拖拽结束
+const handleDragEnd = (e) => {
+  if (e.currentTarget) {
+    e.currentTarget.style.opacity = '';
+  }
+  dragItemIndex.current = null;
+};
+
+// 拖拽经过
+const handleDragOver = (e, targetIndex) => {
+  e.preventDefault();
+  if (!isSortingMode) return;
+  if (dragItemIndex.current === null) return;
+  if (dragItemIndex.current === targetIndex) return;
   
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!isSortingMode) return;
-    saveOrder(taskList);
-    dragItemIndex.current = null;
-  };
+  const newList = [...taskList];
+  const draggedItem = newList[dragItemIndex.current];
+  newList.splice(dragItemIndex.current, 1);
+  newList.splice(targetIndex, 0, draggedItem);
+  
+  setTaskList(newList);
+  dragItemIndex.current = targetIndex;
+};
+
+const handleDrop = (e) => {
+  e.preventDefault();
+  if (!isSortingMode) return;
+  saveOrder(taskList);
+  dragItemIndex.current = null;
+};
+  
+
 
   // 删除任务 - 修复：正确调用 onDeleteTask
   const handleDeleteTask = (task, e) => {
@@ -11509,7 +11544,8 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 
 
 function App() {
-  
+  // 在 App 组件中，找到其他 useRef 定义的位置，添加：
+const isUserTogglingRef = useRef(false);
   // 添加这个状态定义
   const [lastSyncStatus, setLastSyncStatus] = useState({
     success: false,
@@ -11644,7 +11680,7 @@ const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [confettiParts, setConfettiParts] = useState([]);
 const lastCompletionStatus = useRef({});
 const isFirstLoad = useRef(true);  // 👈 添加
-
+const prevCompletionState = useRef({});
 
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -12729,10 +12765,15 @@ const handleCrossDateTask = (task, targetDates) => {
   alert(`任务已设置在 ${targetDates.length} 个日期显示`);
 };
 
+
+
 const toggleDone = (task) => {
   const wasDone = task.done;
+  const newDoneState = !wasDone;
   
-  // 如果是跨日期任务，同步所有日期的状态
+  console.log(`🖱️ 用户点击: ${task.text}, 原状态=${wasDone}, 新状态=${newDoneState}`);
+  
+  // 如果是跨日期任务
   if (task.crossDateId || (task.dateRange && task.dateRange.allDates)) {
     const crossDateId = task.crossDateId;
     const actualCompletedDate = selectedDate;
@@ -12745,15 +12786,25 @@ const toggleDone = (task) => {
           if (t.crossDateId === crossDateId) {
             return {
               ...t,
-              done: !wasDone,
-              pinned: !wasDone ? false : t.pinned,
-              subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks,
-              actualCompletedDate: !wasDone ? actualCompletedDate : undefined
+              done: newDoneState,
+              pinned: newDoneState ? false : t.pinned,
+              subTasks: t.subTasks ? t.subTasks.map(st => ({ ...st, done: newDoneState })) : t.subTasks,
+              actualCompletedDate: newDoneState ? actualCompletedDate : undefined
             };
           }
           return t;
         });
       });
+      
+      // ✅ 只在完成时检测
+      if (newDoneState === true) {
+        setTimeout(() => {
+          // 获取更新后的当前日期任务
+          const updatedCurrentTasks = newTasksByDate[selectedDate] || [];
+          console.log('🔍 检测撒花，当前任务数:', updatedCurrentTasks.length);
+          checkConfettiWithTasks(updatedCurrentTasks);
+        }, 100);
+      }
       
       return newTasksByDate;
     });
@@ -12765,27 +12816,139 @@ const toggleDone = (task) => {
     const currentDateTasks = prev[selectedDate] || [];
     const updatedTasks = currentDateTasks.map(t => {
       if (t.id === task.id) {
-        // 同时更新子任务
-        const newSubTasks = t.subTasks ? t.subTasks.map(st => ({ ...st, done: !wasDone })) : t.subTasks;
+        const newSubTasks = t.subTasks ? t.subTasks.map(st => ({ ...st, done: newDoneState })) : t.subTasks;
         return { 
           ...t, 
-          done: !wasDone,
-          pinned: !wasDone ? false : t.pinned,
+          done: newDoneState,
+          pinned: newDoneState ? false : t.pinned,
           subTasks: newSubTasks
         };
       }
       return t;
     });
     
-    return {
+    const newTasksByDate = {
       ...prev,
       [selectedDate]: updatedTasks
     };
+    
+    // ✅ 只在完成时检测
+    if (newDoneState === true) {
+      setTimeout(() => {
+        console.log('🔍 检测撒花，更新后任务:', updatedTasks.map(t => ({ text: t.text, done: t.done })));
+        checkConfettiWithTasks(updatedTasks);
+      }, 100);
+    }
+    
+    return newTasksByDate;
   });
 };
 
+// 检测撒花函数 - 接收当前日期的所有任务
+const checkConfettiWithTasks = useCallback((currentTasks) => {
+  console.log('🎯 开始检测撒花，任务列表:', currentTasks.map(t => ({ 
+    text: t.text, 
+    category: t.category,
+    subCategory: t.subCategory,
+    done: t.done,
+    pinned: t.pinned 
+  })));
+  
+  // 1. 检测主分类完成（排除置顶任务）
+  categories.forEach(cat => {
+    // 获取该分类下所有非置顶任务
+    const catTasks = currentTasks.filter(t => 
+      t.category === cat.name && 
+      t.pinned !== true
+    );
+    
+    if (catTasks.length === 0) {
+      console.log(`📊 ${cat.name}: 无任务，跳过`);
+      return;
+    }
+    
+    const completedCount = catTasks.filter(t => t.done === true).length;
+    const isNowComplete = completedCount === catTasks.length;
+    const key = `complete_${cat.name}_${selectedDate}`;
+    const wasComplete = localStorage.getItem(key) === 'true';
+    
+    console.log(`📊 ${cat.name}: 总任务=${catTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
+    
+    // 只有从 false 变成 true 时才撒花
+    if (wasComplete === false && isNowComplete === true) {
+      console.log(`🎉🎉🎉 恭喜！${cat.name} 全部完成！撒花！🎉🎉🎉`);
+      triggerConfetti(cat.name);
+    }
+    localStorage.setItem(key, isNowComplete);
+  });
+  
+  // 2. 检测校内子分类完成
+  const schoolCategory = categories.find(c => c.name === '校内');
+  if (schoolCategory) {
+    schoolCategory.subCategories.forEach(subCat => {
+      // 获取校内下该子分类的所有非置顶任务
+      const subCatTasks = currentTasks.filter(t => 
+        t.category === '校内' && 
+        t.subCategory === subCat &&
+        t.pinned !== true
+      );
+      
+      if (subCatTasks.length === 0) {
+        console.log(`📊 校内-${subCat}: 无任务，跳过`);
+        return;
+      }
+      
+      const completedCount = subCatTasks.filter(t => t.done === true).length;
+      const isNowComplete = completedCount === subCatTasks.length;
+      const key = `complete_校内_${subCat}_${selectedDate}`;
+      const wasComplete = localStorage.getItem(key) === 'true';
+      
+      console.log(`📊 校内-${subCat}: 总任务=${subCatTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
+      
+      // 只有从 false 变成 true 时才撒花
+      if (wasComplete === false && isNowComplete === true) {
+        console.log(`🎉🎉🎉 恭喜！校内 - ${subCat} 全部完成！撒花！🎉🎉🎉`);
+        triggerConfetti(`校内 - ${subCat}`);
+      }
+      localStorage.setItem(key, isNowComplete);
+    });
+  }
+}, [categories, selectedDate]);
 
-// 迁移任务函数
+const triggerConfetti = (categoryName) => {
+  console.log(`🎉 恭喜！${categoryName} 全部完成！`);
+  
+  // 获取屏幕中心点坐标
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  
+  const parts = [];
+  
+  // 只生成 1 个大 🎉，从中心出现
+  parts.push({
+    id: Date.now(),
+    emoji: '🎉',  // 撒花 emoji
+    startX: centerX,
+    startY: centerY,
+    fontSize: 100,  // 超大号字体
+    rotation: 0,
+    delay: 0
+  });
+  
+  setConfettiParts(parts);
+  
+  // 2 秒后清除
+  setTimeout(() => {
+    setConfettiParts([]);
+  }, 2000);
+};
+
+// 添加撒花检测函数
+// 添加撒花检测函数
+// 添加撒花检测函数
+// 添加撒花检测函数 - 移除 isUserTogglingRef 判断
+
+
 const moveTaskToDate = (task, targetDate, moveOption, selectedCategory) => {
   if (moveOption === 'single') {
     // 迁移单个任务
@@ -15787,33 +15950,7 @@ const getTasksBySubCategory = (catName) => {
 
 // ========== 大拇指动画函数 ==========
 // ========== 撒花动画函数 - 大号 🎉 从中心绽放 ==========
-const triggerConfetti = (categoryName) => {
-  console.log(`🎉 恭喜！${categoryName} 全部完成！`);
-  
-  // 获取屏幕中心点坐标
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2;
-  
-  const parts = [];
-  
-  // 只生成 1 个大 🎉，从中心出现
-  parts.push({
-    id: Date.now(),
-    emoji: '🎉',  // 撒花 emoji
-    startX: centerX,
-    startY: centerY,
-    fontSize: 100,  // 超大号字体
-    rotation: 0,
-    delay: 0
-  });
-  
-  setConfettiParts(parts);
-  
-  // 2 秒后清除
-  setTimeout(() => {
-    setConfettiParts([]);
-  }, 2000);
-};
+
 // ============================================
 
 
@@ -15831,68 +15968,15 @@ const getCategoryTasks = useCallback((catName) => {
   const totalTime = (catName) =>
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
-// 修改撒花检测的 useEffect
-useEffect(() => {
-  // 如果是首次加载，只记录状态不触发动画
-  if (isFirstLoad.current) {
-    categories.forEach(cat => {
-      const catTasks = getCategoryTasks(cat.name);
-      if (catTasks.length === 0) return;
-      const isNowComplete = catTasks.every(task => task.done === true);
-      lastCompletionStatus.current[cat.name] = isNowComplete;
-    });
-    // 首次加载完成后，延迟设置 isFirstLoad 为 false
-    setTimeout(() => {
-      isFirstLoad.current = false;
-    }, 500);
-    return;
-  }
-  
-  categories.forEach(cat => {
-    const catTasks = getCategoryTasks(cat.name);
-    if (catTasks.length === 0) return;
-    
-    const wasComplete = lastCompletionStatus.current[cat.name];
-    const isNowComplete = catTasks.every(task => task.done === true);
-    
-    // 只在状态从 false 变为 true 时触发
-    if (!wasComplete && isNowComplete) {
-      console.log(`🎉 恭喜！${cat.name} 全部完成！`);
-      triggerConfetti(cat.name);
-    }
-    
-    lastCompletionStatus.current[cat.name] = isNowComplete;
-  });
-}, [tasksByDate, categories, selectedDate]); // 添加 selectedDate 依赖
+// 不需要修改 toggleDone，用更简单的方式
 
-// ========== 检测子分类完成并触发撒花 ==========
-useEffect(() => {
-  // 跳过首次加载
-  if (isFirstLoad.current) return;
-  
-  const schoolCategory = categories.find(c => c.name === '校内');
-  if (!schoolCategory) return;
-  
-  schoolCategory.subCategories.forEach(subCat => {
-    const subCatTasks = todayTasks.filter(t => 
-      t.category === '校内' && 
-      t.subCategory === subCat &&
-      t.pinned !== true
-    );
-    
-    if (subCatTasks.length === 0) return;
-    
-    const wasComplete = lastCompletionStatus.current[`校内_${subCat}`];
-    const isNowComplete = subCatTasks.every(task => task.done === true);
-    
-    if (!wasComplete && isNowComplete) {
-      console.log(`🎉 恭喜！校内 - ${subCat} 全部完成！`);
-      triggerConfetti(`校内 - ${subCat}`);
-    }
-    
-    lastCompletionStatus.current[`校内_${subCat}`] = isNowComplete;
-  });
-}, [tasksByDate, categories, todayTasks, selectedDate]); // 添加 selectedDate 依赖
+// 在 App 组件添加一个 ref 来记录上次的日期
+const lastDateRef = useRef(selectedDate);
+
+// 替换原来的撒花检测 useEffect
+
+
+
 // 切换到上一周
 const prevWeek = () => {
   const monday = new Date(currentMonday);
@@ -15944,7 +16028,6 @@ const nextWeek = () => {
   }
 };
 
-// 在 handleDateSelect 函数中添加重置逻辑
 const handleDateSelect = (selectedDate) => {
   const localSelectedDate = new Date(
     selectedDate.getFullYear(), 
@@ -15962,32 +16045,8 @@ const handleDateSelect = (selectedDate) => {
   setSelectedDate(newSelectedDate);
   setShowDatePickerModal(false);
   
-  // 🔑 关键：切换日期时重置完成状态记录
-  // 延迟一点执行，等待新日期的任务数据加载完成
-  setTimeout(() => {
-    // 重置所有分类的完成状态记录
-    categories.forEach(cat => {
-      const catTasks = getCategoryTasks(cat.name);
-      if (catTasks.length === 0) return;
-      const isComplete = catTasks.every(task => task.done === true);
-      lastCompletionStatus.current[cat.name] = isComplete;
-    });
-    
-    // 重置子分类的完成状态记录
-    const schoolCategory = categories.find(c => c.name === '校内');
-    if (schoolCategory) {
-      schoolCategory.subCategories.forEach(subCat => {
-        const subCatTasks = todayTasks.filter(t => 
-          t.category === '校内' && 
-          t.subCategory === subCat &&
-          t.pinned !== true
-        );
-        if (subCatTasks.length === 0) return;
-        const isComplete = subCatTasks.every(task => task.done === true);
-        lastCompletionStatus.current[`校内_${subCat}`] = isComplete;
-      });
-    }
-  }, 100);
+  // 🔑 切换日期时不清除任何状态，让新日期独立检测
+  // 不需要调用 checkAndTriggerConfetti
 };
 
 
