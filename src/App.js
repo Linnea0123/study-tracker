@@ -2009,7 +2009,7 @@ const handleManualBackup = async () => {
 
 const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [token, setToken] = useState(config.token || '');
-  const [autoSync, setAutoSync] = useState(config.autoSync || false);
+  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true);
   const [gistId, setGistId] = useState(config.gistId || '');
 
   const handleSave = () => {
@@ -13678,24 +13678,37 @@ useEffect(() => {
 }, [tasksByDate, isInitialized]);
 
 
-// 👇 放在这下面 👇
+// 每天第一次打开页面自动同步到云端
 useEffect(() => {
   if (!isInitialized) return;
   
   // 检查今天是否已经同步过
-  const lastSyncDate = localStorage.getItem('last_auto_sync_date');
+  const lastAutoSyncDate = localStorage.getItem('last_auto_sync_date');
   const today = new Date().toISOString().split('T')[0];
   
-  if (lastSyncDate !== today) {
+  // 如果今天还没有同步过，则执行自动同步
+  if (lastAutoSyncDate !== today) {
     const token = localStorage.getItem('github_token');
-    if (token) {
-      console.log('☁️ 新的一天，自动同步到云端...');
+    const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
+    
+    if (token && autoSyncEnabled) {
+      console.log('☁️ 每天首次打开页面，自动同步到云端...', new Date().toLocaleString());
+      
+      // 延迟3秒执行，确保页面完全加载和数据就绪
       const timer = setTimeout(() => {
         syncToGitHub();
+        // 记录今天已经同步过
         localStorage.setItem('last_auto_sync_date', today);
       }, 3000);
+      
       return () => clearTimeout(timer);
+    } else if (!token) {
+      console.log('⚠️ 未设置 GitHub Token，跳过自动同步');
+    } else if (!autoSyncEnabled) {
+      console.log('⚠️ 自动同步未开启，跳过');
     }
+  } else {
+    console.log('✅ 今天已经同步过，跳过自动同步');
   }
 }, [isInitialized]);
 
@@ -13815,24 +13828,6 @@ useEffect(() => {
 }, [isInitialized]);
 
   
-
-  // 自动同步
-useEffect(() => {
-  const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
-  const token = localStorage.getItem('github_token');
-  
-  if (autoSyncEnabled && token && isInitialized) {
-    console.log('⏰ 自动同步已启用，每30分钟执行一次');
-    
-    const autoSyncTimer = setInterval(() => {
-      console.log('⏰ 执行自动同步...');
-      syncToGitHub();
-    }, 30 * 60 * 1000); // 30分钟
-    
-    return () => clearInterval(autoSyncTimer);
-  }
-}, [isInitialized, syncToGitHub]);
-
 
 
 
