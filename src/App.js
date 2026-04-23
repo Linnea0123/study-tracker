@@ -1361,6 +1361,7 @@ return (
 
         {/* 子分类管理弹窗 - 保持原有代码不变 */}
         {/* 子分类管理弹窗 - 保持原有代码不变 */}
+{/* 子分类管理弹窗 - 替换拖拽相关代码 */}
 {showSubCategoryManager && (
   <div style={{
     position: 'fixed',
@@ -1376,8 +1377,8 @@ return (
     padding: '10px'
   }} onClick={() => {
     setShowSubCategoryManager(false);
-    setIsSortingSubCategories(false);  // 重置排序状态
-    setTempSubCategories([]);           // 清空临时列表
+    setIsSortingSubCategories(false);
+    setTempSubCategories([]);
   }}>
            
     <div style={{
@@ -1438,8 +1439,8 @@ return (
           value={selectedSubject}
           onChange={(e) => {
             setSelectedSubject(e.target.value);
-            setIsSortingSubCategories(false);  // 重置排序状态
-            setTempSubCategories([]);           // 清空临时列表
+            setIsSortingSubCategories(false);
+            setTempSubCategories([]);
           }}
           style={{
             width: '100%',
@@ -1458,7 +1459,6 @@ return (
 
       {selectedSubject && (
         <>
-          {/* 按钮行：添加按钮 + 排序按钮 */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <button
               onClick={() => {
@@ -1485,7 +1485,6 @@ return (
               + 添加新子分类
             </button>
 
-            {/* 排序按钮 */}
             <button
               onClick={isSortingSubCategories ? handleFinishSorting : handleStartSorting}
               style={{
@@ -1504,23 +1503,7 @@ return (
                 gap: '6px'
               }}
             >
-              {isSortingSubCategories ? (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-                  </svg>
-                  完成排序
-                </>
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-                    <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-                    <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-                  </svg>
-                  排序
-                </>
-              )}
+              {isSortingSubCategories ? '✓ 完成排序' : '⋮⋮ 排序'}
             </button>
           </div>
 
@@ -1549,18 +1532,94 @@ return (
                 (isSortingSubCategories ? tempSubCategories : (subjectSubCategories[selectedSubject] || [])).map((subCat, index) => (
                   <div
                     key={`${subCat}_${index}`}
+                    data-drag-index={index}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: dragSubCategoryIndex.current === index ? '#e8f0fe' : '#fff',
+                      cursor: isSortingSubCategories ? 'grab' : 'default',
+                      userSelect: isSortingSubCategories ? 'none' : 'auto',
+                      touchAction: isSortingSubCategories ? 'none' : 'auto',
+                      transition: 'background-color 0.2s'
+                    }}
+                    // 手机端触摸拖拽
+                    onTouchStart={(e) => {
+                      if (!isSortingSubCategories) return;
+                      e.preventDefault();
+                      const touch = e.touches[0];
+                      dragSubCategoryIndex.current = index;
+                      dragStartY.current = touch.clientY;
+                      // 添加视觉反馈
+                      e.currentTarget.style.backgroundColor = '#e8f0fe';
+                      e.currentTarget.style.transform = 'scale(1.01)';
+                    }}
+                    onTouchMove={(e) => {
+                      if (!isSortingSubCategories) return;
+                      if (dragSubCategoryIndex.current === null) return;
+                      e.preventDefault();
+                      
+                      const touch = e.touches[0];
+                      const currentY = touch.clientY;
+                      const startY = dragStartY.current;
+                      
+                      if (startY === null) return;
+                      
+                      // 获取所有可拖拽元素的位置
+                      const elements = document.querySelectorAll('[data-drag-index]');
+                      let targetIndex = dragSubCategoryIndex.current;
+                      
+                      for (let i = 0; i < elements.length; i++) {
+                        const rect = elements[i].getBoundingClientRect();
+                        const centerY = rect.top + rect.height / 2;
+                        if (currentY > centerY) {
+                          targetIndex = i;
+                        }
+                      }
+                      
+                      if (targetIndex !== dragSubCategoryIndex.current) {
+                        const newList = [...tempSubCategories];
+                        const draggedItem = newList[dragSubCategoryIndex.current];
+                        newList.splice(dragSubCategoryIndex.current, 1);
+                        newList.splice(targetIndex, 0, draggedItem);
+                        
+                        setTempSubCategories(newList);
+                        dragSubCategoryIndex.current = targetIndex;
+                        dragStartY.current = currentY;
+                      }
+                    }}
+                    onTouchEnd={(e) => {
+                      if (!isSortingSubCategories) return;
+                      e.preventDefault();
+                      if (e.currentTarget) {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.transform = '';
+                      }
+                      dragSubCategoryIndex.current = null;
+                      dragStartY.current = null;
+                    }}
+                    // 电脑端鼠标拖拽
                     draggable={isSortingSubCategories}
                     onDragStart={(e) => {
                       if (!isSortingSubCategories) {
                         e.preventDefault();
                         return false;
                       }
+                      dragSubCategoryIndex.current = index;
                       e.dataTransfer.setData('text/plain', index.toString());
                       e.dataTransfer.effectAllowed = 'move';
                       e.dataTransfer.setDragImage(new Image(), 0, 0);
-                      dragSubCategoryIndex.current = index;
+                      e.currentTarget.style.opacity = '0.5';
+                      return true;
                     }}
                     onDragEnd={(e) => {
+                      if (e.currentTarget) {
+                        e.currentTarget.style.opacity = '';
+                      }
                       dragSubCategoryIndex.current = null;
                     }}
                     onDragOver={(e) => {
@@ -1581,74 +1640,9 @@ return (
                       e.preventDefault();
                       dragSubCategoryIndex.current = null;
                     }}
-                    // 手机端触摸事件 - 简化版
-                    onTouchStart={(e) => {
-                      if (!isSortingSubCategories) return;
-                      e.preventDefault();
-                      const touch = e.touches[0];
-                      dragSubCategoryIndex.current = index;
-                      dragStartY.current = touch.clientY;
-                      e.currentTarget.style.backgroundColor = '#f0f0f0';
-                    }}
-                    onTouchMove={(e) => {
-                      if (!isSortingSubCategories) return;
-                      if (dragSubCategoryIndex.current === null) return;
-                      e.preventDefault();
-                      
-                      const touch = e.touches[0];
-                      const currentY = touch.clientY;
-                      const deltaY = currentY - (dragStartY.current || currentY);
-                      
-                      // 计算目标索引（向上或向下移动）
-                      const itemHeight = 60; // 估算每个项目的高度
-                      const moveSteps = Math.round(deltaY / itemHeight);
-                      
-                      if (moveSteps !== 0) {
-                        const targetIndex = Math.min(
-                          Math.max(0, dragSubCategoryIndex.current + moveSteps),
-                          tempSubCategories.length - 1
-                        );
-                        
-                        if (targetIndex !== dragSubCategoryIndex.current) {
-                          const newList = [...tempSubCategories];
-                          const draggedItem = newList[dragSubCategoryIndex.current];
-                          newList.splice(dragSubCategoryIndex.current, 1);
-                          newList.splice(targetIndex, 0, draggedItem);
-                          
-                          setTempSubCategories(newList);
-                          dragSubCategoryIndex.current = targetIndex;
-                          dragStartY.current = currentY;
-                        }
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      if (!isSortingSubCategories) return;
-                      e.preventDefault();
-                      if (e.currentTarget) {
-                        e.currentTarget.style.backgroundColor = '';
-                      }
-                      dragSubCategoryIndex.current = null;
-                      dragStartY.current = null;
-                    }}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '8px',
-                      marginBottom: '8px',
-                      backgroundColor: '#fff',
-                      cursor: isSortingSubCategories ? 'grab' : 'default',
-                      opacity: dragSubCategoryIndex.current === index ? 0.5 : 1,
-                      userSelect: isSortingSubCategories ? 'none' : 'auto',
-                      touchAction: isSortingSubCategories ? 'none' : 'auto',
-                      transition: 'background-color 0.2s'
-                    }}
                   >
                     <span style={{ fontSize: '14px' }}>{subCat}</span>
                     
-                    {/* 排序模式下显示拖拽手柄 */}
                     {isSortingSubCategories ? (
                       <div
                         style={{
@@ -1670,7 +1664,6 @@ return (
                         </svg>
                       </div>
                     ) : (
-                      // 非排序模式下显示编辑和删除按钮
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
                           onClick={() => {
@@ -15825,21 +15818,20 @@ const triggerConfetti = (categoryName) => {
 
 
 
-// 找到 getCategoryTasks 函数的定义，修改为：
+// 找到 getCategoryTasks 函数的定义，确保它是这样写的
 const getCategoryTasks = useCallback((catName) => {
-  // 使用 selectedDate 获取当天的任务
   const dateTasks = tasksByDate[selectedDate] || [];
   const result = dateTasks.filter(t => 
     t.category === catName && 
     t.pinned !== true
   );
   return result;
-}, [tasksByDate, selectedDate]);  // 添加 selectedDate 依赖
-
+}, [tasksByDate, selectedDate]);
   // 计算分类总时间
   const totalTime = (catName) =>
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
+// 修改撒花检测的 useEffect
 useEffect(() => {
   // 如果是首次加载，只记录状态不触发动画
   if (isFirstLoad.current) {
@@ -15849,6 +15841,10 @@ useEffect(() => {
       const isNowComplete = catTasks.every(task => task.done === true);
       lastCompletionStatus.current[cat.name] = isNowComplete;
     });
+    // 首次加载完成后，延迟设置 isFirstLoad 为 false
+    setTimeout(() => {
+      isFirstLoad.current = false;
+    }, 500);
     return;
   }
   
@@ -15859,7 +15855,7 @@ useEffect(() => {
     const wasComplete = lastCompletionStatus.current[cat.name];
     const isNowComplete = catTasks.every(task => task.done === true);
     
-    // 只在状态从 false 变为 true 时触发，且只触发一次
+    // 只在状态从 false 变为 true 时触发
     if (!wasComplete && isNowComplete) {
       console.log(`🎉 恭喜！${cat.name} 全部完成！`);
       triggerConfetti(cat.name);
@@ -15867,14 +15863,7 @@ useEffect(() => {
     
     lastCompletionStatus.current[cat.name] = isNowComplete;
   });
-  
-  // 关键：每次 effect 执行后，设置 isFirstLoad 为 false
-  if (!isFirstLoad.current) {
-    setTimeout(() => {
-      isFirstLoad.current = false;
-    }, 100);
-  }
-}, [tasksByDate, categories]); 
+}, [tasksByDate, categories, selectedDate]); // 添加 selectedDate 依赖
 
 // ========== 检测子分类完成并触发撒花 ==========
 useEffect(() => {
@@ -15903,61 +15892,59 @@ useEffect(() => {
     
     lastCompletionStatus.current[`校内_${subCat}`] = isNowComplete;
   });
-}, [tasksByDate, categories, todayTasks]);
-
+}, [tasksByDate, categories, todayTasks, selectedDate]); // 添加 selectedDate 依赖
 // 切换到上一周
 const prevWeek = () => {
   const monday = new Date(currentMonday);
   monday.setDate(monday.getDate() - 7);
   
-  console.log('prevWeek:', {
-    原周一: currentMonday.toLocaleDateString(),
-    新周一: monday.toLocaleDateString()
-  });
-  
   setCurrentMonday(monday);
   
-  // 使用本地日期格式，避免时区问题
   const year = monday.getFullYear();
   const month = String(monday.getMonth() + 1).padStart(2, '0');
   const day = String(monday.getDate()).padStart(2, '0');
   const newSelectedDate = `${year}-${month}-${day}`;
   
   setSelectedDate(newSelectedDate);
+  
+  // 重置完成状态记录
+  setTimeout(() => {
+    categories.forEach(cat => {
+      const catTasks = getCategoryTasks(cat.name);
+      if (catTasks.length === 0) return;
+      lastCompletionStatus.current[cat.name] = catTasks.every(task => task.done === true);
+    });
+  }, 100);
 };
 
-// 切换到下一周
 const nextWeek = () => {
   try {
-    console.log('当前周一:', currentMonday);
-    
-    // 创建新的日期对象
     const newMonday = new Date(currentMonday);
-    console.log('复制后的周一:', newMonday);
-    
-    // 增加7天
     newMonday.setDate(newMonday.getDate() + 7);
-    console.log('增加7天后的周一:', newMonday);
     
-    // 更新状态
     setCurrentMonday(newMonday);
     
-    // 修复：使用本地日期格式，避免时区问题
     const year = newMonday.getFullYear();
     const month = String(newMonday.getMonth() + 1).padStart(2, '0');
     const day = String(newMonday.getDate()).padStart(2, '0');
     const newSelectedDate = `${year}-${month}-${day}`;
     
-    console.log('新的选中日期:', newSelectedDate);
     setSelectedDate(newSelectedDate);
     
-    console.log('切换完成');
+    // 重置完成状态记录
+    setTimeout(() => {
+      categories.forEach(cat => {
+        const catTasks = getCategoryTasks(cat.name);
+        if (catTasks.length === 0) return;
+        lastCompletionStatus.current[cat.name] = catTasks.every(task => task.done === true);
+      });
+    }, 100);
   } catch (error) {
     console.error('切换下一周时出错:', error);
   }
 };
 
-
+// 在 handleDateSelect 函数中添加重置逻辑
 const handleDateSelect = (selectedDate) => {
   const localSelectedDate = new Date(
     selectedDate.getFullYear(), 
@@ -15975,7 +15962,32 @@ const handleDateSelect = (selectedDate) => {
   setSelectedDate(newSelectedDate);
   setShowDatePickerModal(false);
   
-  
+  // 🔑 关键：切换日期时重置完成状态记录
+  // 延迟一点执行，等待新日期的任务数据加载完成
+  setTimeout(() => {
+    // 重置所有分类的完成状态记录
+    categories.forEach(cat => {
+      const catTasks = getCategoryTasks(cat.name);
+      if (catTasks.length === 0) return;
+      const isComplete = catTasks.every(task => task.done === true);
+      lastCompletionStatus.current[cat.name] = isComplete;
+    });
+    
+    // 重置子分类的完成状态记录
+    const schoolCategory = categories.find(c => c.name === '校内');
+    if (schoolCategory) {
+      schoolCategory.subCategories.forEach(subCat => {
+        const subCatTasks = todayTasks.filter(t => 
+          t.category === '校内' && 
+          t.subCategory === subCat &&
+          t.pinned !== true
+        );
+        if (subCatTasks.length === 0) return;
+        const isComplete = subCatTasks.every(task => task.done === true);
+        lastCompletionStatus.current[`校内_${subCat}`] = isComplete;
+      });
+    }
+  }, 100);
 };
 
 
