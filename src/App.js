@@ -11098,56 +11098,174 @@ const handleDrop = (e) => {
 };
 
 
-const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings, onDeleteReflection, onClearReflections }) => {
+const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings, onDeleteReflection, onClearReflections, selectedDate, tasksByDate, categories }) => {
   const chartHeight = window.innerWidth <= 768 ? 200 : 300;
   const fontSize = window.innerWidth <= 768 ? 10 : 12;
   const [activeTab, setActiveTab] = useState('time');
   
-  // 时间筛选状态 - 默认设置为 'today'
+  // 时间筛选状态
   const [dateRange, setDateRange] = useState('today');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [showCustomPicker, setShowCustomPicker] = useState(false);
-
-  // 获取当前日期范围
-  const getDateRangeFilter = useCallback(() => {
-    const today = new Date();
-    const startDate = new Date(today);
-    let endDate = new Date(today);
-    endDate.setHours(23, 59, 59, 999);
-    
-    switch (dateRange) {
-      case 'today':
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        const dayOfWeek = today.getDay();
-        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        startDate.setDate(today.getDate() - daysToMonday);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'year':
-        startDate.setMonth(0, 1);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'custom':
-        if (customStartDate && customEndDate) {
-          return {
-            start: new Date(customStartDate),
-            end: new Date(customEndDate)
-          };
-        }
-        return null;
-      default:
-        break;
+// 👇👇👇 放在这里！所有 useState 之后，其他函数之前 👇👇👇
+  useEffect(() => {
+    // 切换到结束时间或复盘记录时，默认显示本周
+    if (activeTab === 'endTime' || activeTab === 'review') {
+      setDateRange('week');
     }
+  }, [activeTab]);
+  // 获取当前日期范围 - 移到最前面定义
+ // 获取当前日期范围 - 使用 selectedDate 作为基准
+const getDateRangeFilter = useCallback(() => {
+  // 使用 selectedDate 而不是今天
+  const baseDate = new Date(selectedDate);
+  baseDate.setHours(0, 0, 0, 0);
+  let startDate = new Date(baseDate);
+  let endDate = new Date(baseDate);
+  endDate.setHours(23, 59, 59, 999);
+  
+  switch (dateRange) {
+    case 'today':
+      startDate = new Date(baseDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(baseDate);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case 'week':
+      const dayOfWeek = baseDate.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate = new Date(baseDate);
+      startDate.setDate(baseDate.getDate() - daysToMonday);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case 'month':
+      startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case 'year':
+      startDate = new Date(baseDate.getFullYear(), 0, 1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(baseDate.getFullYear(), 11, 31);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case 'custom':
+      if (customStartDate && customEndDate) {
+        return {
+          start: new Date(customStartDate),
+          end: new Date(customEndDate)
+        };
+      }
+      return null;
+    default:
+      break;
+  }
+  
+  return { start: startDate, end: endDate };
+}, [dateRange, customStartDate, customEndDate, selectedDate]);  // 添加 selectedDate 依赖
+
+  // 获取选中日期的任务数据
+  const getSelectedDateTasks = useCallback(() => {
+    if (!selectedDate || !tasksByDate) return [];
+    return tasksByDate[selectedDate] || [];
+  }, [selectedDate, tasksByDate]);
+
+  // 修复：重新计算饼图数据 - 基于筛选后的日期
+  const getPieChartData = useCallback(() => {
+    const range = getDateRangeFilter();
+    if (!range) return [];
     
-    return { start: startDate, end: endDate };
-  }, [dateRange, customStartDate, customEndDate]);
+    // 收集筛选范围内所有日期的任务
+    const allTasks = [];
+    Object.entries(tasksByDate || {}).forEach(([date, tasks]) => {
+      const dateObj = new Date(date);
+      if (dateObj >= range.start && dateObj <= range.end) {
+        allTasks.push(...tasks);
+      }
+    });
+    
+    // 排除本周任务和未完成的常规任务
+    const learningTasks = allTasks.filter(task => {
+      if (task.category === "本周任务") return false;
+      if (task.isRegularTask && !task.done) return false;
+      return true;
+    });
+    
+    // 按分类统计时间
+    const categoryTimeMap = new Map();
+    const schoolSubCategoryTimeMap = new Map();
+    
+    learningTasks.forEach(task => {
+      const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
+      if (timeMinutes === 0) return;
+      
+      if (task.category === '校内') {
+        const subCat = task.subCategory || '未分类';
+        const current = schoolSubCategoryTimeMap.get(subCat) || 0;
+        schoolSubCategoryTimeMap.set(subCat, current + timeMinutes);
+      } else {
+        const current = categoryTimeMap.get(task.category) || 0;
+        categoryTimeMap.set(task.category, current + timeMinutes);
+      }
+    });
+    
+    // 构建饼图数据数组
+    const pieData = [];
+    
+    schoolSubCategoryTimeMap.forEach((time, subCat) => {
+      pieData.push({
+        name: `校内-${subCat}`,
+        time: time,
+        type: 'school_sub'
+      });
+    });
+    
+    categoryTimeMap.forEach((time, catName) => {
+      pieData.push({
+        name: catName,
+        time: time,
+        type: 'other'
+      });
+    });
+    
+    pieData.sort((a, b) => b.time - a.time);
+    return pieData;
+  }, [tasksByDate, getDateRangeFilter]);
+
+  // 修复：重新计算总时间
+  const getTotalTime = useCallback(() => {
+    const pieData = getPieChartData();
+    return pieData.reduce((sum, item) => sum + item.time, 0);
+  }, [getPieChartData]);
+
+  // 修复：重新计算任务统计
+  const getTaskStats = useCallback(() => {
+    const range = getDateRangeFilter();
+    if (!range) return { totalTasks: 0, completedTasks: 0 };
+    
+    let totalTasks = 0;
+    let completedTasks = 0;
+    
+    Object.entries(tasksByDate || {}).forEach(([date, tasks]) => {
+      const dateObj = new Date(date);
+      if (dateObj >= range.start && dateObj <= range.end) {
+        const learningTasks = tasks.filter(task => {
+          if (task.category === "本周任务") return false;
+          if (task.isRegularTask && !task.done) return false;
+          return true;
+        });
+        totalTasks += learningTasks.length;
+        completedTasks += learningTasks.filter(t => t.done).length;
+      }
+    });
+    
+    return { totalTasks, completedTasks };
+  }, [tasksByDate, getDateRangeFilter]);
 
   // 筛选结束时间数据
   const filteredEndTimeList = useMemo(() => {
@@ -11179,6 +11297,35 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [dailyReflections, getDateRangeFilter]);
 
+  const pieData = getPieChartData();
+  const totalTime = getTotalTime();
+  const taskStats = getTaskStats();
+
+  // 获取饼图颜色
+  const getPieColor = (name, type) => {
+    if (type === 'school_sub') {
+      const subCategoryColors = {
+        '数学': '#E8F5E9',
+        '语文': '#FFFDE7',
+        '英语': '#FCE4EC',
+        '运动': '#E3F2FD',
+        '未分类': '#F5F5F5'
+      };
+      const subCatName = name.replace('校内-', '');
+      return subCategoryColors[subCatName] || '#E8F0FE';
+    } else {
+      const categoryColors = {
+        '语文': '#FFFDE7',
+        '数学': '#E8F5E9',
+        '英语': '#FCE4EC',
+        '科学': '#E1F5FE',
+        '运动': '#E3F2FD',
+        '校内': '#61A2Da'
+      };
+      return categoryColors[name] || '#f0f0f0';
+    }
+  };
+
   // 检查时间是否 >= 21:00
   const isLateEndTime = (timeStr) => {
     if (!timeStr) return false;
@@ -11186,9 +11333,23 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
     return hour >= 21;
   };
 
-  const DateFilterButtons = ({ showToday = true }) => {
+  // 获取日期范围显示文本
+ // 获取日期范围显示文本
+const getDateRangeText = () => {
+  const range = getDateRangeFilter();
+  if (!range) return '';
+  const startStr = `${range.start.getMonth() + 1}/${range.start.getDate()}`;
+  const endStr = `${range.end.getMonth() + 1}/${range.end.getDate()}`;
+  if (startStr === endStr) return startStr;
+  return `${startStr} - ${endStr}`;
+};
+
+  const DateFilterButtons = () => {
   const [localStartDate, setLocalStartDate] = useState('');
   const [localEndDate, setLocalEndDate] = useState('');
+
+  // 根据当前选项卡决定是否显示"今日"按钮
+  const shouldShowToday = activeTab === 'time';  // 只在时间统计选项卡显示今日按钮
 
   const handleCustomConfirm = () => {
     if (localStartDate && localEndDate) {
@@ -11204,9 +11365,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
   };
 
   return (
-    <div style={{
-      marginBottom: '16px'
-    }}>
+    <div style={{ marginBottom: '16px' }}>
       <div style={{
         display: 'flex',
         gap: '8px',
@@ -11215,7 +11374,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         flexWrap: 'wrap',
         marginBottom: showCustomPicker ? '12px' : 0
       }}>
-        {showToday && (
+        {shouldShowToday && (
           <div
             onClick={() => {
               setDateRange('today');
@@ -11359,30 +11518,126 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
   );
 };
 
-  // 根据 dateRange 筛选图表数据
-  const getFilteredChartData = useCallback(() => {
-    const range = getDateRangeFilter();
-    if (!range) return { dailyStudyData: [], dailyTasksData: [] };
+  // 简易饼图组件
+  const SimplePieChart = ({ data, total }) => {
+    if (data.length === 0) {
+      return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
+    }
     
-    const filteredStudyData = dailyStudyData.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate >= range.start && itemDate <= range.end;
+    let currentAngle = 0;
+    const slices = [];
+    let schoolTotalAngle = 0;
+    
+    data.forEach(item => {
+      const angle = (item.time / total) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      currentAngle = endAngle;
+      
+      const startRad = (startAngle - 90) * Math.PI / 180;
+      const endRad = (endAngle - 90) * Math.PI / 180;
+      const x1 = 100 + 80 * Math.cos(startRad);
+      const y1 = 100 + 80 * Math.sin(startRad);
+      const x2 = 100 + 80 * Math.cos(endRad);
+      const y2 = 100 + 80 * Math.sin(endRad);
+      const largeArc = angle > 180 ? 1 : 0;
+      
+      const pathData = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      
+      slices.push({
+        ...item,
+        pathData,
+        color: getPieColor(item.name, item.type),
+        percentage: ((item.time / total) * 100).toFixed(1),
+        startAngle,
+        endAngle,
+        angle
+      });
+      
+      if (item.type === 'school_sub') {
+        schoolTotalAngle += angle;
+      }
     });
     
-    const filteredTasksData = dailyTasksData.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate >= range.start && itemDate <= range.end;
+    let schoolStartAngle = 0;
+    let schoolEndAngle = 0;
+    let foundFirst = false;
+    
+    slices.forEach(slice => {
+      if (slice.type === 'school_sub') {
+        if (!foundFirst) {
+          schoolStartAngle = slice.startAngle;
+          foundFirst = true;
+        }
+        schoolEndAngle = slice.endAngle;
+      }
     });
     
-    return {
-      dailyStudyData: filteredStudyData,
-      dailyTasksData: filteredTasksData,
-      categoryData: categoryData,
-      subCategoryData: subCategoryData
+    const getOuterArcPath = () => {
+      if (schoolTotalAngle === 0) return null;
+      const radius = 92;
+      const startRad = (schoolStartAngle - 90) * Math.PI / 180;
+      const endRad = (schoolEndAngle - 90) * Math.PI / 180;
+      const x1 = 100 + radius * Math.cos(startRad);
+      const y1 = 100 + radius * Math.sin(startRad);
+      const x2 = 100 + radius * Math.cos(endRad);
+      const y2 = 100 + radius * Math.sin(endRad);
+      const largeArc = schoolTotalAngle > 180 ? 1 : 0;
+      return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
     };
-  }, [dailyStudyData, dailyTasksData, categoryData, subCategoryData, getDateRangeFilter]);
-
-  const filteredData = getFilteredChartData();
+    
+    const outerArcPath = getOuterArcPath();
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <svg width="240" height="240" viewBox="0 0 200 200">
+          {slices.map((slice, idx) => (
+            <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
+          ))}
+          {outerArcPath && (
+            <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
+          )}
+         <circle cx="100" cy="100" r="35" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+<text x="100" y="103" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">
+  {Math.floor(total)}m
+</text>
+          
+        </svg>
+        
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: '12px',
+          marginTop: '16px',
+          maxWidth: '100%'
+        }}>
+          {slices.map((slice, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: slice.color,
+                borderRadius: '2px',
+                border: '1px solid #ddd'
+              }} />
+              <span style={{ fontSize: '11px', color: '#333' }}>
+                {slice.name} ({slice.time}分钟, {slice.percentage}%)
+              </span>
+            </div>
+          ))}
+          {schoolTotalAngle > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
+              <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
+              <span style={{ fontSize: '11px', color: '#61A2Da', fontWeight: 'bold' }}>
+                校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{
@@ -11400,10 +11655,10 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 20,
-        position: "sticky",
-        top: 0,
+        
+        
         backgroundColor: "#f5faff",
-        zIndex: 10,
+      
         padding: "0 0 10px 0"
       }}>
         <h1 style={{
@@ -11414,7 +11669,6 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         }}>
           统计汇总
         </h1>
-        {/* 右上角关闭按钮 - 参考样式 */}
         <button
           onClick={onClose}
           style={{
@@ -11436,8 +11690,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
           ×
         </button>
       </div>
-
-      {/* 标签页切换 */}
+      
       <div style={{
         display: 'flex',
         gap: '2px',
@@ -11501,377 +11754,254 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
           复盘记录
         </div>
       </div>
+      
+     <DateFilterButtons />
+      
+      {/* 显示当前选中的日期范围 */}
+      <div style={{
+        textAlign: 'center',
+        marginBottom: 16,
+        padding: '8px',
+        backgroundColor: '#e8f0fe',
+        borderRadius: '8px',
+        fontSize: '14px',
+        color: '#61A2Da',
+        fontWeight: 'bold'
+      }}>
+        📅 {getDateRangeText()}
+      </div>
 
-      {/* 标签页 1：时间统计 */}
       {activeTab === 'time' && (
         <>
-            <DateFilterButtons showToday={true} />
-          
           {/* 统计卡片 */}
           <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 20,
-            padding: "8px 0",
-            backgroundColor: "#e8f0fe",
-            borderRadius: 10
-          }}>
-            <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
-              <div>平均完成率</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgCompletion}%</div>
-            </div>
-            <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
-              <div>日均时长</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgDailyTime}m</div>
-            </div>
-          </div>
-
-          {/* 当显示今日时，显示今日详细数据 */}
-          {dateRange === 'today' && (
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '8px',
+  marginBottom: 20
+}}>
             <div style={{
+              padding: '10px',
               backgroundColor: '#fff',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '20px',
-              border: '1px solid #e0e0e0'
-            }}>
-              <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '14px', color: '#61A2Da' }}>
-                今日详细数据
-              </h3>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '12px'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '11px', color: '#666' }}>学习时间</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>
-                    {dailyStudyData[0]?.time || 0}分钟
-                  </div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '11px', color: '#666' }}>完成任务</div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>
-                    {dailyTasksData[0]?.tasks || 0}个
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 每日学习时间图表 - 今日模式下不显示 */}
-          {dateRange !== 'today' && (
-            <div style={{ height: chartHeight, marginBottom: 30 }}>
-              <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-                每日学习时间（排除运动）
-              </h3>
-              {filteredData.dailyStudyData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="80%">
-                  <BarChart data={filteredData.dailyStudyData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize }} />
-                    <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
-                    <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
-                      label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
-                  暂无学习时间数据
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 校内子分类学习时间图表 */}
-          <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              校内子分类学习时间
-            </h3>
-            {subCategoryData && subCategoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={subCategoryData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize }} />
-                  <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
-                  <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
-                    label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ textAlign: "center", padding: "30px", color: "#666" }}>
-                暂无校内子分类学习时间数据
-              </div>
-            )}
-          </div>
-
-          {/* 各科目学习时间图表 */}
-          <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              各科目学习时间
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={categoryData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
-                <Bar dataKey="time" fill="#4a90e2" radius={[4, 4, 0, 0]} 
-                  label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* 每日完成任务数图表 - 今日模式下不显示 */}
-          {dateRange !== 'today' && filteredData.dailyTasksData.length > 0 && (
-            <div style={{ height: chartHeight }}>
-              <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-                每日完成任务数
-              </h3>
-              <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={filteredData.dailyTasksData} margin={{ left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize }} />
-                  <YAxis tick={{ fontSize }} />
-                  <Bar dataKey="tasks" fill="#00a854" radius={[4, 4, 0, 0]} 
-                    label={{ position: "top", fontSize }} 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* 标签页 2：结束时间记录 */}
-      {activeTab === 'endTime' && (
-        <>
-           <DateFilterButtons showToday={false} />
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e0e0e0',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              backgroundColor: '#f8f9fa',
-              padding: '10px 15px',
-              borderBottom: '1px solid #e0e0e0',
-              fontSize: '12px',
-              color: '#666',
-              fontWeight: 'bold',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>日期</span>
-              <span>结束时间</span>
-              <span>状态</span>
-            </div>
-            <div style={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
-              {filteredEndTimeList.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  暂无结束时间记录
-                </div>
-              ) : (
-                filteredEndTimeList.map(({ date, time }) => {
-                  const isLate = isLateEndTime(time);
-                  return (
-                    <div
-                      key={date}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 15px',
-                        borderBottom: '1px solid #f0f0f0',
-                        backgroundColor: '#fff'
-                      }}
-                    >
-                      <span style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>
-                        {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
-                      </span>
-                      <span style={{ fontSize: '14px', color: '#666' }}>
-                        {time}
-                      </span>
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {isLate ? (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                            <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                          </svg>
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 12L10 18L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            <div style={{
-              padding: '10px 15px',
-              backgroundColor: '#f8f9fa',
-              borderTop: '1px solid #e0e0e0',
-              fontSize: '11px',
-              color: '#999',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
               textAlign: 'center'
             }}>
-              共 {filteredEndTimeList.length} 条记录
+              <div style={{ fontSize: '11px', color: '#666' }}>总任务</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>{taskStats.totalTasks}</div>
             </div>
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '11px', color: '#666' }}>已完成</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>{taskStats.completedTasks}</div>
+            </div>
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '11px', color: '#666' }}>完成率</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ff9800' }}>
+                {taskStats.totalTasks === 0 ? 0 : Math.round((taskStats.completedTasks / taskStats.totalTasks) * 100)}%
+              </div>
+            </div>
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '11px', color: '#666' }}>学习总时长</div>
+             <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#9c27b0' }}>
+  {totalTime >= 60 ? `${(totalTime / 60).toFixed(1)}h` : `${totalTime}分钟`}
+</div>
+            </div>
+          </div>
+
+          {/* 饼图区域 */}
+          <div style={{
+            marginBottom: 20,
+            padding: '15px',
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            border: '1px solid #e0e0e0'
+          }}>
+            <h3 style={{
+              marginBottom: 15,
+              fontSize: '14px',
+              textAlign: 'center',
+              color: '#333'
+            }}>
+              🥧 学习时间分布（按分类）
+            </h3>
+            <SimplePieChart data={pieData} total={totalTime} />
           </div>
         </>
       )}
 
-      {/* 标签页 3：复盘记录 */}
-      {activeTab === 'review' && (
-        <>
-          <DateFilterButtons showToday={false} />
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e0e0e0',
-            overflow: 'hidden'
+      {activeTab === 'endTime' && (
+        <div style={{
+          padding: '15px',
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          border: '1px solid #e0e0e0'
+        }}>
+          <h3 style={{
+            marginBottom: 15,
+            fontSize: '14px',
+            textAlign: 'center',
+            color: '#333'
           }}>
-            <div style={{
-              backgroundColor: '#f8f9fa',
-              padding: '10px 15px',
-              borderBottom: '1px solid #e0e0e0',
-              fontSize: '12px',
-              color: '#666',
-              fontWeight: 'bold',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>日期</span>
-              <span style={{ width: '28px' }}></span>
+            ⏰ 学习结束时间记录
+          </h3>
+          {filteredEndTimeList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              暂无结束时间记录
             </div>
-            <div style={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
-              {filteredReviewList.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  暂无复盘记录
-                </div>
-              ) : (
-                filteredReviewList.map(({ date, reflection }) => {
-                  const rating = dailyRatings?.[date] || 0;
-                  const getEmoji = (rate) => {
-                    if (rate === 1) return '😞';
-                    if (rate === 2) return '😕';
-                    if (rate === 3) return '😐';
-                    if (rate === 4) return '😊';
-                    if (rate === 5) return '🥳';
-                    return '😐';
-                  };
-                  
-                  return (
-                    <div
-                      key={date}
-                      style={{
-                        padding: '12px 15px',
-                        borderBottom: '1px solid #f0f0f0',
-                        backgroundColor: '#fff'
-                      }}
-                    >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '8px'
-                      }}>
-                        <div style={{
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          color: '#61A2Da'
-                        }}>
-                          {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ fontSize: '18px' }}>
-                            {getEmoji(rating)}
-                          </div>
-                          {onDeleteReflection && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`确定要删除 ${parseInt(date.slice(5, 7))}月${parseInt(date.slice(8))}日的复盘记录吗？`)) {
-                                  onDeleteReflection(date);
-                                }
-                              }}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                fontSize: '16px',
-                                cursor: 'pointer',
-                                color: '#999',
-                                width: '28px',
-                                height: '28px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: 0
-                              }}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{
-                        fontSize: '13px',
-                        lineHeight: 1.5,
-                        color: '#333',
-                        backgroundColor: '#f9f9f9',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word'
-                      }}>
-                        {reflection}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            {filteredReviewList.length > 0 && onClearReflections && (
-              <div style={{
-                padding: '10px 15px',
-                backgroundColor: '#f8f9fa',
-                borderTop: '1px solid #e0e0e0',
-                fontSize: '11px',
-                color: '#999',
-                textAlign: 'center'
-              }}>
-                <button
-                  onClick={() => {
-                    if (window.confirm(`确定要删除当前筛选范围内的所有 ${filteredReviewList.length} 条复盘记录吗？此操作不可恢复！`)) {
-                      onClearReflections(filteredReviewList.map(item => item.date));
-                    }
-                  }}
+          ) : (
+            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+              {filteredEndTimeList.map((item, idx) => (
+                <div
+                  key={item.date}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    color: '#d32f2f',
-                    padding: '4px 8px',
-                    borderRadius: '4px'
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px',
+                    borderBottom: idx < filteredEndTimeList.length - 1 ? '1px solid #eee' : 'none',
+                    backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white'
                   }}
                 >
-                  清空所有
-                </button>
-              </div>
-            )}
-          </div>
-        </>
+                  <span style={{ fontSize: '13px', color: '#333' }}>{item.date.slice(5)}</span>
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    color: isLateEndTime(item.time) ? '#f44336' : '#4caf50'
+                  }}>
+                    {item.time}
+                    {isLateEndTime(item.time) && ' 🌙'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'review' && (
+        <div style={{
+          padding: '15px',
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          border: '1px solid #e0e0e0'
+        }}>
+          <h3 style={{
+            marginBottom: 15,
+            fontSize: '14px',
+            textAlign: 'center',
+            color: '#333'
+          }}>
+            📝 复盘记录 ({filteredReviewList.length})
+          </h3>
+          {filteredReviewList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              暂无复盘记录
+            </div>
+          ) : (
+            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+              {filteredReviewList.map((item, idx) => (
+                <div
+                  key={item.date}
+                  style={{
+                    marginBottom: '12px',
+                    padding: '12px',
+                    borderBottom: idx < filteredReviewList.length - 1 ? '1px solid #eee' : 'none',
+                    backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white',
+                    borderRadius: '8px'
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#61A2Da' }}>
+                      📅 {item.date.slice(5)}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {dailyRatings?.[item.date] && (
+                        <span style={{ fontSize: '14px' }}>
+                          {dailyRatings[item.date] === 1 && '😞'}
+                          {dailyRatings[item.date] === 2 && '😕'}
+                          {dailyRatings[item.date] === 3 && '😐'}
+                          {dailyRatings[item.date] === 4 && '😊'}
+                          {dailyRatings[item.date] === 5 && '🥳'}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`确定要删除 ${item.date} 的复盘记录吗？`)) {
+                            onDeleteReflection?.(item.date);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          color: '#999',
+                          padding: '0 4px'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    lineHeight: '1.5',
+                    color: '#333',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}>
+                    {item.reflection}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {filteredReviewList.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm(`确定要清空当前筛选范围内的所有复盘记录吗？`)) {
+                  onClearReflections?.(filteredReviewList.map(item => item.date));
+                }
+              }}
+              style={{
+                width: '100%',
+                marginTop: '15px',
+                padding: '10px',
+                backgroundColor: '#f44336',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+            >
+              清空当前列表
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -17463,6 +17593,9 @@ if (showStats) {
     onClose={() => setShowStats(false)}
     dailyStudyData={dailyStudyData}
     categoryData={categoryData}
+    selectedDate={selectedDate}        // 新增
+    tasksByDate={tasksByDate}          // 新增
+    categories={categories}  
     subCategoryData={subCategoryData}
     dailyTasksData={dailyTasksData}
     avgCompletion={avgCompletion}
@@ -19127,6 +19260,7 @@ if (isInitialized && todayTasks.length === 0) {
     >
  
 
+
 <div
   style={{
     backgroundColor: isComplete ? "#f5f5f5" : (categoryColors[c.name] || (() => {
@@ -19153,6 +19287,7 @@ if (isInitialized && todayTasks.length === 0) {
     minHeight: "24px"
   }}
 >
+  {/* 左侧：标题和完成状态 */}
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
     <span
       onClick={() => setCollapsedCategories(prev => ({ ...prev, [c.name]: !prev[c.name] }))}
@@ -19163,103 +19298,105 @@ if (isInitialized && todayTasks.length === 0) {
     </span>
   </div>
 
-  {/* 右侧：排序按钮 + 时间显示 */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    {/* 排序按钮 - 校内类别不显示排序按钮 */}
-
-{/* 排序按钮 - 校内类别不显示排序按钮 */}
-{/* 分类标题右侧的排序按钮 - 修改这里 */}
-{/* 分类标题右侧的排序按钮 - 激活状态显示黑色对勾 */}
-{c.name !== '校内' && (
+  {/* 右侧：统计汇总按钮 + 排序按钮 + 时间显示 */}
+  {/* 右侧：统计汇总按钮 + 排序按钮 + 时间显示 */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+  
+{/* 统计汇总按钮 - 只在校内类别显示 */}
+{c.name === '校内' && (
   <div
     onClick={(e) => {
       e.stopPropagation();
-      if (sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory) {
-        setSortingSubCategory(null);
-      } else {
-        setSortingSubCategory({ category: c.name, subCategory: null });
-      }
+      setShowStats(true);
     }}
     style={{
-      borderRadius: 4,
-      cursor: "pointer",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      cursor: "pointer",
       width: "18px",
       height: "18px",
-      userSelect: "none"
+      borderRadius: "4px",
+      marginRight: "0px",
+      backgroundColor: "transparent"
     }}
+    title="统计汇总"
   >
-    {sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory ? (
-      // 已激活排序模式 - 显示黑色对勾
-      <svg 
-        width="14" 
-        height="14" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ display: 'block' }}
-      >
-        <path 
-          d="M20 6L9 17L4 12" 
-          stroke="#333" 
-          strokeWidth="3" 
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-          fill="none"
-        />
-      </svg>
-    ) : (
-      // 未激活 - 显示三条横线
-      <svg 
-        width="14" 
-        height="14" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ display: 'block' }}
-      >
-        <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-      </svg>
-    )}
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="2" fill="none"/>
+      <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#fff" stroke="none"/>
+    </svg>
   </div>
 )}
+    
+
+    {/* 排序按钮 - 校内类别不显示排序按钮 */}
+    {c.name !== '校内' && (
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          if (sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory) {
+            setSortingSubCategory(null);
+          } else {
+            setSortingSubCategory({ category: c.name, subCategory: null });
+          }
+        }}
+        style={{
+          borderRadius: 4,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "18px",
+          height: "18px",
+          userSelect: "none"
+        }}
+      >
+        {sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6L9 17L4 12" stroke="#333" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+            <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+            <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+        )}
+      </div>
+    )}
 
     {/* 时间显示 */}
- {/* 主分类标题时间显示 - 黑色，右对齐 */}
-{/* 主分类标题时间显示 - 校内白色，其他黑色 */}
-{/* 校内大分类时间显示 - 未完成白色，完成后黑色 */}
-<span
-  onClick={(e) => {
-    e.stopPropagation();
-    editCategoryTime(c.name);
-  }}
-  style={{
-    fontSize: '11px',
-    color: c.name === '校内' 
-      ? (isComplete ? '#333' : '#fff')  // 校内：完成时黑色，未完成白色
-      : '#333',                          // 其他分类：始终黑色
-    fontFamily: 'Calibri, "微软雅黑", sans-serif',
-    cursor: "pointer",
-    minWidth: "32px",
-    width: "32px",
-    textAlign: "right",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    flexShrink: 0,
-    background: "transparent",
-    border: "none",
-    fontWeight: "normal",
-    display: "inline-block"
-  }}
-  title="点击修改总时间"
->
-  {formatCategoryTime(totalTime(c.name))}
-</span>
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        editCategoryTime(c.name);
+      }}
+      style={{
+        fontSize: '11px',
+        color: c.name === '校内' 
+          ? (isComplete ? '#333' : '#fff')
+          : '#333',
+        fontFamily: 'Calibri, "微软雅黑", sans-serif',
+        cursor: "pointer",
+        minWidth: "32px",
+        width: "32px",
+        textAlign: "right",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        flexShrink: 0,
+        background: "transparent",
+        border: "none",
+        marginRight: "5px"  ,
+        marginLeft: "-18px"  , 
+        fontWeight: "normal",
+        display: "inline-block"
+      }}
+      title="点击修改总时间"
+    >
+      {formatCategoryTime(totalTime(c.name))}
+    </span>
   </div>
 </div>
 
@@ -19724,12 +19861,7 @@ if (isInitialized && todayTasks.length === 0) {
       title: `完成率: ${todayStats.completionRate}%`
     },
     
-    {
-      label: "统计汇总",
-      value: "",
-      onClick: () => setShowStats(true),
-      title: "查看详细统计"
-    }
+  
   ].map((item, idx) => (
     <div
       key={idx}
