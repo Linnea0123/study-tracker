@@ -11097,7 +11097,6 @@ const handleDrop = (e) => {
   );
 };
 
-
 const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings }) => {
   const chartHeight = window.innerWidth <= 768 ? 200 : 300;
   const fontSize = window.innerWidth <= 768 ? 10 : 12;
@@ -11183,158 +11182,161 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
     return hour >= 21;
   };
 
+  const DateFilterButtons = () => {
+    const [localStartDate, setLocalStartDate] = useState('');
+    const [localEndDate, setLocalEndDate] = useState('');
 
+    const handleCustomConfirm = () => {
+      if (localStartDate && localEndDate) {
+        setCustomStartDate(localStartDate);
+        setCustomEndDate(localEndDate);
+        setDateRange('custom');
+        setShowCustomPicker(false);
+        setLocalStartDate('');
+        setLocalEndDate('');
+      } else {
+        alert('请选择开始和结束日期');
+      }
+    };
 
-const DateFilterButtons = () => {
-  const [localStartDate, setLocalStartDate] = useState('');
-  const [localEndDate, setLocalEndDate] = useState('');
-  const [showCustomPicker, setShowCustomPicker] = useState(false);
-
-  const handleCustomConfirm = () => {
-    if (localStartDate && localEndDate) {
-      setCustomStartDate(localStartDate);
-      setCustomEndDate(localEndDate);
-      setDateRange('custom');
-      setShowCustomPicker(false);
-      setLocalStartDate('');
-      setLocalEndDate('');
-    } else {
-      alert('请选择开始和结束日期');
-    }
+    return (
+      <div style={{
+        marginBottom: '16px'
+      }}>
+        {/* 第一行：本周、本月、本年、自选按钮 */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          flexWrap: 'wrap',
+          marginBottom: showCustomPicker ? '12px' : 0
+        }}>
+          <div
+            onClick={() => {
+              setDateRange('week');
+              setShowCustomPicker(false);
+            }}
+            style={{
+              padding: '4px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: dateRange === 'week' ? '#6E9AC7' : '#f0f0f0',
+              color: dateRange === 'week' ? '#fff' : '#333',
+              borderRadius: '16px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            本周
+          </div>
+          <div
+            onClick={() => {
+              setDateRange('month');
+              setShowCustomPicker(false);
+            }}
+            style={{
+              padding: '4px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: dateRange === 'month' ? '#6E9AC7' : '#f0f0f0',
+              color: dateRange === 'month' ? '#fff' : '#333',
+              borderRadius: '16px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            本月
+          </div>
+          <div
+            onClick={() => {
+              setDateRange('year');
+              setShowCustomPicker(false);
+            }}
+            style={{
+              padding: '4px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: dateRange === 'year' ? '#6E9AC7' : '#f0f0f0',
+              color: dateRange === 'year' ? '#fff' : '#333',
+              borderRadius: '16px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            本年
+          </div>
+          <div
+            onClick={() => setShowCustomPicker(!showCustomPicker)}
+            style={{
+              padding: '4px 12px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: dateRange === 'custom' ? '#6E9AC7' : '#f0f0f0',
+              color: dateRange === 'custom' ? '#fff' : '#333',
+              borderRadius: '16px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            自选 {dateRange === 'custom' && customStartDate && customEndDate && '✓'}
+          </div>
+        </div>
+        
+        {/* 第二行：自选日期选择器（仅当点击自选时显示） */}
+        {showCustomPicker && (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '12px',
+            padding: '12px',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '8px'
+          }}>
+            <input
+              type="date"
+              value={localStartDate}
+              onChange={(e) => setLocalStartDate(e.target.value)}
+              style={{
+                padding: '6px 8px',
+                fontSize: '13px',
+                borderRadius: '6px',
+                border: '1px solid #ccc',
+                flex: '1',
+                minWidth: '120px'
+              }}
+            />
+            <span style={{ fontSize: '13px', color: '#666' }}>至</span>
+            <input
+              type="date"
+              value={localEndDate}
+              onChange={(e) => setLocalEndDate(e.target.value)}
+              style={{
+                padding: '6px 8px',
+                fontSize: '13px',
+                borderRadius: '6px',
+                border: '1px solid #ccc',
+                flex: '1',
+                minWidth: '120px'
+              }}
+            />
+            <div
+              onClick={handleCustomConfirm}
+              style={{
+                padding: '6px 16px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                backgroundColor: '#6E9AC7',
+                color: '#fff',
+                borderRadius: '6px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              确定
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
-
-  return (
-   <div style={{
-  display: 'flex',
-  gap: '8px',
-  marginBottom: '16px',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  flexWrap: 'nowrap',      // 强制不换行
-  overflowX: 'auto',       // 如果实在放不下，允许横向滚动
-  minHeight: '32px'         // ← 固定高度，防止移位
-    }}>
-      <div
-        onClick={() => {
-          setDateRange('week');
-          setShowCustomPicker(false);
-        }}
-        style={{
-          padding: '4px 12px',
-          fontSize: '12px',
-          cursor: 'pointer',
-          backgroundColor: dateRange === 'week' ? '#6E9AC7' : '#f0f0f0',
-          color: dateRange === 'week' ? '#fff' : '#333',
-          borderRadius: '4px'
-        }}
-      >
-        本周
-      </div>
-      <div
-        onClick={() => {
-          setDateRange('month');
-          setShowCustomPicker(false);
-        }}
-        style={{
-          padding: '4px 12px',
-          fontSize: '12px',
-          cursor: 'pointer',
-          backgroundColor: dateRange === 'month' ? '#6E9AC7' : '#f0f0f0',
-          color: dateRange === 'month' ? '#fff' : '#333',
-          borderRadius: '4px'
-        }}
-      >
-        本月
-      </div>
-      <div
-        onClick={() => {
-          setDateRange('year');
-          setShowCustomPicker(false);
-        }}
-        style={{
-          padding: '4px 12px',
-          fontSize: '12px',
-          cursor: 'pointer',
-          backgroundColor: dateRange === 'year' ? '#6E9AC7' : '#f0f0f0',
-          color: dateRange === 'year' ? '#fff' : '#333',
-          borderRadius: '4px'
-        }}
-      >
-        本年
-      </div>
-      
-{/* 自选 */}
-<div style={{
-  display: 'flex',
-  gap: '6px',
-  alignItems: 'center',
-  flexWrap: 'nowrap'
-}}>
-  <div
-    onClick={() => setShowCustomPicker(!showCustomPicker)}
-    style={{
-      padding: '4px 8px',
-      fontSize: '12px',
-      cursor: 'pointer',
-      backgroundColor: dateRange === 'custom' ? '#6E9AC7' : '#f0f0f0',
-      color: dateRange === 'custom' ? '#fff' : '#333',
-      borderRadius: '4px',
-      whiteSpace: 'nowrap'
-    }}
-  >
-    自选
-  </div>
-  
-  {showCustomPicker && (
-    <>
-      <input
-        type="date"
-        value={localStartDate}
-        onChange={(e) => setLocalStartDate(e.target.value)}
-        style={{
-          padding: '4px 4px',
-          fontSize: '11px',
-          borderRadius: '4px',
-          border: '1px solid #ccc',
-          width: '105px',
-          boxSizing: 'border-box'
-        }}
-      />
-      <span style={{ fontSize: '11px' }}>至</span>
-      <input
-        type="date"
-        value={localEndDate}
-        onChange={(e) => setLocalEndDate(e.target.value)}
-        style={{
-          padding: '4px 4px',
-          fontSize: '11px',
-          borderRadius: '4px',
-          border: '1px solid #ccc',
-          width: '105px',
-          boxSizing: 'border-box'
-        }}
-      />
-      <div
-        onClick={handleCustomConfirm}
-        style={{
-          padding: '4px 8px',
-          fontSize: '11px',
-          cursor: 'pointer',
-          backgroundColor: '#6E9AC7',
-          color: '#fff',
-          borderRadius: '4px',
-          whiteSpace: 'nowrap'
-        }}
-      >
-        确定
-      </div>
-    </>
-  )}
-</div>
-
-    </div>
-  );
-};
 
   return (
     <div style={{
@@ -11346,61 +11348,61 @@ const DateFilterButtons = () => {
       height: '100vh',
       overflow: 'auto'
     }}>
-      {/* 头部 - 只有标题和右侧 X 按钮 */}
-      {/* 头部 - 固定在顶部 */}
-<div style={{
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  marginBottom: 20,
-  position: "sticky",
-  top: 0,
-  backgroundColor: "#f5faff",
-  zIndex: 10,
-  padding: "0 0 10px 0"
-}}>
-  <h1 style={{
-    textAlign: "center",
-    color: "#6E9AC7",
-    fontSize: 20,
-    margin: 0
-  }}>
-    统计汇总
-  </h1>
-  <button
-    onClick={onClose}
-    style={{
-      position: "absolute",
-      right: 0,
-      background: "transparent",
-      border: "none",
-      fontSize: "24px",
-      cursor: "pointer",
-      color: "#999",
-      width: "28px",
-      height: "28px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 0
-    }}
-  >
-    ×
-  </button>
-</div>
+      {/* 头部 */}
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 20,
+        position: "sticky",
+        top: 0,
+        backgroundColor: "#f5faff",
+        zIndex: 10,
+        padding: "0 0 10px 0"
+      }}>
+        <h1 style={{
+          textAlign: "center",
+          color: "#6E9AC7",
+          fontSize: 20,
+          margin: 0
+        }}>
+          统计汇总
+        </h1>
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            right: 0,
+            background: "transparent",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            color: "#999",
+            width: "28px",
+            height: "28px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0
+          }}
+        >
+          ×
+        </button>
+      </div>
 
-      {/* 标签页切换 */}
+      {/* 标签页切换 - 三个在一行不换行 */}
       <div style={{
         display: 'flex',
         gap: '2px',
         marginBottom: 20,
         borderBottom: '1px solid #e0e0e0',
-        paddingLeft: '8px'
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch'
       }}>
         <div
           onClick={() => setActiveTab('time')}
           style={{
-            padding: '8px 20px',
+            padding: '8px 16px',
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'time' ? '#fff' : '#f0f0f0',
@@ -11408,15 +11410,17 @@ const DateFilterButtons = () => {
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
             borderBottom: activeTab === 'time' ? '2px solid #6E9AC7' : 'none',
-            fontWeight: activeTab === 'time' ? 'bold' : 'normal'
+            fontWeight: activeTab === 'time' ? 'bold' : 'normal',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
         >
-          📊 时间统计
+          时间统计
         </div>
         <div
           onClick={() => setActiveTab('endTime')}
           style={{
-            padding: '8px 20px',
+            padding: '8px 16px',
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'endTime' ? '#fff' : '#f0f0f0',
@@ -11424,15 +11428,17 @@ const DateFilterButtons = () => {
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
             borderBottom: activeTab === 'endTime' ? '2px solid #6E9AC7' : 'none',
-            fontWeight: activeTab === 'endTime' ? 'bold' : 'normal'
+            fontWeight: activeTab === 'endTime' ? 'bold' : 'normal',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
         >
-          ⏰ 结束时间
+          结束时间
         </div>
         <div
           onClick={() => setActiveTab('review')}
           style={{
-            padding: '8px 20px',
+            padding: '8px 16px',
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'review' ? '#fff' : '#f0f0f0',
@@ -11440,10 +11446,12 @@ const DateFilterButtons = () => {
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
             borderBottom: activeTab === 'review' ? '2px solid #6E9AC7' : 'none',
-            fontWeight: activeTab === 'review' ? 'bold' : 'normal'
+            fontWeight: activeTab === 'review' ? 'bold' : 'normal',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
         >
-          📝 复盘记录
+          复盘记录
         </div>
       </div>
 
@@ -11634,107 +11642,106 @@ const DateFilterButtons = () => {
         </>
       )}
 
-     {/* 标签页 3：复盘记录 */}
-{activeTab === 'review' && (
-  <>
-    <DateFilterButtons />
-    <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      border: '1px solid #e0e0e0',
-      overflow: 'hidden'
-    }}>
-      <div style={{
-        backgroundColor: '#f8f9fa',
-        padding: '10px 15px',
-        borderBottom: '1px solid #e0e0e0',
-        fontSize: '12px',
-        color: '#666',
-        fontWeight: 'bold',
-        display: 'flex',
-        justifyContent: 'space-between'
-      }}>
-        <span>日期</span>
-        <span>心情</span>
-      </div>
-      <div style={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
-        {filteredReviewList.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-            暂无复盘记录
+      {/* 标签页 3：复盘记录 */}
+      {activeTab === 'review' && (
+        <>
+          <DateFilterButtons />
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            border: '1px solid #e0e0e0',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              backgroundColor: '#f8f9fa',
+              padding: '10px 15px',
+              borderBottom: '1px solid #e0e0e0',
+              fontSize: '12px',
+              color: '#666',
+              fontWeight: 'bold',
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}>
+              <span>日期</span>
+              <span>心情</span>
+            </div>
+            <div style={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
+              {filteredReviewList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  暂无复盘记录
+                </div>
+              ) : (
+                filteredReviewList.map(({ date, reflection }) => {
+                  const rating = dailyRatings?.[date] || 0;
+                  const getEmoji = (rate) => {
+                    if (rate === 1) return '😞';
+                    if (rate === 2) return '😕';
+                    if (rate === 3) return '😐';
+                    if (rate === 4) return '😊';
+                    if (rate === 5) return '🥳';
+                    return '😐';
+                  };
+                  
+                  return (
+                    <div
+                      key={date}
+                      style={{
+                        padding: '12px 15px',
+                        borderBottom: '1px solid #f0f0f0',
+                        backgroundColor: '#fff'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          color: '#6E9AC7'
+                        }}>
+                          {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
+                        </div>
+                        <div style={{ fontSize: '18px' }}>
+                          {getEmoji(rating)}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: '13px',
+                        lineHeight: 1.5,
+                        color: '#333',
+                        backgroundColor: '#f9f9f9',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                      }}>
+                        {reflection}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div style={{
+              padding: '10px 15px',
+              backgroundColor: '#f8f9fa',
+              borderTop: '1px solid #e0e0e0',
+              fontSize: '11px',
+              color: '#999',
+              textAlign: 'center'
+            }}>
+              共 {filteredReviewList.length} 条复盘记录
+            </div>
           </div>
-        ) : (
-          filteredReviewList.map(({ date, reflection }) => {
-            // 获取该日期的评分
-            const rating = dailyRatings?.[date] || 0;
-            // 根据评分获取表情
-            const getEmoji = (rate) => {
-              if (rate === 1) return '😞';
-              if (rate === 2) return '😕';
-              if (rate === 3) return '😐';
-              if (rate === 4) return '😊';
-              if (rate === 5) return '🥳';
-              return '😐';
-            };
-            
-            return (
-              <div
-                key={date}
-                style={{
-                  padding: '12px 15px',
-                  borderBottom: '1px solid #f0f0f0',
-                  backgroundColor: '#fff'
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px'
-                }}>
-                  <div style={{
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#6E9AC7'
-                  }}>
-                    {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
-                  </div>
-                  <div style={{ fontSize: '18px' }}>
-                    {getEmoji(rating)}
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: '13px',
-                  lineHeight: 1.5,
-                  color: '#333',
-                  backgroundColor: '#f9f9f9',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
-                }}>
-                  {reflection}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-      <div style={{
-        padding: '10px 15px',
-        backgroundColor: '#f8f9fa',
-        borderTop: '1px solid #e0e0e0',
-        fontSize: '11px',
-        color: '#999',
-        textAlign: 'center'
-      }}>
-        共 {filteredReviewList.length} 条复盘记录
-      </div>
-    </div>
-  </>
-)}
+        </>
+      )}
     </div>
   );
 };
+
 
 const CategoryManagerModal = ({ 
   categories, 
