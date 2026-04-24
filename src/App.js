@@ -1847,9 +1847,9 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
       flexDirection: 'column',
       boxSizing: 'border-box'
     }}>
-      <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '15px', color: '#1a73e8' }}>
-        今日复盘
-      </h3>
+      <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '15px', color: '#61A2Da' }}>
+  今日复盘
+</h3>
       
       <textarea
         value={reflection}
@@ -1872,18 +1872,63 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
         autoFocus
       />
 
-      {/* 结束时间 */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '13px', fontWeight: 'bold' }}>
-          ⏰ 学习结束时间
-        </label>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="number" placeholder="时" value={localEndHour} onChange={(e) => setLocalEndHour(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: 4, textAlign: 'center' }} />
-          <span>:</span>
-          <input type="number" placeholder="分" value={localEndMinute} onChange={(e) => setLocalEndMinute(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: 4, textAlign: 'center' }} />
-          <button onClick={() => { setLocalEndHour(''); setLocalEndMinute(''); }} style={{ padding: '8px 12px', backgroundColor: '#f0f0f0', border: 'none', borderRadius: 4, cursor: 'pointer' }}>清除</button>
-        </div>
-      </div>
+{/* 结束时间 */}
+<div style={{ marginBottom: '16px' }}>
+  <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '13px', fontWeight: 'bold' }}>
+    ⏰ 学习结束时间
+  </label>
+  <div style={{ 
+    display: 'flex', 
+    gap: '8px', 
+    alignItems: 'center',
+    flexWrap: 'wrap'  // 允许换行
+  }}>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: '1', minWidth: '120px' }}>
+      <input 
+        type="number" 
+        placeholder="时" 
+        value={localEndHour} 
+        onChange={(e) => setLocalEndHour(e.target.value)} 
+        style={{ 
+          flex: 1, 
+          padding: '8px', 
+          border: '1px solid #ccc', 
+          borderRadius: 4, 
+          textAlign: 'center',
+          minWidth: '50px'
+        }} 
+      />
+      <span>:</span>
+      <input 
+        type="number" 
+        placeholder="分" 
+        value={localEndMinute} 
+        onChange={(e) => setLocalEndMinute(e.target.value)} 
+        style={{ 
+          flex: 1, 
+          padding: '8px', 
+          border: '1px solid #ccc', 
+          borderRadius: 4, 
+          textAlign: 'center',
+          minWidth: '50px'
+        }} 
+      />
+    </div>
+    <button 
+      onClick={() => { setLocalEndHour(''); setLocalEndMinute(''); }} 
+      style={{ 
+        padding: '8px 16px', 
+        backgroundColor: '#f0f0f0', 
+        border: 'none', 
+        borderRadius: 4, 
+        cursor: 'pointer',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      清除
+    </button>
+  </div>
+</div>
 
       {/* 评分选择 - 使用 div 避开全局 CSS */}
       <div style={{ marginBottom: '16px' }}>
@@ -1925,9 +1970,71 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
 
       {/* 按钮区域 */}
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={onClose} style={{ flex: 1, padding: '8px', backgroundColor: '#f0f0f0', border: 'none', borderRadius: 4, cursor: 'pointer' }}>取消</button>
-        <button onClick={() => onSave(rating, reflection, localEndHour, localEndMinute)} style={{ flex: 1, padding: '8px', backgroundColor: '#1a73e8', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>保存</button>
-      </div>
+  {/* 取消按钮 - 无悬浮效果 */}
+  <div
+    onClick={onClose}
+    style={{
+      flex: 1,
+      padding: '8px',
+      backgroundColor: '#f0f0f0',
+      color: '#333',
+      borderRadius: 6,
+      fontSize: '14px',
+      fontWeight: '500',
+      textAlign: 'center',
+      cursor: 'pointer',
+      transition: 'none',
+      transform: 'none',
+      boxShadow: 'none'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = '#f0f0f0';
+      e.currentTarget.style.transform = 'none';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = '#f0f0f0';
+      e.currentTarget.style.transform = 'none';
+    }}
+    onMouseDown={(e) => {
+      e.currentTarget.style.transform = 'none';
+    }}
+  >
+    取消
+  </div>
+  
+  {/* 保存按钮 - 蓝色与本月按钮一致 (#61A2Da)，无悬浮效果 */}
+  <div
+    onClick={() => onSave(rating, reflection, localEndHour, localEndMinute)}
+    style={{
+      flex: 1,
+      padding: '8px',
+      backgroundColor: '#61A2Da',
+      color: '#fff',
+      borderRadius: 6,
+      fontSize: '14px',
+      fontWeight: '500',
+      textAlign: 'center',
+      cursor: 'pointer',
+      transition: 'none',
+      transform: 'none',
+      boxShadow: 'none'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = '#61A2Da';
+      e.currentTarget.style.transform = 'none';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = '#61A2Da';
+      e.currentTarget.style.transform = 'none';
+    }}
+    onMouseDown={(e) => {
+      e.currentTarget.style.transform = 'none';
+    }}
+  >
+    保存
+  </div>
+</div>
+
     </div>
   );
 };
@@ -11237,6 +11344,72 @@ const getDateRangeFilter = useCallback(() => {
     return pieData;
   }, [tasksByDate, getDateRangeFilter]);
 
+// 按科目统计饼图数据（校内子分类：数学、语文、英语、运动）
+// 按科目统计饼图数据（合并校内子分类和大类别）
+const getSubjectPieChartData = useCallback(() => {
+  const range = getDateRangeFilter();
+  if (!range) return [];
+  
+  // 收集筛选范围内所有日期的任务
+  const allTasks = [];
+  Object.entries(tasksByDate || {}).forEach(([date, tasks]) => {
+    const dateObj = new Date(date);
+    if (dateObj >= range.start && dateObj <= range.end) {
+      allTasks.push(...tasks);
+    }
+  });
+  
+  // 排除本周任务和未完成的常规任务
+  const learningTasks = allTasks.filter(task => {
+    if (task.category === "本周任务") return false;
+    if (task.isRegularTask && !task.done) return false;
+    return true;
+  });
+  
+  // 按科目统计时间（合并校内子分类和大类别）
+  const subjectTimeMap = new Map();
+  
+  // 科目列表
+  const subjects = ['数学', '语文', '英语', '运动'];
+  
+  learningTasks.forEach(task => {
+    const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
+    if (timeMinutes === 0) return;
+    
+    let subject = null;
+    
+    // 如果是校内分类且有子分类，使用子分类名称
+    if (task.category === '校内' && task.subCategory) {
+      if (subjects.includes(task.subCategory)) {
+        subject = task.subCategory;
+      }
+    } 
+    // 如果是大类别（数学、语文、英语、运动）
+    else if (subjects.includes(task.category)) {
+      subject = task.category;
+    }
+    
+    // 只有匹配到科目才统计
+    if (subject) {
+      const current = subjectTimeMap.get(subject) || 0;
+      subjectTimeMap.set(subject, current + timeMinutes);
+    }
+  });
+  
+  // 构建饼图数据数组
+  const subjectData = [];
+  subjectTimeMap.forEach((time, subject) => {
+    subjectData.push({
+      name: subject,
+      time: time,
+      type: 'subject'
+    });
+  });
+  
+  subjectData.sort((a, b) => b.time - a.time);
+  return subjectData;
+}, [tasksByDate, getDateRangeFilter]);
+
   // 修复：重新计算总时间
   const getTotalTime = useCallback(() => {
     const pieData = getPieChartData();
@@ -11266,6 +11439,13 @@ const getDateRangeFilter = useCallback(() => {
     
     return { totalTasks, completedTasks };
   }, [tasksByDate, getDateRangeFilter]);
+
+
+// 获取科目总时间
+const getSubjectTotalTime = useCallback(() => {
+  const data = getSubjectPieChartData();
+  return data.reduce((sum, item) => sum + item.time, 0);
+}, [getSubjectPieChartData]);
 
   // 筛选结束时间数据
   const filteredEndTimeList = useMemo(() => {
@@ -11300,6 +11480,8 @@ const getDateRangeFilter = useCallback(() => {
   const pieData = getPieChartData();
   const totalTime = getTotalTime();
   const taskStats = getTaskStats();
+  const subjectPieData = getSubjectPieChartData();
+const subjectTotalTime = getSubjectTotalTime();
 
   // 获取饼图颜色
   const getPieColor = (name, type) => {
@@ -11519,7 +11701,8 @@ const getDateRangeText = () => {
 };
 
   // 简易饼图组件
- const SimplePieChart = ({ data, total }) => {
+ 
+const SimplePieChart = ({ data, total }) => {
   if (data.length === 0) {
     return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
   }
@@ -11603,33 +11786,35 @@ const getDateRangeText = () => {
   
   const outerArcPath = getOuterArcPath();
   
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width="240" height="240" viewBox="0 0 200 200">
-        {/* 饼图扇形 */}
-        {slices.map((slice, idx) => (
-          <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
-        ))}
+ return (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <svg width="240" height="240" viewBox="0 0 200 200">
+      {/* 饼图扇形 */}
+      {slices.map((slice, idx) => (
+        <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
+      ))}
+      
+      {/* 校内总计外层圆弧 */}
+      {outerArcPath && (
+        <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
+      )}
+      
+      {/* 色块内部的文字标签 */}
+      {slices.map((slice, idx) => {
+        if (parseFloat(slice.percentage) < 5) return null;
         
-        {/* 校内总计外层圆弧 */}
-        {outerArcPath && (
-          <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
-        )}
+        const timeMinutes = slice.time;
+        const timeDisplay = timeMinutes >= 60 
+          ? `${(timeMinutes / 60).toFixed(1)}h` 
+          : `${timeMinutes}m`;
         
-        {/* 色块内部的文字标签 */}
-        {slices.map((slice, idx) => {
-          // 只显示占比大于 5% 的标签，避免文字重叠
-          if (parseFloat(slice.percentage) < 5) return null;
-          
-          // 根据色块颜色决定文字颜色（深色背景用白字，浅色背景用黑字）
-          const isDarkColor = slice.color === '#61A2Da' || slice.color === '#E8F5E9';
-          const textColor = slice.color === '#FFFDE7' || slice.color === '#FCE4EC' ? '#333' : '#333';
-          
-          return (
+        const textColor = '#333';
+        
+        return (
+          <g key={idx}>
             <text
-              key={idx}
               x={slice.labelX}
-              y={slice.labelY}
+              y={slice.labelY - 4}
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize="9"
@@ -11638,34 +11823,205 @@ const getDateRangeText = () => {
             >
               {slice.displayName}
             </text>
-          );
-        })}
-        
-        {/* 中心圆 */}
-        <circle cx="100" cy="100" r="35" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
-        <text x="100" y="103" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">
-          {Math.floor(total)}m
-        </text>
-      </svg>
+            <text
+              x={slice.labelX}
+              y={slice.labelY + 6}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="8"
+              fill={textColor}
+              opacity="0.8"
+            >
+              {timeDisplay}
+            </text>
+          </g>
+        );
+      })}
       
-      {/* 校内总计图例（保留一个简洁的图例） */}
-      {schoolTotalAngle > 0 && (
+      {/* 中心圆 */}
+      <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+<text 
+  x="100" 
+  y="100" 
+  textAnchor="middle" 
+  dominantBaseline="middle"
+  fontSize="11" 
+  fontWeight="bold" 
+  fill="#333"
+>
+  {Math.floor(total)}m
+</text>
+    </svg>
+    
+    {/* 饼图下方的图例 - 校内子分类显示为"校内-数学" */}
+    {/* 饼图下方的图例 */}
+<div style={{
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  gap: '12px',
+  marginTop: '16px'
+}}>
+  {/* 1. 校内总计放在最前面 */}
+  {schoolTotalAngle > 0 && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
+      <span style={{ fontSize: '11px', color: '#61A2Da', fontWeight: 'bold' }}>
+        校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)
+      </span>
+    </div>
+  )}
+  
+  {/* 2. 校内子分类 */}
+  {slices.filter(s => s.type === 'school_sub').map((slice, idx) => {
+    const displayName = `校内-${slice.name.replace('校内-', '')}`;
+    return (
+      <div key={`school_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginTop: '8px',
-          fontSize: '11px',
-          color: '#61A2Da'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
-            <span>校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)</span>
-          </div>
-        </div>
-      )}
+          width: '12px', 
+          height: '12px', 
+          backgroundColor: slice.color,
+          borderRadius: '2px',
+          border: '1px solid #ddd'
+        }} />
+        <span style={{ fontSize: '11px', color: '#333' }}>
+          {displayName} ({slice.percentage}%)
+        </span>
+      </div>
+    );
+  })}
+  
+  {/* 3. 其他类别 */}
+  {slices.filter(s => s.type !== 'school_sub').map((slice, idx) => {
+    return (
+      <div key={`other_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ 
+          width: '12px', 
+          height: '12px', 
+          backgroundColor: slice.color,
+          borderRadius: '2px',
+          border: '1px solid #ddd'
+        }} />
+        <span style={{ fontSize: '11px', color: '#333' }}>
+          {slice.name} ({slice.percentage}%)
+        </span>
+      </div>
+    );
+  })}
+</div>
     </div>
   );
 };
+
+// 👇👇👇 在这里添加第二个饼图组件 👇👇👇
+  const SimpleSubjectPieChart = ({ data, total }) => {
+    if (data.length === 0) {
+      return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
+    }
+    
+// 科目颜色映射（校内子分类）
+// 科目颜色映射
+const getSubjectColor = (subject) => {
+  const colors = {
+    '数学': '#E8F5E9',
+    '语文': '#FFFDE7',
+    '英语': '#FCE4EC',
+    '运动': '#E3F2FD'
+  };
+  return colors[subject] || '#f0f0f0';
+};
+    
+    let currentAngle = 0;
+    const slices = [];
+    
+    data.forEach(item => {
+      const angle = (item.time / total) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      currentAngle = endAngle;
+      
+      const startRad = (startAngle - 90) * Math.PI / 180;
+      const endRad = (endAngle - 90) * Math.PI / 180;
+      const x1 = 100 + 80 * Math.cos(startRad);
+      const y1 = 100 + 80 * Math.sin(startRad);
+      const x2 = 100 + 80 * Math.cos(endRad);
+      const y2 = 100 + 80 * Math.sin(endRad);
+      const largeArc = angle > 180 ? 1 : 0;
+      
+      const pathData = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
+      
+      const midAngle = startAngle + angle / 2;
+      const midRad = (midAngle - 90) * Math.PI / 180;
+      const labelRadius = 55;
+      const labelX = 100 + labelRadius * Math.cos(midRad);
+      const labelY = 100 + labelRadius * Math.sin(midRad);
+      
+      const percentage = ((item.time / total) * 100).toFixed(1);
+      const timeDisplay = item.time >= 60 ? `${(item.time / 60).toFixed(1)}h` : `${item.time}m`;
+      
+      slices.push({
+        ...item,
+        pathData,
+        color: getSubjectColor(item.name),
+        percentage,
+        labelX,
+        labelY,
+        timeDisplay
+      });
+    });
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <svg width="240" height="240" viewBox="0 0 200 200">
+          {slices.map((slice, idx) => (
+            <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
+          ))}
+          
+          {/* 色块内部文字 */}
+          {slices.map((slice, idx) => {
+            if (parseFloat(slice.percentage) < 5) return null;
+            return (
+              <g key={idx}>
+                <text x={slice.labelX} y={slice.labelY - 4} textAnchor="middle" fontSize="9" fontWeight="bold" fill="#333">
+                  {slice.name}
+                </text>
+                <text x={slice.labelX} y={slice.labelY + 6} textAnchor="middle" fontSize="8" fill="#333" opacity="0.8">
+                  {slice.timeDisplay}
+                </text>
+              </g>
+            );
+          })}
+          
+          {/* 中心圆 */}
+        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+<text 
+  x="100" 
+  y="100" 
+  textAnchor="middle" 
+  dominantBaseline="middle"
+  fontSize="11" 
+  fontWeight="bold" 
+  fill="#333"
+>
+  {Math.floor(total)}m
+</text>
+        </svg>
+        
+        {/* 图例 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginTop: '16px' }}>
+          {slices.map((slice, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: slice.color, borderRadius: '2px', border: '1px solid #ddd' }} />
+              <span style={{ fontSize: '11px', color: '#333' }}>{slice.name} ({slice.percentage}%)</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+
+
 
   return (
     <div style={{
@@ -11701,7 +12057,8 @@ const getDateRangeText = () => {
           onClick={onClose}
           style={{
             position: "absolute",
-            right: 0,
+      top: "10px",
+      right: "40px",  // 加大右边距，避开滚动条（滚动条宽度约15-20px）
             background: "transparent",
             border: "none",
             fontSize: "20px",
@@ -11720,68 +12077,69 @@ const getDateRangeText = () => {
       </div>
       
       <div style={{
-        display: 'flex',
-        gap: '2px',
-        marginBottom: 20,
-        borderBottom: '1px solid #e0e0e0',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch'
-      }}>
-        <div
-          onClick={() => setActiveTab('time')}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'time' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'time' ? '#61A2Da' : '#666',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'time' ? '2px solid #61A2Da' : 'none',
-            fontWeight: activeTab === 'time' ? 'bold' : 'normal',
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}
-        >
-          时间统计
-        </div>
-        <div
-          onClick={() => setActiveTab('endTime')}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'endTime' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'endTime' ? '#61A2Da' : '#666',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'endTime' ? '2px solid #61A2Da' : 'none',
-            fontWeight: activeTab === 'endTime' ? 'bold' : 'normal',
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}
-        >
-          结束时间
-        </div>
-        <div
-          onClick={() => setActiveTab('review')}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'review' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'review' ? '#61A2Da' : '#666',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'review' ? '2px solid #61A2Da' : 'none',
-            fontWeight: activeTab === 'review' ? 'bold' : 'normal',
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}
-        >
-          复盘记录
-        </div>
-      </div>
+  display: 'flex',
+  gap: '2px',
+  marginBottom: 20,
+  borderBottom: '1px solid #e0e0e0',
+  overflowX: 'auto',
+  WebkitOverflowScrolling: 'touch',
+  fontFamily: '微软雅黑, "Microsoft YaHei", sans-serif'
+}}>
+  <div
+    onClick={() => setActiveTab('time')}
+    style={{
+      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
+      fontSize: '13px',     // 从 14px 改为 13px
+      cursor: 'pointer',
+      backgroundColor: activeTab === 'time' ? '#fff' : '#f0f0f0',
+      color: activeTab === 'time' ? '#61A2Da' : '#666',
+      borderTopLeftRadius: '8px',
+      borderTopRightRadius: '8px',
+      borderBottom: activeTab === 'time' ? '2px solid #61A2Da' : 'none',
+      fontWeight: activeTab === 'time' ? 'bold' : 'normal',
+      whiteSpace: 'nowrap',
+      flexShrink: 0
+    }}
+  >
+    时间统计
+  </div>
+  <div
+    onClick={() => setActiveTab('endTime')}
+    style={{
+      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
+      fontSize: '13px',     // 从 14px 改为 13px
+      cursor: 'pointer',
+      backgroundColor: activeTab === 'endTime' ? '#fff' : '#f0f0f0',
+      color: activeTab === 'endTime' ? '#61A2Da' : '#666',
+      borderTopLeftRadius: '8px',
+      borderTopRightRadius: '8px',
+      borderBottom: activeTab === 'endTime' ? '2px solid #61A2Da' : 'none',
+      fontWeight: activeTab === 'endTime' ? 'bold' : 'normal',
+      whiteSpace: 'nowrap',
+      flexShrink: 0
+    }}
+  >
+    结束时间
+  </div>
+  <div
+    onClick={() => setActiveTab('review')}
+    style={{
+      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
+      fontSize: '13px',     // 从 14px 改为 13px
+      cursor: 'pointer',
+      backgroundColor: activeTab === 'review' ? '#fff' : '#f0f0f0',
+      color: activeTab === 'review' ? '#61A2Da' : '#666',
+      borderTopLeftRadius: '8px',
+      borderTopRightRadius: '8px',
+      borderBottom: activeTab === 'review' ? '2px solid #61A2Da' : 'none',
+      fontWeight: activeTab === 'review' ? 'bold' : 'normal',
+      whiteSpace: 'nowrap',
+      flexShrink: 0
+    }}
+  >
+    复盘记录
+  </div>
+</div>
       
      <DateFilterButtons />
       
@@ -11872,6 +12230,27 @@ const getDateRangeText = () => {
             </h3>
             <SimplePieChart data={pieData} total={totalTime} />
           </div>
+
+{/* 新增：按科目饼图 */}
+<div style={{
+  marginBottom: 20,
+  padding: '15px',
+  backgroundColor: '#fff',
+  borderRadius: '12px',
+  border: '1px solid #e0e0e0'
+}}>
+  <h3 style={{
+    marginBottom: 15,
+    fontSize: '14px',
+    textAlign: 'center',
+    color: '#333'
+  }}>
+    🥧 学习时间分布（按科目）
+  </h3>
+  <SimpleSubjectPieChart data={subjectPieData} total={subjectTotalTime} />
+</div>
+
+
         </>
       )}
 
@@ -19345,7 +19724,7 @@ if (isInitialized && todayTasks.length === 0) {
       width: "18px",
       height: "18px",
       borderRadius: "4px",
-      marginRight: "0px",
+      marginRight: "8px",
       backgroundColor: "transparent"
     }}
     title="统计汇总"
@@ -19377,6 +19756,7 @@ if (isInitialized && todayTasks.length === 0) {
           justifyContent: "center",
           width: "18px",
           height: "18px",
+          marginRight: "8px",
           userSelect: "none"
         }}
       >
@@ -19534,7 +19914,7 @@ if (isInitialized && todayTasks.length === 0) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-   
+   marginRight:"8px" ,
     userSelect: "none",
     transition: "none"
   }}
