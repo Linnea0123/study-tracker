@@ -464,7 +464,7 @@ button:focus-visible {
   .grade-modal button.manage-subcat-btn:hover,
   .grade-modal button.manage-subcat-btn:active,
   .grade-modal button.manage-subcat-btn:focus {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: white !important;
   }
   
@@ -473,7 +473,7 @@ button:focus-visible {
   .grade-modal button.subject-btn-selected:hover,
   .grade-modal button.subject-btn-selected:active,
   .grade-modal button.subject-btn-selected:focus {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: white !important;
   }
   
@@ -491,7 +491,7 @@ button:focus-visible {
   .grade-modal button.subcat-btn-selected:hover,
   .grade-modal button.subcat-btn-selected:active,
   .grade-modal button.subcat-btn-selected:focus {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: white !important;
   }
   
@@ -509,7 +509,7 @@ button:focus-visible {
   .grade-modal button.add-subcat-btn:hover,
   .grade-modal button.add-subcat-btn:active,
   .grade-modal button.add-subcat-btn:focus {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: white !important;
   }
   
@@ -520,7 +520,7 @@ button:focus-visible {
   .grade-modal button.sort-btn:active:hover,
   .grade-modal button.sort-btn:focus:hover,
   .grade-modal button.sort-btn:focus-visible {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: #ffffff !important;
     border: none !important;
     transform: none !important;
@@ -534,7 +534,7 @@ button:focus-visible {
   .grade-modal button.sorting-active-btn:hover,
   .grade-modal button.sorting-active-btn:active,
   .grade-modal button.sorting-active-btn:focus {
-    background-color: #6E9AC7 !important;
+    background-color: #61A2Da !important;
     color: white !important;
   }
 
@@ -567,7 +567,7 @@ button:focus-visible {
     <h2 style={{ 
       textAlign: 'center', 
       margin: 0,
-      color: '#6E9AC7',
+      color: '#61A2Da',
       fontSize: '20px'
     }}>
       成绩记录
@@ -689,7 +689,7 @@ button:focus-visible {
         style={{
           flex: 1,
           padding: '5px 8px',
-          backgroundColor: selectedSubject === subject ? '#6E9AC7' : '#f0f0f0',
+          backgroundColor: selectedSubject === subject ? '#61A2Da' : '#f0f0f0',
           color: selectedSubject === subject ? 'white' : '#333',
           border: 'none',
           borderRadius: '6px',
@@ -717,7 +717,7 @@ button:focus-visible {
         onClick={() => handleSubCategoryClick(null)}
         style={{
           padding: '4px 10px',
-          backgroundColor: selectedSubCategory === null ? '#6E9AC7' : '#f0f0f0',
+          backgroundColor: selectedSubCategory === null ? '#61A2Da' : '#f0f0f0',
           color: selectedSubCategory === null ? 'white' : '#333',
           border: 'none',
           borderRadius: '16px',
@@ -735,7 +735,7 @@ button:focus-visible {
           onClick={() => handleSubCategoryClick(subCat)}
           style={{
             padding: '4px 10px',
-            backgroundColor: selectedSubCategory === subCat ? '#6E9AC7' : '#f0f0f0',
+            backgroundColor: selectedSubCategory === subCat ? '#61A2Da' : '#f0f0f0',
             color: selectedSubCategory === subCat ? 'white' : '#333',
             border: 'none',
             borderRadius: '16px',
@@ -1112,7 +1112,7 @@ button:focus-visible {
         <h3 style={{ 
           textAlign: 'center', 
           marginBottom: '20px', 
-          color: '#6E9AC7',
+          color: '#61A2Da',
           fontSize: '16px',
           padding: '0 24px'
         }}>
@@ -1396,7 +1396,7 @@ button:focus-visible {
               style={{
                 flex: 1,
                 padding: 14,
-                backgroundColor: '#6E9AC7',
+                backgroundColor: '#61A2Da',
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
@@ -1497,7 +1497,7 @@ button:focus-visible {
         <h3 style={{ 
           textAlign: 'center', 
           marginBottom: '20px', 
-          color: '#6E9AC7',
+          color: '#61A2Da',
           fontSize: '18px'
         }}>
           管理子分类
@@ -1551,7 +1551,7 @@ button:focus-visible {
                 style={{
                   flex: 1,
                   padding: '12px',
-                  backgroundColor: '#6E9AC7',
+                  backgroundColor: '#61A2Da',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -1569,7 +1569,7 @@ button:focus-visible {
                 style={{
                   flex: 1,
                   padding: '12px',
-                  backgroundColor: isSortingSubCategories ? '#6E9AC7' : '#f0f0f0',
+                  backgroundColor: isSortingSubCategories ? '#61A2Da' : '#f0f0f0',
                   color: isSortingSubCategories ? 'white' : '#333',
                   border: 'none',
                   borderRadius: '8px',
@@ -1938,7 +1938,7 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
 const baseCategories = [
   { 
     name: "校内", 
-    color: "#6E9AC7",  // 保持蓝色不变
+    color: "#61A2Da",  // 保持蓝色不变
     subCategories: ["数学", "语文", "英语", "运动"]
   },
   { name: "语文", color: "#FFFDE7", textColor: "#333" },
@@ -2084,7 +2084,7 @@ const handleManualBackup = async () => {
           borderBottom: '1px solid #e0e0e0',
           paddingBottom: 10
         }}>
-          <h3 style={{ margin: 0, color: '#6E9AC7' }}>📦 备份管理</h3>
+          <h3 style={{ margin: 0, color: '#61A2Da' }}>📦 备份管理</h3>
           <button
             onClick={onClose}
             style={{
@@ -4998,7 +4998,7 @@ const handleEditTemplate = (index, template) => {
               onClick={handleSave}
               style={{
                 padding: "6px 12px",
-                backgroundColor: "#6E9AC7",
+                backgroundColor: "#61A2Da",
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
@@ -6249,7 +6249,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
     .add-btn:focus {
       background-image: none !important;
       background: initial !important;
-      background-color: #6E9AC7 !important;  // ← 改成 
+      background-color: #61A2Da !important;  // ← 改成 
       color: initial !important;
       border: initial !important;
       border-color: initial !important;
@@ -6284,7 +6284,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
     .add-btn:hover,
     .add-btn:active,
     .add-btn:focus {
-      background-color: #6E9AC7 !important;
+      background-color: #61A2Da !important;
       background-image: none !important;
       color: #fff !important;
       border: none !important;
@@ -6333,7 +6333,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
           <h3 style={{ 
             textAlign: 'center', 
             marginBottom: 20, 
-            color: '#6E9AC7',
+            color: '#61A2Da',
             fontSize: 18
           }}>
             📅 添加本周任务
@@ -6459,7 +6459,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
               style={{
                 flex: 1,
                 padding: 10,
-                backgroundColor: '#6E9AC7',
+                backgroundColor: '#61A2Da',
                 color: '#fff',
                 borderRadius: 6,
                 fontSize: 14,
@@ -7058,7 +7058,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
             ×
           </div>
 
-          <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#6E9AC7', fontSize: '18px' }}>
+          <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#61A2Da', fontSize: '18px' }}>
             📅 本月任务 ({tasks.length})
           </h2>
 
@@ -7069,7 +7069,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     style={{
       width: '100%',
       padding: '14px',
-      backgroundColor: '#6E9AC7',
+      backgroundColor: '#61A2Da',
       color: '#fff',
       borderRadius: '8px',
       fontSize: '14px',
@@ -7082,11 +7082,11 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       boxSizing: 'border-box'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = '#6E9AC7';
+      e.currentTarget.style.backgroundColor = '#61A2Da';
       e.currentTarget.style.transform = 'none';
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = '#6E9AC7';
+      e.currentTarget.style.backgroundColor = '#61A2Da';
       e.currentTarget.style.transform = 'none';
     }}
     onMouseDown={(e) => {
@@ -7160,7 +7160,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       style={{
         width: '100%',
         padding: '12px',
-        backgroundColor: '#6E9AC7',
+        backgroundColor: '#61A2Da',
         color: '#fff',
         borderRadius: '6px',
         fontWeight: 'bold',
@@ -7171,11 +7171,11 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
         boxSizing: 'border-box'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#6E9AC7';
+        e.currentTarget.style.backgroundColor = '#61A2Da';
         e.currentTarget.style.transform = 'none';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#6E9AC7';
+        e.currentTarget.style.backgroundColor = '#61A2Da';
         e.currentTarget.style.transform = 'none';
       }}
       onMouseDown={(e) => {
@@ -11225,7 +11225,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
               padding: '4px 12px',
               fontSize: '13px',
               cursor: 'pointer',
-              backgroundColor: dateRange === 'today' ? '#6E9AC7' : '#f0f0f0',
+              backgroundColor: dateRange === 'today' ? '#61A2Da' : '#f0f0f0',
               color: dateRange === 'today' ? '#fff' : '#333',
               borderRadius: '16px',
               whiteSpace: 'nowrap'
@@ -11243,7 +11243,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             padding: '4px 12px',
             fontSize: '13px',
             cursor: 'pointer',
-            backgroundColor: dateRange === 'week' ? '#6E9AC7' : '#f0f0f0',
+            backgroundColor: dateRange === 'week' ? '#61A2Da' : '#f0f0f0',
             color: dateRange === 'week' ? '#fff' : '#333',
             borderRadius: '16px',
             whiteSpace: 'nowrap'
@@ -11260,7 +11260,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             padding: '4px 12px',
             fontSize: '13px',
             cursor: 'pointer',
-            backgroundColor: dateRange === 'month' ? '#6E9AC7' : '#f0f0f0',
+            backgroundColor: dateRange === 'month' ? '#61A2Da' : '#f0f0f0',
             color: dateRange === 'month' ? '#fff' : '#333',
             borderRadius: '16px',
             whiteSpace: 'nowrap'
@@ -11277,7 +11277,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             padding: '4px 12px',
             fontSize: '13px',
             cursor: 'pointer',
-            backgroundColor: dateRange === 'year' ? '#6E9AC7' : '#f0f0f0',
+            backgroundColor: dateRange === 'year' ? '#61A2Da' : '#f0f0f0',
             color: dateRange === 'year' ? '#fff' : '#333',
             borderRadius: '16px',
             whiteSpace: 'nowrap'
@@ -11291,7 +11291,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             padding: '4px 12px',
             fontSize: '13px',
             cursor: 'pointer',
-            backgroundColor: dateRange === 'custom' ? '#6E9AC7' : '#f0f0f0',
+            backgroundColor: dateRange === 'custom' ? '#61A2Da' : '#f0f0f0',
             color: dateRange === 'custom' ? '#fff' : '#333',
             borderRadius: '16px',
             whiteSpace: 'nowrap'
@@ -11345,7 +11345,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
               padding: '6px 16px',
               fontSize: '13px',
               cursor: 'pointer',
-              backgroundColor: '#6E9AC7',
+              backgroundColor: '#61A2Da',
               color: '#fff',
               borderRadius: '6px',
               whiteSpace: 'nowrap'
@@ -11408,7 +11408,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
       }}>
         <h1 style={{
           textAlign: "center",
-          color: "#6E9AC7",
+          color: "#61A2Da",
           fontSize: 20,
           margin: 0
         }}>
@@ -11453,10 +11453,10 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'time' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'time' ? '#6E9AC7' : '#666',
+            color: activeTab === 'time' ? '#61A2Da' : '#666',
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'time' ? '2px solid #6E9AC7' : 'none',
+            borderBottom: activeTab === 'time' ? '2px solid #61A2Da' : 'none',
             fontWeight: activeTab === 'time' ? 'bold' : 'normal',
             whiteSpace: 'nowrap',
             flexShrink: 0
@@ -11471,10 +11471,10 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'endTime' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'endTime' ? '#6E9AC7' : '#666',
+            color: activeTab === 'endTime' ? '#61A2Da' : '#666',
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'endTime' ? '2px solid #6E9AC7' : 'none',
+            borderBottom: activeTab === 'endTime' ? '2px solid #61A2Da' : 'none',
             fontWeight: activeTab === 'endTime' ? 'bold' : 'normal',
             whiteSpace: 'nowrap',
             flexShrink: 0
@@ -11489,10 +11489,10 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             fontSize: '14px',
             cursor: 'pointer',
             backgroundColor: activeTab === 'review' ? '#fff' : '#f0f0f0',
-            color: activeTab === 'review' ? '#6E9AC7' : '#666',
+            color: activeTab === 'review' ? '#61A2Da' : '#666',
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
-            borderBottom: activeTab === 'review' ? '2px solid #6E9AC7' : 'none',
+            borderBottom: activeTab === 'review' ? '2px solid #61A2Da' : 'none',
             fontWeight: activeTab === 'review' ? 'bold' : 'normal',
             whiteSpace: 'nowrap',
             flexShrink: 0
@@ -11535,7 +11535,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
               marginBottom: '20px',
               border: '1px solid #e0e0e0'
             }}>
-              <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '14px', color: '#6E9AC7' }}>
+              <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '14px', color: '#61A2Da' }}>
                 今日详细数据
               </h3>
               <div style={{
@@ -11790,7 +11790,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
                         <div style={{
                           fontSize: '13px',
                           fontWeight: '500',
-                          color: '#6E9AC7'
+                          color: '#61A2Da'
                         }}>
                           {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
                         </div>
@@ -12037,7 +12037,7 @@ const CategoryManagerModal = ({
           paddingBottom: 10,
           borderBottom: '1px solid #e0e0e0'
         }}>
-          <h3 style={{ margin: 0, color: '#6E9AC7', fontSize: '16px' }}>
+          <h3 style={{ margin: 0, color: '#61A2Da', fontSize: '16px' }}>
             管理类别
           </h3>
           
@@ -12049,7 +12049,7 @@ const CategoryManagerModal = ({
               }}
               style={{
                 padding: '4px 12px',
-                backgroundColor: '#6E9AC7',
+                backgroundColor: '#61A2Da',
                 color: '#fff',
                 borderRadius: 4,
                 fontSize: 13,
@@ -12087,7 +12087,7 @@ const CategoryManagerModal = ({
             style={{
               flex: 1,
               padding: '8px',
-              backgroundColor: '#6E9AC7',
+              backgroundColor: '#61A2Da',
               color: '#fff',
               borderRadius: 6,
               fontSize: 13,
@@ -12102,7 +12102,7 @@ const CategoryManagerModal = ({
             style={{
               flex: 1,
               padding: '8px',
-              backgroundColor: '#6E9AC7',
+              backgroundColor: '#61A2Da',
               color: '#fff',
               borderRadius: 6,
               fontSize: 13,
@@ -12826,7 +12826,7 @@ const [categoryColors, setCategoryColors] = useState(() => {
     '英语': '#FCE4EC',
     '科学': '#E1F5FE',
     '运动': '#E3F2FD',
-    '校内': '#6E9AC7'
+    '校内': '#61A2Da'
   };
 });
 
@@ -17895,7 +17895,7 @@ if (isInitialized && todayTasks.length === 0) {
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
-    color: "#6E9AC7",
+    color: "#61A2Da",
     fontSize: "20px",
     margin: 0,
     padding: "10px 0", // 添加上下内边距来垂直居中
@@ -17949,7 +17949,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 0,
-      color: "#6E9AC7"      // ← 添加箭头颜色
+      color: "#61A2Da"      // ← 添加箭头颜色
     }}
     title="上一周"
   >
@@ -17969,7 +17969,7 @@ if (isInitialized && todayTasks.length === 0) {
       display: "inline-block",
       lineHeight: "16px",
       verticalAlign: "middle",
-      color: "#6E9AC7"       // ← 添加文字颜色
+      color: "#61A2Da"       // ← 添加文字颜色
     }}
     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
@@ -17997,7 +17997,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 0,
-      color: "#6E9AC7"      // ← 添加箭头颜色
+      color: "#61A2Da"      // ← 添加箭头颜色
     }}
     title="下一周"
   >
@@ -18011,7 +18011,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowWeekTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#6E9AC7",
+        backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -18025,7 +18025,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowMonthTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#6E9AC7",
+        backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -18040,7 +18040,7 @@ if (isInitialized && todayTasks.length === 0) {
   onClick={() => setShowTemplateList(!showTemplateList)}
   style={{
     padding: "4px 4px",
-    backgroundColor: "#6E9AC7",
+    backgroundColor: "#61A2Da",
     color: "#fff",
     borderRadius: "4px",
     cursor: "pointer",
@@ -18054,7 +18054,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowAddTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#6E9AC7",
+        backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -18068,7 +18068,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowBulkImportModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#6E9AC7",
+        backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -18453,7 +18453,7 @@ if (isInitialized && todayTasks.length === 0) {
       maxHeight: '80vh',
       overflow: 'auto'
     }} onClick={e => e.stopPropagation()}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#6E9AC7' }}>添加任务</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#61A2Da' }}>添加任务</h3>
       
       {/* 任务输入框 */}
       <input
@@ -18486,7 +18486,7 @@ if (isInitialized && todayTasks.length === 0) {
               style={{
                 padding: '4px 12px',
                 borderRadius: 16,
-                backgroundColor: newTaskCategory === c.name ? '#6E9AC7' : '#f0f0f0',
+                backgroundColor: newTaskCategory === c.name ? '#61A2Da' : '#f0f0f0',
                 color: newTaskCategory === c.name ? '#fff' : '#333',
                 fontSize: '12px',
                 cursor: 'pointer',
@@ -18573,7 +18573,7 @@ if (isInitialized && todayTasks.length === 0) {
           style={{
             flex: 1,
             padding: 10,
-            backgroundColor: '#6E9AC7',
+            backgroundColor: '#61A2Da',
             color: '#fff',
             borderRadius: 8,
             fontSize: 14,
@@ -18586,12 +18586,12 @@ if (isInitialized && todayTasks.length === 0) {
             boxShadow: 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#6E9AC7';
+            e.currentTarget.style.backgroundColor = '#61A2Da';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#6E9AC7';
+            e.currentTarget.style.backgroundColor = '#61A2Da';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
@@ -18631,7 +18631,7 @@ if (isInitialized && todayTasks.length === 0) {
       maxHeight: '80vh',
       overflow: 'auto'
     }} onClick={e => e.stopPropagation()}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#6E9AC7' }}>批量导入任务</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#61A2Da' }}>批量导入任务</h3>
       
       {/* 批量文本输入框 */}
       <textarea
@@ -18744,7 +18744,7 @@ if (isInitialized && todayTasks.length === 0) {
           style={{
             flex: 1,
             padding: 10,
-            backgroundColor: '#6E9AC7',
+            backgroundColor: '#61A2Da',
             color: '#fff',
             borderRadius: 8,
             fontSize: 14,
@@ -18757,12 +18757,12 @@ if (isInitialized && todayTasks.length === 0) {
             boxShadow: 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#6E9AC7';
+            e.currentTarget.style.backgroundColor = '#61A2Da';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#6E9AC7';
+            e.currentTarget.style.backgroundColor = '#61A2Da';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
@@ -19107,7 +19107,7 @@ if (isInitialized && todayTasks.length === 0) {
       case '英语': return '#FCE4EC';
       case '科学': return '#E1F5FE';
       case '运动': return '#E3F2FD';
-      case '校内': return '#6E9AC7';
+      case '校内': return '#61A2Da';
       default: return '#f0f0f0';
     }
   };
@@ -19136,7 +19136,7 @@ if (isInitialized && todayTasks.length === 0) {
         case '英语': return '#FCE4EC';
         case '科学': return '#E1F5FE';
         case '运动': return '#E3F2FD';
-        case '校内': return '#6E9AC7';
+        case '校内': return '#61A2Da';
         default: return '#f0f0f0';
       }
     })()),
@@ -19782,7 +19782,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#6E9AC7",
+      backgroundColor: "#61A2Da",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
@@ -19811,7 +19811,7 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     padding: "6px 10px",
-    backgroundColor: isSyncing ? "#ccc" : "#6E9AC7",  // ✅ 变灰
+    backgroundColor: isSyncing ? "#ccc" : "#61A2Da",  // ✅ 变灰
     color: "#fff",
     fontSize: 12,
     borderRadius: 6,
@@ -19883,7 +19883,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#6E9AC7",
+      backgroundColor: "#61A2Da",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
@@ -19908,7 +19908,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#6E9AC7",
+      backgroundColor: "#61A2Da",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
