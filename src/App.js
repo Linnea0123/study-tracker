@@ -11634,26 +11634,51 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
 };
 
 const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
-  // 里程碑配置
-  const milestones = [
-    { count: 50, title: "学习新芽", color: "#4CAF50" },
-    { count: 100, title: "小小学霸", color: "#2196F3" },
-    { count: 200, title: "青铜学者", color: "#CD7F32" },
-    { count: 300, title: "白银学者", color: "#C0C0C0" },
-    { count: 500, title: "黄金学者", color: "#FFD700" },
-    { count: 800, title: "钻石学者", color: "#00BCD4" },
-    { count: 1000, title: "传奇学霸", color: "#9C27B0" }
-  ];
+  // 每100个任务升一级，1级需要100个任务
+  const currentLevel = Math.floor(totalCompletedTasks / 100);
+  // 当前等级区间的起始值（0, 100, 200, 300...）
+  const levelStart = currentLevel * 100;
+  // 当前等级区间的结束值
+  const levelEnd = levelStart + 100;
+  // 当前等级区间内的进度（0-100）
+  const levelProgress = totalCompletedTasks - levelStart;
+  // 进度百分比
+  const progressPercent = (levelProgress / 100) * 100;
 
-  // 下一个里程碑
-  const nextMilestone = milestones.find(m => m.count > totalCompletedTasks);
-  // 当前进度百分比
-  const prevCount = milestones.find(m => m.count <= totalCompletedTasks)?.count || 0;
-  const nextCount = nextMilestone?.count || prevCount;
-  const progress = nextMilestone ? ((totalCompletedTasks - prevCount) / (nextCount - prevCount)) * 100 : 100;
+  // 等级称号
+  const getLevelTitle = (level) => {
+    if (level === 0) return "学习萌新";
+    if (level === 1) return "1级学者";
+    if (level === 2) return "2级学者";
+    if (level === 3) return "3级学者";
+    if (level === 4) return "4级学者";
+    if (level === 5) return "5级学者";
+    if (level === 6) return "6级学者";
+    if (level === 7) return "7级学者";
+    if (level === 8) return "8级学者";
+    if (level === 9) return "9级学者";
+    if (level >= 10) return `${level}级学者`;
+    return `${level}级学者`;
+  };
 
-  // 已解锁的勋章
-  const unlockedCount = milestones.filter(m => m.count <= totalCompletedTasks).length;
+  // 等级颜色
+  const getLevelColor = (level) => {
+    if (level === 0) return "#9E9E9E";
+    if (level === 1) return "#CD7F32"; // 青铜
+    if (level === 2) return "#C0C0C0"; // 白银
+    if (level === 3) return "#FFD700"; // 黄金
+    if (level === 4) return "#00BCD4"; // 钻石
+    if (level === 5) return "#9C27B0"; // 铂金
+    if (level === 6) return "#FF5722"; // 橙金
+    if (level === 7) return "#E91E63"; // 粉金
+    if (level === 8) return "#3F51B5"; // 蓝金
+    if (level === 9) return "#009688"; // 翠金
+    if (level >= 10) return "#FFD700"; // 黄金
+    return "#4CAF50";
+  };
+
+  // 下一等级需要的任务数
+  const tasksToNextLevel = levelEnd - totalCompletedTasks;
 
   return (
     <div style={{
@@ -11669,148 +11694,208 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
       zIndex: 1000,
       padding: '10px'
     }} onClick={onClose}>
-      {/* 内嵌样式 - 禁用按钮悬浮效果 */}
       <style>{`
-       /* 强制关闭按钮所有状态都不变色 */
-.milestone-close-btn,
-.milestone-close-btn:hover,
-.milestone-close-btn:active,
-.milestone-close-btn:focus,
-.milestone-close-btn:focus-visible,
-.milestone-close-btn:active:hover {
-  color: #999 !important;
-  background-color: transparent !important;
-  background: transparent !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
+        .milestone-close-btn,
+        .milestone-close-btn:hover,
+        .milestone-close-btn:active,
+        .milestone-close-btn:focus {
+          color: #999 !important;
+          background-color: transparent !important;
+        }
       `}</style>
       
       <div style={{
         backgroundColor: '#fff',
-        borderRadius: '12px',
+        borderRadius: '16px',
         width: '100%',
-        maxWidth: '350px',
+        maxWidth: '320px',
         overflow: 'hidden',
-        position: 'relative'
+        position: 'relative',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
       }} onClick={e => e.stopPropagation()}>
         
-        {/* 右上角关闭按钮 - 无背景色 */}
-       <button
-  className="milestone-close-btn"
-  onClick={onClose}
-  style={{
-    position: 'absolute',
-    top: '12px',
-    right: '12px',
-    width: '28px',
-    height: '28px',
-    backgroundColor: 'transparent',
-    color: '#999',
-    border: 'none',
-    borderRadius: '50%',
-    fontSize: '18px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10
-  }}
-  onMouseDown={(e) => {
-    e.preventDefault();
-  }}
->
-  ×
-</button>
+        {/* 右上角关闭按钮 */}
+        <button
+          className="milestone-close-btn"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            width: '28px',
+            height: '28px',
+            backgroundColor: 'transparent',
+            color: '#999',
+            border: 'none',
+            borderRadius: '50%',
+            fontSize: '18px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          ×
+        </button>
 
-        {/* 头部 */}
+        {/* 头部 - 等级徽章 */}
         <div style={{
-          padding: '20px',
+          padding: '24px 20px 16px 20px',
           textAlign: 'center',
-          borderBottom: '1px solid #eee'
+          background: `linear-gradient(135deg, ${getLevelColor(currentLevel)}20 0%, #f5f5f5 100%)`
         }}>
-          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🏆</div>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '8px',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+          }}>
+            🏆
+          </div>
+          <div style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: getLevelColor(currentLevel),
+            marginBottom: '4px'
+          }}>
+            {getLevelTitle(currentLevel)}
+          </div>
+          <div style={{
+            fontSize: '13px',
+            color: '#666'
+          }}>
             已完成 {totalCompletedTasks} 个任务
           </div>
         </div>
 
-        {/* 进度条 */}
-        {nextMilestone && (
-          <div style={{ padding: '16px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              fontSize: '12px',
-              color: '#666',
-              marginBottom: '6px'
-            }}>
-              <span>{prevCount}</span>
-              <span>↓ {nextCount - totalCompletedTasks} 个任务 → {nextMilestone.title}</span>
-              <span>{nextCount}</span>
-            </div>
-            <div style={{
-              width: '100%',
-              height: '6px',
-              backgroundColor: '#e0e0e0',
-              borderRadius: '3px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${Math.min(progress, 100)}%`,
-                height: '100%',
-                backgroundColor: nextMilestone.color,
-                borderRadius: '3px'
-              }} />
-            </div>
+        {/* 等级进度条 */}
+        <div style={{ padding: '16px 20px' }}>
+          {/* 等级区间显示 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '12px',
+            color: '#999',
+            marginBottom: '6px'
+          }}>
+            <span>{levelStart}</span>
+            <span style={{ fontWeight: 'bold', color: getLevelColor(currentLevel) }}>
+              Lv.{currentLevel}
+            </span>
+            <span>{levelEnd}</span>
           </div>
-        )}
+          
+          {/* 进度条 */}
+          <div style={{
+            width: '100%',
+            height: '10px',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '5px',
+            overflow: 'hidden',
+            marginBottom: '8px'
+          }}>
+            <div style={{
+              width: `${progressPercent}%`,
+              height: '100%',
+              backgroundColor: getLevelColor(currentLevel),
+              borderRadius: '5px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          
+          {/* 进度数字 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '11px',
+            color: '#666',
+            marginBottom: '8px'
+          }}>
+            <span>📊 当前进度</span>
+            <span>{levelProgress}/100</span>
+          </div>
 
-        {/* 勋章列表 */}
+          {/* 下一级提示 */}
+          {tasksToNextLevel > 0 && (
+            <div style={{
+              fontSize: '11px',
+              color: '#888',
+              textAlign: 'center',
+              marginTop: '12px',
+              padding: '8px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px'
+            }}>
+              💪 再完成 {tasksToNextLevel} 个任务，升至 {getLevelTitle(currentLevel + 1)}
+            </div>
+          )}
+        </div>
+
+        {/* 勋章列表 - 显示已解锁的等级徽章 */}
         <div style={{ padding: '0 16px 20px 16px' }}>
           <div style={{ 
             fontSize: '12px', 
             color: '#999', 
             marginBottom: '12px',
-            textAlign: 'center'
+            textAlign: 'center',
+            borderTop: '1px solid #f0f0f0',
+            paddingTop: '12px'
           }}>
-            已获得 {unlockedCount}/{milestones.length} 枚勋章
+            已解锁等级徽章
           </div>
           
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-            {milestones.map(m => {
-              const isUnlocked = m.count <= totalCompletedTasks;
-              return (
-                <div
-                  key={m.count}
-                  style={{
-                    width: '70px',
-                    padding: '8px 4px',
-                    textAlign: 'center',
-                    backgroundColor: isUnlocked ? `${m.color}15` : '#f5f5f5',
-                    borderRadius: '8px',
-                    opacity: isUnlocked ? 1 : 0.5
-                  }}
-                >
-                  <div style={{ 
-                    fontSize: '20px',
-                    marginBottom: '4px',
-                    filter: isUnlocked ? 'none' : 'grayscale(1)'
-                  }}>
-                    {isUnlocked ? '🏅' : '🔒'}
-                  </div>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    fontWeight: isUnlocked ? 'bold' : 'normal',
-                    color: isUnlocked ? m.color : '#999'
-                  }}>
-                    {m.title}
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#aaa' }}>{m.count}</div>
-                </div>
-              );
-            })}
+          {/* 勋章列表 - 显示已解锁的等级徽章 */}
+<div style={{ padding: '0 16px 20px 16px' }}>
+  <div style={{ 
+    fontSize: '12px', 
+    color: '#999', 
+    marginBottom: '12px',
+    textAlign: 'center',
+    borderTop: '1px solid #f0f0f0',
+    paddingTop: '12px'
+  }}>
+    已解锁等级徽章
+  </div>
+  
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(level => {  // ← 加上 11
+      const isUnlocked = totalCompletedTasks >= (level * 100);
+      const levelColor = getLevelColor(level);
+      
+      return (
+        <div
+          key={level}
+          style={{
+            width: '55px',
+            padding: '6px 4px',
+            textAlign: 'center',
+            backgroundColor: isUnlocked ? `${levelColor}15` : '#f5f5f5',
+            borderRadius: '8px',
+            opacity: isUnlocked ? 1 : 0.5,
+            border: isUnlocked ? `1px solid ${levelColor}30` : '1px solid #eee'
+          }}
+        >
+          <div style={{ 
+            fontSize: '20px',
+            marginBottom: '2px',
+            filter: isUnlocked ? 'none' : 'grayscale(1)'
+          }}>
+            {isUnlocked ? '🏅' : '🔒'}
           </div>
+          <div style={{ 
+            fontSize: '10px', 
+            fontWeight: isUnlocked ? 'bold' : 'normal',
+            color: isUnlocked ? levelColor : '#999'
+          }}>
+            {level === 0 ? '萌新' : `${level}级`}
+          </div>
+          <div style={{ fontSize: '8px', color: '#aaa' }}>{level * 100}</div>
+        </div>
+      );
+    })}
+  </div>
+</div>
         </div>
       </div>
     </div>
@@ -12900,7 +12985,13 @@ useEffect(() => {
 }, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
 
 
-
+// 👇 在这里添加新的 useEffect
+useEffect(() => {
+  const validatedMonday = getMonday(new Date(selectedDate));
+  if (validatedMonday.getTime() !== currentMonday.getTime()) {
+    setCurrentMonday(validatedMonday);
+  }
+}, [selectedDate, currentMonday]);
 
 
 
@@ -17408,13 +17499,7 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
-      {(() => {
-         const validatedMonday = getMonday(new Date(selectedDate));
-  if (validatedMonday.getTime() !== currentMonday.getTime()) {
-    setCurrentMonday(validatedMonday);
-  }
-  return null;
-      })()}
+
 
 
 
