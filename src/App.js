@@ -10947,7 +10947,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         </button>
         <h1 style={{
           textAlign: "center",
-          color: "#1a73e8",
+          color: "#6E9AC7 ",
           fontSize: 20
         }}>
           学习统计
@@ -11767,7 +11767,7 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
 
 function App() {
 
-
+const [showTemplateList, setShowTemplateList] = useState(false);
 
 
   // 在 App 组件开头，其他 useState 附近添加
@@ -16953,10 +16953,10 @@ if (isInitialized && todayTasks.length === 0) {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 10
+  marginBottom: 4
 }}>
   {/* 左侧：周次显示 */}
-  <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
+ <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
   <button
     onClick={(e) => {
       e.preventDefault();
@@ -16975,7 +16975,8 @@ if (isInitialized && todayTasks.length === 0) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      flexShrink: 0
+      flexShrink: 0,
+      color: "#6E9AC7"      // ← 添加箭头颜色
     }}
     title="上一周"
   >
@@ -16993,8 +16994,9 @@ if (isInitialized && todayTasks.length === 0) {
       borderRadius: "6px",
       transition: "background-color 0.2s",
       display: "inline-block",
-      lineHeight: "16px",        // 固定行高
-      verticalAlign: "middle"
+      lineHeight: "16px",
+      verticalAlign: "middle",
+      color: "#6E9AC7"       // ← 添加文字颜色
     }}
     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
@@ -17021,7 +17023,8 @@ if (isInitialized && todayTasks.length === 0) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      flexShrink: 0
+      flexShrink: 0,
+      color: "#6E9AC7"      // ← 添加箭头颜色
     }}
     title="下一周"
   >
@@ -17059,6 +17062,21 @@ if (isInitialized && todayTasks.length === 0) {
     >
       本月
     </div>
+     {/* 👇 添加模板按钮 */}
+ <div
+  onClick={() => setShowTemplateList(!showTemplateList)}
+  style={{
+    padding: "4px 4px",
+    backgroundColor: "#6E9AC7",
+    color: "#fff",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "12px",
+    textAlign: "center"
+  }}
+>
+  模板 
+</div>
     <div
       onClick={() => setShowAddTaskModal(true)}
       style={{
@@ -17090,6 +17108,112 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
+{/* 👇 模板列表 - 在这里展开（日期行上方） */}
+{showTemplateList && (
+  <div style={{
+    
+    marginBottom: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: '4px',
+    padding: '6px 0'
+  }}>
+    {/* 左侧：现有模板（靠右，所以放在右边区域） */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+      {templates.length === 0 ? (
+        <span style={{ fontSize: '12px', color: '#999' }}>暂无模板</span>
+      ) : (
+        templates.map((template, index) => (
+          <span
+            key={index}
+            onClick={() => {
+              // 使用模板添加任务
+              const newTask = {
+                id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                text: template.text || '',
+                category: template.category || '校内',
+                subCategory: template.subCategory || '',
+                done: false,
+                timeSpent: 0,
+                subTasks: template.subTasks || [],
+                note: template.note || "",
+                reflection: "",
+                image: template.image || null,
+                scheduledTime: template.scheduledTime || "",
+                pinned: false,
+                tags: template.tags || [],
+                progress: template.progress || {
+                  initial: 0,
+                  current: 0,
+                  target: 0,
+                  unit: "%"
+                },
+                reminderTime: null
+              };
+              
+              setTasksByDate(prev => ({
+                ...prev,
+                [selectedDate]: [...(prev[selectedDate] || []), newTask]
+              }));
+              
+              const toast = document.createElement('div');
+              toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
+              toast.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #28a745;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 2000;
+              `;
+              document.body.appendChild(toast);
+              setTimeout(() => toast.remove(), 2000);
+            }}
+            style={{
+              cursor: 'pointer',
+              fontSize: '13px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: '#f0f0f0',
+              color: '#333'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+          >
+            {template.name || template.text?.slice(0, 15) || `模板${index + 1}`}
+          </span>
+        ))
+      )}
+    </div>
+    
+    {/* 右侧：灰色的 + 按钮 */}
+    <span
+      onClick={() => setShowTemplateModal(true)}
+      style={{
+        cursor: "pointer",
+        fontSize: "16px",
+        fontWeight: "normal",
+        color: "#999",
+        background: "transparent",
+        padding: "0",
+        width: "18px",
+        height: "18px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      title="添加新模板"
+    >
+      +
+    </span>
+  </div>
+)}
 
 {/* 第三行：日期（周一到周日） */}
 <div style={{
