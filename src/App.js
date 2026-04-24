@@ -501,7 +501,10 @@ const GradeModal = ({ onClose, isVisible }) => {
     background-color: #1a73e8 !important;
     color: white !important;
   }
+
+  
 `}</style>
+      
       
 
       <div className="grade-modal" style={{
@@ -4821,7 +4824,7 @@ const handleEditTemplate = (index, template) => {
               onClick={handleSave}
               style={{
                 padding: "6px 12px",
-                backgroundColor: "#1a73e8",
+                backgroundColor: "#6E9AC7",
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
@@ -16540,7 +16543,7 @@ if (isInitialized && todayTasks.length === 0) {
       margin: "0 auto",
       padding: 15,
       fontFamily: "sans-serif",
-      backgroundColor: "#f5faff",
+      backgroundColor: "#fcfdff",
       overflowX: "hidden", // 防止横向滚动
   width: "100%", // 确保宽度100%
   boxSizing: "border-box" // 包含padding在宽度内
@@ -16905,7 +16908,7 @@ if (isInitialized && todayTasks.length === 0) {
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
-    color: "#1a73e8",
+    color: "#6E9AC7",
     fontSize: "20px",
     margin: 0,
     padding: "10px 0", // 添加上下内边距来垂直居中
@@ -17007,7 +17010,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowWeekTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#1a73e8",
+        backgroundColor: "#6E9AC7",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -17021,7 +17024,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowMonthTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#1a73e8",
+        backgroundColor: "#6E9AC7",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -17035,7 +17038,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowAddTaskModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#1a73e8",
+        backgroundColor: "#6E9AC7",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -17049,7 +17052,7 @@ if (isInitialized && todayTasks.length === 0) {
       onClick={() => setShowBulkImportModal(true)}
       style={{
         padding: "4px 4px",
-        backgroundColor: "#1a73e8",
+        backgroundColor: "#6E9AC7",
         color: "#fff",
         borderRadius: "4px",
         cursor: "pointer",
@@ -18774,7 +18777,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#1a73e8",
+      backgroundColor: "#6E9AC7",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
@@ -18803,7 +18806,7 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     padding: "6px 10px",
-    backgroundColor: isSyncing ? "#ccc" : "#1a73e8",  // ✅ 变灰
+    backgroundColor: isSyncing ? "#ccc" : "#6E9AC7",  // ✅ 变灰
     color: "#fff",
     fontSize: 12,
     borderRadius: 6,
@@ -18875,7 +18878,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#1a73e8",
+      backgroundColor: "#6E9AC7",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
@@ -18900,7 +18903,7 @@ if (isInitialized && todayTasks.length === 0) {
       alignItems: "center",
       justifyContent: "center",
       padding: "6px 10px",
-      backgroundColor: "#1a73e8",
+      backgroundColor: "#6E9AC7",
       color: "#fff",
       fontSize: 12,
       borderRadius: 6,
