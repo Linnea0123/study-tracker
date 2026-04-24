@@ -18867,13 +18867,24 @@ if (isInitialized && todayTasks.length === 0) {
   const weekReflections = weekDates
     .map(dateObj => {
       const reflection = dailyReflections[dateObj.date] || '';
+      const rating = dailyRatings[dateObj.date] || 0;
       return {
         date: dateObj.date,
         label: dateObj.label,
-        reflection: reflection
+        reflection: reflection,
+        rating: rating
       };
     })
     .filter(item => item.reflection.trim() !== ''); // 只显示有复盘的日期
+  
+  const getRatingEmoji = (rating) => {
+    if (rating === 5) return '🥳';
+    if (rating === 4) return '😊';
+    if (rating === 3) return '😐';
+    if (rating === 2) return '😕';
+    if (rating === 1) return '😞';
+    return '';
+  };
   
   const hasReflections = weekReflections.length > 0;
   
@@ -18907,9 +18918,6 @@ if (isInitialized && todayTasks.length === 0) {
         <span>
           本周复盘汇总 ({weekReflections.length})
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          
-        </div>
       </div>
 
       {!collapsedCategories["weekReflections"] && hasReflections && (
@@ -18930,12 +18938,17 @@ if (isInitialized && todayTasks.length === 0) {
                 fontSize: 14,
                 display: "flex",
                 alignItems: "center",
-                gap: 4
+                justifyContent: "space-between"
               }}>
-                <span>{item.label}</span>
-                <span style={{ fontSize: 12, color: "#666" }}>
-                  ({item.date.slice(5)})
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{item.label}</span>
+                  <span style={{ fontSize: 12, color: "#666" }}>
+                    ({item.date.slice(5)})
+                  </span>
+                </div>
+                <div style={{ fontSize: '16px' }}>
+                  {getRatingEmoji(item.rating)}
+                </div>
               </div>
               <div style={{
                 fontSize: 13,
@@ -18969,7 +18982,6 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
   );
 })()}
-
 
 
 
