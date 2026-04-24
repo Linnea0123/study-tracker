@@ -11097,13 +11097,14 @@ const handleDrop = (e) => {
   );
 };
 
-const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings }) => {
+
+const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings, onDeleteReflection, onClearReflections }) => {
   const chartHeight = window.innerWidth <= 768 ? 200 : 300;
   const fontSize = window.innerWidth <= 768 ? 10 : 12;
   const [activeTab, setActiveTab] = useState('time');
   
-  // 时间筛选状态
-  const [dateRange, setDateRange] = useState('week');
+  // 时间筛选状态 - 默认设置为 'today'
+  const [dateRange, setDateRange] = useState('today');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [showCustomPicker, setShowCustomPicker] = useState(false);
@@ -11116,6 +11117,9 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
     endDate.setHours(23, 59, 59, 999);
     
     switch (dateRange) {
+      case 'today':
+        startDate.setHours(0, 0, 0, 0);
+        break;
       case 'week':
         const dayOfWeek = today.getDay();
         const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -11182,161 +11186,203 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
     return hour >= 21;
   };
 
-  const DateFilterButtons = () => {
-    const [localStartDate, setLocalStartDate] = useState('');
-    const [localEndDate, setLocalEndDate] = useState('');
+  const DateFilterButtons = ({ showToday = true }) => {
+  const [localStartDate, setLocalStartDate] = useState('');
+  const [localEndDate, setLocalEndDate] = useState('');
 
-    const handleCustomConfirm = () => {
-      if (localStartDate && localEndDate) {
-        setCustomStartDate(localStartDate);
-        setCustomEndDate(localEndDate);
-        setDateRange('custom');
-        setShowCustomPicker(false);
-        setLocalStartDate('');
-        setLocalEndDate('');
-      } else {
-        alert('请选择开始和结束日期');
-      }
-    };
+  const handleCustomConfirm = () => {
+    if (localStartDate && localEndDate) {
+      setCustomStartDate(localStartDate);
+      setCustomEndDate(localEndDate);
+      setDateRange('custom');
+      setShowCustomPicker(false);
+      setLocalStartDate('');
+      setLocalEndDate('');
+    } else {
+      alert('请选择开始和结束日期');
+    }
+  };
 
-    return (
+  return (
+    <div style={{
+      marginBottom: '16px'
+    }}>
       <div style={{
-        marginBottom: '16px'
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        flexWrap: 'wrap',
+        marginBottom: showCustomPicker ? '12px' : 0
       }}>
-        {/* 第一行：本周、本月、本年、自选按钮 */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          flexWrap: 'wrap',
-          marginBottom: showCustomPicker ? '12px' : 0
-        }}>
+        {showToday && (
           <div
             onClick={() => {
-              setDateRange('week');
+              setDateRange('today');
               setShowCustomPicker(false);
             }}
             style={{
               padding: '4px 12px',
               fontSize: '13px',
               cursor: 'pointer',
-              backgroundColor: dateRange === 'week' ? '#6E9AC7' : '#f0f0f0',
-              color: dateRange === 'week' ? '#fff' : '#333',
+              backgroundColor: dateRange === 'today' ? '#6E9AC7' : '#f0f0f0',
+              color: dateRange === 'today' ? '#fff' : '#333',
               borderRadius: '16px',
               whiteSpace: 'nowrap'
             }}
           >
-            本周
-          </div>
-          <div
-            onClick={() => {
-              setDateRange('month');
-              setShowCustomPicker(false);
-            }}
-            style={{
-              padding: '4px 12px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              backgroundColor: dateRange === 'month' ? '#6E9AC7' : '#f0f0f0',
-              color: dateRange === 'month' ? '#fff' : '#333',
-              borderRadius: '16px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            本月
-          </div>
-          <div
-            onClick={() => {
-              setDateRange('year');
-              setShowCustomPicker(false);
-            }}
-            style={{
-              padding: '4px 12px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              backgroundColor: dateRange === 'year' ? '#6E9AC7' : '#f0f0f0',
-              color: dateRange === 'year' ? '#fff' : '#333',
-              borderRadius: '16px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            本年
-          </div>
-          <div
-            onClick={() => setShowCustomPicker(!showCustomPicker)}
-            style={{
-              padding: '4px 12px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              backgroundColor: dateRange === 'custom' ? '#6E9AC7' : '#f0f0f0',
-              color: dateRange === 'custom' ? '#fff' : '#333',
-              borderRadius: '16px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            自选 {dateRange === 'custom' && customStartDate && customEndDate && '✓'}
-          </div>
-        </div>
-        
-        {/* 第二行：自选日期选择器（仅当点击自选时显示） */}
-        {showCustomPicker && (
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: '8px',
-            marginTop: '12px',
-            padding: '12px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px'
-          }}>
-            <input
-              type="date"
-              value={localStartDate}
-              onChange={(e) => setLocalStartDate(e.target.value)}
-              style={{
-                padding: '6px 8px',
-                fontSize: '13px',
-                borderRadius: '6px',
-                border: '1px solid #ccc',
-                flex: '1',
-                minWidth: '120px'
-              }}
-            />
-            <span style={{ fontSize: '13px', color: '#666' }}>至</span>
-            <input
-              type="date"
-              value={localEndDate}
-              onChange={(e) => setLocalEndDate(e.target.value)}
-              style={{
-                padding: '6px 8px',
-                fontSize: '13px',
-                borderRadius: '6px',
-                border: '1px solid #ccc',
-                flex: '1',
-                minWidth: '120px'
-              }}
-            />
-            <div
-              onClick={handleCustomConfirm}
-              style={{
-                padding: '6px 16px',
-                fontSize: '13px',
-                cursor: 'pointer',
-                backgroundColor: '#6E9AC7',
-                color: '#fff',
-                borderRadius: '6px',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              确定
-            </div>
+            今日
           </div>
         )}
+        <div
+          onClick={() => {
+            setDateRange('week');
+            setShowCustomPicker(false);
+          }}
+          style={{
+            padding: '4px 12px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            backgroundColor: dateRange === 'week' ? '#6E9AC7' : '#f0f0f0',
+            color: dateRange === 'week' ? '#fff' : '#333',
+            borderRadius: '16px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          本周
+        </div>
+        <div
+          onClick={() => {
+            setDateRange('month');
+            setShowCustomPicker(false);
+          }}
+          style={{
+            padding: '4px 12px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            backgroundColor: dateRange === 'month' ? '#6E9AC7' : '#f0f0f0',
+            color: dateRange === 'month' ? '#fff' : '#333',
+            borderRadius: '16px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          本月
+        </div>
+        <div
+          onClick={() => {
+            setDateRange('year');
+            setShowCustomPicker(false);
+          }}
+          style={{
+            padding: '4px 12px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            backgroundColor: dateRange === 'year' ? '#6E9AC7' : '#f0f0f0',
+            color: dateRange === 'year' ? '#fff' : '#333',
+            borderRadius: '16px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          本年
+        </div>
+        <div
+          onClick={() => setShowCustomPicker(!showCustomPicker)}
+          style={{
+            padding: '4px 12px',
+            fontSize: '13px',
+            cursor: 'pointer',
+            backgroundColor: dateRange === 'custom' ? '#6E9AC7' : '#f0f0f0',
+            color: dateRange === 'custom' ? '#fff' : '#333',
+            borderRadius: '16px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          自选 {dateRange === 'custom' && customStartDate && customEndDate && '✓'}
+        </div>
       </div>
-    );
-  };
+      
+      {showCustomPicker && (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '8px',
+          padding: '10px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px'
+        }}>
+          <input
+            type="date"
+            value={localStartDate}
+            onChange={(e) => setLocalStartDate(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              fontSize: '13px',
+              borderRadius: '6px',
+              border: '1px solid #ccc',
+              flex: '1',
+              minWidth: '120px'
+            }}
+          />
+          <span style={{ fontSize: '13px', color: '#666' }}>至</span>
+          <input
+            type="date"
+            value={localEndDate}
+            onChange={(e) => setLocalEndDate(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              fontSize: '13px',
+              borderRadius: '6px',
+              border: '1px solid #ccc',
+              flex: '1',
+              minWidth: '120px'
+            }}
+          />
+          <div
+            onClick={handleCustomConfirm}
+            style={{
+              padding: '6px 16px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: '#6E9AC7',
+              color: '#fff',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            确定
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+  // 根据 dateRange 筛选图表数据
+  const getFilteredChartData = useCallback(() => {
+    const range = getDateRangeFilter();
+    if (!range) return { dailyStudyData: [], dailyTasksData: [] };
+    
+    const filteredStudyData = dailyStudyData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= range.start && itemDate <= range.end;
+    });
+    
+    const filteredTasksData = dailyTasksData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= range.start && itemDate <= range.end;
+    });
+    
+    return {
+      dailyStudyData: filteredStudyData,
+      dailyTasksData: filteredTasksData,
+      categoryData: categoryData,
+      subCategoryData: subCategoryData
+    };
+  }, [dailyStudyData, dailyTasksData, categoryData, subCategoryData, getDateRangeFilter]);
+
+  const filteredData = getFilteredChartData();
 
   return (
     <div style={{
@@ -11368,6 +11414,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         }}>
           统计汇总
         </h1>
+        {/* 右上角关闭按钮 - 参考样式 */}
         <button
           onClick={onClose}
           style={{
@@ -11375,7 +11422,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             right: 0,
             background: "transparent",
             border: "none",
-            fontSize: "24px",
+            fontSize: "20px",
             cursor: "pointer",
             color: "#999",
             width: "28px",
@@ -11390,7 +11437,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
         </button>
       </div>
 
-      {/* 标签页切换 - 三个在一行不换行 */}
+      {/* 标签页切换 */}
       <div style={{
         display: 'flex',
         gap: '2px',
@@ -11458,7 +11505,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
       {/* 标签页 1：时间统计 */}
       {activeTab === 'time' && (
         <>
-          <DateFilterButtons />
+            <DateFilterButtons showToday={true} />
           
           {/* 统计卡片 */}
           <div style={{
@@ -11470,31 +11517,72 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             borderRadius: 10
           }}>
             <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
-              <div>📊 平均完成率</div>
+              <div>平均完成率</div>
               <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgCompletion}%</div>
             </div>
             <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
-              <div>⏱️ 日均时长</div>
+              <div>日均时长</div>
               <div style={{ fontWeight: "bold", marginTop: 2 }}>{avgDailyTime}m</div>
             </div>
           </div>
 
-          {/* 每日学习时间图表 */}
-          <div style={{ height: chartHeight, marginBottom: 30 }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              每日学习时间（排除运动）
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={dailyStudyData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
-                <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
-                  label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {/* 当显示今日时，显示今日详细数据 */}
+          {dateRange === 'today' && (
+            <div style={{
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '20px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <h3 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '14px', color: '#6E9AC7' }}>
+                今日详细数据
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: '#666' }}>学习时间</div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>
+                    {dailyStudyData[0]?.time || 0}分钟
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: '#666' }}>完成任务</div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>
+                    {dailyTasksData[0]?.tasks || 0}个
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 每日学习时间图表 - 今日模式下不显示 */}
+          {dateRange !== 'today' && (
+            <div style={{ height: chartHeight, marginBottom: 30 }}>
+              <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+                每日学习时间（排除运动）
+              </h3>
+              {filteredData.dailyStudyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="80%">
+                  <BarChart data={filteredData.dailyStudyData} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize }} />
+                    <YAxis tick={{ fontSize }} domain={[0, 'dataMax + 20']} />
+                    <Bar dataKey="time" fill="#1a73e8" radius={[4, 4, 0, 0]} 
+                      label={{ position: "top", fontSize: fontSize - 1, formatter: (value) => `${value}分钟`, fill: "#333", offset: 8 }} 
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                  暂无学习时间数据
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 校内子分类学习时间图表 */}
           <div style={{ height: chartHeight, marginBottom: 30 }}>
@@ -11536,29 +11624,31 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
             </ResponsiveContainer>
           </div>
 
-          {/* 每日完成任务数图表 */}
-          <div style={{ height: chartHeight }}>
-            <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
-              每日完成任务数
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={dailyTasksData} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize }} />
-                <YAxis tick={{ fontSize }} />
-                <Bar dataKey="tasks" fill="#00a854" radius={[4, 4, 0, 0]} 
-                  label={{ position: "top", fontSize }} 
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {/* 每日完成任务数图表 - 今日模式下不显示 */}
+          {dateRange !== 'today' && filteredData.dailyTasksData.length > 0 && (
+            <div style={{ height: chartHeight }}>
+              <h3 style={{ textAlign: "center", marginBottom: 10, fontSize: fontSize + 2 }}>
+                每日完成任务数
+              </h3>
+              <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={filteredData.dailyTasksData} margin={{ left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize }} />
+                  <YAxis tick={{ fontSize }} />
+                  <Bar dataKey="tasks" fill="#00a854" radius={[4, 4, 0, 0]} 
+                    label={{ position: "top", fontSize }} 
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
 
       {/* 标签页 2：结束时间记录 */}
       {activeTab === 'endTime' && (
         <>
-          <DateFilterButtons />
+           <DateFilterButtons showToday={false} />
           <div style={{
             backgroundColor: '#fff',
             borderRadius: '12px',
@@ -11569,11 +11659,11 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
               backgroundColor: '#f8f9fa',
               padding: '10px 15px',
               borderBottom: '1px solid #e0e0e0',
-              display: 'flex',
-              justifyContent: 'space-between',
               fontSize: '12px',
               color: '#666',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              display: 'flex',
+              justifyContent: 'space-between'
             }}>
               <span>日期</span>
               <span>结束时间</span>
@@ -11645,7 +11735,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
       {/* 标签页 3：复盘记录 */}
       {activeTab === 'review' && (
         <>
-          <DateFilterButtons />
+          <DateFilterButtons showToday={false} />
           <div style={{
             backgroundColor: '#fff',
             borderRadius: '12px',
@@ -11663,7 +11753,7 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
               justifyContent: 'space-between'
             }}>
               <span>日期</span>
-              <span>心情</span>
+              <span style={{ width: '28px' }}></span>
             </div>
             <div style={{ maxHeight: 'calc(100vh - 280px)', overflow: 'auto' }}>
               {filteredReviewList.length === 0 ? (
@@ -11704,8 +11794,34 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
                         }}>
                           {parseInt(date.slice(5, 7))}月{parseInt(date.slice(8))}日
                         </div>
-                        <div style={{ fontSize: '18px' }}>
-                          {getEmoji(rating)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ fontSize: '18px' }}>
+                            {getEmoji(rating)}
+                          </div>
+                          {onDeleteReflection && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`确定要删除 ${parseInt(date.slice(5, 7))}月${parseInt(date.slice(8))}日的复盘记录吗？`)) {
+                                  onDeleteReflection(date);
+                                }
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                fontSize: '16px',
+                                cursor: 'pointer',
+                                color: '#999',
+                                width: '28px',
+                                height: '28px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 0
+                              }}
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div style={{
@@ -11725,23 +11841,41 @@ const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dai
                 })
               )}
             </div>
-            <div style={{
-              padding: '10px 15px',
-              backgroundColor: '#f8f9fa',
-              borderTop: '1px solid #e0e0e0',
-              fontSize: '11px',
-              color: '#999',
-              textAlign: 'center'
-            }}>
-              共 {filteredReviewList.length} 条复盘记录
-            </div>
+            {filteredReviewList.length > 0 && onClearReflections && (
+              <div style={{
+                padding: '10px 15px',
+                backgroundColor: '#f8f9fa',
+                borderTop: '1px solid #e0e0e0',
+                fontSize: '11px',
+                color: '#999',
+                textAlign: 'center'
+              }}>
+                <button
+                  onClick={() => {
+                    if (window.confirm(`确定要删除当前筛选范围内的所有 ${filteredReviewList.length} 条复盘记录吗？此操作不可恢复！`)) {
+                      onClearReflections(filteredReviewList.map(item => item.date));
+                    }
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    color: '#d32f2f',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  清空所有
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
     </div>
   );
 };
-
 
 const CategoryManagerModal = ({ 
   categories, 
@@ -17179,36 +17313,51 @@ const handleDateSelect = (selectedDate) => {
 // 清空所有数据
 const clearAllData = async () => {
   if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
+    // 清空任务数据
     setTasksByDate({});
     setTemplates([]);
-
     
+    // 清空本月任务
+    setMonthTasks([]);
+    
+    // 清空每日复盘和评分
+    setDailyRatings({});
+    setDailyReflections({});
+    
+    // 清空学习结束时间
+    setStudyEndTimes({});
+    
+    // 清空每日提醒
+    setReminderText('');
+    localStorage.setItem('daily_reminder', '');
     
     // 清空所有存储
     await saveMainData('tasks', {});
     await saveMainData('templates', []);
-    await saveMainData('exchange', []);
-    await saveMainData('pointHistory', [{
-      date: new Date().toISOString(),
-      change: 0,
-      reason: '系统初始化',
-      totalAfterChange: 0
-    }]);
-   
-
-     // 清空初始化状态
+    await saveMainData('monthTasks', []);
+    
+    // 清空所有每日数据
+    const allKeys = Object.keys(localStorage);
+    const dailyKeys = allKeys.filter(key => key.includes(`${STORAGE_KEY}_daily_`));
+    dailyKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // 清空初始化状态
     localStorage.removeItem('study-tracker-PAGE_A-v2_isInitialized');
     
-    // 清空每日数据
+    // 重新初始化每日数据（清空今天的）
     const today = new Date().toISOString().split("T")[0];
     await saveMainData(`daily_${today}`, {
       rating: 0,
       reflection: '',
       date: today
     });
+    
+    alert('所有数据已清空！页面将重新加载。');
+    window.location.reload();
   }
 };
-
 
 
 
@@ -17311,17 +17460,49 @@ const todayStats = calculateTodayStats();
 if (showStats) {
   return (
     <StatsPage 
-      onClose={() => setShowStats(false)}
-      dailyStudyData={dailyStudyData}
-      categoryData={categoryData}
-      subCategoryData={subCategoryData}
-      dailyTasksData={dailyTasksData}
-      avgCompletion={avgCompletion}
-      avgDailyTime={avgDailyTime}
-      dailyRatings={dailyRatings} 
-      studyEndTimes={studyEndTimes}        // ← 添加这一行
-    dailyReflections={dailyReflections} 
-    />
+    onClose={() => setShowStats(false)}
+    dailyStudyData={dailyStudyData}
+    categoryData={categoryData}
+    subCategoryData={subCategoryData}
+    dailyTasksData={dailyTasksData}
+    avgCompletion={avgCompletion}
+    avgDailyTime={avgDailyTime}
+    dailyRatings={dailyRatings} 
+    studyEndTimes={studyEndTimes}
+    dailyReflections={dailyReflections}
+    onDeleteReflection={(date) => {
+      // 删除单条复盘记录
+      setDailyReflections(prev => {
+        const newReflections = { ...prev };
+        delete newReflections[date];
+        // 同时删除评分
+        setDailyRatings(ratingsPrev => {
+          const newRatings = { ...ratingsPrev };
+          delete newRatings[date];
+          // 保存到 localStorage
+          localStorage.removeItem(`${STORAGE_KEY}_daily_${date}`);
+          return newRatings;
+        });
+        return newReflections;
+      });
+    }}
+    onClearReflections={(dates) => {
+      // 批量删除复盘记录
+      setDailyReflections(prev => {
+        const newReflections = { ...prev };
+        setDailyRatings(ratingsPrev => {
+          const newRatings = { ...ratingsPrev };
+          dates.forEach(date => {
+            delete newReflections[date];
+            delete newRatings[date];
+            localStorage.removeItem(`${STORAGE_KEY}_daily_${date}`);
+          });
+          return newRatings;
+        });
+        return newReflections;
+      });
+    }}
+  />
   );
 }
 
