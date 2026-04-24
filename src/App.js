@@ -419,7 +419,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.add-grade-btn:hover,
   .grade-modal button.add-grade-btn:active,
   .grade-modal button.add-grade-btn:focus {
-    background-color: #1a73e8 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
   
@@ -428,7 +428,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.manage-subcat-btn:hover,
   .grade-modal button.manage-subcat-btn:active,
   .grade-modal button.manage-subcat-btn:focus {
-    background-color: #9C27B0 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
   
@@ -437,7 +437,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.subject-btn-selected:hover,
   .grade-modal button.subject-btn-selected:active,
   .grade-modal button.subject-btn-selected:focus {
-    background-color: #1a73e8 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
   
@@ -455,7 +455,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.subcat-btn-selected:hover,
   .grade-modal button.subcat-btn-selected:active,
   .grade-modal button.subcat-btn-selected:focus {
-    background-color: #1a73e8 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
   
@@ -473,7 +473,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.add-subcat-btn:hover,
   .grade-modal button.add-subcat-btn:active,
   .grade-modal button.add-subcat-btn:focus {
-    background-color: #4CAF50 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
   
@@ -484,7 +484,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.sort-btn:active:hover,
   .grade-modal button.sort-btn:focus:hover,
   .grade-modal button.sort-btn:focus-visible {
-    background-color: #1a73e8 !important;
+    background-color: #6E9AC7 !important;
     color: #ffffff !important;
     border: none !important;
     transform: none !important;
@@ -498,7 +498,7 @@ const GradeModal = ({ onClose, isVisible }) => {
   .grade-modal button.sorting-active-btn:hover,
   .grade-modal button.sorting-active-btn:active,
   .grade-modal button.sorting-active-btn:focus {
-    background-color: #1a73e8 !important;
+    background-color: #6E9AC7 !important;
     color: white !important;
   }
 
@@ -546,7 +546,7 @@ const GradeModal = ({ onClose, isVisible }) => {
         <h2 style={{ 
           textAlign: 'center', 
           marginBottom: '20px', 
-          color: '#1a73e8',
+          color: '#6E9AC7',
           fontSize: '20px',
           padding: '0 40px',
           marginTop: '10px'
@@ -571,7 +571,7 @@ const GradeModal = ({ onClose, isVisible }) => {
             style={{
               flex: 1,
               padding: '10px 12px',
-              backgroundColor: '#1a73e8',
+              backgroundColor: '#6E9AC7',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -579,7 +579,7 @@ const GradeModal = ({ onClose, isVisible }) => {
               fontSize: '14px'
             }}
           >
-            {showAddForm ? '取消添加' : '+ 添加新成绩'}
+            {showAddForm ? '取消添加' : '添加新成绩'}
           </button>
 
           <button
@@ -588,7 +588,7 @@ const GradeModal = ({ onClose, isVisible }) => {
             style={{
               flex: 1,
               padding: '10px 12px',
-              backgroundColor: '#9C27B0',
+              backgroundColor: '#6E9AC7',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -614,7 +614,7 @@ const GradeModal = ({ onClose, isVisible }) => {
               style={{
                 flex: 1,
                 padding: '8px 12px',
-                backgroundColor: selectedSubject === subject ? '#1a73e8' : '#f0f0f0',
+                backgroundColor: selectedSubject === subject ? '#6E9AC7' : '#f0f0f0',
                 color: selectedSubject === subject ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '8px',
@@ -641,7 +641,7 @@ const GradeModal = ({ onClose, isVisible }) => {
               onClick={() => handleSubCategoryClick(null)}
               style={{
                 padding: '6px 14px',
-                backgroundColor: selectedSubCategory === null ? '#1a73e8' : '#f0f0f0',
+                backgroundColor: selectedSubCategory === null ? '#6E9AC7' : '#f0f0f0',
                 color: selectedSubCategory === null ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '20px',
@@ -659,7 +659,7 @@ const GradeModal = ({ onClose, isVisible }) => {
                 onClick={() => handleSubCategoryClick(subCat)}
                 style={{
                   padding: '6px 14px',
-                  backgroundColor: selectedSubCategory === subCat ? '#1a73e8' : '#f0f0f0',
+                  backgroundColor: selectedSubCategory === subCat ? '#6E9AC7' : '#f0f0f0',
                   color: selectedSubCategory === subCat ? 'white' : '#333',
                   border: 'none',
                   borderRadius: '20px',
@@ -1036,7 +1036,7 @@ const GradeModal = ({ onClose, isVisible }) => {
               <h3 style={{ 
                 textAlign: 'center', 
                 marginBottom: '20px', 
-                color: '#1a73e8',
+                color: '#6E9AC7',
                 fontSize: '16px',
                 padding: '0 24px'
               }}>
@@ -1320,7 +1320,7 @@ const GradeModal = ({ onClose, isVisible }) => {
                     style={{
                       flex: 1,
                       padding: 14,
-                      backgroundColor: '#1a73e8',
+                      backgroundColor: '#6E9AC7',
                       color: 'white',
                       border: 'none',
                       borderRadius: 8,
@@ -1421,7 +1421,7 @@ const GradeModal = ({ onClose, isVisible }) => {
               <h3 style={{ 
                 textAlign: 'center', 
                 marginBottom: '20px', 
-                color: '#9C27B0',
+                color: '#6E9AC7',
                 fontSize: '18px'
               }}>
                 管理子分类
@@ -1476,7 +1476,7 @@ const GradeModal = ({ onClose, isVisible }) => {
     style={{
       flex: 1,
       padding: '12px',
-      backgroundColor: '#4CAF50',
+      backgroundColor: '#6E9AC7',
       color: 'white',
       border: 'none',
       borderRadius: '8px',
@@ -1485,7 +1485,7 @@ const GradeModal = ({ onClose, isVisible }) => {
       fontWeight: '500'
     }}
   >
-    + 添加新子分类
+    添加新子分类
   </button>
 
   {/* 排序按钮 */}
@@ -1495,7 +1495,7 @@ const GradeModal = ({ onClose, isVisible }) => {
     style={{
       flex: 1,
       padding: '12px',
-      backgroundColor: isSortingSubCategories ? '#1a73e8' : '#f0f0f0',
+      backgroundColor: isSortingSubCategories ? '#6E9AC7' : '#f0f0f0',
       color: isSortingSubCategories ? 'white' : '#333',
       border: 'none',
       borderRadius: '8px',
@@ -1764,7 +1764,7 @@ const GradeModal = ({ onClose, isVisible }) => {
 const baseCategories = [
   { 
     name: "校内", 
-    color: "#1a73e8",  // 保持蓝色不变
+    color: "#6E9AC7",  // 保持蓝色不变
     subCategories: ["数学", "语文", "英语", "运动"]
   },
   { name: "语文", color: "#FFFDE7", textColor: "#333" },
@@ -1910,7 +1910,7 @@ const handleManualBackup = async () => {
           borderBottom: '1px solid #e0e0e0',
           paddingBottom: 10
         }}>
-          <h3 style={{ margin: 0, color: '#1a73e8' }}>📦 备份管理</h3>
+          <h3 style={{ margin: 0, color: '#6E9AC7' }}>📦 备份管理</h3>
           <button
             onClick={onClose}
             style={{
@@ -6066,7 +6066,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
     .add-btn:focus {
       background-image: none !important;
       background: initial !important;
-      background-color: initial !important;
+      background-color: #6E9AC7 !important;  // ← 改成 
       color: initial !important;
       border: initial !important;
       border-color: initial !important;
@@ -6101,7 +6101,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
     .add-btn:hover,
     .add-btn:active,
     .add-btn:focus {
-      background-color: #87CEEB !important;
+      background-color: #6E9AC7 !important;
       background-image: none !important;
       color: #fff !important;
       border: none !important;
@@ -6150,7 +6150,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
           <h3 style={{ 
             textAlign: 'center', 
             marginBottom: 20, 
-            color: '#87CEEB',
+            color: '#6E9AC7',
             fontSize: 18
           }}>
             📅 添加本周任务
@@ -6276,7 +6276,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
               style={{
                 flex: 1,
                 padding: 10,
-                backgroundColor: '#87CEEB',
+                backgroundColor: '#6E9AC7',
                 color: '#fff',
                 borderRadius: 6,
                 fontSize: 14,
@@ -6875,7 +6875,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
             ×
           </div>
 
-          <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#FF9800', fontSize: '18px' }}>
+          <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#6E9AC7', fontSize: '18px' }}>
             📅 本月任务 ({tasks.length})
           </h2>
 
@@ -6886,7 +6886,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     style={{
       width: '100%',
       padding: '14px',
-      backgroundColor: '#FF9800',
+      backgroundColor: '#6E9AC7',
       color: '#fff',
       borderRadius: '8px',
       fontSize: '14px',
@@ -6899,11 +6899,11 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       boxSizing: 'border-box'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = '#FF9800';
+      e.currentTarget.style.backgroundColor = '#6E9AC7';
       e.currentTarget.style.transform = 'none';
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = '#FF9800';
+      e.currentTarget.style.backgroundColor = '#6E9AC7';
       e.currentTarget.style.transform = 'none';
     }}
     onMouseDown={(e) => {
@@ -6977,7 +6977,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       style={{
         width: '100%',
         padding: '12px',
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#6E9AC7',
         color: '#fff',
         borderRadius: '6px',
         fontWeight: 'bold',
@@ -6988,11 +6988,11 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
         boxSizing: 'border-box'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#4CAF50';
+        e.currentTarget.style.backgroundColor = '#6E9AC7';
         e.currentTarget.style.transform = 'none';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#4CAF50';
+        e.currentTarget.style.backgroundColor = '#6E9AC7';
         e.currentTarget.style.transform = 'none';
       }}
       onMouseDown={(e) => {
@@ -10896,7 +10896,7 @@ const handleDrop = (e) => {
             onDeleteImage={onDeleteImage}
             onEditNote={onEditNote}
             onEditReflection={onEditReflection}
-            onOpenEditModal={onOpenEditModal}
+            onOpenEditModal={onOpenEditModal} 
             onShowImageModal={onShowImageModal}
             toggleDone={toggleDone}
             formatTimeNoSeconds={formatTimeNoSeconds}
@@ -11211,7 +11211,7 @@ const CategoryManagerModal = ({
           paddingBottom: 10,
           borderBottom: '1px solid #e0e0e0'
         }}>
-          <h3 style={{ margin: 0, color: '#1a73e8', fontSize: '16px' }}>
+          <h3 style={{ margin: 0, color: '#6E9AC7', fontSize: '16px' }}>
             管理类别
           </h3>
           
@@ -11223,7 +11223,7 @@ const CategoryManagerModal = ({
               }}
               style={{
                 padding: '4px 12px',
-                backgroundColor: '#1a73e8',
+                backgroundColor: '#6E9AC7',
                 color: '#fff',
                 borderRadius: 4,
                 fontSize: 13,
@@ -11261,7 +11261,7 @@ const CategoryManagerModal = ({
             style={{
               flex: 1,
               padding: '8px',
-              backgroundColor: '#1a73e8',
+              backgroundColor: '#6E9AC7',
               color: '#fff',
               borderRadius: 6,
               fontSize: 13,
@@ -11269,14 +11269,14 @@ const CategoryManagerModal = ({
               cursor: 'pointer'
             }}
           >
-            + 添加类别
+            添加类别
           </div>
           <div
             onClick={handleAddSubCategory}
             style={{
               flex: 1,
               padding: '8px',
-              backgroundColor: '#1a73e8',
+              backgroundColor: '#6E9AC7',
               color: '#fff',
               borderRadius: 6,
               fontSize: 13,
@@ -11284,7 +11284,7 @@ const CategoryManagerModal = ({
               cursor: 'pointer'
             }}
           >
-            + 添加子类别
+            添加子类别
           </div>
         </div>
 
@@ -11923,7 +11923,7 @@ const [categoryColors, setCategoryColors] = useState(() => {
     '英语': '#FCE4EC',
     '科学': '#E1F5FE',
     '运动': '#E3F2FD',
-    '校内': '#1a73e8'
+    '校内': '#6E9AC7'
   };
 });
 
@@ -13891,18 +13891,20 @@ const handleUpdateProgress = (task, newCurrent) => {
     setTasksByDate(prev => {
       const updatedTasksByDate = { ...prev };
       let hasChanges = false;
+      let updatedTask = null;
       
       Object.keys(updatedTasksByDate).forEach(date => {
         updatedTasksByDate[date] = updatedTasksByDate[date].map(t => {
           if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
             hasChanges = true;
-            return {
+            updatedTask = {
               ...t,
               progress: {
                 ...t.progress,
                 current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
               }
             };
+            return updatedTask;
           }
           return t;
         });
@@ -13910,26 +13912,36 @@ const handleUpdateProgress = (task, newCurrent) => {
       
       if (hasChanges) {
         console.log('✅ 本周任务进度已更新');
+        // 强制保存到 localStorage
+        setTimeout(() => {
+          saveMainData('tasks', updatedTasksByDate);
+        }, 0);
       }
       return updatedTasksByDate;
     });
   } else {
     // 普通任务：只更新当前日期
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? {
-          ...t,
-          progress: {
-            ...t.progress,
-            current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
-          }
-        } : t
-      )
-    }));
+    setTasksByDate(prev => {
+      const newTasksByDate = {
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(t =>
+          t.id === task.id ? {
+            ...t,
+            progress: {
+              ...t.progress,
+              current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
+            }
+          } : t
+        )
+      };
+      // 强制保存
+      setTimeout(() => {
+        saveMainData('tasks', newTasksByDate);
+      }, 0);
+      return newTasksByDate;
+    });
   }
 };
-  
   
   
 
@@ -14676,6 +14688,7 @@ const getWeekTasks = () => {
 };
 
   const weekTasks = getWeekTasks();
+  const isWeekComplete = weekTasks.length > 0 && weekTasks.every(task => task.done);  
   const pinnedTasks = useMemo(() => {
   return todayTasks.filter(task => task.pinned === true);
 }, [todayTasks]);
@@ -16051,6 +16064,7 @@ const saveTaskEdit = (task, editData) => {
             scheduledTime: editData.scheduledTime || "",
             tags: editData.tags || [],
             subTasks: editData.subTasks || [],
+            progress: editData.progress || t.progress,  // ← 添加这行！
             reminderTime: reminderTime,
           } : t
         );
@@ -16942,67 +16956,78 @@ if (isInitialized && todayTasks.length === 0) {
   marginBottom: 10
 }}>
   {/* 左侧：周次显示 */}
-  <div style={{ display: "flex", alignItems: "center" }}>
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        prevWeek();
-      }}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: "6px",
-        fontSize: "14px"
-      }}
-      title="上一周"
-    >
-      ⬅️
-    </button>
+  <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
+  <button
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      prevWeek();
+    }}
+    style={{
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      padding: "0",
+      margin: "0",
+      fontSize: "14px",
+      width: "24px",
+      height: "24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }}
+    title="上一周"
+  >
+    ◀
+  </button>
 
-    {/* 修改这里：把日期文字变成可点击的 */}
-    <span 
-      onClick={() => setShowDatePickerModal(true)}  // ✅ 添加点击事件
-      style={{
-        fontWeight: "bold",
-        margin: "0 4px",
-        fontSize: "13px",
-        cursor: "pointer",  // ✅ 添加手型光标
-        padding: "4px 8px",  // ✅ 增加点击区域
-        borderRadius: "6px",  // ✅ 圆角
-        transition: "background-color 0.2s",  // ✅ 过渡效果
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-      title="点击选择日期"
-    >
-      {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
-    </span>
+  <span 
+    onClick={() => setShowDatePickerModal(true)}
+    style={{
+      fontWeight: "bold",
+      margin: "0",
+      fontSize: "13px",
+      cursor: "pointer",
+      padding: "4px 6px",
+      borderRadius: "6px",
+      transition: "background-color 0.2s",
+      display: "inline-block",
+      lineHeight: "16px",        // 固定行高
+      verticalAlign: "middle"
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
+    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+    title="点击选择日期"
+  >
+    {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
+  </span>
 
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        nextWeek();
-      }}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: "6px",
-        fontSize: "14px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      title="下一周"
-    >
-      ➡️
-    </button>
-
-    {/* ✅ 删除原来的月历按钮 */}
-  </div>
+  <button
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nextWeek();
+    }}
+    style={{
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      padding: "0",
+      margin: "0",
+      fontSize: "14px",
+      width: "24px",
+      height: "24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }}
+    title="下一周"
+  >
+    ▶
+  </button>
+</div>
 
   {/* 右侧：四个小按钮（保持不变） */}
   <div style={{ display: "flex", gap: "6px" }}>
@@ -17349,7 +17374,7 @@ if (isInitialized && todayTasks.length === 0) {
       maxHeight: '80vh',
       overflow: 'auto'
     }} onClick={e => e.stopPropagation()}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>添加任务</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#6E9AC7' }}>添加任务</h3>
       
       {/* 任务输入框 */}
       <input
@@ -17382,7 +17407,7 @@ if (isInitialized && todayTasks.length === 0) {
               style={{
                 padding: '4px 12px',
                 borderRadius: 16,
-                backgroundColor: newTaskCategory === c.name ? '#1a73e8' : '#f0f0f0',
+                backgroundColor: newTaskCategory === c.name ? '#6E9AC7' : '#f0f0f0',
                 color: newTaskCategory === c.name ? '#fff' : '#333',
                 fontSize: '12px',
                 cursor: 'pointer',
@@ -17469,7 +17494,7 @@ if (isInitialized && todayTasks.length === 0) {
           style={{
             flex: 1,
             padding: 10,
-            backgroundColor: '#28a745',
+            backgroundColor: '#6E9AC7',
             color: '#fff',
             borderRadius: 8,
             fontSize: 14,
@@ -17482,12 +17507,12 @@ if (isInitialized && todayTasks.length === 0) {
             boxShadow: 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#28a745';
+            e.currentTarget.style.backgroundColor = '#6E9AC7';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#28a745';
+            e.currentTarget.style.backgroundColor = '#6E9AC7';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
@@ -17527,7 +17552,7 @@ if (isInitialized && todayTasks.length === 0) {
       maxHeight: '80vh',
       overflow: 'auto'
     }} onClick={e => e.stopPropagation()}>
-      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>批量导入任务</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#6E9AC7' }}>批量导入任务</h3>
       
       {/* 批量文本输入框 */}
       <textarea
@@ -17640,7 +17665,7 @@ if (isInitialized && todayTasks.length === 0) {
           style={{
             flex: 1,
             padding: 10,
-            backgroundColor: '#28a745',
+            backgroundColor: '#6E9AC7',
             color: '#fff',
             borderRadius: 8,
             fontSize: 14,
@@ -17653,12 +17678,12 @@ if (isInitialized && todayTasks.length === 0) {
             boxShadow: 'none'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#28a745';
+            e.currentTarget.style.backgroundColor = '#6E9AC7';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#28a745';
+            e.currentTarget.style.backgroundColor = '#6E9AC7';
             e.currentTarget.style.transform = 'none';
             e.currentTarget.style.scale = 1;
           }}
@@ -17869,48 +17894,109 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 本周任务区域 */}
 {weekTasks.length > 0 && (
-  <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", border: "2px solid #87CEEB", backgroundColor: "#fff" }}>
-    <div onClick={() => setCollapsedCategories(prev => ({ ...prev, "本周任务": !prev["本周任务"] }))}
-      style={{ backgroundColor: "#87CEEB", color: "#fff", padding: "3px 8px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-      <span>本周任务 ({weekTasks.filter(t => t.done).length}/{weekTasks.length})</span>
-      <button onClick={(e) => { e.stopPropagation(); setShowWeekTaskModal(true); }}
-        style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 16 }}>
-        ➕
-      </button>
+  <div style={{ 
+    marginBottom: 8, 
+    borderRadius: 10, 
+    overflow: "hidden", 
+    border: `2px solid ${isWeekComplete ? "#ccc" : "#FF9800"}`,
+    backgroundColor: "#fff" 
+  }}>
+    <div 
+      onClick={() => setCollapsedCategories(prev => ({ ...prev, "本周任务": !prev["本周任务"] }))}
+      style={{ 
+        backgroundColor: isWeekComplete ? "#f5f5f5" : "#FF9800",
+        color: isWeekComplete ? "#bbb" : "#fff",
+        fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加字体
+        padding: "3px 12px",                            // ← 改成 3px 12px
+        fontWeight: isWeekComplete ? "normal" : "bold",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        cursor: "pointer",
+        fontSize: "13px",
+        minHeight: "24px"
+      }}
+    >
+      {/* 左侧：标题和完成状态 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>
+          本周任务 ({weekTasks.filter(t => t.done).length}/{weekTasks.length})
+          {isWeekComplete && <SquareCheckMark show={true} size={12} color="#bbb" />}
+        </span>
+      </div>
+      
+      {/* 右侧：排序按钮（没有 + 按钮） */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            if (sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory) {
+              setSortingSubCategory(null);
+            } else {
+              setSortingSubCategory({ category: "本周任务", subCategory: null });
+            }
+          }}
+          style={{
+            borderRadius: 4,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "18px",
+            height: "18px",
+            userSelect: "none"
+          }}
+        >
+          {sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17L4 12" stroke="#333" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          )}
+        </div>
+      </div>
     </div>
-    {!collapsedCategories["本周任务"] && (
-      <ul style={{ listStyle: "none", padding: 8, margin: 0 }}>
-        {weekTasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onDeleteTask={deleteTask}
-            onEditTime={editTaskTime}
-            getTaskCompletionType={getTaskCompletionType}  // 
-            onEditNote={editTaskNote}
-            onEditReflection={editTaskReflection}
-            onOpenEditModal={openTaskEditModal}
-            onShowImageModal={setShowImageModal}
-            toggleDone={toggleDone}
-            formatTimeNoSeconds={formatTimeNoSeconds}
-            formatTimeWithSeconds={formatTimeWithSeconds}
-            onMoveTask={moveTask}
-            onDeleteImage={handleDeleteImage}
-            categories={categories}
-            setShowMoveModal={setShowMoveModal}
-            onUpdateProgress={handleUpdateProgress}  // 确保传递这个
-            onEditSubTask={editSubTask}
-            onToggleSubTask={toggleSubTask}
-          />
-        ))}
-      </ul>
-    )}
+
+   {!collapsedCategories["本周任务"] && (
+  <div style={{ padding: "8px" }}>  {/* ← 添加 padding */}
+    <SortableTaskList
+      tasks={weekTasks}
+      category="本周任务"
+      subCategory={null}
+      isSortingMode={sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory}
+      onSortingEnd={(newOrder) => {
+        const orderKey = `tasks_order_本周任务`;
+        localStorage.setItem(orderKey, JSON.stringify(newOrder));
+        setTasksByDate(prev => ({ ...prev }));
+      }}
+      onDeleteTask={deleteTask}
+  onEditTime={editTaskTime}
+  onDeleteImage={handleDeleteImage}
+  onEditNote={editTaskNote}
+  onEditReflection={editTaskReflection}
+  onOpenEditModal={openTaskEditModal}     // ← 添加这一行！
+  onShowImageModal={setShowImageModal}
+  toggleDone={toggleDone}
+  formatTimeNoSeconds={formatTimeNoSeconds}
+  formatTimeWithSeconds={formatTimeWithSeconds}
+  onMoveTask={moveTask}
+  categories={categories}
+  setShowMoveModal={setShowMoveModal}
+  onUpdateProgress={handleUpdateProgress}
+  onEditSubTask={editSubTask}
+  onToggleSubTask={toggleSubTask}
+  getTaskCompletionType={getTaskCompletionType}
+    />
   </div>
 )}
-
-
+  </div>
+)}
 
 
 
@@ -17943,7 +18029,7 @@ if (isInitialized && todayTasks.length === 0) {
         case '英语': return '#FCE4EC';
         case '科学': return '#E1F5FE';
         case '运动': return '#E3F2FD';
-        case '校内': return '#1a73e8';
+        case '校内': return '#6E9AC7';
         default: return '#f0f0f0';
       }
     })()),
