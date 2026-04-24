@@ -11519,125 +11519,153 @@ const getDateRangeText = () => {
 };
 
   // 简易饼图组件
-  const SimplePieChart = ({ data, total }) => {
-    if (data.length === 0) {
-      return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
+ const SimplePieChart = ({ data, total }) => {
+  if (data.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
+  }
+  
+  let currentAngle = 0;
+  const slices = [];
+  let schoolTotalAngle = 0;
+  
+  data.forEach(item => {
+    const angle = (item.time / total) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    currentAngle = endAngle;
+    
+    const startRad = (startAngle - 90) * Math.PI / 180;
+    const endRad = (endAngle - 90) * Math.PI / 180;
+    const x1 = 100 + 80 * Math.cos(startRad);
+    const y1 = 100 + 80 * Math.sin(startRad);
+    const x2 = 100 + 80 * Math.cos(endRad);
+    const y2 = 100 + 80 * Math.sin(endRad);
+    const largeArc = angle > 180 ? 1 : 0;
+    
+    const pathData = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    
+    // 计算文字位置（扇形的中间角度）
+    const midAngle = startAngle + angle / 2;
+    const midRad = (midAngle - 90) * Math.PI / 180;
+    const labelRadius = 55; // 文字距离圆心的距离（在扇形内部）
+    const labelX = 100 + labelRadius * Math.cos(midRad);
+    const labelY = 100 + labelRadius * Math.sin(midRad);
+    
+    // 获取显示名称（校内子类别去掉前缀）
+    const displayName = item.type === 'school_sub' ? item.name.replace('校内-', '') : item.name;
+    const percentage = ((item.time / total) * 100).toFixed(1);
+    
+    slices.push({
+      ...item,
+      pathData,
+      color: getPieColor(item.name, item.type),
+      percentage,
+      startAngle,
+      endAngle,
+      angle,
+      labelX,
+      labelY,
+      displayName
+    });
+    
+    if (item.type === 'school_sub') {
+      schoolTotalAngle += angle;
     }
-    
-    let currentAngle = 0;
-    const slices = [];
-    let schoolTotalAngle = 0;
-    
-    data.forEach(item => {
-      const angle = (item.time / total) * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angle;
-      currentAngle = endAngle;
-      
-      const startRad = (startAngle - 90) * Math.PI / 180;
-      const endRad = (endAngle - 90) * Math.PI / 180;
-      const x1 = 100 + 80 * Math.cos(startRad);
-      const y1 = 100 + 80 * Math.sin(startRad);
-      const x2 = 100 + 80 * Math.cos(endRad);
-      const y2 = 100 + 80 * Math.sin(endRad);
-      const largeArc = angle > 180 ? 1 : 0;
-      
-      const pathData = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
-      
-      slices.push({
-        ...item,
-        pathData,
-        color: getPieColor(item.name, item.type),
-        percentage: ((item.time / total) * 100).toFixed(1),
-        startAngle,
-        endAngle,
-        angle
-      });
-      
-      if (item.type === 'school_sub') {
-        schoolTotalAngle += angle;
+  });
+  
+  // 计算校内总时长的外层圆弧（保持不变）
+  let schoolStartAngle = 0;
+  let schoolEndAngle = 0;
+  let foundFirst = false;
+  
+  slices.forEach(slice => {
+    if (slice.type === 'school_sub') {
+      if (!foundFirst) {
+        schoolStartAngle = slice.startAngle;
+        foundFirst = true;
       }
-    });
-    
-    let schoolStartAngle = 0;
-    let schoolEndAngle = 0;
-    let foundFirst = false;
-    
-    slices.forEach(slice => {
-      if (slice.type === 'school_sub') {
-        if (!foundFirst) {
-          schoolStartAngle = slice.startAngle;
-          foundFirst = true;
-        }
-        schoolEndAngle = slice.endAngle;
-      }
-    });
-    
-    const getOuterArcPath = () => {
-      if (schoolTotalAngle === 0) return null;
-      const radius = 92;
-      const startRad = (schoolStartAngle - 90) * Math.PI / 180;
-      const endRad = (schoolEndAngle - 90) * Math.PI / 180;
-      const x1 = 100 + radius * Math.cos(startRad);
-      const y1 = 100 + radius * Math.sin(startRad);
-      const x2 = 100 + radius * Math.cos(endRad);
-      const y2 = 100 + radius * Math.sin(endRad);
-      const largeArc = schoolTotalAngle > 180 ? 1 : 0;
-      return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
-    };
-    
-    const outerArcPath = getOuterArcPath();
-    
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <svg width="240" height="240" viewBox="0 0 200 200">
-          {slices.map((slice, idx) => (
-            <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
-          ))}
-          {outerArcPath && (
-            <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
-          )}
-         <circle cx="100" cy="100" r="35" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
-<text x="100" y="103" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">
-  {Math.floor(total)}m
-</text>
-          
-        </svg>
-        
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '12px',
-          marginTop: '16px',
-          maxWidth: '100%'
-        }}>
-          {slices.map((slice, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ 
-                width: '12px', 
-                height: '12px', 
-                backgroundColor: slice.color,
-                borderRadius: '2px',
-                border: '1px solid #ddd'
-              }} />
-              <span style={{ fontSize: '11px', color: '#333' }}>
-                {slice.name} ({slice.time}分钟, {slice.percentage}%)
-              </span>
-            </div>
-          ))}
-          {schoolTotalAngle > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
-              <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
-              <span style={{ fontSize: '11px', color: '#61A2Da', fontWeight: 'bold' }}>
-                校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+      schoolEndAngle = slice.endAngle;
+    }
+  });
+  
+  const getOuterArcPath = () => {
+    if (schoolTotalAngle === 0) return null;
+    const radius = 92;
+    const startRad = (schoolStartAngle - 90) * Math.PI / 180;
+    const endRad = (schoolEndAngle - 90) * Math.PI / 180;
+    const x1 = 100 + radius * Math.cos(startRad);
+    const y1 = 100 + radius * Math.sin(startRad);
+    const x2 = 100 + radius * Math.cos(endRad);
+    const y2 = 100 + radius * Math.sin(endRad);
+    const largeArc = schoolTotalAngle > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
+  
+  const outerArcPath = getOuterArcPath();
+  
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width="240" height="240" viewBox="0 0 200 200">
+        {/* 饼图扇形 */}
+        {slices.map((slice, idx) => (
+          <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
+        ))}
+        
+        {/* 校内总计外层圆弧 */}
+        {outerArcPath && (
+          <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
+        )}
+        
+        {/* 色块内部的文字标签 */}
+        {slices.map((slice, idx) => {
+          // 只显示占比大于 5% 的标签，避免文字重叠
+          if (parseFloat(slice.percentage) < 5) return null;
+          
+          // 根据色块颜色决定文字颜色（深色背景用白字，浅色背景用黑字）
+          const isDarkColor = slice.color === '#61A2Da' || slice.color === '#E8F5E9';
+          const textColor = slice.color === '#FFFDE7' || slice.color === '#FCE4EC' ? '#333' : '#333';
+          
+          return (
+            <text
+              key={idx}
+              x={slice.labelX}
+              y={slice.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="9"
+              fontWeight="bold"
+              fill={textColor}
+            >
+              {slice.displayName}
+            </text>
+          );
+        })}
+        
+        {/* 中心圆 */}
+        <circle cx="100" cy="100" r="35" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        <text x="100" y="103" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">
+          {Math.floor(total)}m
+        </text>
+      </svg>
+      
+      {/* 校内总计图例（保留一个简洁的图例） */}
+      {schoolTotalAngle > 0 && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          marginTop: '8px',
+          fontSize: '11px',
+          color: '#61A2Da'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
+            <span>校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div style={{
