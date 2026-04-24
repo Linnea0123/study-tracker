@@ -4174,74 +4174,57 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
           📅 {selectedDate} 学习汇总
         </h3>
         
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 8,
-          marginBottom: 20,
-          flexShrink: 0
-        }}>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成任务</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {currentContent.newStats.completedTasks} 个
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>总任务数</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {currentContent.newStats.totalTasks} 个
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>完成率</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {currentContent.newStats.completionRate}%
-            </div>
-          </div>
-          <div style={{
-            backgroundColor: '#e8f0fe',
-            padding: 8,
-            borderRadius: 8,
-            textAlign: 'center',
-            minHeight: '50px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>学习时长</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a73e8' }}>
-              {totalHours}h
-            </div>
-          </div>
-        </div>
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '6px',  // 从 8px 改为 6px，更紧凑
+  marginBottom: 20
+}}>
+  <div style={{
+    padding: '6px',  // 从 8px 改为 6px
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>总任务</div>  
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1a73e8' }}>{taskStats.totalTasks}</div>  
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>已完成</div>
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#4caf50' }}>{taskStats.completedTasks}</div>
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>完成率</div>
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#ff9800' }}>
+      {taskStats.totalTasks === 0 ? 0 : Math.round((taskStats.completedTasks / taskStats.totalTasks) * 100)}%
+    </div>
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>学习总时长</div>
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#9c27b0' }}>
+      {totalTime >= 60 ? `${(totalTime / 60).toFixed(1)}h` : `${totalTime}分钟`}
+    </div>
+  </div>
+</div>
         
         <div style={{
           backgroundColor: '#f8f9fa',
@@ -12160,57 +12143,57 @@ const getSubjectColor = (subject) => {
       {activeTab === 'time' && (
         <>
           {/* 统计卡片 */}
-          <div style={{
+         <div style={{
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '8px',
+  gap: '8px',  // 从 8px 改为 6px，更紧凑
   marginBottom: 20
 }}>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '11px', color: '#666' }}>总任务</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>{taskStats.totalTasks}</div>
-            </div>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '11px', color: '#666' }}>已完成</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>{taskStats.completedTasks}</div>
-            </div>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '11px', color: '#666' }}>完成率</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ff9800' }}>
-                {taskStats.totalTasks === 0 ? 0 : Math.round((taskStats.completedTasks / taskStats.totalTasks) * 100)}%
-              </div>
-            </div>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '11px', color: '#666' }}>学习总时长</div>
-             <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#9c27b0' }}>
-  {totalTime >= 60 ? `${(totalTime / 60).toFixed(1)}h` : `${totalTime}分钟`}
+  <div style={{
+    padding: '6px',  // 从 8px 改为 6px
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>总任务</div>  
+    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#1a73e8' }}>{taskStats.totalTasks}</div>  
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>已完成</div>
+    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4caf50' }}>{taskStats.completedTasks}</div>
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>完成率</div>
+    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ff9800' }}>
+      {taskStats.totalTasks === 0 ? 0 : Math.round((taskStats.completedTasks / taskStats.totalTasks) * 100)}%
+    </div>
+  </div>
+  <div style={{
+    padding: '6px',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    border: '1px solid #e0e0e0',
+    textAlign: 'center'
+  }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>学习总时长</div>
+    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9c27b0' }}>
+      {totalTime >= 60 ? `${(totalTime / 60).toFixed(1)}h` : `${totalTime}分钟`}
+    </div>
+  </div>
 </div>
-            </div>
-          </div>
 
           {/* 饼图区域 */}
           <div style={{
@@ -12226,7 +12209,7 @@ const getSubjectColor = (subject) => {
               textAlign: 'center',
               color: '#333'
             }}>
-              🥧 学习时间分布（按分类）
+              分类时间
             </h3>
             <SimplePieChart data={pieData} total={totalTime} />
           </div>
@@ -12245,7 +12228,7 @@ const getSubjectColor = (subject) => {
     textAlign: 'center',
     color: '#333'
   }}>
-    🥧 学习时间分布（按科目）
+    科目时间
   </h3>
   <SimpleSubjectPieChart data={subjectPieData} total={subjectTotalTime} />
 </div>
