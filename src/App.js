@@ -4935,6 +4935,7 @@ const handleEditTemplate = (index, template) => {
     }
 
     const templateData = {
+      id: editingTemplateIndex !== null ? templates[editingTemplateIndex].id : `template_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, 
       name: formData.text.slice(0, 20),
       text: formData.text,
       category: formData.category,
@@ -10044,7 +10045,7 @@ const TaskItem = ({
   onDeleteTask, 
   onDeleteImage,
   onEditSubTask = () => {},
-  isSortingMode = false  // 新增参数：排序模式下隐藏删除按钮
+  isSortingMode = false
 }) => {
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState(null);
   const [editSubTaskText, setEditSubTaskText] = useState('');
@@ -10061,6 +10062,19 @@ const TaskItem = ({
       onUpdateProgress(task, newCurrent);
     }
   };
+
+  // 计算进度百分比
+  const getProgressPercent = () => {
+    const current = Number(task.progress?.current) || 0;
+    const initial = Number(task.progress?.initial) || 0;
+    const target = Number(task.progress?.target) || 0;
+    if (target === 0) return 0;
+    const percent = ((current - initial) / (target - initial)) * 100;
+    return Math.min(Math.max(0, percent), 100);
+  };
+
+  const progressPercent = getProgressPercent();
+  const hasProgress = task.progress && task.progress.target > 0;
 
   // 开始编辑子任务
   const startEditSubTask = (index, currentText) => {
@@ -10095,148 +10109,227 @@ const TaskItem = ({
   };
 
   return (
-
-
-    // TaskItem 组件 - 修复高度中心对齐
-<li
-  className="task-item"
-  style={{
-    position: "relative",
-      background: "transparent",        // 透明背景
-    borderRadius: 6,
-    marginBottom: 4,
-    padding: "2px 8px",
-    border: "0.5px solid #e0e0e0",
-    boxSizing: "border-box"
-  }}
->
-  {/* 主要内容行 */}
-  <div style={{ 
-    display: "flex", 
-    alignItems: "center",  // 保持居中
-    gap: 6,
-    minHeight: "28px"      // 稍微增加一点高度
-  }}>
-    
-    {/* 复选框 */}
-    <input
-      type="checkbox"
-      checked={task.done}
-      onChange={(e) => {
-        e.stopPropagation();
-        if (typeof toggleDone === 'function') {
-          toggleDone(task);
-        }
+    <li
+      className="task-item"
+      style={{
+        position: "relative",
+        background: "transparent",
+        borderRadius: 6,
+        marginBottom: 4,
+        padding: "6px 8px",
+        border: "0.5px solid #e0e0e0",
+        boxSizing: "border-box"
       }}
-      onClick={(e) => e.stopPropagation()}
-      style={{ 
-        margin: 0,
-        cursor: "pointer", 
-        flexShrink: 0,
-        width: "14px",
-        height: "14px",
-        verticalAlign: "middle"
-      }}
-    />
-
-    {/* 任务文字区域 */}
-    <div style={{ 
-      display: "flex", 
-      alignItems: "center",  // 保持居中
-      flex: 1, 
-      flexWrap: "wrap", 
-      gap: "6px",
-      minWidth: 0
-    }}>  
-
-
-
-<div
-  onClick={(e) => {
-    e.stopPropagation();
-    onOpenEditModal(task);
-  }}
-  style={{
-    wordBreak: "break-word",
-    cursor: "pointer",
-    color: task.done ? "#999" : "#000",
-    fontWeight: task.pinned ? "bold" : "normal",
-    fontSize: "13px",
-    lineHeight: "1.5",
-    flex: "1",
-    minWidth: "50px",
-    // 移除 display: flex 和 align-items，让内容自然流动
-  }}
->
-  {/* 文字和图片标识放在同一个内联容器中 */}
-  <span>
-    {task.text}
-    {task.hasImage && (
-      <span
-        style={{
-          fontSize: "12px",
-          color: "#ff4444",
-          fontWeight: "bold",
-          marginLeft: "4px",
-          whiteSpace: "nowrap"
-        }}
-        title="需要添加图片"
-      >
-        【图片】
-      </span>
-    )}
-  </span>
-</div>
-
-      {/* 右侧时间显示 */}
-      <div style={{
-        display: "flex",
+    >
+      {/* 主要内容行 - 任务文字和右侧时间/排序按钮在同一行 */}
+      <div style={{ 
+        display: "flex", 
         alignItems: "center",
-        gap: "4px",
-        flexShrink: 0,
-        height: "28px"  // 固定高度，确保内部元素垂直居中
+        gap: 6,
+        minHeight: "28px"
       }}>
-        {(() => {
-          const minutes = Math.floor((task.timeSpent || 0) / 60);
-          return (
-           <span
-  onClick={(e) => {
-    e.stopPropagation();
-    if (!isSortingMode) {
-      onEditTime(task);
-    }
-  }}
-  style={{
-    fontSize: "11px",
-    color: isSortingMode ? "transparent" : "#666",
-    cursor: isSortingMode ? "default" : "pointer",
-    minWidth: "30px",        // 统一宽度
-    width: "30px",
-    textAlign: "right",      // 右对齐
-    pointerEvents: isSortingMode ? "none" : "auto",
-    lineHeight: "28px",
-    display: "inline-block",
-    fontFamily: 'Calibri, "微软雅黑", sans-serif'
-  }}
->
-  {minutes}m
-</span>
-          );
-        })()}
+        
+        {/* 复选框 */}
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={(e) => {
+            e.stopPropagation();
+            if (typeof toggleDone === 'function') {
+              toggleDone(task);
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          style={{ 
+            margin: 0,
+            cursor: "pointer", 
+            flexShrink: 0,
+            width: "14px",
+            height: "14px",
+            verticalAlign: "middle"
+          }}
+        />
+
+        {/* 任务文字区域 - 可点击编辑 */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenEditModal(task);
+          }}
+          style={{
+            wordBreak: "break-word",
+            cursor: "pointer",
+            color: task.done ? "#999" : "#000",
+            fontWeight: task.pinned ? "bold" : "normal",
+            fontSize: "13px",
+            lineHeight: "1.5",
+            flex: 1,
+            minWidth: "50px"
+          }}
+        >
+          <span>
+            {task.text}
+            {task.hasImage && (
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "#ff4444",
+                  fontWeight: "bold",
+                  marginLeft: "4px",
+                  whiteSpace: "nowrap"
+                }}
+                title="需要添加图片"
+              >
+                【图片】
+              </span>
+            )}
+          </span>
+        </div>
+
+        {/* 右侧时间显示 + 排序模式下的按钮 */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          flexShrink: 0,
+          height: "28px"
+        }}>
+          {/* 时间显示 */}
+          {(() => {
+            const minutes = Math.floor((task.timeSpent || 0) / 60);
+            return (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isSortingMode) {
+                    onEditTime(task);
+                  }
+                }}
+                style={{
+                  fontSize: "11px",
+                  color: isSortingMode ? "transparent" : "#666",
+                  cursor: isSortingMode ? "default" : "pointer",
+                  minWidth: "30px",
+                  width: "30px",
+                  textAlign: "right",
+                  pointerEvents: isSortingMode ? "none" : "auto",
+                  lineHeight: "28px",
+                  display: "inline-block",
+                  fontFamily: 'Calibri, "微软雅黑", sans-serif'
+                }}
+              >
+                {minutes}m
+              </span>
+            );
+          })()}
+
+          {/* 排序模式下的删除和拖拽按钮 - 只在这里显示，与任务文字同行 */}
+      
+        </div>
+      </div>
+
+      {/* 进度条 - 独立一行，在任务文字下方 */}
+     {/* 进度条 - 独立一行，在任务文字下方 */}
+{/* 进度条 - 独立一行，在任务文字下方 */}
+{hasProgress && (
+  <div style={{ marginTop: 6 }}>
+    <div style={{
+      width: '100%',
+      height: 10,
+      backgroundColor: '#f0f0f0',
+      borderRadius: 5,
+      overflow: 'hidden',
+      marginBottom: 4
+    }}>
+      <div style={{
+        width: `${progressPercent}%`,
+        height: '100%',
+        backgroundColor: Number(task.progress?.current) >= Number(task.progress?.target) ? '#4CAF50' : '#2196F3',
+        borderRadius: 5,
+        transition: 'width 0.3s ease'
+      }} />
+    </div>
+
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      height: '20px'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 11,
+        color: '#666'
+      }}>
+        <span>{Math.round(progressPercent)}%</span>
+        <span>|</span>
+        <span>{task.progress?.current || 0}/{task.progress?.target || 0} {task.progress?.unit}</span>
+      </div>
+
+      {/* 分开的灰色外框按钮 - 确保文字居中 */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            handleProgressAdjust(-1);
+          }}
+          style={{
+            width: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: '1px solid #ccc',
+            borderRadius: '3px',
+            backgroundColor: 'transparent',
+            boxSizing: 'border-box'
+          }}
+        >
+          <span style={{
+            fontSize: '12px',
+            color: '#999',
+            lineHeight: 1,
+            userSelect: 'none'
+          }}>-</span>
+        </div>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            handleProgressAdjust(1);
+          }}
+          style={{
+            width: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: '1px solid #ccc',
+            borderRadius: '3px',
+            backgroundColor: 'transparent',
+            boxSizing: 'border-box'
+          }}
+        >
+          <span style={{
+            fontSize: '12px',
+            color: '#999',
+            lineHeight: 1,
+            userSelect: 'none'
+          }}>+</span>
+        </div>
       </div>
     </div>
   </div>
-  
-
-
-
-      
+)}
 
       {/* 第二行：备注和感想 */}
       {(task.note || task.reflection) && (
         <div style={{ 
           marginLeft: "20px", 
-          marginBottom: 4,
+          marginTop: 4,
           position: "relative"
         }}>
           {/* 备注 */}
@@ -10295,7 +10388,7 @@ const TaskItem = ({
             </div>
           )}
 
-          {/* 时间信息行 - 计划时间、提醒时间、标签 */}
+          {/* 时间信息行 */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -10304,7 +10397,6 @@ const TaskItem = ({
             gap: 8,
             flexWrap: "wrap"
           }}>
-            {/* 左侧：计划时间、提醒时间、标签 */}
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -10313,75 +10405,44 @@ const TaskItem = ({
               minWidth: 0,
               flexWrap: "wrap"
             }}>
-              {/* 计划时间 */}
               {task.scheduledTime && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "#666",
-                    marginTop: 8,
-                    backgroundColor: "#f0f0f0",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    border: "1px solid #e0e0e0",
-                    whiteSpace: "nowrap",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2
-                  }}
-                  title="计划时间"
-                >
+                <span style={{
+                  fontSize: 11,
+                  color: "#666",
+                  backgroundColor: "#f0f0f0",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #e0e0e0",
+                  whiteSpace: "nowrap"
+                }}>
                   ⏰ {task.scheduledTime}
                 </span>
               )}
 
-              {/* 提醒时间 */}
               {task.reminderTime && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "#666",
-                    backgroundColor: "#fff0f0",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    border: "1px solid #ffcccc",
-                    whiteSpace: "nowrap",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2
-                  }}
-                  title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month || ''}月${task.reminderTime.day || ''}日 ${task.reminderTime.hour || ''}:${task.reminderTime.minute || ''}`}
-                >
-                  🔔 {task.reminderTime.year || ''}/{task.reminderTime.month || ''}/{task.reminderTime.day || ''} {task.reminderTime.hour || ''}:{task.reminderTime.minute || ''}
+                <span style={{
+                  fontSize: 11,
+                  color: "#666",
+                  backgroundColor: "#fff0f0",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #ffcccc",
+                  whiteSpace: "nowrap"
+                }}>
+                  🔔 {task.reminderTime.month}/{task.reminderTime.day}
                 </span>
               )}
 
-              {/* 标签 */}
               {task.tags && task.tags.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  gap: 3,
-                  flexWrap: 'wrap',
-                  alignItems: 'center'
-                }}>
-                  {task.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        fontSize: 9,
-                        padding: '2px 6px',
-                        backgroundColor: tag.color,
-                        color: '#fff',
-                        borderRadius: 10,
-                        border: 'none',
-                        whiteSpace: 'nowrap',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        lineHeight: '1.2'
-                      }}
-                      title={tag.name}
-                    >
+                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                  {task.tags.map((tag, idx) => (
+                    <span key={idx} style={{
+                      fontSize: 9,
+                      padding: '2px 6px',
+                      backgroundColor: tag.color,
+                      color: '#fff',
+                      borderRadius: 10
+                    }}>
                       {tag.name}
                     </span>
                   ))}
@@ -10389,115 +10450,6 @@ const TaskItem = ({
               )}
             </div>
 
-            {/* 右侧：循环图标 */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              flexShrink: 0
-            }}>
-              {task.isRepeating && (
-                <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 如果没有备注和感想，时间信息单独一行显示 */}
-      {!task.note && !task.reflection && (
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginTop: 4,
-          marginLeft: "20px",
-          gap: 8,
-          flexWrap: "wrap"
-        }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            flex: 1,
-            minWidth: 0
-          }}>
-            {task.scheduledTime && (
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#666",
-                  backgroundColor: "#f0f0f0",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #e0e0e0",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2
-                }}
-                title="计划时间"
-              >
-                ⏰ {task.scheduledTime}
-              </span>
-            )}
-
-            {task.reminderTime && task.reminderTime.month && task.reminderTime.day && (
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#666",
-                  backgroundColor: "#fff0f0",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #ffcccc",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2
-                }}
-                title={`提醒时间: ${task.reminderTime.year || ''}年${task.reminderTime.month}月${task.reminderTime.day}日${task.reminderTime.hour ? ` ${task.reminderTime.hour}:${String(task.reminderTime.minute || 0).padStart(2, '0')}` : ''}`}
-              >
-                🔔 {task.reminderTime.month}/{task.reminderTime.day}
-                {task.reminderTime.hour !== undefined && task.reminderTime.hour !== '' && task.reminderTime.hour !== 0 && (
-                  <> {String(task.reminderTime.hour).padStart(2, '0')}:{String(task.reminderTime.minute || 0).padStart(2, '0')}</>
-                )}
-              </span>
-            )}
-
-            {task.tags && task.tags.length > 0 && (
-              <div style={{
-                display: 'flex',
-                gap: 3,
-                flexWrap: 'wrap',
-                alignItems: 'center'
-              }}>
-                {task.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      fontSize: 9,
-                      padding: '2px 6px',
-                      backgroundColor: tag.color,
-                      color: '#fff',
-                      borderRadius: 10,
-                      border: 'none',
-                      whiteSpace: 'nowrap',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      lineHeight: '1.2'
-                    }}
-                    title={tag.name}
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {task.isRepeating && (
               <span style={{ fontSize: "12px" }} title="重复任务">🔄</span>
             )}
@@ -10505,186 +10457,10 @@ const TaskItem = ({
         </div>
       )}
 
-      {/* 进度条 */}
-      {task.progress && task.progress.target > 0 && (
-        <div style={{ marginTop: 6 }}>
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowProgressControls(!showProgressControls);
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <div style={{
-              width: '100%',
-              height: 10,
-              backgroundColor: '#f0f0f0',
-              borderRadius: 5,
-              overflow: 'hidden',
-              marginBottom: 6
-            }}>
-              <div style={{
-                width: `${Math.min(((Number(task.progress.current) - Number(task.progress.initial)) / Math.max(Number(task.progress.target) - Number(task.progress.initial), 1)) * 100, 100)}%`,
-                height: '100%',
-                backgroundColor: Number(task.progress.current) >= Number(task.progress.target) ? '#4CAF50' : '#2196F3',
-                borderRadius: 5,
-                transition: 'width 0.3s ease'
-              }} />
-            </div>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 0,
-            height: '24px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 11.5,
-              color: '#666'
-            }}>
-              <span>{(() => {
-                const current = Number(task.progress.current) || 0;
-                const initial = Number(task.progress.initial) || 0;
-                const target = Number(task.progress.target) || 0;
-                const progress = Math.min(((current - initial) / Math.max(target - initial, 1)) * 100, 100);
-                return isNaN(progress) ? '0%' : `${Math.round(progress)}%`;
-              })()}</span>
-              <span>|</span>
-              <span>{task.progress.current || 0}/{task.progress.target || 0} {task.progress.unit}</span>
-            </div>
-
-            {showProgressControls ? (
-              <div style={{
-                display: 'flex',
-                gap: 4,
-                width: '68px',
-                justifyContent: 'flex-end'
-              }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProgressAdjust(-1);
-                  }}
-                  style={{
-                    padding: '1px 6px',
-                    fontSize: 10,
-                    border: '1px solid #ccc',
-                    borderRadius: 3,
-                    backgroundColor: '#fff',
-                    color: '#333',
-                    cursor: 'pointer',
-                    minWidth: '26px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  -
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProgressAdjust(1);
-                  }}
-                  style={{
-                    padding: '1px 6px',
-                    fontSize: 10,
-                    border: '1px solid #ccc',
-                    borderRadius: 3,
-                    backgroundColor: '#fff',
-                    color: '#333',
-                    cursor: 'pointer',
-                    minWidth: '26px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            ) : (
-              <div style={{ width: '60px' }} />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 跨日期任务的子任务列表 */}
-      {task.dateRange && task.dateRange.allDates && task.dateRange.allDates.length > 0 && (
-        <div 
-          className="date-range-subtasks"
-          style={{ 
-            marginLeft: "20px", 
-            marginTop: "6px",
-            marginBottom: "6px",
-            display: "none",
-            borderLeft: "2px solid #1a73e8",
-            paddingLeft: "8px"
-          }}
-        >
-          <div style={{ 
-            fontSize: "11px", 
-            color: "#666", 
-            marginBottom: "4px",
-            fontWeight: "bold"
-          }}>
-            📅 各天完成情况：
-          </div>
-          {task.dateRange.allDates.map((date, idx) => {
-            let isCompleted = task.done;
-            let completionType = 'synced';
-            
-            if (getTaskCompletionType) {
-              const result = getTaskCompletionType(task, date);
-              isCompleted = result.completed;
-              completionType = result.type;
-            }
-            
-            const dateObj = new Date(date);
-            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-            
-            return (
-              <div 
-                key={date}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "11px",
-                  padding: "2px 0",
-                  color: isCompleted ? "#4CAF50" : "#999"
-                }}
-              >
-                <span style={{ minWidth: "70px" }}>
-                  {date.slice(5)} (周{weekDays[dateObj.getDay()]})
-                </span>
-                <span>
-                  {isCompleted ? (
-                    completionType === 'actual' ? "✓ 已完成" : "✓ 同步完成"
-                  ) : (
-                    "○ 未完成"
-                  )}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* 子任务区域 */}
-      <div style={{ marginLeft: "20px" }}>
+      <div style={{ marginLeft: "20px", marginTop: 4 }}>
         {task.subTasks && task.subTasks.length > 0 && (
           <div style={{ 
-            marginTop: (task.note || task.reflection) ? 2 : -2,
-            marginBottom: 0,
             borderLeft: '2px solid #e0e0e0', 
             paddingLeft: 8
           }}>
@@ -10695,10 +10471,9 @@ const TaskItem = ({
                 gap: 1,
                 marginBottom: 4,
                 fontSize: 13, 
-                color: task.done ? '#999' : '#666',
-                minHeight: '18px'
+                color: task.done ? '#999' : '#666'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <input
                     type="checkbox"
                     checked={subTask.done}
@@ -10707,127 +10482,55 @@ const TaskItem = ({
                   />
                   
                   {editingSubTaskIndex === index ? (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <input
-                        type="text"
-                        value={editSubTaskText}
-                        onChange={(e) => setEditSubTaskText(e.target.value)}
-                        onBlur={saveEditSubTask}
-                        onKeyDown={handleKeyPress}
-                        autoFocus
-                        style={{
-                          padding: '1px 4px',
-                          border: '1px solid #1a73e8',
-                          borderRadius: '3px',
-                          fontSize: '13px',
-                          outline: 'none',
-                          height: '20px'
-                        }}
-                      />
-                      {subTask.note && (
-                        <div style={{ 
-                          fontSize: '11px', 
-                          color: '#333',
-                          marginLeft: '0px',
-                          padding: '2px 6px',
-                          backgroundColor: '#fff9c4',
-                          borderRadius: '3px',
-                          border: '1px solid #ffd54f',
-                          lineHeight: '1.3'
-                        }}>
-                          ❗️ {subTask.note}
-                        </div>
-                      )}
-                    </div>
+                    <input
+                      type="text"
+                      value={editSubTaskText}
+                      onChange={(e) => setEditSubTaskText(e.target.value)}
+                      onBlur={saveEditSubTask}
+                      onKeyDown={handleKeyPress}
+                      autoFocus
+                      style={{
+                        flex: 1,
+                        padding: '2px 6px',
+                        border: '1px solid #1a73e8',
+                        borderRadius: '3px',
+                        fontSize: '12px',
+                        outline: 'none'
+                      }}
+                    />
                   ) : (
                     <span 
                       onClick={() => startEditSubTask(index, subTask.text)}
                       onContextMenu={(e) => {
                         e.preventDefault();
-                        e.stopPropagation();
                         const newNote = window.prompt("添加备注", subTask.note || "");
                         if (newNote !== null) {
                           onEditSubTask(task, index, subTask.text, newNote);
                         }
                       }}
                       style={{ 
-                        textDecoration: "none",
                         cursor: 'pointer',
                         flex: 1,
-                        padding: '3px 4px 1px 4px',
-                        borderRadius: '3px',
-                        transition: 'background-color 0.2s',
-                        minHeight: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        lineHeight: '1.5'
+                        padding: '2px 4px'
                       }}
-                      onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                      onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                      title="左键编辑文本，右键添加备注"
                     >
                       {subTask.text}
                     </span>
                   )}
                 </div>
                 
-                {/* 非编辑模式下备注显示 */}
-                {editingSubTaskIndex !== index && subTask.note && (
+                {subTask.note && editingSubTaskIndex !== index && (
                   <div style={{ marginLeft: '20px' }}>
-                    {editingSubTaskNoteIndex === index ? (
-                      <input
-                        type="text"
-                        defaultValue={subTask.note}
-                        onBlur={(e) => {
-                          const newNote = e.target.value.trim();
-                          if (newNote !== subTask.note) {
-                            onEditSubTask(task, index, subTask.text, newNote);
-                          }
-                          setEditingSubTaskNoteIndex(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const newNote = e.target.value.trim();
-                            if (newNote !== subTask.note) {
-                              onEditSubTask(task, index, subTask.text, newNote);
-                            }
-                            setEditingSubTaskNoteIndex(null);
-                          } else if (e.key === 'Escape') {
-                            setEditingSubTaskNoteIndex(null);
-                          }
-                        }}
-                        autoFocus
-                        style={{
-                          fontSize: '10px',
-                          padding: '2px 6px',
-                          border: '1px solid #1a73e8',
-                          borderRadius: '3px',
-                          outline: 'none',
-                          width: '100%',
-                          backgroundColor: '#fff9c4'
-                        }}
-                      />
-                    ) : (
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSubTaskNoteIndex(index);
-                        }}
-                        style={{ 
-                          fontSize: '11px', 
-                          color: '#333',
-                          padding: '2px 6px',
-                          backgroundColor: '#fff9c4',
-                          borderRadius: '3px',
-                          border: '1px solid #ffd54f',
-                          lineHeight: '1.3',
-                          cursor: 'pointer'
-                        }}
-                        title="点击编辑备注"
-                      >
-                        ❗️ {subTask.note}
-                      </div>
-                    )}
+                    <div style={{ 
+                      fontSize: '11px', 
+                      color: '#333',
+                      padding: '2px 6px',
+                      backgroundColor: '#fff9c4',
+                      borderRadius: '3px',
+                      border: '1px solid #ffd54f'
+                    }}>
+                      ❗️ {subTask.note}
+                    </div>
                   </div>
                 )}
               </div>
@@ -10873,13 +10576,8 @@ const TaskItem = ({
               height: '20px',
               cursor: 'pointer',
               fontSize: '12px',
-              color: '#ff4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+              color: '#ff4444'
             }}
-            title="删除图片"
           >
             ×
           </button>
@@ -10892,17 +10590,17 @@ const TaskItem = ({
 
 
 
-// SortableTaskList 组件 - 删除提示信息后的版本
-// SortableTaskList 组件 - 添加删除按钮
+
 // SortableTaskList 组件 - 修复删除功能
 // SortableTaskList 组件 - 修复删除功能
+// SortableTaskList 组件 - 修复删除按钮和拖拽手柄位置
 const SortableTaskList = ({ 
   tasks, 
   category, 
   subCategory,
   isSortingMode, 
   onSortingEnd,
-  onDeleteTask,  // 这是从 App 传入的 deleteTask 函数
+  onDeleteTask,
   onEditTime,
   onDeleteImage,
   onEditNote,
@@ -10972,69 +10670,49 @@ const SortableTaskList = ({
     return null;
   }
   
-// 拖拽开始
-// 拖拽开始
-const handleDragStart = (e, index) => {
-  if (!isSortingMode) {
-    e.preventDefault();
-    return false;
-  }
-  dragItemIndex.current = index;
-  e.dataTransfer.setData('text/plain', index.toString());
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setDragImage(new Image(), 0, 0);
-  e.currentTarget.style.opacity = '0.5';
-  return true;
-};
-
-// 拖拽结束
-const handleDragEnd = (e) => {
-  if (e.currentTarget) {
-    e.currentTarget.style.opacity = '';
-  }
-  dragItemIndex.current = null;
-};
-
-// 拖拽经过
-const handleDragOver = (e, targetIndex) => {
-  e.preventDefault();
-  if (!isSortingMode) return;
-  if (dragItemIndex.current === null) return;
-  if (dragItemIndex.current === targetIndex) return;
-  
-  const newList = [...taskList];
-  const draggedItem = newList[dragItemIndex.current];
-  newList.splice(dragItemIndex.current, 1);
-  newList.splice(targetIndex, 0, draggedItem);
-  
-  setTaskList(newList);
-  dragItemIndex.current = targetIndex;
-};
-
-const handleDrop = (e) => {
-  e.preventDefault();
-  if (!isSortingMode) return;
-  saveOrder(taskList);
-  dragItemIndex.current = null;
-};
-  
-
-
-  // 删除任务 - 修复：正确调用 onDeleteTask
-  const handleDeleteTask = (task, e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    console.log('SortableTaskList 删除任务:', task.text);
-    
-    if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
-      // 调用父组件的删除函数
-      if (onDeleteTask && typeof onDeleteTask === 'function') {
-        onDeleteTask(task, 'today');
-      }
-      // 立即从本地列表中移除
-      setTaskList(prev => prev.filter(t => t.id !== task.id));
+  // 拖拽开始
+  const handleDragStart = (e, index) => {
+    if (!isSortingMode) {
+      e.preventDefault();
+      return false;
     }
+    dragItemIndex.current = index;
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setDragImage(new Image(), 0, 0);
+    e.currentTarget.style.opacity = '0.5';
+    return true;
+  };
+
+  // 拖拽结束
+  const handleDragEnd = (e) => {
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = '';
+    }
+    dragItemIndex.current = null;
+  };
+
+  // 拖拽经过
+  const handleDragOver = (e, targetIndex) => {
+    e.preventDefault();
+    if (!isSortingMode) return;
+    if (dragItemIndex.current === null) return;
+    if (dragItemIndex.current === targetIndex) return;
+    
+    const newList = [...taskList];
+    const draggedItem = newList[dragItemIndex.current];
+    newList.splice(dragItemIndex.current, 1);
+    newList.splice(targetIndex, 0, draggedItem);
+    
+    setTaskList(newList);
+    dragItemIndex.current = targetIndex;
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (!isSortingMode) return;
+    saveOrder(taskList);
+    dragItemIndex.current = null;
   };
   
   return (
@@ -11062,103 +10740,82 @@ const handleDrop = (e) => {
             position: 'relative'
           }}
         >
-          {/* 排序模式显示拖拽手柄和删除按钮 */}
-       
-
-
-
-
-{isSortingMode && (
-  <div
-    style={{
-      position: 'absolute',
-      right: '4px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '-5px',
-      zIndex: 10,
-      background: 'transparent',
-      padding: '2px 4px'
-    }}
-  >
-    {/* 删除按钮 - SVG 版本 */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (window.confirm(`确定要删除任务 "${task.text}" 吗？\n\n此操作不可撤销！`)) {
-          if (onDeleteTask && typeof onDeleteTask === 'function') {
-            onDeleteTask(task, 'today');
-          }
-        }
-      }}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        padding: 0,
-        width: '18px',
-        height: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      title="删除任务"
-    >
-      <svg 
-        width="14" 
-        height="14" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ display: 'block' }}
-      >
-        <path 
-          d="M18 6L6 18" 
-          stroke="#999" 
-          strokeWidth="2" 
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-        />
-        <path 
-          d="M6 6L18 18" 
-          stroke="#999" 
-          strokeWidth="2" 
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-        />
-      </svg>
-    </button>
-    
-  
-  {/* 拖拽手柄 - 三条横线版本（间距加大） */}
-<div
-  style={{
-    cursor: 'grab',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'right',
-    width: '18px',      // 与复选框宽度一致
-    height: '18px'      // 与复选框高度一致
-  }}
-  title="拖拽调整顺序"
->
-  <svg 
-    width="14" 
-    height="14" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <line x1="5" y1="6" x2="19" y2="6" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="5" y1="12" x2="19" y2="12" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="5" y1="18" x2="19" y2="18" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-</div>
-  </div>
-)}
+          {/* ✅ 排序模式下的删除和拖拽按钮 - 放在任务内容外部，但不在绝对定位中 */}
+          {isSortingMode && (
+            <div
+              style={{
+                position: 'absolute',
+                right: '0px',
+                top: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                zIndex: 5,
+      paddingRight: '4px' 
+              }}
+            >
+              {/* 删除按钮 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (window.confirm(`确定要删除任务 "${task.text}" 吗？\n\n此操作不可撤销！`)) {
+                    if (onDeleteTask && typeof onDeleteTask === 'function') {
+                      onDeleteTask(task, 'today');
+                    }
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title="删除任务"
+              >
+                <svg 
+                  width="14" 
+                  height="14" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M18 6L6 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
+                  <path d="M6 6L18 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
+                </svg>
+              </button>
+              
+              {/* 拖拽手柄 */}
+              <div
+                style={{
+                  cursor: 'grab',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px'
+                }}
+                title="拖拽调整顺序"
+              >
+                <svg 
+                  width="14" 
+                  height="14" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <line x1="5" y1="6" x2="19" y2="6" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="5" y1="12" x2="19" y2="12" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="5" y1="18" x2="19" y2="18" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+          )}
 
           <TaskItem
             task={task}
@@ -11516,18 +11173,24 @@ const getDateRangeText = () => {
   // 根据当前选项卡决定是否显示"今日"按钮
   const shouldShowToday = activeTab === 'time';  // 只在时间统计选项卡显示今日按钮
 
-  const handleCustomConfirm = () => {
-    if (localStartDate && localEndDate) {
-      setCustomStartDate(localStartDate);
-      setCustomEndDate(localEndDate);
-      setDateRange('custom');
-      setShowCustomPicker(false);
-      setLocalStartDate('');
-      setLocalEndDate('');
-    } else {
-      alert('请选择开始和结束日期');
-    }
-  };
+ const handleCustomConfirm = () => {
+  if (localStartDate && localEndDate) {
+    console.log('设置自定义日期:', localStartDate, '至', localEndDate);
+    setCustomStartDate(localStartDate);
+    setCustomEndDate(localEndDate);
+    setDateRange('custom');
+    setShowCustomPicker(false);
+    setLocalStartDate('');
+    setLocalEndDate('');
+    
+    // 强制刷新视图
+    setTimeout(() => {
+      console.log('当前 dateRange:', dateRange);
+    }, 100);
+  } else {
+    alert('请选择开始和结束日期');
+  }
+};
 
   return (
     <div style={{ marginBottom: '16px' }}>
@@ -11537,7 +11200,7 @@ const getDateRangeText = () => {
         alignItems: 'center',
         justifyContent: 'flex-start',
         flexWrap: 'wrap',
-        marginBottom: showCustomPicker ? '12px' : 0
+        marginBottom: showCustomPicker ? '8px' : 0
       }}>
         {shouldShowToday && (
           <div
@@ -11610,19 +11273,22 @@ const getDateRangeText = () => {
           本年
         </div>
         <div
-          onClick={() => setShowCustomPicker(!showCustomPicker)}
-          style={{
-            padding: '4px 12px',
-            fontSize: '13px',
-            cursor: 'pointer',
-            backgroundColor: dateRange === 'custom' ? '#61A2Da' : '#f0f0f0',
-            color: dateRange === 'custom' ? '#fff' : '#333',
-            borderRadius: '16px',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          自选 {dateRange === 'custom' && customStartDate && customEndDate && '✓'}
-        </div>
+  onClick={() => {
+    setDateRange('custom');  // ✅ 先设置 dateRange 为 custom
+     setShowCustomPicker(true);  // 只展开，不收缩
+  }}
+  style={{
+    padding: '4px 12px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    backgroundColor: dateRange === 'custom' ? '#61A2Da' : '#f0f0f0',
+    color: dateRange === 'custom' ? '#fff' : '#333',
+    borderRadius: '16px',
+    whiteSpace: 'nowrap'
+  }}
+>
+  自选 {dateRange === 'custom' && customStartDate && customEndDate && '✓'}
+</div>
       </div>
       
       {showCustomPicker && (
@@ -11631,9 +11297,9 @@ const getDateRangeText = () => {
           flexWrap: 'wrap',
           alignItems: 'center',
           gap: '8px',
-          marginTop: '8px',
-          padding: '10px',
-          backgroundColor: '#f8f9fa',
+          marginTop: '0px !important', 
+          padding: '5px',
+        
           borderRadius: '8px'
         }}>
           <input
@@ -12021,7 +11687,7 @@ const getSubjectColor = (subject) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: 20,
+        marginBottom: 10,
         
         
         backgroundColor: "#f5faff",
@@ -12062,7 +11728,7 @@ const getSubjectColor = (subject) => {
       <div style={{
   display: 'flex',
   gap: '2px',
-  marginBottom: 20,
+  marginBottom: 15,
   borderBottom: '1px solid #e0e0e0',
   overflowX: 'auto',
   WebkitOverflowScrolling: 'touch',
@@ -12137,7 +11803,7 @@ const getSubjectColor = (subject) => {
         color: '#61A2Da',
         fontWeight: 'bold'
       }}>
-        📅 {getDateRangeText()}
+         {getDateRangeText()}
       </div>
 
       {activeTab === 'time' && (
@@ -12237,55 +11903,66 @@ const getSubjectColor = (subject) => {
         </>
       )}
 
-      {activeTab === 'endTime' && (
-        <div style={{
-          padding: '15px',
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          border: '1px solid #e0e0e0'
-        }}>
-          <h3 style={{
-            marginBottom: 15,
-            fontSize: '14px',
-            textAlign: 'center',
-            color: '#333'
-          }}>
-            ⏰ 学习结束时间记录
-          </h3>
-          {filteredEndTimeList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-              暂无结束时间记录
+{activeTab === 'endTime' && (
+  <div style={{
+    padding: '15px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    border: '1px solid #e0e0e0'
+  }}>
+    
+    {filteredEndTimeList.length === 0 ? (
+      <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+        暂无结束时间记录
+      </div>
+    ) : (
+      <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+        {filteredEndTimeList.map((item, idx) => {
+          const [hour] = item.time.split(':').map(Number);
+          const isLate = hour >= 21;
+          return (
+            <div
+              key={item.date}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px',
+                borderBottom: idx < filteredEndTimeList.length - 1 ? '1px solid #eee' : 'none',
+                backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white'
+              }}
+            >
+              <span style={{ fontSize: '13px', color: '#333' }}>{item.date.slice(5)}</span>
+              {/* 时间居中 */}
+              <span style={{
+                fontSize: '13px',
+                fontWeight: 'bold',
+                color: isLate ? '#f44336' : '#4caf50',
+                textAlign: 'center',
+                flex: 1
+              }}>
+                {item.time}
+              </span>
+              {/* 勾/叉靠右 */}
+              <div style={{ width: '24px', display: 'flex', justifyContent: 'center' }}>
+                {isLate ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                    <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                  </svg>
+                )}
+              </div>
             </div>
-          ) : (
-            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-              {filteredEndTimeList.map((item, idx) => (
-                <div
-                  key={item.date}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px',
-                    borderBottom: idx < filteredEndTimeList.length - 1 ? '1px solid #eee' : 'none',
-                    backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white'
-                  }}
-                >
-                  <span style={{ fontSize: '13px', color: '#333' }}>{item.date.slice(5)}</span>
-                  <span style={{
-                    fontSize: '13px',
-                    fontWeight: 'bold',
-                    color: isLateEndTime(item.time) ? '#f44336' : '#4caf50'
-                  }}>
-                    {item.time}
-                    {isLateEndTime(item.time) && ' 🌙'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
+          );
+        })}
+      </div>
+    )}
+  </div>
+)}
       {activeTab === 'review' && (
         <div style={{
           padding: '15px',
@@ -12293,14 +11970,7 @@ const getSubjectColor = (subject) => {
           borderRadius: '12px',
           border: '1px solid #e0e0e0'
         }}>
-          <h3 style={{
-            marginBottom: 15,
-            fontSize: '14px',
-            textAlign: 'center',
-            color: '#333'
-          }}>
-            📝 复盘记录 ({filteredReviewList.length})
-          </h3>
+          
           {filteredReviewList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
               暂无复盘记录
@@ -15312,36 +14982,36 @@ useEffect(() => {
   return () => clearInterval(intervalId);
 }, [tasksByDate, selectedDate]); 
   // 进度更新函数
+// 进度更新函数 - 同时更新对应模板的进度
+
+
+// 进度更新函数 - 同时更新对应模板的进度
 const handleUpdateProgress = (task, newCurrent) => {
   console.log('更新进度:', task.text, '新进度:', newCurrent);
   
+  // 先更新任务本身的进度
   if (task.isWeekTask) {
-    // 本周任务：更新所有日期的同一任务
     setTasksByDate(prev => {
       const updatedTasksByDate = { ...prev };
       let hasChanges = false;
-      let updatedTask = null;
       
       Object.keys(updatedTasksByDate).forEach(date => {
         updatedTasksByDate[date] = updatedTasksByDate[date].map(t => {
           if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
             hasChanges = true;
-            updatedTask = {
+            return {
               ...t,
               progress: {
                 ...t.progress,
                 current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
               }
             };
-            return updatedTask;
           }
           return t;
         });
       });
       
       if (hasChanges) {
-        console.log('✅ 本周任务进度已更新');
-        // 强制保存到 localStorage
         setTimeout(() => {
           saveMainData('tasks', updatedTasksByDate);
         }, 0);
@@ -15349,11 +15019,10 @@ const handleUpdateProgress = (task, newCurrent) => {
       return updatedTasksByDate;
     });
   } else {
-    // 普通任务：只更新当前日期
     setTasksByDate(prev => {
       const newTasksByDate = {
         ...prev,
-        [selectedDate]: prev[selectedDate].map(t =>
+        [selectedDate]: (prev[selectedDate] || []).map(t =>
           t.id === task.id ? {
             ...t,
             progress: {
@@ -15363,12 +15032,45 @@ const handleUpdateProgress = (task, newCurrent) => {
           } : t
         )
       };
-      // 强制保存
+      
       setTimeout(() => {
         saveMainData('tasks', newTasksByDate);
       }, 0);
+      
       return newTasksByDate;
     });
+  }
+  
+  // ✅ 自动同步进度到对应的模板（静默同步，不显示提示）
+  if (task.templateId && templates.length > 0) {
+    console.log('🔄 检测到模板任务，尝试同步进度到模板:', task.templateId);
+    
+    const newCurrentValue = Math.min(Math.max(0, newCurrent), task.progress?.target || 100);
+    
+    let templateUpdated = false;
+    const updatedTemplates = templates.map((template) => {
+      if (template.id === task.templateId) {
+        console.log(`✅ 找到匹配模板: ${template.name || template.text}`);
+        templateUpdated = true;
+        return {
+          ...template,
+          progress: {
+            ...template.progress,
+            current: newCurrentValue,
+            target: task.progress?.target || template.progress?.target || 100,
+            unit: task.progress?.unit || template.progress?.unit || "%"
+          }
+        };
+      }
+      return template;
+    });
+    
+    if (templateUpdated) {
+      setTemplates(updatedTemplates);
+      saveMainData('templates', updatedTemplates);
+      console.log(`✅ 模板进度已自动更新为: ${newCurrentValue}`);
+      // ❌ 移除了 toast 提示，静默同步
+    }
   }
 };
   
@@ -16303,9 +16005,10 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
 
 
 // 添加模板保存函数
+// 添加模板保存函数
 const handleAddTemplate = (templateData) => {
   const newTemplate = {
-    id: Date.now(),
+    id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, // ✅ 添加唯一ID
     ...templateData,
     createdAt: new Date().toISOString()
   };
@@ -16488,7 +16191,8 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
 // 在 handleAddTask 函数附近添加这个函数
 // 直接使用模板添加任务
 // 直接使用模板添加任务（带提示）
-const handleUseTemplate = (template) => {
+// 直接使用模板添加任务（带模板ID标记）
+const handleUseTemplate = (template, templateIndex) => {
   const newTask = {
     id: Date.now().toString(),
     text: template.text || template.content || '',
@@ -16496,7 +16200,7 @@ const handleUseTemplate = (template) => {
     subCategory: template.subCategory || '',
     done: false,
     timeSpent: 0,
-    subTasks: [],
+    subTasks: template.subTasks || [],
     note: template.note || "",
     reflection: "",
     image: template.image || null,
@@ -16510,7 +16214,10 @@ const handleUseTemplate = (template) => {
       unit: "%"
     },
     reminderTime: null,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    // ✅ 关键：添加模板ID标记，用于自动同步进度
+    templateId: template.id || `template_${templateIndex}`,
+    templateText: template.text  // 保存模板文字用于匹配
   };
 
   setTasksByDate(prev => ({
@@ -16518,7 +16225,7 @@ const handleUseTemplate = (template) => {
     [selectedDate]: [...(prev[selectedDate] || []), newTask]
   }));
 
-  // 显示短暂提示（2秒后消失）
+  // 显示短暂提示
   const toast = document.createElement('div');
   toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
   toast.style.cssText = `
@@ -16532,7 +16239,6 @@ const handleUseTemplate = (template) => {
     border-radius: 8px;
     font-size: 14px;
     z-index: 2000;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   `;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2000);
@@ -18604,10 +18310,11 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
+
+
 {/* 👇 模板列表 - 在这里展开（日期行上方） */}
 {showTemplateList && (
   <div style={{
-    
     marginBottom: 0,
     display: 'flex',
     alignItems: 'center',
@@ -18623,9 +18330,9 @@ if (isInitialized && todayTasks.length === 0) {
       ) : (
         templates.map((template, index) => (
           <span
-            key={index}
+            key={template.id || index}
             onClick={() => {
-              // 使用模板添加任务
+              // 使用模板添加任务 - 带模板ID标记，支持进度自动同步
               const newTask = {
                 id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 text: template.text || '',
@@ -18646,7 +18353,11 @@ if (isInitialized && todayTasks.length === 0) {
                   target: 0,
                   unit: "%"
                 },
-                reminderTime: null
+                reminderTime: null,
+                createdAt: new Date().toISOString(),
+                // ✅ 关键：添加模板ID标记，用于自动同步进度
+                templateId: template.id,
+                templateText: template.text
               };
               
               setTasksByDate(prev => ({
@@ -18654,6 +18365,7 @@ if (isInitialized && todayTasks.length === 0) {
                 [selectedDate]: [...(prev[selectedDate] || []), newTask]
               }));
               
+              // 显示短暂提示（2秒后消失）
               const toast = document.createElement('div');
               toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
               toast.style.cssText = `
@@ -18667,6 +18379,7 @@ if (isInitialized && todayTasks.length === 0) {
                 border-radius: 8px;
                 font-size: 14px;
                 z-index: 2000;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
               `;
               document.body.appendChild(toast);
               setTimeout(() => toast.remove(), 2000);
@@ -18681,6 +18394,7 @@ if (isInitialized && todayTasks.length === 0) {
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+            title={template.progress?.current > 0 ? `当前进度: ${template.progress.current}/${template.progress.target} ${template.progress.unit}` : ''}
           >
             {template.name || template.text?.slice(0, 15) || `模板${index + 1}`}
           </span>
@@ -18710,6 +18424,7 @@ if (isInitialized && todayTasks.length === 0) {
     </span>
   </div>
 )}
+
 
 {/* 第三行：日期（周一到周日） */}
 <div style={{
@@ -18789,29 +18504,24 @@ if (isInitialized && todayTasks.length === 0) {
         
        
         
-        {totalCount > 0 && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "2px",
-            marginTop: dailyRating > 0 ? "0px" : "4px"
-          }}>
-            <div style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
-            }} />
-            <span style={{
-              fontSize: "9px",
-              fontWeight: "bold",
-              color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
-            }}>
-              {completedCount}/{totalCount}
-            </span>
-          </div>
-        )}
+      {/* 第三行：任务数量 - 移除圆点 */}
+{totalCount > 0 && (
+  <div style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "2px",
+    marginTop: "2px"
+  }}>
+    <span style={{
+      fontSize: "9px",
+      fontWeight: "bold",
+      color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+    }}>
+      {completedCount}/{totalCount}
+    </span>
+  </div>
+)}
         
         {/* 👇 添加结束时间显示 - 小小的 */}
      
