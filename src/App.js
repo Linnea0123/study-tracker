@@ -18573,13 +18573,13 @@ if (isInitialized && todayTasks.length === 0) {
     color: (() => {
       // 解析结束时间，判断是否 >= 21:00
       const [hour] = studyEndTime.split(':').map(Number);
-      return hour >= 21 ? "#f44336" : "#999";  // 21点及以后显示红色
+      return hour > 21 ? "#f44336" : "#999";  // 21点及以后显示红色
     })(),
     marginTop: "2px",
     whiteSpace: "nowrap",
     fontWeight: (() => {
       const [hour] = studyEndTime.split(':').map(Number);
-      return hour >= 21 ? "bold" : "normal";
+      return hour > 21 ? "bold" : "normal";
     })()
   }}>
     {studyEndTime}
