@@ -10231,23 +10231,33 @@ const TaskItem = ({
       {/* 进度条 - 独立一行，在任务文字下方 */}
      {/* 进度条 - 独立一行，在任务文字下方 */}
 {/* 进度条 - 独立一行，在任务文字下方 */}
+{/* 进度条 - 独立一行，在任务文字下方 */}
 {hasProgress && (
   <div style={{ marginTop: 6 }}>
-    <div style={{
-      width: '100%',
-      height: 10,
-      backgroundColor: '#f0f0f0',
-      borderRadius: 5,
-      overflow: 'hidden',
-      marginBottom: 4
-    }}>
+    {/* 进度条 - 点击展开/收起按钮 */}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowProgressControls(!showProgressControls);
+      }}
+      style={{ cursor: 'pointer' }}
+    >
       <div style={{
-        width: `${progressPercent}%`,
-        height: '100%',
-        backgroundColor: Number(task.progress?.current) >= Number(task.progress?.target) ? '#4CAF50' : '#2196F3',
+        width: '100%',
+        height: 10,
+        backgroundColor: '#f0f0f0',
         borderRadius: 5,
-        transition: 'width 0.3s ease'
-      }} />
+        overflow: 'hidden',
+        marginBottom: 4
+      }}>
+        <div style={{
+          width: `${progressPercent}%`,
+          height: '100%',
+          backgroundColor: Number(task.progress?.current) >= Number(task.progress?.target) ? '#4CAF50' : '#2196F3',
+          borderRadius: 5,
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
     </div>
 
     <div style={{
@@ -10268,59 +10278,45 @@ const TaskItem = ({
         <span>{task.progress?.current || 0}/{task.progress?.target || 0} {task.progress?.unit}</span>
       </div>
 
-      {/* 分开的灰色外框按钮 - 确保文字居中 */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            handleProgressAdjust(-1);
-          }}
-          style={{
-            width: '18px',
-            height: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            border: '1px solid #ccc',
-            borderRadius: '3px',
-            backgroundColor: 'transparent',
-            boxSizing: 'border-box'
-          }}
-        >
-          <span style={{
-            fontSize: '12px',
-            color: '#999',
-            lineHeight: 1,
-            userSelect: 'none'
-          }}>-</span>
+      {/* - + 按钮 - 默认隐藏，点击进度条后显示 */}
+      {showProgressControls && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProgressAdjust(-1);
+            }}
+            style={{
+              width: '20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontSize: '13px',
+              color: '#999',
+              userSelect: 'none',
+              lineHeight: '20px'
+            }}
+          >
+            -
+          </span>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProgressAdjust(1);
+            }}
+            style={{
+              width: '20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontSize: '13px',
+              color: '#999',
+              userSelect: 'none',
+              lineHeight: '20px'
+            }}
+          >
+            +
+          </span>
         </div>
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            handleProgressAdjust(1);
-          }}
-          style={{
-            width: '18px',
-            height: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            border: '1px solid #ccc',
-            borderRadius: '3px',
-            backgroundColor: 'transparent',
-            boxSizing: 'border-box'
-          }}
-        >
-          <span style={{
-            fontSize: '12px',
-            color: '#999',
-            lineHeight: 1,
-            userSelect: 'none'
-          }}>+</span>
-        </div>
-      </div>
+      )}
     </div>
   </div>
 )}
@@ -18076,6 +18072,7 @@ if (isInitialized && todayTasks.length === 0) {
   padding: "0 40px"
 }}>
  {/* 右上角成绩记录按钮 */}
+{/* 右上角成绩记录按钮 - 柱状图图标 */}
 <button
   onClick={() => setShowGradeModal(true)}
   style={{
@@ -18084,43 +18081,79 @@ if (isInitialized && todayTasks.length === 0) {
     right: 0,
     width: 36,
     height: 36,
-    backgroundColor: "transparent", // 改为透明
-    border: "none", // 去掉边框
+    backgroundColor: "transparent",
+    border: "none",
     cursor: "pointer",
     fontSize: "16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
-    padding: 0 // 确保没有内边距
+    padding: 0
   }}
-  title="成绩111记录"
+  title="成绩记录"
 >
-  📊
+  <svg 
+    width="20" 
+    height="20" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* 第一个柱子 */}
+    <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
+    {/* 第二个柱子 - 最高 */}
+    <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
+    {/* 第三个柱子 */}
+    <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
+    {/* 底部横线 */}
+    <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
 </button>
     {/* 🏆 左上角奖杯按钮 - 新增 */}
-  <button
-    onClick={() => setShowMilestoneModal(true)}
-    style={{
+{/* 🏆 左上角奖杯按钮 - 改为简笔画奖牌 */}
+<button
+  onClick={() => setShowMilestoneModal(true)}
+  style={{
     position: "absolute",
     top: 0,
     left: 0,
     width: 36,
     height: 36,
-    backgroundColor: "transparent", // 改为透明
-    border: "none", // 去掉边框
+    backgroundColor: "transparent",
+    border: "none",
     cursor: "pointer",
     fontSize: "16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
-    padding: 0 // 确保没有内边距
+    padding: 0
   }}
-    title="里程碑"
+  title="里程碑"
+>
+  <svg 
+    width="22" 
+    height="22" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
   >
-    🏆
-  </button>
+    {/* 圆形奖牌 */}
+    <circle cx="12" cy="10" r="6" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+    
+    {/* 五角星 */}
+    <polygon 
+      points="12,6 13.2,9 16.5,9 14,11 15,14 12,12.5 9,14 10,11 7.5,9 10.8,9" 
+      fill="#61A2Da"
+      stroke="none"
+    />
+    
+    {/* 绶带 */}
+    <line x1="12" y1="16" x2="10" y2="21" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="12" y1="16" x2="14" y2="21" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+</button>
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
@@ -18234,12 +18267,57 @@ if (isInitialized && todayTasks.length === 0) {
   </button>
 </div>
 
+
   {/* 右侧：四个小按钮（保持不变） */}
-  <div style={{ display: "flex", gap: "6px" }}>
+  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+    {/* 奖杯图标 */}
+    <button
+      onClick={() => setShowMilestoneModal(true)}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      title="里程碑"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="10" r="6" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+        <polygon points="12,6 13.2,9 16.5,9 14,11 15,14 12,12.5 9,14 10,11 7.5,9 10.8,9" fill="#61A2Da" stroke="none"/>
+        <line x1="12" y1="16" x2="10" y2="21" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="12" y1="16" x2="14" y2="21" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    </button>
+    
+    {/* 成绩柱状图图标 */}
+    <button
+      onClick={() => setShowGradeModal(true)}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      title="成绩记录"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="13" width="4" height="7" fill="#61A2Da" rx="1"/>
+        <rect x="10" y="8" width="4" height="12" fill="#61A2Da" rx="1"/>
+        <rect x="17" y="10" width="4" height="10" fill="#61A2Da" rx="1"/>
+      </svg>
+    </button>
+    
+    {/* 本周按钮 */}
     <div
       onClick={() => setShowWeekTaskModal(true)}
       style={{
-        padding: "4px 4px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
@@ -18250,10 +18328,12 @@ if (isInitialized && todayTasks.length === 0) {
     >
       本周
     </div>
+    
+    {/* 本月按钮 */}
     <div
       onClick={() => setShowMonthTaskModal(true)}
       style={{
-        padding: "4px 4px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
@@ -18264,25 +18344,28 @@ if (isInitialized && todayTasks.length === 0) {
     >
       本月
     </div>
-     {/* 👇 添加模板按钮 */}
- <div
-  onClick={() => setShowTemplateList(!showTemplateList)}
-  style={{
-    padding: "4px 4px",
-    backgroundColor: "#61A2Da",
-    color: "#fff",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "11px",
-    textAlign: "center"
-  }}
->
-  模板 
-</div>
+    
+    {/* 模板按钮 */}
+    <div
+      onClick={() => setShowTemplateList(!showTemplateList)}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      模板
+    </div>
+    
+    {/* 添加按钮 */}
     <div
       onClick={() => setShowAddTaskModal(true)}
       style={{
-        padding: "4px 4px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
@@ -18293,10 +18376,12 @@ if (isInitialized && todayTasks.length === 0) {
     >
       添加
     </div>
+    
+    {/* 批量按钮 */}
     <div
       onClick={() => setShowBulkImportModal(true)}
       style={{
-        padding: "4px 4px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
         borderRadius: "4px",
@@ -18504,15 +18589,21 @@ if (isInitialized && todayTasks.length === 0) {
         
        
         
-      {/* 第三行：任务数量 - 移除圆点 */}
+{/* 第三行：任务数量 + 圆点 */}
 {totalCount > 0 && (
   <div style={{
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "2px",
+    gap: "4px",
     marginTop: "2px"
   }}>
+    <div style={{
+      width: "6px",
+      height: "6px",
+      borderRadius: "50%",
+      backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+    }} />
     <span style={{
       fontSize: "9px",
       fontWeight: "bold",
