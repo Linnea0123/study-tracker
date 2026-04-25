@@ -18260,7 +18260,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
   {/* 右侧：四个小按钮（保持不变） */}
-  <div style={{ display: "flex", gap: "6px" }}>
+  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
     
     
     {/* 本周按钮 */}
