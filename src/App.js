@@ -4174,54 +4174,38 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
           📅 {selectedDate} 学习汇总
         </h3>
         
+
 <div style={{
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '6px',  // 从 8px 改为 6px，更紧凑
+  gap: '6px',
   marginBottom: 20
 }}>
-  <div style={{
-    padding: '6px',  // 从 8px 改为 6px
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0',
-    textAlign: 'center'
-  }}>
+  {/* 修复：使用 currentContent.newStats 而不是 taskStats */}
+  <div style={{ padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
     <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>总任务</div>  
-    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1a73e8' }}>{taskStats.totalTasks}</div>  
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1a73e8' }}>
+      {currentContent.newStats.totalTasks}
+    </div>  
   </div>
-  <div style={{
-    padding: '6px',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0',
-    textAlign: 'center'
-  }}>
+  <div style={{ padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
     <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>已完成</div>
-    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#4caf50' }}>{taskStats.completedTasks}</div>
-  </div>
-  <div style={{
-    padding: '6px',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0',
-    textAlign: 'center'
-  }}>
-    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>完成率</div>
-    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#ff9800' }}>
-      {taskStats.totalTasks === 0 ? 0 : Math.round((taskStats.completedTasks / taskStats.totalTasks) * 100)}%
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#4caf50' }}>
+      {currentContent.newStats.completedTasks}
     </div>
   </div>
-  <div style={{
-    padding: '6px',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0',
-    textAlign: 'center'
-  }}>
+  <div style={{ padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
+    <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>完成率</div>
+    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#ff9800' }}>
+      {currentContent.newStats.completionRate}%
+    </div>
+  </div>
+  <div style={{ padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
     <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>学习总时长</div>
     <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#9c27b0' }}>
-      {totalTime >= 60 ? `${(totalTime / 60).toFixed(1)}h` : `${totalTime}分钟`}
+      {currentContent.newStats.totalMinutes >= 60 
+        ? `${(currentContent.newStats.totalMinutes / 60).toFixed(1)}h` 
+        : `${currentContent.newStats.totalMinutes}分钟`}
     </div>
   </div>
 </div>
