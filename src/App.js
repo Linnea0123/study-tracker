@@ -20761,10 +20761,12 @@ if (isInitialized && todayTasks.length === 0) {
 <div style={{
   display: "flex",
   justifyContent: "center",
-  gap: 10,
-  marginTop: 20,
-  marginBottom: 20,
-  flexWrap: "wrap"
+  gap: 6,
+  marginTop: 16,
+  marginBottom: 16,
+  flexWrap: "nowrap",
+  overflowX: "auto",
+  WebkitOverflowScrolling: "touch"
 }}>
   {/* 每日日志按钮 */}
   <div
@@ -20776,77 +20778,79 @@ if (isInitialized && todayTasks.length === 0) {
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "6px 10px",
+      padding: "4px 6px",
       backgroundColor: "#61A2Da",
       color: "#fff",
-      fontSize: 12,
+      fontSize: 11,
       borderRadius: 6,
-      width: "70px",
-      height: "30px",
+      width: "60px",
+      height: "28px",
       cursor: "pointer",
       userSelect: "none",
-      boxSizing: "border-box"
+      boxSizing: "border-box",
+      flexShrink: 0
     }}
   >
     每日日志
   </div>
 
-{/* 时间记录按钮 - 放在每日日志旁边 */}
-<div
-  onClick={(e) => {
-    e.preventDefault();
-    setShowTimeRecordModal(true);
-  }}
-  style={{
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "6px 10px",
-    backgroundColor: "#61A2Da",
-    color: "#fff",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: "pointer",
-    userSelect: "none",
-    boxSizing: "border-box"
-  }}
->
-  时间记录
-</div>
+  {/* 时间记录按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      setShowTimeRecordModal(true);
+    }}
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "4px 6px",
+      backgroundColor: "#61A2Da",
+      color: "#fff",
+      fontSize: 11,
+      borderRadius: 6,
+      width: "60px",
+      height: "28px",
+      cursor: "pointer",
+      userSelect: "none",
+      boxSizing: "border-box",
+      flexShrink: 0
+    }}
+  >
+    时间记录
+  </div>
 
-  
-{/* 立即同步按钮 */}
-<div
-  onClick={(e) => {
-    e.preventDefault();
-    if (isSyncing) {  // ✅ 检查是否正在同步
-      alert('正在同步中，请稍候...');
-      return;
-    }
-    syncToGitHub();
-  }}
-  style={{
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "6px 10px",
-    backgroundColor: isSyncing ? "#ccc" : "#61A2Da",  // ✅ 变灰
-    color: "#fff",
-    fontSize: 12,
-    borderRadius: 6,
-    width: "70px",
-    height: "30px",
-    cursor: isSyncing ? "not-allowed" : "pointer",  // ✅ 鼠标样式变化
-    userSelect: "none",
-    boxSizing: "border-box",
-    opacity: isSyncing ? 0.7 : 1
-  }}
->
-  {isSyncing ? "同步中..." : "立即同步"}
-</div>
-  
+  {/* 立即同步按钮 */}
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      if (isSyncing) {
+        alert('正在同步中，请稍候...');
+        return;
+      }
+      syncToGitHub();
+    }}
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "4px 6px",
+      backgroundColor: isSyncing ? "#ccc" : "#61A2Da",
+      color: "#fff",
+      fontSize: 11,
+      borderRadius: 6,
+      width: "60px",
+      height: "28px",
+      cursor: isSyncing ? "not-allowed" : "pointer",
+      userSelect: "none",
+      boxSizing: "border-box",
+      opacity: isSyncing ? 0.7 : 1,
+      flexShrink: 0
+    }}
+  >
+    {isSyncing ? "同步中..." : "立即同步"}
+  </div>
+
   {/* 恢复云端按钮 */}
   <div
     onClick={(e) => {
@@ -20903,21 +20907,22 @@ if (isInitialized && todayTasks.length === 0) {
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "6px 10px",
+      padding: "4px 6px",
       backgroundColor: "#61A2Da",
       color: "#fff",
-      fontSize: 12,
+      fontSize: 11,
       borderRadius: 6,
-      width: "70px",
-      height: "30px",
+      width: "60px",
+      height: "28px",
       cursor: "pointer",
       userSelect: "none",
-      boxSizing: "border-box"
+      boxSizing: "border-box",
+      flexShrink: 0
     }}
   >
     恢复云端
   </div>
-  
+
   {/* 其他设置按钮 */}
   <div
     onClick={(e) => {
@@ -20928,16 +20933,17 @@ if (isInitialized && todayTasks.length === 0) {
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "6px 10px",
+      padding: "4px 6px",
       backgroundColor: "#61A2Da",
       color: "#fff",
-      fontSize: 12,
+      fontSize: 11,
       borderRadius: 6,
-      width: "70px",
-      height: "30px",
+      width: "60px",
+      height: "28px",
       cursor: "pointer",
       userSelect: "none",
-      boxSizing: "border-box"
+      boxSizing: "border-box",
+      flexShrink: 0
     }}
   >
     其他设置
