@@ -4698,7 +4698,7 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
             </div>
           </div>
           <div style={{ padding: '6px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>学习总时长</div>
+            <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>学习时长</div>
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#9c27b0' }}>
               {newStats.totalMinutes >= 60 
                 ? `${(newStats.totalMinutes / 60).toFixed(1)}h` 
@@ -11862,10 +11862,40 @@ const getDateRangeText = () => {
 
   // 简易饼图组件
  
-const SimplePieChart = ({ data, total }) => {
+const SimplePieChart = ({ data, total, completionStatus = {} }) => {
   if (data.length === 0) {
     return <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无时间数据</div>;
   }
+  
+  // 获取饼图颜色
+  const getPieColor = (name, type) => {
+    if (type === 'school_sub') {
+      const subCatName = name.replace('校内-', '');
+      // 如果该子分类全部完成，返回灰色
+      if (completionStatus[subCatName]?.isComplete) {
+        return '#d0d0d0';
+      }
+      
+      const subCategoryColors = {
+        '数学': '#E8F5E9',
+        '语文': '#FFFDE7',
+        '英语': '#FCE4EC',
+        '运动': '#E3F2FD',
+        '未分类': '#F5F5F5'
+      };
+      return subCategoryColors[subCatName] || '#E8F0FE';
+    } else {
+      const categoryColors = {
+        '语文': '#FFFDE7',
+        '数学': '#E8F5E9',
+        '英语': '#FCE4EC',
+        '科学': '#E1F5FE',
+        '运动': '#E3F2FD',
+        '校内': '#61A2Da'
+      };
+      return categoryColors[name] || '#f0f0f0';
+    }
+  };
   
   let currentAngle = 0;
   const slices = [];
@@ -11946,129 +11976,128 @@ const SimplePieChart = ({ data, total }) => {
   
   const outerArcPath = getOuterArcPath();
   
- return (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-    <svg width="240" height="240" viewBox="0 0 200 200">
-      {/* 饼图扇形 */}
-      {slices.map((slice, idx) => (
-        <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
-      ))}
-      
-      {/* 校内总计外层圆弧 */}
-      {outerArcPath && (
-        <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
-      )}
-      
-      {/* 色块内部的文字标签 */}
-      {slices.map((slice, idx) => {
-        if (parseFloat(slice.percentage) < 5) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width="240" height="240" viewBox="0 0 200 200">
+        {/* 饼图扇形 */}
+        {slices.map((slice, idx) => (
+          <path key={idx} d={slice.pathData} fill={slice.color} stroke="#fff" strokeWidth="1.5" />
+        ))}
         
-        const timeMinutes = slice.time;
-        const timeDisplay = timeMinutes >= 60 
-          ? `${(timeMinutes / 60).toFixed(1)}h` 
-          : `${timeMinutes}m`;
+        {/* 校内总计外层圆弧 */}
+        {outerArcPath && (
+          <path d={outerArcPath} fill="none" stroke="#61A2Da" strokeWidth="4" strokeLinecap="round" />
+        )}
         
-        const textColor = '#333';
+        {/* 色块内部的文字标签 */}
+        {slices.map((slice, idx) => {
+          if (parseFloat(slice.percentage) < 5) return null;
+          
+          const timeMinutes = slice.time;
+          const timeDisplay = timeMinutes >= 60 
+            ? `${(timeMinutes / 60).toFixed(1)}h` 
+            : `${timeMinutes}m`;
+          
+          const textColor = '#333';
+          
+          return (
+            <g key={idx}>
+              <text
+                x={slice.labelX}
+                y={slice.labelY - 4}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="9"
+                fontWeight="bold"
+                fill={textColor}
+              >
+                {slice.displayName}
+              </text>
+              <text
+                x={slice.labelX}
+                y={slice.labelY + 6}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="8"
+                fill={textColor}
+                opacity="0.8"
+              >
+                {timeDisplay}
+              </text>
+            </g>
+          );
+        })}
         
-        return (
-          <g key={idx}>
-            <text
-              x={slice.labelX}
-              y={slice.labelY - 4}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="9"
-              fontWeight="bold"
-              fill={textColor}
-            >
-              {slice.displayName}
-            </text>
-            <text
-              x={slice.labelX}
-              y={slice.labelY + 6}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="8"
-              fill={textColor}
-              opacity="0.8"
-            >
-              {timeDisplay}
-            </text>
-          </g>
-        );
-      })}
+        {/* 中心圆 */}
+        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        <text 
+          x="100" 
+          y="100" 
+          textAnchor="middle" 
+          dominantBaseline="middle"
+          fontSize="11" 
+          fontWeight="bold" 
+          fill="#333"
+        >
+          {Math.floor(total)}m
+        </text>
+      </svg>
       
-      {/* 中心圆 */}
-      <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
-<text 
-  x="100" 
-  y="100" 
-  textAnchor="middle" 
-  dominantBaseline="middle"
-  fontSize="11" 
-  fontWeight="bold" 
-  fill="#333"
->
-  {Math.floor(total)}m
-</text>
-    </svg>
-    
-    {/* 饼图下方的图例 - 校内子分类显示为"校内-数学" */}
-    {/* 饼图下方的图例 */}
-<div style={{
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'center',
-  gap: '12px',
-  marginTop: '16px'
-}}>
-  {/* 1. 校内总计放在最前面 */}
-  {schoolTotalAngle > 0 && (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
-      <span style={{ fontSize: '11px', color: '#61A2Da', fontWeight: 'bold' }}>
-        校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)
-      </span>
-    </div>
-  )}
-  
-  {/* 2. 校内子分类 */}
-  {slices.filter(s => s.type === 'school_sub').map((slice, idx) => {
-    const displayName = `校内-${slice.name.replace('校内-', '')}`;
-    return (
-      <div key={`school_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ 
-          width: '12px', 
-          height: '12px', 
-          backgroundColor: slice.color,
-          borderRadius: '2px',
-          border: '1px solid #ddd'
-        }} />
-        <span style={{ fontSize: '11px', color: '#333' }}>
-          {displayName} ({slice.percentage}%)
-        </span>
+      {/* 饼图下方的图例 - 校内子分类显示为"校内-数学" */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '12px',
+        marginTop: '16px'
+      }}>
+        {/* 1. 校内总计放在最前面 */}
+        {schoolTotalAngle > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: '16px', height: '4px', backgroundColor: '#61A2Da', borderRadius: '2px' }} />
+            <span style={{ fontSize: '11px', color: '#61A2Da', fontWeight: 'bold' }}>
+              校内总计 ({(schoolTotalAngle / 360 * 100).toFixed(1)}%)
+            </span>
+          </div>
+        )}
+        
+        {/* 2. 校内子分类 */}
+        {slices.filter(s => s.type === 'school_sub').map((slice, idx) => {
+          const displayName = `校内-${slice.name.replace('校内-', '')}`;
+          return (
+            <div key={`school_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: slice.color,
+                borderRadius: '2px',
+                border: '1px solid #ddd'
+              }} />
+              <span style={{ fontSize: '11px', color: '#333' }}>
+                {displayName} ({slice.percentage}%)
+              </span>
+            </div>
+          );
+        })}
+        
+        {/* 3. 其他类别 */}
+        {slices.filter(s => s.type !== 'school_sub').map((slice, idx) => {
+          return (
+            <div key={`other_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: slice.color,
+                borderRadius: '2px',
+                border: '1px solid #ddd'
+              }} />
+              <span style={{ fontSize: '11px', color: '#333' }}>
+                {slice.name} ({slice.percentage}%)
+              </span>
+            </div>
+          );
+        })}
       </div>
-    );
-  })}
-  
-  {/* 3. 其他类别 */}
-  {slices.filter(s => s.type !== 'school_sub').map((slice, idx) => {
-    return (
-      <div key={`other_${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ 
-          width: '12px', 
-          height: '12px', 
-          backgroundColor: slice.color,
-          borderRadius: '2px',
-          border: '1px solid #ddd'
-        }} />
-        <span style={{ fontSize: '11px', color: '#333' }}>
-          {slice.name} ({slice.percentage}%)
-        </span>
-      </div>
-    );
-  })}
-</div>
     </div>
   );
 };
