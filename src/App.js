@@ -8810,9 +8810,10 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
 // 任务编辑模态框
 
 // 任务编辑模态框
-const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories }) => {
+const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories, onMarkAbandoned }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
+    onMarkAbandoned  ,
     category: task.category || categories[0]?.name || '校内',
     subCategory: task.subCategory || '',
     note: task.note || '',
@@ -8983,6 +8984,40 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 
   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
   
+
+
+  {/* ❌ 放弃按钮 - 标记任务为做不完 */}
+{/* ❌ 放弃按钮 */}
+<button
+  onClick={() => {
+    if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
+      if (onMarkAbandoned) {
+        onMarkAbandoned(task);
+      }
+      onClose();
+    }
+  }}
+  style={{
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  }}
+  title="标记为做不完"
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+</button>
+
   {/* 📅 跨日期按钮 - 日历简笔画 */}
   <button
     onClick={() => {
@@ -10725,11 +10760,36 @@ const toggleDateCompletion = (date, isChecked) => {
       {/* 主要内容行 - 任务文字和右侧时间/排序按钮在同一行 */}
      <div style={{ display: "flex", alignItems: "center", gap: 6, minHeight: "28px" }}>
   {/* 主复选框 - 判断是否有任何一天完成 */}
+ 
+{/* 复选框 - 放弃的任务显示框内叉 */}
+{task.abandoned ? (
+  // 放弃的任务：显示带叉的复选框
+  <span
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "14px",
+      height: "14px",
+      margin: 0,
+      flexShrink: 0,
+      border: "1px solid #999",
+      borderRadius: "2px",
+      backgroundColor: "#f5f5f5",
+      cursor: "default"
+    }}
+  >
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="5" y1="5" x2="19" y2="19" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="19" y1="5" x2="5" y2="19" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+    </svg>
+  </span>
+) : (
+  // 正常任务：使用原生复选框
   <input
     type="checkbox"
     checked={(() => {
       if (!task.crossDateId) return task.done;
-      // 跨日期任务：检查是否有任何一个日期完成了
       const allDates = task.crossDates || [];
       return allDates.some(date => {
         const dayTasks = tasksByDate[date] || [];
@@ -10743,8 +10803,17 @@ const toggleDateCompletion = (date, isChecked) => {
         toggleDone(task);
       }
     }}
-    style={{ margin: 0, cursor: "pointer", flexShrink: 0, width: "14px", height: "14px" }}
+    style={{ 
+      margin: 0, 
+      cursor: "pointer", 
+      flexShrink: 0, 
+      width: "14px", 
+      height: "14px"
+    }}
   />
+)}
+
+
 
   {/* 任务文字 + 📅 图标 */}
   <div
@@ -10754,40 +10823,55 @@ const toggleDateCompletion = (date, isChecked) => {
     }}
     style={{
       wordBreak: "break-word",
-      cursor: "pointer",
-      color: "#000",
-      fontWeight: task.pinned ? "bold" : "normal",
-      fontSize: "13px",
-      lineHeight: "1.5",
-      flex: 1,
-      minWidth: "50px",
-      display: "flex",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: "4px"
+  cursor: "pointer",
+  color: task.abandoned ? "#999" : "#000",  // ✅ 放弃的文字变灰色
+  fontWeight: task.pinned ? "bold" : "normal",
+  fontSize: "13px",
+  lineHeight: "1.5",
+  flex: 1,
+  minWidth: "50px",
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "4px"
     }}
   >
     <span>{task.text}</span>
     
     {/* 📅 图标 */}
-    {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
-      <span
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowCrossDateDetail(!showCrossDateDetail);
-        }}
-        style={{
-          fontSize: "10px",
-          cursor: "pointer",
-          color: showCrossDateDetail ? "#61A2Da" : "#ff9800",
-          display: "inline-flex",
-          alignItems: "center",
-          marginLeft: "2px"
-        }}
-      >
-        📅
-      </span>
-    )}
+   {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+  <span
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowCrossDateDetail(!showCrossDateDetail);
+    }}
+    style={{
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      marginLeft: "2px",
+      opacity: showCrossDateDetail ? 0.7 : 1
+    }}
+    title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
+  >
+    <svg 
+      width="14" 
+      height="14" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block' }}
+    >
+      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+      <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+      <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+    </svg>
+  </span>
+)}
   </div>
 
   {/* 时间显示 */}
@@ -13611,7 +13695,27 @@ const endSortingSubCategory = (subCategory, orderedTasks) => {
 
 
 
-
+const markTaskAsAbandoned = (task) => {
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    
+    if (task.isWeekTask) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? { ...t, abandoned: true, done: false }
+            : t
+        );
+      });
+    } else {
+      newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
+        t.id === task.id ? { ...t, abandoned: true, done: false } : t
+      );
+    }
+    
+    return newTasksByDate;
+  });
+};
 
 const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
@@ -14914,7 +15018,7 @@ const checkConfettiWithTasks = useCallback((currentTasks) => {
     if (catTasks.length === 0) {
       return;
     }
-    
+    const allTasks = filteredTasks;
     const completedCount = catTasks.filter(t => t.done === true).length;
     const isNowComplete = completedCount === catTasks.length;
     
@@ -18783,7 +18887,7 @@ if (isInitialized && todayTasks.length === 0) {
     onImageUpload={handleImageUpload}
     setCategories={setCategories} 
     setShowDeleteModal={setShowDeleteModal}
- 
+ onMarkAbandoned={markTaskAsAbandoned}
     setShowMoveTaskModal={setShowMoveTaskModal}
     setShowCrossDateModal={setShowCrossDateModal}
   />
@@ -19300,9 +19404,10 @@ if (isInitialized && todayTasks.length === 0) {
    
     
 
-const completedCount = filteredTasks.filter(task => {
+// ✅ 排除放弃的任务 (abandoned === true)
+const activeTasks = filteredTasks.filter(task => !task.abandoned);
+const completedCount = activeTasks.filter(task => {
   if (task.crossDateId) {
-    // 跨日期任务：检查是否有任何一个日期完成了这个任务
     const crossTaskDates = task.crossDates || [];
     return crossTaskDates.some(date => {
       const dateTasks = tasksByDate[date] || [];
@@ -19313,11 +19418,12 @@ const completedCount = filteredTasks.filter(task => {
   return task.done;
 }).length;
 
-const totalCount = filteredTasks.length;
+const totalCount = activeTasks.length;
 const allDone = totalCount > 0 && completedCount === totalCount;
+const hasIncomplete = totalCount > 0 && completedCount < totalCount;
 
-   
-    const hasIncomplete = totalCount > 0 && completedCount < totalCount;
+// 判断是否所有任务都被放弃了
+const allAbandoned = filteredTasks.length > 0 && activeTasks.length === 0;
     
     const dailyRating = dailyRatings[dateStr] || 0;
     const studyEndTime = studyEndTimes[dateStr] || '';  // 👈 获取当前日期的结束时间
@@ -19432,12 +19538,14 @@ const allDone = totalCount > 0 && completedCount === totalCount;
       width: "6px",
       height: "6px",
       borderRadius: "50%",
-      backgroundColor: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+      // ✅ 所有未放弃任务都完成 → 变灰
+      backgroundColor: allDone ? "#ccc" : (hasIncomplete ? "#f44336" : "#666")
     }} />
     <span style={{
       fontSize: "9px",
       fontWeight: "bold",
-      color: allDone ? "#4CAF50" : hasIncomplete ? "#f44336" : "#666"
+      // ✅ 所有未放弃任务都完成 → 变灰
+      color: allDone ? "#ccc" : (hasIncomplete ? "#f44336" : "#666")
     }}>
       {completedCount}/{totalCount}
     </span>
