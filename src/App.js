@@ -4501,29 +4501,114 @@ const ImageModal = ({ imageUrl, onClose }) => (
 const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByDate, selectedDate, studyEndTime }) => {
   // 实时从 tasksByDate 和 selectedDate 生成日志内容
 // 在 DailyLogModal 组件中，替换 generateRealTimeContent 函数
+
+// 在 DailyLogModal 组件中，找到 generateRealTimeContent 函数并替换为：
+
+// 在 DailyLogModal 组件中，找到 generateRealTimeContent 函数并替换：
+
 const generateRealTimeContent = useCallback(() => {
   const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
   
-  // 只统计该日期实际完成的任务（跨日期任务根据当前的 done 状态）
-  const completedTasks = dayTasks.filter(task => {
-    if (task.isRegularTask && !task.done) return false;
-    if (task.category === "本周任务") return false;
-    // 直接使用任务在当前日期的 done 状态
+  // 获取所有日期的任务，用于检查跨日期任务是否在其他日期完成
+  const allTasksByDate = tasksByDate || {};
+  const allDates = Object.keys(allTasksByDate);
+  
+  // 辅助函数：检查跨日期任务是否已在任何日期完成
+  const isCrossDateTaskCompletedAnywhere = (crossDateId, currentDate) => {
+    if (!crossDateId) return false;
+    for (const date of allDates) {
+      // 跳过当前日期本身
+      if (date === currentDate) continue;
+      const tasksOnDate = allTasksByDate[date] || [];
+      const taskOnDate = tasksOnDate.find(t => t.crossDateId === crossDateId);
+      if (taskOnDate?.done === true) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  // 获取跨日期任务在其他日期的完成日期（用于显示）
+  const getCompletedDate = (crossDateId) => {
+    if (!crossDateId) return null;
+    for (const date of allDates) {
+      const tasksOnDate = allTasksByDate[date] || [];
+      const taskOnDate = tasksOnDate.find(t => t.crossDateId === crossDateId);
+      if (taskOnDate?.done === true) {
+        return date;
+      }
+    }
+    return null;
+  };
+  
+  // 辅助函数：判断任务是否应该在当前日期显示
+  const shouldShowTaskOnCurrentDate = (task, currentDate) => {
+    // 放弃的任务始终显示
+    if (task.abandoned) return true;
+    
+    // 如果是跨日期任务
+    if (task.crossDateId) {
+      // ✅ 关键修改：检查这个任务是否已经在其他日期完成了
+      const completedElsewhere = isCrossDateTaskCompletedAnywhere(task.crossDateId, currentDate);
+      
+      if (completedElsewhere) {
+        // 已经在其他日期完成，不在当前日期显示
+        return false;
+      }
+      
+      // 如果当前日期本身已经完成，显示
+      if (task.done === true) {
+        return true;
+      }
+      
+      // 未完成的任务，显示
+      return true;
+    }
+    // 普通任务总是显示
+    return true;
+  };
+  
+  // 辅助函数：获取任务的完成状态
+  const getTaskCompletedStatus = (task, currentDate) => {
+    if (task.abandoned) return false;
+    
+    if (task.crossDateId) {
+      // ✅ 检查是否在任何日期完成
+      const completedAnywhere = isCrossDateTaskCompletedAnywhere(task.crossDateId, currentDate);
+      // 或者当前日期本身已完成
+      return completedAnywhere || task.done === true;
+    }
     return task.done === true;
+  };
+  
+  // 筛选当前日期应该显示的任务
+  let filteredTasks = dayTasks.filter(task => {
+    // 排除常规任务（常规任务单独处理）
+    if (task.isRegularTask) return false;
+    // 排除本周任务
+    if (task.category === "本周任务") return false;
+    // 判断是否应该显示
+    if (!shouldShowTaskOnCurrentDate(task, selectedDate)) return false;
+    return true;
   });
   
-  // 未完成的任务（只显示校内分类的）
-  const incompleteTasks = dayTasks.filter(task => {
-    if (task.isRegularTask) return false;
-    if (task.category === "本周任务") return false;
-    // 直接使用任务在当前日期的 done 状态
-    return !task.done && task.category === "校内";
+  // 常规任务：只显示未完成的
+  const regularTasks = dayTasks.filter(task => {
+    if (task.isRegularTask && !task.done && task.category !== "本周任务") {
+      return true;
+    }
+    return false;
   });
+  
+  // 合并常规任务
+  filteredTasks = [...filteredTasks, ...regularTasks];
   
   // 按分类和子分类组织任务
   const tasksByCategory = {};
   
-  completedTasks.forEach(task => {
+  filteredTasks.forEach(task => {
+    const isCompleted = getTaskCompletedStatus(task, selectedDate);
+    
     if (!tasksByCategory[task.category]) {
       tasksByCategory[task.category] = {
         withSubCategories: {},
@@ -4531,52 +4616,36 @@ const generateRealTimeContent = useCallback(() => {
       };
     }
     
+    const taskWithStatus = { ...task, isCompleted };
+    
     if (task.subCategory) {
       if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
         tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
       }
-      tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
+      tasksByCategory[task.category].withSubCategories[task.subCategory].push(taskWithStatus);
     } else {
-      tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
+      tasksByCategory[task.category].withoutSubCategories.push(taskWithStatus);
     }
   });
   
-  incompleteTasks.forEach(task => {
-    if (task.category === "校内") {
-      if (!tasksByCategory[task.category]) {
-        tasksByCategory[task.category] = {
-          withSubCategories: {},
-          withoutSubCategories: []
-        };
-      }
-      
-      if (task.subCategory) {
-        if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
-          tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
-        }
-        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
-      } else {
-        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
-      }
-    }
-  });
+  // 统计当前日期实际显示的任务
+  const totalTasksCount = filteredTasks.length;
+  const completedCount = filteredTasks.filter(t => getTaskCompletedStatus(t, selectedDate)).length;
   
-  const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+  const totalTime = filteredTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
   const totalMinutes = Math.floor(totalTime / 60);
   
-  const totalTasksCount = completedTasks.length + incompleteTasks.length;
-  
   const newStats = {
-    completedTasks: completedTasks.length,
-    incompleteTasks: incompleteTasks.length,
+    completedTasks: completedCount,
+    incompleteTasks: totalTasksCount - completedCount,
+    abandonedTasks: filteredTasks.filter(t => t.abandoned).length,
     totalTasks: totalTasksCount,
-    completionRate: totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0,
+    completionRate: totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0,
     totalMinutes: totalMinutes,
-    averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
+    averagePerTask: completedCount > 0 ? Math.round(totalMinutes / completedCount) : 0,
     categories: Object.keys(tasksByCategory).length
   };
   
-  // 确保返回正确的对象结构
   return { tasksByCategory, newStats };
 }, [tasksByDate, selectedDate]);
   
@@ -5602,83 +5671,255 @@ const handleEditTemplate = (index, template) => {
  
  
   {/* 标题栏 */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-          paddingBottom: 15,
-          borderBottom: "2px solid #f0f0f0"
-        }}>
-          <h3 style={{
-            margin: 0,
-            color: "#1a73e8",
-            fontSize: 18,
-            fontWeight: "600"
-          }}>
-            {editingTemplateIndex !== null ? '编辑模板' : '新建模板'}
-          </h3>
+       {/* 标题栏 */}
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+  paddingBottom: 15,
+  borderBottom: "2px solid #f0f0f0"
+}}>
+  <h3 style={{
+    margin: 0,
+    color: "#61A2Da",
+    fontSize: 18,
+    fontWeight: "600"
+  }}>
+    编辑
+  </h3>
 
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <button
-              onClick={handleImageClick}
-              style={{
-                width: '32px',
-                height: '32px',
-                padding: 0,
-                backgroundColor: '#f8f9fa',
-                color: '#666',
-                border: "1px solid #e0e0e0",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: "16px",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-              title="添加图片"
-            >
-              🖼️
-            </button>
+  {/* ✅ 修改：按钮容器 - 紧凑靠右，不换行 */}
+  <div style={{ 
+    display: "flex", 
+    gap: "2px",           // 减小间距
+    alignItems: "center",
+    flexShrink: 0,        // 防止收缩
+    flexWrap: "nowrap"    // 强制不换行
+  }}>
+    {/* ❌ 放弃按钮 */}
+    <button
+      onClick={() => {
+        if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
+          if (onMarkAbandoned) {
+            onMarkAbandoned(task);
+          }
+          onClose();
+        }
+      }}
+      style={{
+        width: '28px',        // 从 32px 减小
+        height: '28px',       // 从 32px 减小
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="标记为做不完"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+      </svg>
+    </button>
 
-            <button
-              onClick={handleSave}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#61A2Da",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                height: '32px',
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: "600"
-              }}
-            >
-              {editingTemplateIndex !== null ? '更新' : '保存'}
-            </button>
+    {/* 📅 跨日期按钮 */}
+    <button
+      onClick={() => {
+        onClose();
+        setTimeout(() => {
+          setShowCrossDateModal(task);
+        }, 100);
+      }}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="跨日期显示"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+      </svg>
+    </button>
 
-            <button
-              onClick={onClose}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "18px",
-                cursor: "pointer",
-                color: "#666",
-                width: "24px",
-                height: "24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "50%"
-              }}
-            >
-              ×
-            </button>
-          </div>
-        </div>
+    {/* 📤 迁移任务按钮 */}
+    <button
+      onClick={() => {
+        onClose();
+        setTimeout(() => {
+          setShowMoveTaskModal(task);
+        }, 100);
+      }}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="迁移任务"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 6H21V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V6Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M8 3H16L18 6H6L8 3Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M12 10V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M9 13L12 16L15 13" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+
+    {/* 🔝 置顶按钮 */}
+    <button
+      onClick={() => {
+        onTogglePinned(task);
+        setEditData({ ...editData, pinned: !editData.pinned });
+      }}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title={editData.pinned ? "取消置顶" : "置顶任务"}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L12 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M5 9L12 2L19 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <text x="12" y="22" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#61A2Da">TOP</text>
+      </svg>
+    </button>
+
+    {/* 🗑️ 删除按钮 */}
+    <button
+      onClick={handleDelete}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="删除任务"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 7H20" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M10 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M14 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M6 7L8 21H16L18 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M9 7L10 3H14L15 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      </svg>
+    </button>
+
+    {/* 🖼️ 添加图片按钮 */}
+    <button
+      onClick={handleImageClick}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="添加图片"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <circle cx="8.5" cy="9.5" r="1.5" fill="#61A2Da"/>
+        <path d="M7 16L11 12L15 16L20 11" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    </button>
+
+    {/* 保存按钮 */}
+    <button
+      onClick={handleSave}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 4,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="保存"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 6L9 17L4 12" stroke="#61A2Da" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+      </svg>
+    </button>
+
+    {/* 关闭按钮 */}
+    <button
+      onClick={onClose}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        width: "28px",
+        height: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        flexShrink: 0
+      }}
+      title="关闭"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="6" x2="6" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
 
         <div style={{
           display: 'flex',
@@ -8965,7 +9206,8 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
       }}>
 
         {/* 标题栏 */}
-       <div style={{
+{/* 标题栏 */}
+<div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -8975,243 +9217,243 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 }}>
   <h3 style={{
     margin: 0,
-    color: "#61A2Da",  // ✅ 改为统一蓝色
+    color: "#61A2Da",
     fontSize: 18,
     fontWeight: "600"
   }}>
     编辑
   </h3>
 
-  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-  
+  {/* ✅ 按钮容器 - 固定间距，靠右，不自动拉伸 */}
+  <div style={{ 
+    display: "flex", 
+    gap: "4px",           // ✅ 固定 4px 间距，不会自动变大
+    alignItems: "center",
+    flexShrink: 0,        // 防止收缩
+    flexWrap: "nowrap"    // 强制不换行
+  }}>
+    {/* ❌ 放弃按钮 */}
+    <button
+      onClick={() => {
+        if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
+          if (onMarkAbandoned) {
+            onMarkAbandoned(task);
+          }
+          onClose();
+        }
+      }}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="标记为做不完"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
+      </svg>
+    </button>
 
+    {/* 📅 跨日期按钮 */}
+    <button
+      onClick={() => {
+        onClose();
+        setTimeout(() => {
+          setShowCrossDateModal(task);
+        }, 100);
+      }}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="跨日期显示"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+      </svg>
+    </button>
 
-  {/* ❌ 放弃按钮 - 标记任务为做不完 */}
-{/* ❌ 放弃按钮 */}
-<button
-  onClick={() => {
-    if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
-      if (onMarkAbandoned) {
-        onMarkAbandoned(task);
-      }
-      onClose();
-    }
-  }}
-  style={{
-    width: '32px',
-    height: '32px',
-    padding: 0,
-    backgroundColor: 'transparent',
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  }}
-  title="标记为做不完"
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-    <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-  </svg>
-</button>
+    {/* 📤 迁移任务按钮 */}
+    <button
+      onClick={() => {
+        onClose();
+        setTimeout(() => {
+          setShowMoveTaskModal(task);
+        }, 100);
+      }}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="迁移任务"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 6H21V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V6Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M8 3H16L18 6H6L8 3Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M12 10V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M9 13L12 16L15 13" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
 
-  {/* 📅 跨日期按钮 - 日历简笔画 */}
-  <button
-    onClick={() => {
-      onClose();
-      setTimeout(() => {
-        setShowCrossDateModal(task);
-      }, 100);
-    }}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: 'transparent',
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="跨日期显示"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-    </svg>
-  </button>
+    {/* 🔝 置顶按钮 */}
+    <button
+      onClick={() => {
+        onTogglePinned(task);
+        setEditData({ ...editData, pinned: !editData.pinned });
+      }}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title={editData.pinned ? "取消置顶" : "置顶任务"}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L12 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M5 9L12 2L19 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <text x="12" y="22" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#61A2Da">TOP</text>
+      </svg>
+    </button>
 
-  {/* 📤 迁移任务按钮 - 文件夹/移动简笔画 */}
-  <button
-    onClick={() => {
-      onClose();
-      setTimeout(() => {
-        setShowMoveTaskModal(task);
-      }, 100);
-    }}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: 'transparent',
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="迁移任务"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 6H21V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V6Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <path d="M8 3H16L18 6H6L8 3Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <path d="M12 10V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M9 13L12 16L15 13" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  </button>
+    {/* 🗑️ 删除按钮 */}
+    <button
+      onClick={handleDelete}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="删除任务"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 7H20" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M10 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M14 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M6 7L8 21H16L18 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <path d="M9 7L10 3H14L15 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      </svg>
+    </button>
 
-  {/* 📌 置顶按钮 - 大头针简笔画 */}
-{/* 🔝 置顶按钮 - TOP 向上箭头简笔画 */}
-<button
-  onClick={() => {
-    onTogglePinned(task);
-    setEditData({ ...editData, pinned: !editData.pinned });
-  }}
-  style={{
-    width: '32px',
-    height: '32px',
-    padding: 0,
-    backgroundColor: 'transparent',
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  }}
-  title={editData.pinned ? "取消置顶" : "置顶任务"}
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* 向上箭头 */}
-    <path d="M12 2L12 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M5 9L12 2L19 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    {/* TOP 文字 */}
-    <text x="12" y="22" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#61A2Da">TOP</text>
-  </svg>
-</button>
+    {/* 🖼️ 添加图片按钮 */}
+    <button
+      onClick={handleImageClick}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="添加图片"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <circle cx="8.5" cy="9.5" r="1.5" fill="#61A2Da"/>
+        <path d="M7 16L11 12L15 16L20 11" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    </button>
 
-  {/* 🗑️ 删除按钮 - 垃圾桶简笔画 */}
-  <button
-    onClick={handleDelete}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: 'transparent',
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="删除任务"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 7H20" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M10 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M14 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M6 7L8 21H16L18 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <path d="M9 7L10 3H14L15 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-    </svg>
-  </button>
+    {/* 保存按钮 */}
+    <button
+      onClick={handleSave}
+      style={{
+        width: '32px',
+        height: '32px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="保存"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 6L9 17L4 12" stroke="#61A2Da" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+      </svg>
+    </button>
 
-  {/* 🖼️ 添加图片按钮 - 图片简笔画 */}
-  <button
-    onClick={handleImageClick}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: 'transparent',
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="添加图片"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <circle cx="8.5" cy="9.5" r="1.5" fill="#61A2Da"/>
-      <path d="M7 16L11 12L15 16L20 11" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  </button>
-
-  {/* 保存按钮 - 对勾简笔画 */}
-{/* 保存按钮 - 蓝色对勾，透明背景 */}
-<button
-  onClick={handleSave}
-  style={{
-    width: '32px',
-    height: '32px',
-    padding: 0,
-    backgroundColor: 'transparent',
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  }}
-  title="保存"
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 6L9 17L4 12" stroke="#61A2Da" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-  </svg>
-</button>
-
-  {/* 关闭按钮 - ✕ 简笔画 */}
-  <button
-    onClick={onClose}
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      width: "28px",
-      height: "28px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: "50%"
-    }}
-    title="关闭"
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="18" y1="6" x2="6" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  </button>
-</div>
+    {/* 关闭按钮 */}
+    <button
+      onClick={onClose}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        width: "28px",
+        height: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        flexShrink: 0
+      }}
+      title="关闭"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="6" x2="6" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
+  </div>
 </div>
 
         <div style={{
@@ -10640,6 +10882,7 @@ const TaskItem = ({
   showCategoryTag = false,
   formatTimeNoSeconds,
   toggleDone,
+  selectedDate, 
   formatTimeWithSeconds,
   onMoveTask,
   getTaskCompletionType,
@@ -10839,7 +11082,8 @@ const toggleDateCompletion = (date, isChecked) => {
     <span>{task.text}</span>
     
     {/* 📅 图标 */}
-   {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+{/* 📅 图标 - 可点击展开/收起跨日期详情 */}
+{task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
   <span
     onClick={(e) => {
       e.stopPropagation();
@@ -10849,7 +11093,7 @@ const toggleDateCompletion = (date, isChecked) => {
       cursor: "pointer",
       display: "inline-flex",
       alignItems: "center",
-      marginLeft: "2px",
+      marginLeft: "6px",
       opacity: showCrossDateDetail ? 0.7 : 1
     }}
     title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
@@ -10860,7 +11104,6 @@ const toggleDateCompletion = (date, isChecked) => {
       viewBox="0 0 24 24" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
-      style={{ display: 'block' }}
     >
       <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
       <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
@@ -10987,21 +11230,28 @@ const toggleDateCompletion = (date, isChecked) => {
     </div>
   </div>
 )}
+
 {/* 跨日期任务详情 - 展开区域 */}
-{/* 跨日期任务详情 - 简洁展开区域 */}
-{/* 跨日期任务详情 - 简洁展开区域 */}
-{/* 跨日期任务详情 - 展开区域（只读，不能勾选） */}
+{/* 跨日期任务详情 - 展开区域 */}
+{/* 跨日期任务详情 - 展开区域 */}
 {showCrossDateDetail && task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
   <div style={{
-    marginTop: 4,
+    marginTop: 8,
     marginLeft: "28px",
-    padding: "4px 0",
-    fontSize: "11px"
+    padding: "8px 0",
+    fontSize: "11px",
+    borderTop: "1px solid #f0f0f0",
+    borderBottom: "1px solid #f0f0f0",
+    backgroundColor: "#fafafa",
+    borderRadius: "4px"
   }}>
     {task.crossDates.slice().sort().map(date => {
       const dayTasks = tasksByDate[date] || [];
       const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
-      const isCompleted = taskOnDate?.done || false;
+      
+      // ✅ 只有 actualCompletedDate 等于这个日期时才显示勾选
+      const isCompletedOnThisDate = taskOnDate?.actualCompletedDate === date;
+      
       const dateStr = date.slice(5);
       const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
       const weekday = new Date(date).getDay();
@@ -11012,21 +11262,27 @@ const toggleDateCompletion = (date, isChecked) => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '2px 0'
+            gap: 8,
+            padding: '4px 8px',
+            borderRadius: '4px'
           }}
         >
-          {/* 只显示状态图标，没有复选框 */}
-          <span style={{ width: '14px', fontSize: '10px' }}>
-            {isCompleted ? '✅' : '⬜'}
+          {/* ✅ 显示勾选框状态 */}
+          <span style={{ width: '16px', fontSize: '12px' }}>
+            {isCompletedOnThisDate ? '✅' : '⬜'}
           </span>
-          <span style={{ color: '#666' }}>{dateStr}</span>
-          <span style={{ color: '#999', fontSize: '10px' }}>({weekdays[weekday]})</span>
+          <span style={{ color: '#666' }}>
+            {dateStr}
+          </span>
+          <span style={{ color: '#999', fontSize: '10px' }}>
+            ({weekdays[weekday]})
+          </span>
         </div>
       );
     })}
   </div>
 )}
+
       {/* 第二行：备注和感想 */}
       {(task.note || task.reflection) && (
         <div style={{ 
@@ -11308,6 +11564,7 @@ const SortableTaskList = ({
   onDeleteImage,
   onEditNote,
   onEditReflection,
+  selectedDate,  
   onOpenEditModal,
   onShowImageModal,
   toggleDone,
@@ -11522,6 +11779,7 @@ const SortableTaskList = ({
 
           <TaskItem
             task={task}
+            selectedDate={selectedDate}
             isSortingMode={isSortingMode}
             getTaskCompletionType={getTaskCompletionType}
             onDeleteTask={onDeleteTask}
@@ -11537,6 +11795,7 @@ const SortableTaskList = ({
             formatTimeWithSeconds={formatTimeWithSeconds}
             onMoveTask={onMoveTask}
             categories={categories}
+            
             setShowMoveModal={setShowMoveModal}
             onUpdateProgress={onUpdateProgress}
             onEditSubTask={onEditSubTask}
@@ -14766,20 +15025,19 @@ const CrossDateModal = ({ task, onClose, onSave, selectedDate }) => {
   };
 
   // 保存函数 - 已移除多余的 {} 块
-  const handleSave = () => {
-    // 获取选中的日期对应的日期字符串
-    const targetDates = getDateOptions()
-      .filter(option => selectedDays.includes(option.day))
-      .map(option => option.value);
-    
-    if (targetDates.length === 0) {
-      alert('请至少选择一个日期');
-      return;
-    }
-    
-    onSave(task, targetDates);
-    onClose();
-  };
+const handleSave = () => {
+  const targetDates = getDateOptions()
+    .filter(option => selectedDays.includes(option.day))
+    .map(option => option.value);
+  
+  if (targetDates.length === 0) {
+    alert('请至少选择一个日期');
+    return;
+  }
+  
+  onSave(task, targetDates);
+  onClose();
+};
 
   return (
     <div style={{
@@ -14923,13 +15181,14 @@ const handleCrossDateTask = (task, targetDates) => {
       
       // 创建新任务（保持原有的完成状态）
       const newTask = {
-        ...task,
-        id: `${crossDateId}_${date}`, // 每个日期的任务有唯一ID
-        crossDateId: crossDateId,
-        isCrossDate: true,
-        crossDates: targetDates,
-        done: task.done || false // 保持原有的完成状态
-      };
+  ...task,
+  id: `${crossDateId}_${date}`,
+  crossDateId: crossDateId,
+  isCrossDate: true,
+  crossDates: targetDates,
+  done: task.done || false,
+  actualCompletedDate: null,  // ✅ 初始化时没有实际完成日期
+};
       
       newTasksByDate[date].push(newTask);
       console.log(`创建任务在 ${date}:`, newTask);
@@ -14942,31 +15201,40 @@ const handleCrossDateTask = (task, targetDates) => {
 };
 
 
+// 在 App 组件中，替换 toggleDone 函数：
+
+// 在 App 组件中，替换 toggleDone 函数：
+
 const toggleDone = (task) => {
   const newDoneState = !task.done;
+  const currentDate = selectedDate;
   
-  // 如果是跨日期任务 - 只更新当前选中日期的任务
+  // 如果是跨日期任务
   if (task.crossDateId) {
     const crossDateId = task.crossDateId;
-    const currentDate = selectedDate;
     
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
       
-      // 只更新当前日期的这个任务
-      if (newTasksByDate[currentDate]) {
-        newTasksByDate[currentDate] = newTasksByDate[currentDate].map(t => {
+      // 更新所有相关日期的任务完成状态（全局同步）
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t => {
           if (t.crossDateId === crossDateId) {
-            return { ...t, done: newDoneState };
+            // ✅ 关键：如果是勾选操作，记录实际完成日期
+            // 如果是取消操作，清除实际完成日期
+            const actualDate = newDoneState ? currentDate : null;
+            return { 
+              ...t, 
+              done: newDoneState,
+              actualCompletedDate: actualDate  // 记录实际完成的日期
+            };
           }
           return t;
         });
-      }
+      });
       
-      // ✅ 在 setState 回调中执行撒花检测，确保拿到最新数据
       setTimeout(() => {
         const updatedTasks = newTasksByDate[selectedDate] || [];
-        console.log('🎯 撒花检测 - 更新后的任务列表:', updatedTasks.map(t => ({ text: t.text, done: t.done })));
         checkConfettiWithTasks(updatedTasks);
       }, 50);
       
@@ -14984,10 +15252,8 @@ const toggleDone = (task) => {
       )
     };
     
-    // ✅ 在 setState 回调中执行撒花检测
     setTimeout(() => {
       const updatedTasks = newTasksByDate[selectedDate] || [];
-      console.log('🎯 撒花检测 - 更新后的任务列表:', updatedTasks.map(t => ({ text: t.text, done: t.done })));
       checkConfettiWithTasks(updatedTasks);
     }, 50);
     
@@ -15007,35 +15273,36 @@ const checkConfettiWithTasks = useCallback((currentTasks) => {
     pinned: t.pinned 
   })));
   
-  // 1. 检测主分类完成（排除置顶任务）
-  categories.forEach(cat => {
-    // 获取该分类下所有非置顶任务
-    const catTasks = currentTasks.filter(t => 
-      t.category === cat.name && 
-      t.pinned !== true
-    );
-    
-    if (catTasks.length === 0) {
-      return;
-    }
-    const allTasks = filteredTasks;
-    const completedCount = catTasks.filter(t => t.done === true).length;
-    const isNowComplete = completedCount === catTasks.length;
-    
-    // ✅ 修复：使用正确的 key 格式，包含日期
-    const key = `complete_${cat.name}_${selectedDate}`;
-    const savedValue = localStorage.getItem(key);
-    const wasComplete = savedValue === 'true';
-    
-    console.log(`📊 ${cat.name}: 总任务=${catTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
-    
-    // 只有从 false 变成 true 时才撒花
-    if (wasComplete === false && isNowComplete === true) {
-      console.log(`🎉🎉🎉 恭喜！${cat.name} 全部完成！撒花！🎉🎉🎉`);
-      triggerConfetti(cat.name);
-    }
-    localStorage.setItem(key, isNowComplete);
-  });
+// 1. 检测主分类完成（排除置顶任务和放弃的任务）
+categories.forEach(cat => {
+  // 获取该分类下所有非置顶、未放弃的任务
+  const catTasks = currentTasks.filter(t => 
+    t.category === cat.name && 
+    t.pinned !== true &&
+    t.abandoned !== true   // ✅ 排除放弃的任务
+  );
+  
+  if (catTasks.length === 0) {
+    return;
+  }
+  
+  const completedCount = catTasks.filter(t => t.done === true).length;
+  const isNowComplete = completedCount === catTasks.length;
+  
+  // ✅ 使用正确的 key 格式，包含日期
+  const key = `complete_${cat.name}_${selectedDate}`;
+  const savedValue = localStorage.getItem(key);
+  const wasComplete = savedValue === 'true';
+  
+  console.log(`📊 ${cat.name}: 有效任务=${catTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
+  
+  // 只有从 false 变成 true 时才撒花
+  if (wasComplete === false && isNowComplete === true) {
+    console.log(`🎉🎉🎉 恭喜！${cat.name} 全部完成！撒花！🎉🎉🎉`);
+    triggerConfetti(cat.name);
+  }
+  localStorage.setItem(key, isNowComplete);
+});
   
   // 2. 检测校内子分类完成
   const schoolCategory = categories.find(c => c.name === '校内');
@@ -19404,9 +19671,12 @@ if (isInitialized && todayTasks.length === 0) {
    
     
 
-// ✅ 排除放弃的任务 (abandoned === true)
-const activeTasks = filteredTasks.filter(task => !task.abandoned);
-const completedCount = activeTasks.filter(task => {
+// ✅ 总任务数包括放弃的任务
+const totalCount = filteredTasks.length;
+
+// ✅ 已完成数只计算未放弃且完成的任务
+const completedCount = filteredTasks.filter(task => {
+  if (task.abandoned) return false;
   if (task.crossDateId) {
     const crossTaskDates = task.crossDates || [];
     return crossTaskDates.some(date => {
@@ -19418,12 +19688,38 @@ const completedCount = activeTasks.filter(task => {
   return task.done;
 }).length;
 
-const totalCount = activeTasks.length;
+
+
+
+// 所有未放弃的任务是否都完成了
+const allUngivenUpDone = filteredTasks
+  .filter(task => !task.abandoned)
+  .every(task => task.done === true);
+
+// 是否有未完成且未放弃的任务
+const hasPendingTasks = filteredTasks.some(task => !task.done && !task.abandoned);
+
+// 圆点和数字颜色
+let numberColor = "#666";
+let dotColor = "#666";
+
+if (allUngivenUpDone && totalCount > 0) {
+  // 所有未放弃任务都完成 → 变灰
+  numberColor = "#ccc";
+  dotColor = "#ccc";
+} else if (hasPendingTasks) {
+  // 有待处理任务 → 红色
+  numberColor = "#f44336";
+  dotColor = "#f44336";
+}
+
 const allDone = totalCount > 0 && completedCount === totalCount;
 const hasIncomplete = totalCount > 0 && completedCount < totalCount;
 
-// 判断是否所有任务都被放弃了
-const allAbandoned = filteredTasks.length > 0 && activeTasks.length === 0;
+
+
+// 是否需要显示灰色
+const shouldShowGray = allUngivenUpDone && totalCount > 0;
     
     const dailyRating = dailyRatings[dateStr] || 0;
     const studyEndTime = studyEndTimes[dateStr] || '';  // 👈 获取当前日期的结束时间
@@ -19538,14 +19834,12 @@ const allAbandoned = filteredTasks.length > 0 && activeTasks.length === 0;
       width: "6px",
       height: "6px",
       borderRadius: "50%",
-      // ✅ 所有未放弃任务都完成 → 变灰
-      backgroundColor: allDone ? "#ccc" : (hasIncomplete ? "#f44336" : "#666")
+      backgroundColor: dotColor
     }} />
     <span style={{
       fontSize: "9px",
       fontWeight: "bold",
-      // ✅ 所有未放弃任务都完成 → 变灰
-      color: allDone ? "#ccc" : (hasIncomplete ? "#f44336" : "#666")
+      color: numberColor
     }}>
       {completedCount}/{totalCount}
     </span>
@@ -20122,6 +20416,7 @@ const allAbandoned = filteredTasks.length > 0 && activeTasks.length === 0;
               formatTimeWithSeconds={formatTimeWithSeconds}
               onMoveTask={moveTask}
               categories={categories}
+              selectedDate={selectedDate}
               setShowMoveModal={setShowMoveModal}
               onUpdateProgress={handleUpdateProgress}
               onToggleSubTask={toggleSubTask}
@@ -20340,6 +20635,7 @@ const allAbandoned = filteredTasks.length > 0 && activeTasks.length === 0;
       tasks={weekTasks}
       category="本周任务"
       subCategory={null}
+      selectedDate={selectedDate} 
       tasksByDate={tasksByDate} 
       isSortingMode={sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory}
       onSortingEnd={(newOrder) => {
@@ -20770,6 +21066,7 @@ const getCategoryBorderColor = () => {
               category={c.name}
               tasksByDate={tasksByDate} 
               subCategory={subCat}
+              selectedDate={selectedDate}
               getTaskCompletionType={getTaskCompletionType} 
               isSortingMode={isSortingMode}
               onSortingEnd={(newOrder) => {
@@ -20815,6 +21112,7 @@ const getCategoryBorderColor = () => {
   tasks={getCategoryTasks(c.name)}
   category={c.name}
   subCategory={null}
+  selectedDate={selectedDate}
   tasksByDate={tasksByDate} 
   isSortingMode={sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory}
   onSortingEnd={(newOrder) => {
