@@ -12988,7 +12988,7 @@ const CategoryManagerModal = ({
                     flex: 1
                   }}>
                     {/* 色块 - 可点击选择颜色 */}
-                    <div
+<div
   onClick={() => {
     const input = document.createElement('input');
     input.type = 'color';
@@ -13009,7 +13009,6 @@ const CategoryManagerModal = ({
   style={{
     width: '24px',
     height: '24px',
-    // ✅ 优先使用 categoryColors 中的颜色
     backgroundColor: categoryColors[category.name] || category.color,
     border: '1px solid #ccc',
     borderRadius: 0,
