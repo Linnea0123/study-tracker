@@ -10949,6 +10949,17 @@ const toggleDateCompletion = (date, isChecked) => {
     }}
   >
     <span>{task.text}</span>
+
+    {/* ✅ 图片标记 - 紧跟在任务文字后面 */}
+  {task.hasImage && (
+    <span style={{ 
+      color: '#ff4444', 
+      fontSize: '11px',
+      marginLeft: '2px'
+    }}>
+      [图片]
+    </span>
+  )}
     
     {/* 📅 图标 */}
 {/* 📅 图标 - 可点击展开/收起跨日期详情 */}
@@ -11163,34 +11174,27 @@ const toggleDateCompletion = (date, isChecked) => {
           marginTop: 4,
           position: "relative"
         }}>
+     
           {/* 备注 */}
-          {task.note && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEditModal(task);
-              }}
-              style={{
-                fontSize: 12,
-                color: "#666",
-                cursor: "pointer",
-                backgroundColor: 'transparent',
-                lineHeight: "1.3",
-                whiteSpace: "pre-wrap",
-                marginBottom: task.reflection ? "2px" : "0",
-              }}
-            >
-              {task.note.split('**[图片]**').map((part, index, array) => (
-                <span key={index}>
-                  {part}
-                  {index < array.length - 1 && (
-                    <span style={{ color: '#ff4444' }}>[图片]</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-          
+{task.note && (
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      onOpenEditModal(task);
+    }}
+    style={{
+      fontSize: 12,
+      color: "#666",
+      cursor: "pointer",
+      backgroundColor: 'transparent',
+      lineHeight: "1.3",
+      whiteSpace: "pre-wrap",
+      marginBottom: task.reflection ? "2px" : "0",
+    }}
+  >
+    {task.note}
+  </div>
+)}
           {/* 感想 */}
           {task.reflection && (
             <div
@@ -17237,16 +17241,13 @@ const parseBulkTextToPreview = useCallback(() => {
   let category = "校内";
   let subCategory = "";
   
-
-const schoolCategory = categories.find(c => c.name === '校内');
-const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
-
-  // 获取所有可用的类别（排除常规任务和本周任务）
+  const schoolCategory = categories.find(c => c.name === '校内');
+  const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+  
   const availableCategories = categories.filter(c => 
     c.name !== "常规任务" && c.name !== "本周任务"
   );
   
-  // 策略1：检查第一行是否匹配某个主类别
   let matchedCategory = availableCategories.find(c => 
     firstLine.includes(c.name) || c.name.includes(firstLine)
   );
@@ -17254,8 +17255,6 @@ const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文'
   if (matchedCategory) {
     category = matchedCategory.name;
     subCategory = "";
-    
-    // 如果是校内类别，尝试提取子分类
     if (category === '校内') {
       for (const subCat of schoolSubCategories) {
         if (firstLine.includes(subCat)) {
@@ -17264,9 +17263,7 @@ const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文'
         }
       }
     }
-  } 
-  // 策略2：检查是否是校内子分类（没有主类别名称的情况）
-  else {
+  } else {
     for (const subCat of schoolSubCategories) {
       if (firstLine.includes(subCat)) {
         category = "校内";
@@ -17276,34 +17273,8 @@ const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文'
     }
   }
   
-  console.log('📌 识别的类别:', category, '子分类:', subCategory || '无');
-  
-  // 解析日期范围的函数
-  const parseDateRangeFromText = (text) => {
-    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
-    const match = text.match(rangePattern);
-    
-    if (match) {
-      return {
-        startMonth: parseInt(match[1]),
-        startDay: parseInt(match[2]),
-        endMonth: parseInt(match[3]),
-        endDay: parseInt(match[4]),
-        rangeText: match[0]
-      };
-    }
-    
-    if (text.includes('@周末')) {
-      return { type: 'weekend', rangeText: '@周末' };
-    }
-    
-    return null;
-  };
-  
-  // 获取默认日期范围
   const getDefaultDateRange = () => {
     const todayDate = new Date();
-    
     switch (bulkDateRange) {
       case 'today': {
         return {
@@ -17357,24 +17328,41 @@ const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文'
   
   const defaultRange = getDefaultDateRange();
   const tasks = [];
-  let lastLineHasImage = false;
+  
+  // ✅ 修改：遍历所有行，先收集任务和图片标记
+  // 第一行是分类，从第2行开始处理
+  // 图片标记 [图片] 作用于它上面的任务（上一个任务）
   
   for (let i = 1; i < lines.length; i++) {
     let line = lines[i];
-
-    // 检测图片标记
-    if (line === '[图片]' || line.includes('[图片]')) {
-      lastLineHasImage = true;
-      console.log('📷 检测到图片标记，下一个任务将有图片标志');
+    
+    // 跳过图片标记行，但要记录下一个任务应该有图片
+    if (line === '[图片]' || line === '【图片】') {
+      // 标记上一个任务有图片
+      if (tasks.length > 0) {
+        tasks[tasks.length - 1].hasImage = true;
+        console.log(`📷 图片标记应用于任务: "${tasks[tasks.length - 1].text}"`);
+      }
       continue;
     }
     
-    // 检查是否有内置日期范围
-    let dateRange = parseDateRangeFromText(line);
+    // 解析任务行
+    let dateRange = null;
     let taskLine = line;
     
-    if (dateRange) {
-      taskLine = line.replace(dateRange.rangeText, '').trim();
+    // 检查是否有内置日期范围
+    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
+    const rangeMatch = line.match(rangePattern);
+    
+    if (rangeMatch) {
+      dateRange = {
+        startMonth: parseInt(rangeMatch[1]),
+        startDay: parseInt(rangeMatch[2]),
+        endMonth: parseInt(rangeMatch[3]),
+        endDay: parseInt(rangeMatch[4]),
+        rangeText: rangeMatch[0]
+      };
+      taskLine = line.replace(rangeMatch[0], '').trim();
     } else if (defaultRange) {
       dateRange = { ...defaultRange };
     }
@@ -17398,20 +17386,16 @@ const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文'
       category: category,
       subCategory: subCategory,
       dateRange: dateRange,
-      hasImage: lastLineHasImage,
+      hasImage: false,  // 初始 false，如果后面有 [图片] 标记会被设为 true
       dateRangeText: dateRange?.rangeText || '',
       duration: null
     });
     
-    console.log(`📝 解析任务: "${taskText}", 类别: ${category}, 子分类: ${subCategory || '无'}, hasImage: ${lastLineHasImage}`);
-    
-    // 重置图片标记，只影响下一个任务
-    lastLineHasImage = false;
+    console.log(`📝 解析任务: "${taskText}", 类别: ${category}, 子分类: ${subCategory || '无'}`);
   }
   
   return tasks;
 }, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories]);
-
 
 
 // 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
@@ -17673,6 +17657,15 @@ const handleImportTasksWithDuration = () => {
         createdAt: new Date().toISOString()
       };
       
+      // ✅ 关键修改：如果 hasImage 为 true，在 note 中添加 [图片] 标记
+if (hasImage) {
+  if (newTask.note) {
+    newTask.note = newTask.note + ' [图片]';
+  } else {
+    newTask.note = '[图片]';
+  }
+}
+
       if (crossDateId && taskDates.length > 1) {
         newTask.crossDateId = crossDateId;
         newTask.crossDates = [...taskDates];
