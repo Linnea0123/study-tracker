@@ -5670,8 +5670,7 @@ const handleEditTemplate = (index, template) => {
 >
  
  
-  {/* 标题栏 */}
-       {/* 标题栏 */}
+{/* 标题栏 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -5686,168 +5685,17 @@ const handleEditTemplate = (index, template) => {
     fontSize: 18,
     fontWeight: "600"
   }}>
-    编辑
+    {editingTemplateIndex !== null ? '编辑模板' : '新建模板'}
   </h3>
 
-  {/* ✅ 修改：按钮容器 - 紧凑靠右，不换行 */}
+  {/* ✅ 按钮容器 - 紧凑靠右，不换行 */}
   <div style={{ 
     display: "flex", 
-    gap: "2px",           // 减小间距
+    gap: "2px",
     alignItems: "center",
-    flexShrink: 0,        // 防止收缩
-    flexWrap: "nowrap"    // 强制不换行
+    flexShrink: 0,
+    flexWrap: "nowrap"
   }}>
-    {/* ❌ 放弃按钮 */}
-    <button
-      onClick={() => {
-        if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
-          if (onMarkAbandoned) {
-            onMarkAbandoned(task);
-          }
-          onClose();
-        }
-      }}
-      style={{
-        width: '28px',        // 从 32px 减小
-        height: '28px',       // 从 32px 减小
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 4,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title="标记为做不完"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-      </svg>
-    </button>
-
-    {/* 📅 跨日期按钮 */}
-    <button
-      onClick={() => {
-        onClose();
-        setTimeout(() => {
-          setShowCrossDateModal(task);
-        }, 100);
-      }}
-      style={{
-        width: '28px',
-        height: '28px',
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 4,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title="跨日期显示"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-      </svg>
-    </button>
-
-    {/* 📤 迁移任务按钮 */}
-    <button
-      onClick={() => {
-        onClose();
-        setTimeout(() => {
-          setShowMoveTaskModal(task);
-        }, 100);
-      }}
-      style={{
-        width: '28px',
-        height: '28px',
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 4,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title="迁移任务"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 6H21V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V6Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <path d="M8 3H16L18 6H6L8 3Z" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <path d="M12 10V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <path d="M9 13L12 16L15 13" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-
-    {/* 🔝 置顶按钮 */}
-    <button
-      onClick={() => {
-        onTogglePinned(task);
-        setEditData({ ...editData, pinned: !editData.pinned });
-      }}
-      style={{
-        width: '28px',
-        height: '28px',
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 4,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title={editData.pinned ? "取消置顶" : "置顶任务"}
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L12 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M5 9L12 2L19 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        <text x="12" y="22" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#61A2Da">TOP</text>
-      </svg>
-    </button>
-
-    {/* 🗑️ 删除按钮 */}
-    <button
-      onClick={handleDelete}
-      style={{
-        width: '28px',
-        height: '28px',
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 4,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title="删除任务"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 7H20" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <path d="M10 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <path d="M14 11V16" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <path d="M6 7L8 21H16L18 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <path d="M9 7L10 3H14L15 7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      </svg>
-    </button>
-
     {/* 🖼️ 添加图片按钮 */}
     <button
       onClick={handleImageClick}
@@ -5967,86 +5815,101 @@ const handleEditTemplate = (index, template) => {
           )}
 
           {/* 任务内容 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              📄 任务内容
-            </label>
-            <textarea
-              value={formData.text}
-              onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-              placeholder="请输入任务内容..."
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                height: '44px',
-                minHeight: '44px',
-                resize: 'vertical',
-                outline: 'none',
-                lineHeight: '1.4'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#1a73e8';
-                e.target.style.backgroundColor = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e0e0e0';
-                e.target.style.backgroundColor = '#fafafa';
-              }}
-            />
-          </div>
+      {/* 任务内容 */}
+{/* 任务内容 */}
 
-          {/* 备注 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: '600',
-              color: '#333',
-              fontSize: 14
-            }}>
-              备注
-            </label>
-            <textarea
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="输入备注..."
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 14,
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                height: '44px',
-                minHeight: '44px',
-                resize: 'vertical',
-                outline: 'none',
-                lineHeight: '1.4'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#1a73e8';
-                e.target.style.backgroundColor = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e0e0e0';
-                e.target.style.backgroundColor = '#fafafa';
-              }}
-            />
-          </div>
+{/* 任务内容 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    📄 任务内容
+  </label>
+  <textarea
+    value={formData.text}
+    onChange={(e) => {
+      setFormData({ ...formData, text: e.target.value });
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }}
+    placeholder="请输入任务内容..."
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      resize: 'none',
+      outline: 'none',
+      lineHeight: '1.4',
+      overflow: 'hidden'
+    }}
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+    }}
+    rows="1"
+  />
+</div>
+
+
+{/* 备注 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    备注
+  </label>
+  <textarea
+    value={formData.note}
+    onChange={(e) => {
+      setFormData({ ...formData, note: e.target.value });
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }}
+    placeholder=""
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      fontSize: 14,
+      backgroundColor: '#fafafa',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      resize: 'none',
+      outline: 'none',
+      lineHeight: '1.4',
+      overflow: 'hidden'
+    }}
+    onFocus={(e) => {
+      e.target.style.borderColor = '#1a73e8';
+      e.target.style.backgroundColor = '#fff';
+      // ✅ 聚焦时不调整高度，保持原样
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = '#e0e0e0';
+      e.target.style.backgroundColor = '#fafafa';
+      // ✅ 失焦时不调整高度，保持内容撑开的高度
+    }}
+    rows="1"
+  />
+</div>
 
         
 
@@ -6242,25 +6105,34 @@ const handleEditTemplate = (index, template) => {
           </div>
 
           {/* 更多配置按钮 */}
-          <div
-            onClick={() => setShowMoreConfig(!showMoreConfig)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              borderRadius: 8,
-              cursor: 'pointer',
-              marginTop: 8,
-              userSelect: 'none'
-            }}
-          >
-            <span style={{ fontSize: 14, color: '#333' }}>
-              {showMoreConfig ? '▼ 收起更多配置' : '▶ 更多配置'}
-            </span>
-          </div>
+       <div
+  onClick={() => setShowMoreConfig(!showMoreConfig)}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: '10px',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    cursor: 'pointer',
+    marginTop: 8,
+    userSelect: 'none'
+  }}
+>
+  {showMoreConfig ? (
+    // ▼ 向下箭头
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 9L12 15L18 9" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  ) : (
+    // ▶ 向右箭头
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 6L15 12L9 18" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  )}
+  <span style={{ fontSize: 14, color: '#333' }}>更多设置</span>
+</div>
 
           {/* 更多配置内容 */}
           {showMoreConfig && (
@@ -6892,11 +6764,7 @@ const handleEditTemplate = (index, template) => {
                 ))}
               </div>
             )}
-            {templates.length > 0 && (
-              <div style={{ fontSize: '11px', color: '#999', marginTop: '8px', textAlign: 'center', padding: '4px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-                💡 点击模板可编辑内容
-              </div>
-            )}
+            
           </div>
         </div>
 
@@ -9233,35 +9101,36 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     flexWrap: "nowrap"    // 强制不换行
   }}>
     {/* ❌ 放弃按钮 */}
-    <button
-      onClick={() => {
-        if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
-          if (onMarkAbandoned) {
-            onMarkAbandoned(task);
-          }
-          onClose();
-        }
-      }}
-      style={{
-        width: '32px',
-        height: '32px',
-        padding: 0,
-        backgroundColor: 'transparent',
-        border: "none",
-        borderRadius: 6,
-        cursor: "pointer",
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}
-      title="标记为做不完"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <line x1="6" y1="6" x2="18" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="18" y1="6" x2="6" y2="18" stroke="#f44336" strokeWidth="2.5" strokeLinecap="round"/>
-      </svg>
-    </button>
+  {/* 🚫 放弃按钮 - 蓝色禁止符号 */}
+<button
+  onClick={() => {
+    if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
+      if (onMarkAbandoned) {
+        onMarkAbandoned(task);
+      }
+      onClose();
+    }
+  }}
+  style={{
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  }}
+  title="标记为做不完"
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+    <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+</button>
 
     {/* 📅 跨日期按钮 */}
     <button
@@ -9842,6 +9711,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 <input
                   type="number"
                   value={editData.progress?.initial || ''}
+                  placeholder="0"
                   onChange={(e) =>
                     setEditData({
                       ...editData,
@@ -9974,11 +9844,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                     boxSizing: 'border-box',
                   }}
                 >
-                  <option value="%">%</option>
+                  <option value="本">本</option>
                   <option value="页">页</option>
                   <option value="章">章</option>
                   <option value="题">题</option>
-                  <option value="本">本</option>
                   <option value="篇">篇</option>
                   <option value="单元">单元</option>
                 </select>
@@ -11231,30 +11100,30 @@ const toggleDateCompletion = (date, isChecked) => {
   </div>
 )}
 
-{/* 跨日期任务详情 - 展开区域 */}
+
 {/* 跨日期任务详情 - 展开区域 */}
 {/* 跨日期任务详情 - 展开区域 */}
 {showCrossDateDetail && task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
   <div style={{
-    marginTop: 8,
+    marginTop: 4,
     marginLeft: "28px",
-    padding: "8px 0",
+    padding: "4px 0",
     fontSize: "11px",
     borderTop: "1px solid #f0f0f0",
     borderBottom: "1px solid #f0f0f0",
-    backgroundColor: "#fafafa",
     borderRadius: "4px"
   }}>
     {task.crossDates.slice().sort().map(date => {
       const dayTasks = tasksByDate[date] || [];
       const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
       
-      // ✅ 只有 actualCompletedDate 等于这个日期时才显示勾选
+      // 只有 actualCompletedDate 等于这个日期时才显示勾选
       const isCompletedOnThisDate = taskOnDate?.actualCompletedDate === date;
       
       const dateStr = date.slice(5);
       const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
       const weekday = new Date(date).getDay();
+      const isToday = date === selectedDate;
       
       return (
         <div
@@ -11263,20 +11132,24 @@ const toggleDateCompletion = (date, isChecked) => {
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '4px 8px',
+            padding: "2px 8px",  // 从 4px 8px 改为 2px 8px，更紧凑
+            backgroundColor: isToday ? '#e8f0fe' : 'transparent',
             borderRadius: '4px'
           }}
         >
-          {/* ✅ 显示勾选框状态 */}
           <span style={{ width: '16px', fontSize: '12px' }}>
             {isCompletedOnThisDate ? '✅' : '⬜'}
           </span>
-          <span style={{ color: '#666' }}>
+          <span style={{ 
+            color: isToday ? '#1a73e8' : '#666',
+            fontWeight: isToday ? 'bold' : 'normal'
+          }}>
             {dateStr}
           </span>
           <span style={{ color: '#999', fontSize: '10px' }}>
             ({weekdays[weekday]})
           </span>
+          {isToday && <span style={{ fontSize: '10px', color: '#1a73e8' }}>今日</span>}
         </div>
       );
     })}
@@ -19626,25 +19499,26 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
     
     {/* 右侧：灰色的 + 按钮 */}
-    <span
-      onClick={() => setShowTemplateModal(true)}
-      style={{
-        cursor: "pointer",
-        fontSize: "16px",
-        fontWeight: "normal",
-        color: "#999",
-        background: "transparent",
-        padding: "0",
-        width: "18px",
-        height: "18px",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }}
-      title="添加新模板"
-    >
-      +
-    </span>
+   {/* 右侧：灰色的 + 按钮 */}
+<span
+  onClick={() => setShowTemplateModal(true)}  // ✅ 检查这个
+  style={{
+    cursor: "pointer",
+    fontSize: "16px",
+    fontWeight: "normal",
+    color: "#999",
+    background: "transparent",
+    padding: "0",
+    width: "18px",
+    height: "18px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}
+  title="添加新模板"
+>
+  +
+</span>
   </div>
 )}
 
