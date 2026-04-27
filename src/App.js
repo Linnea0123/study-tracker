@@ -1,3 +1,4 @@
+
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
@@ -395,6 +396,25 @@ const GradeModal = ({ onClose, isVisible }) => {
       overflow: 'hidden'
     }}>
       <style>{`
+
+/* 确保所有按钮都没有悬浮效果 */
+button,
+button:hover,
+button:active,
+button:focus,
+div[onClick],
+div[onClick]:hover,
+div[onClick]:active {
+  transition: none !important;
+  transform: none !important;
+  scale: 1 !important;
+  background-color: #61A2Da !important;  /* 保持原色 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+
+
 /* 禁用编辑模态框所有按钮的悬浮效果 */
 .task-edit-modal button,
 .task-edit-modal button:hover,
@@ -4471,27 +4491,49 @@ const ImageModal = ({ imageUrl, onClose }) => (
 
 const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByDate, selectedDate, studyEndTime }) => {
   // 实时从 tasksByDate 和 selectedDate 生成日志内容
-  const generateRealTimeContent = useCallback(() => {
-    const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
+// 在 DailyLogModal 组件中，替换 generateRealTimeContent 函数
+const generateRealTimeContent = useCallback(() => {
+  const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
+  
+  // 只统计该日期实际完成的任务（跨日期任务根据当前的 done 状态）
+  const completedTasks = dayTasks.filter(task => {
+    if (task.isRegularTask && !task.done) return false;
+    if (task.category === "本周任务") return false;
+    // 直接使用任务在当前日期的 done 状态
+    return task.done === true;
+  });
+  
+  // 未完成的任务（只显示校内分类的）
+  const incompleteTasks = dayTasks.filter(task => {
+    if (task.isRegularTask) return false;
+    if (task.category === "本周任务") return false;
+    // 直接使用任务在当前日期的 done 状态
+    return !task.done && task.category === "校内";
+  });
+  
+  // 按分类和子分类组织任务
+  const tasksByCategory = {};
+  
+  completedTasks.forEach(task => {
+    if (!tasksByCategory[task.category]) {
+      tasksByCategory[task.category] = {
+        withSubCategories: {},
+        withoutSubCategories: []
+      };
+    }
     
-    // 只显示已完成的任务（包括从常规任务完成的）
-    const completedTasks = dayTasks.filter(task => {
-      if (task.isRegularTask && !task.done) return false;
-      if (task.category === "本周任务") return false;
-      return task.done === true;
-    });
-    
-    // 未完成的任务只显示校内分类的
-    const incompleteTasks = dayTasks.filter(task => {
-      if (task.isRegularTask) return false;
-      if (task.category === "本周任务") return false;
-      return !task.done && task.category === "校内";
-    });
-    
-    // 按分类和子分类组织任务
-    const tasksByCategory = {};
-    
-    completedTasks.forEach(task => {
+    if (task.subCategory) {
+      if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
+        tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
+      }
+      tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
+    } else {
+      tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
+    }
+  });
+  
+  incompleteTasks.forEach(task => {
+    if (task.category === "校内") {
       if (!tasksByCategory[task.category]) {
         tasksByCategory[task.category] = {
           withSubCategories: {},
@@ -4503,57 +4545,44 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
         if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
           tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
         }
-        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: true});
+        tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
       } else {
-        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: true});
+        tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
       }
-    });
-    
-    incompleteTasks.forEach(task => {
-      if (task.category === "校内") {
-        if (!tasksByCategory[task.category]) {
-          tasksByCategory[task.category] = {
-            withSubCategories: {},
-            withoutSubCategories: []
-          };
-        }
-        
-        if (task.subCategory) {
-          if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
-            tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
-          }
-          tasksByCategory[task.category].withSubCategories[task.subCategory].push({...task, isCompleted: false});
-        } else {
-          tasksByCategory[task.category].withoutSubCategories.push({...task, isCompleted: false});
-        }
-      }
-    });
-    
-    const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-    const totalMinutes = Math.floor(totalTime / 60);
-    
-    const totalTasksCount = completedTasks.length + incompleteTasks.length;
-    
-    const newStats = {
-      completedTasks: completedTasks.length,
-      incompleteTasks: incompleteTasks.length,
-      totalTasks: totalTasksCount,
-      completionRate: totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0,
-      totalMinutes: totalMinutes,
-      averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
-      categories: Object.keys(tasksByCategory).length
-    };
-    
-    return { tasksByCategory, newStats };
-  }, [tasksByDate, selectedDate]);
+    }
+  });
+  
+  const totalTime = completedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
+  const totalMinutes = Math.floor(totalTime / 60);
+  
+  const totalTasksCount = completedTasks.length + incompleteTasks.length;
+  
+  const newStats = {
+    completedTasks: completedTasks.length,
+    incompleteTasks: incompleteTasks.length,
+    totalTasks: totalTasksCount,
+    completionRate: totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0,
+    totalMinutes: totalMinutes,
+    averagePerTask: completedTasks.length > 0 ? Math.round(totalMinutes / completedTasks.length) : 0,
+    categories: Object.keys(tasksByCategory).length
+  };
+  
+  // 确保返回正确的对象结构
+  return { tasksByCategory, newStats };
+}, [tasksByDate, selectedDate]);
   
   const [currentContent, setCurrentContent] = useState(() => generateRealTimeContent());
   
-  useEffect(() => {
-    setCurrentContent(generateRealTimeContent());
-  }, [tasksByDate, selectedDate, generateRealTimeContent]);
-  
-  const { tasksByCategory, newStats } = currentContent;
+useEffect(() => {
+  const newContent = generateRealTimeContent();
+  // 确保新内容有正确的结构
+  if (newContent && newContent.tasksByCategory !== undefined) {
+    setCurrentContent(newContent);
+  }
+}, [tasksByDate, selectedDate, generateRealTimeContent]);
+
+// 在使用 currentContent 时添加安全检查
+const { tasksByCategory, newStats } = currentContent || { tasksByCategory: {}, newStats: {} };
   
   // 获取表情
   const getRatingEmoji = () => {
@@ -4867,7 +4896,7 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
           >
             ×
           </button>
-       <div
+   <div
   onClick={handleCopy}
   style={{
     flex: 1,
@@ -4884,20 +4913,7 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
     scale: 1,
     boxShadow: 'none'
   }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.backgroundColor = '#28a745';
-    e.currentTarget.style.transform = 'none';
-    e.currentTarget.style.scale = 1;
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.backgroundColor = '#28a745';
-    e.currentTarget.style.transform = 'none';
-    e.currentTarget.style.scale = 1;
-  }}
-  onMouseDown={(e) => {
-    e.currentTarget.style.transform = 'none';
-    e.currentTarget.style.scale = 1;
-  }}
+  // ⭐ 删除所有 onMouseEnter, onMouseLeave, onMouseDown 事件
 >
   复制日志
 </div>
@@ -12298,56 +12314,57 @@ const getSubjectColor = (subject) => {
 
   return (
     <div style={{
-      maxWidth: 600,
-      margin: "0 auto",
-      padding: 15,
-      fontFamily: "sans-serif",
-      backgroundColor: "#f5faff",
-      height: '100vh',
-      overflow: 'auto'
+  maxWidth: 600,
+  margin: "0 auto",
+  padding: 15,
+  fontFamily: "sans-serif",
+  backgroundColor: "#f5faff",
+  height: '100vh',
+  overflow: 'auto',
+  position: 'relative'   // 添加这个
+}}>
+  {/* 头部 */}
+  <div style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+    backgroundColor: "#f5faff",
+    padding: "0 0 10px 0"
+  }}>
+    <h1 style={{
+      textAlign: "center",
+      color: "#61A2Da",
+      fontSize: 20,
+      margin: 0
     }}>
-      {/* 头部 */}
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 10,
-        
-        
-        backgroundColor: "#f5faff",
-      
-        padding: "0 0 10px 0"
-      }}>
-        <h1 style={{
-          textAlign: "center",
-          color: "#61A2Da",
-          fontSize: 20,
-          margin: 0
-        }}>
-          统计汇总
-        </h1>
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-      top: "10px",
-      right: "40px",  // 加大右边距，避开滚动条（滚动条宽度约15-20px）
-            background: "transparent",
-            border: "none",
-            fontSize: "20px",
-            cursor: "pointer",
-            color: "#999",
-            width: "28px",
-            height: "28px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0
-          }}
-        >
-          ×
-        </button>
-      </div>
+      统计汇总
+    </h1>
+    
+    {/* 关闭按钮 - 相对于这个容器定位 */}
+    <button
+      onClick={onClose}
+      style={{
+        position: 'absolute',
+        top: '8px',
+        right: '15px',   // 调整这个值，让按钮和内容区域右对齐
+        background: 'transparent',
+        border: 'none',
+        fontSize: '24px',
+        cursor: 'pointer',
+        color: '#999',
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '50%',
+        zIndex: 10
+      }}
+    >
+      ×
+    </button>
+  </div>
       
       <div style={{
   display: 'flex',
@@ -14834,22 +14851,41 @@ const toggleDone = (task) => {
         });
       }
       
+      // ✅ 在 setState 回调中执行撒花检测，确保拿到最新数据
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        console.log('🎯 撒花检测 - 更新后的任务列表:', updatedTasks.map(t => ({ text: t.text, done: t.done })));
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      
       return newTasksByDate;
     });
     return;
   }
   
-  // 普通任务的处理 - 这里不应该有 editSubTask 的代码
-  setTasksByDate(prev => ({
-    ...prev,
-    [selectedDate]: (prev[selectedDate] || []).map(t =>
-      t.id === task.id ? { ...t, done: newDoneState } : t
-    )
-  }));
+  // 普通任务的处理
+  setTasksByDate(prev => {
+    const newTasksByDate = {
+      ...prev,
+      [selectedDate]: (prev[selectedDate] || []).map(t =>
+        t.id === task.id ? { ...t, done: newDoneState } : t
+      )
+    };
+    
+    // ✅ 在 setState 回调中执行撒花检测
+    setTimeout(() => {
+      const updatedTasks = newTasksByDate[selectedDate] || [];
+      console.log('🎯 撒花检测 - 更新后的任务列表:', updatedTasks.map(t => ({ text: t.text, done: t.done })));
+      checkConfettiWithTasks(updatedTasks);
+    }, 50);
+    
+    return newTasksByDate;
+  });
 };
 
 
 // 检测撒花函数 - 接收当前日期的所有任务
+// 修复撒花检测函数
 const checkConfettiWithTasks = useCallback((currentTasks) => {
   console.log('🎯 开始检测撒花，任务列表:', currentTasks.map(t => ({ 
     text: t.text, 
@@ -14868,14 +14904,16 @@ const checkConfettiWithTasks = useCallback((currentTasks) => {
     );
     
     if (catTasks.length === 0) {
-      console.log(`📊 ${cat.name}: 无任务，跳过`);
       return;
     }
     
     const completedCount = catTasks.filter(t => t.done === true).length;
     const isNowComplete = completedCount === catTasks.length;
+    
+    // ✅ 修复：使用正确的 key 格式，包含日期
     const key = `complete_${cat.name}_${selectedDate}`;
-    const wasComplete = localStorage.getItem(key) === 'true';
+    const savedValue = localStorage.getItem(key);
+    const wasComplete = savedValue === 'true';
     
     console.log(`📊 ${cat.name}: 总任务=${catTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
     
@@ -14899,14 +14937,16 @@ const checkConfettiWithTasks = useCallback((currentTasks) => {
       );
       
       if (subCatTasks.length === 0) {
-        console.log(`📊 校内-${subCat}: 无任务，跳过`);
         return;
       }
       
       const completedCount = subCatTasks.filter(t => t.done === true).length;
       const isNowComplete = completedCount === subCatTasks.length;
+      
+      // ✅ 修复：使用正确的 key 格式
       const key = `complete_校内_${subCat}_${selectedDate}`;
-      const wasComplete = localStorage.getItem(key) === 'true';
+      const savedValue = localStorage.getItem(key);
+      const wasComplete = savedValue === 'true';
       
       console.log(`📊 校内-${subCat}: 总任务=${subCatTasks.length}, 已完成=${completedCount}, wasComplete=${wasComplete}, isNowComplete=${isNowComplete}`);
       
@@ -14919,35 +14959,31 @@ const checkConfettiWithTasks = useCallback((currentTasks) => {
     });
   }
 }, [categories, selectedDate]);
-
 const triggerConfetti = (categoryName) => {
   console.log(`🎉 恭喜！${categoryName} 全部完成！`);
   
-  // 获取屏幕中心点坐标
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
   
   const parts = [];
   
-  // 只生成 1 个大 🎉，从中心出现
+  // 使用大拇指图片，但保持撒花的动画效果
   parts.push({
     id: Date.now(),
-    emoji: '🎉',  // 撒花 emoji
+    imageUrl: 'https://raw.githubusercontent.com/Linnea0123/study-tracker/main/public/confetti.png',
     startX: centerX,
     startY: centerY,
-    fontSize: 100,  // 超大号字体
-    rotation: 0,
+    width: 50,
+    height: 50,
     delay: 0
   });
   
   setConfettiParts(parts);
   
-  // 2 秒后清除
   setTimeout(() => {
     setConfettiParts([]);
   }, 2000);
 };
-
 // 添加撒花检测函数
 // 添加撒花检测函数
 // 添加撒花检测函数
@@ -15475,8 +15511,6 @@ useEffect(() => {
     saveAllData: () => {
       saveMainData('tasks', tasksByDate);
       saveMainData('templates', templates);
-   
-      
     },
     getState: () => ({
       tasksByDate,
@@ -15485,17 +15519,16 @@ useEffect(() => {
       selectedDate,
       todayTasks: tasksByDate[selectedDate] || []
     }),
-    // 添加setState方法
-    setState: (newState) => {
-      
-    }
+    // ✅ 添加这一行
+    triggerConfetti: triggerConfetti,
+    // 或者如果有 setState 方法，也加上
+    setConfettiParts: setConfettiParts
   };
   
   return () => {
     delete window.appInstance;
   };
-}, [tasksByDate, templates, isInitialized, selectedDate]);
-  
+}, [tasksByDate, templates, isInitialized, selectedDate, triggerConfetti]);
 
 
 
@@ -19243,14 +19276,31 @@ if (isInitialized && todayTasks.length === 0) {
     const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
     
     const filteredTasks = dayTasks.filter(task => {
-      if (task.category === "本周任务") return false;
-      if (task.isRegularTask && !task.done) return false;
-      return true;
-    });
+  if (task.category === "本周任务") return false;
+  if (task.isRegularTask && !task.done) return false;
+  return true;
+});
     
-    const totalCount = filteredTasks.length;
-    const completedCount = filteredTasks.filter(task => task.done).length;
-    const allDone = totalCount > 0 && completedCount === totalCount;
+   
+    
+
+const completedCount = filteredTasks.filter(task => {
+  if (task.crossDateId) {
+    // 跨日期任务：检查是否有任何一个日期完成了这个任务
+    const crossTaskDates = task.crossDates || [];
+    return crossTaskDates.some(date => {
+      const dateTasks = tasksByDate[date] || [];
+      const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
+      return taskOnDate?.done === true;
+    });
+  }
+  return task.done;
+}).length;
+
+const totalCount = filteredTasks.length;
+const allDone = totalCount > 0 && completedCount === totalCount;
+
+   
     const hasIncomplete = totalCount > 0 && completedCount < totalCount;
     
     const dailyRating = dailyRatings[dateStr] || 0;
@@ -20277,6 +20327,7 @@ if (isInitialized && todayTasks.length === 0) {
 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
   
 {/* 统计汇总按钮 - 只在校内类别显示 */}
+{/* 统计汇总按钮 - 只在校内类别显示 */}
 {c.name === '校内' && (
   <div
     onClick={(e) => {
@@ -20297,8 +20348,20 @@ if (isInitialized && todayTasks.length === 0) {
     title="统计汇总"
   >
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="2" fill="none"/>
-      <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#fff" stroke="none"/>
+      {/* 根据类别是否完成，改变颜色 */}
+      <circle 
+        cx="12" 
+        cy="12" 
+        r="10" 
+        stroke={isComplete ? "#bbb" : "#fff"} 
+        strokeWidth="2" 
+        fill="none"
+      />
+      <path 
+        d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" 
+        fill={isComplete ? "#bbb" : "#fff"} 
+        stroke="none"
+      />
     </svg>
   </div>
 )}
@@ -21064,29 +21127,29 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 </div>
 
-{/* 👇 🎉 撒花动画 */}
 {confettiParts.map(part => (
   <div
     key={part.id}
     style={{
       position: 'fixed',
-      left: '50%',
-      top: '50%',
-      fontSize: `${part.fontSize}px`,
+      left: part.startX,
+      top: part.startY,
       pointerEvents: 'none',
       zIndex: 9999,
-      animation: `confettiPop 2s ease-out forwards`,
+      animation: `confettiPop 1.5s ease-out forwards`,
       animationDelay: `${part.delay}s`,
-      transform: 'translate(-50%, -50%)',
-      textAlign: 'center',
-      width: '120px',
-      height: '120px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
     }}
   >
-    {part.emoji}
+    <img 
+      src={part.imageUrl} 
+      alt="congrats"
+      style={{
+        width: '100px',
+        height: '100px',
+        objectFit: 'contain',
+        transform: 'translate(-50%, -50%)'
+      }}
+    />
   </div>
 ))}
 
