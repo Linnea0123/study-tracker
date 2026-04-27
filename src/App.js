@@ -20272,18 +20272,20 @@ const allDone = totalCount > 0 && completedCount === totalCount;
   const isSortingMode = sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory;
   
   // 获取类别背景色（用于边框）
-  const getCategoryBorderColor = () => {
-    if (isComplete) return "#ccc";
-    switch(c.name) {
-      case '语文': return '#FFFDE7';
-      case '数学': return '#E8F5E9';
-      case '英语': return '#FCE4EC';
-      case '科学': return '#E1F5FE';
-      case '运动': return '#E3F2FD';
-      case '校内': return '#61A2Da';
-      default: return '#f0f0f0';
-    }
-  };
+const getCategoryBorderColor = () => {
+  // ✅ 完成时边框变灰，未完成时边框保持原色
+ 
+  
+  switch(c.name) {
+    case '语文': return '#FFFDE7';
+    case '数学': return '#E8F5E9';
+    case '英语': return '#FCE4EC';
+    case '科学': return '#E1F5FE';
+    case '运动': return '#E3F2FD';
+    case '校内': return '#61A2Da';
+    default: return categoryColors[c.name] || '#f0f0f0';
+  }
+};
   
   const borderColor = getCategoryBorderColor();
 
@@ -20294,8 +20296,7 @@ const allDone = totalCount > 0 && completedCount === totalCount;
         marginBottom: 8,
         borderRadius: 10,
         overflow: "hidden",
-        border: `2px solid ${borderColor}`,  // 使用动态边框颜色
-        backgroundColor: "#fff"
+        border: `2px solid ${borderColor}`, 
       }}
     >
  
@@ -20303,26 +20304,28 @@ const allDone = totalCount > 0 && completedCount === totalCount;
 
 <div
   style={{
-    backgroundColor: isComplete ? "#f5f5f5" : (categoryColors[c.name] || (() => {
-      switch(c.name) {
-        case '语文': return '#FFFDE7';
-        case '数学': return '#E8F5E9';
-        case '英语': return '#FCE4EC';
-        case '科学': return '#E1F5FE';
-        case '运动': return '#E3F2FD';
-        case '校内': return '#61A2Da';
-        default: return '#f0f0f0';
-      }
-    })()),
-    color: isComplete ? "#bbb" : (c.name === "校内" ? "#fff" : "#333"),
+    backgroundColor: (() => {
+      return categoryColors[c.name] || (() => {
+        switch(c.name) {
+          case '语文': return '#FFFDE7';
+          case '数学': return '#E8F5E9';
+          case '英语': return '#FCE4EC';
+          case '科学': return '#E1F5FE';
+          case '运动': return '#E3F2FD';
+          case '校内': return '#61A2Da';
+          default: return '#f0f0f0';
+        }
+      })();
+    })(),
+    // ✅ 永远保持正常颜色，不判断 isComplete
+    color: isComplete ? "#aaa" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 12px",
-    fontWeight: isComplete ? "normal" : "bold",
+    fontWeight: "bold",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     cursor: "pointer",
-    transition: "all 0.3s ease",
     fontSize: "13px",
     minHeight: "24px"
   }}
@@ -20369,13 +20372,13 @@ const allDone = totalCount > 0 && completedCount === totalCount;
         cx="12" 
         cy="12" 
         r="10" 
-        stroke={isComplete ? "#bbb" : "#fff"} 
+        stroke={isComplete ? "#333" : "#fff"} 
         strokeWidth="2" 
         fill="none"
       />
       <path 
         d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" 
-        fill={isComplete ? "#bbb" : "#fff"} 
+        fill={isComplete ? "#333" : "#fff"} 
         stroke="none"
       />
     </svg>
@@ -20502,7 +20505,7 @@ const allDone = totalCount > 0 && completedCount === totalCount;
          
 <div
   style={{
-    backgroundColor: allDone ? "#f5f5f5" : (subCategoryColors[subCat] || (() => {
+    backgroundColor: (subCategoryColors[subCat] || (() => {
       switch(subCat) {
         case '数学': return '#E8F5E9';
         case '语文': return '#FFFDE7';
@@ -20511,21 +20514,15 @@ const allDone = totalCount > 0 && completedCount === totalCount;
         default: return '#F5F5F5';
       }
     })()),
-    color: allDone ? '#bbb' : '#333',
+   color: allDone ? "#aaa" : '#333', // ✅ 永远黑色，不判断 allDone
     padding: '4px 8px',
-    fontWeight: allDone ? "normal" : "bold",
+    fontWeight: "bold",
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderRadius: '6px',
     fontSize: '12px',
     marginBottom: '4px',
-    border: 'none',
-    height: '32px',
-    minHeight: '32px',
-    maxHeight: '32px',
-    lineHeight: '24px',
-    boxSizing: 'border-box',
   }}
 >
 
