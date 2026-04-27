@@ -2087,23 +2087,32 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
   );
 };
 
-const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord }) => {
+const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, toggleDone }) => {
   const [addMinutes, setAddMinutes] = useState('');
   const [note, setNote] = useState('');
   const [editingHistoryRecord, setEditingHistoryRecord] = useState(null);
   const [editHistoryMinutes, setEditHistoryMinutes] = useState('');
   const timeRecords = task.timeRecords || [];
 
-  const handleSave = () => {
-    const minutes = parseInt(addMinutes);
-    if (isNaN(minutes) || minutes <= 0) {
-      alert('请输入有效的分钟数（大于0）');
-      return;
-    }
+ const handleSave = () => {
+  const minutes = parseInt(addMinutes);
+  if (isNaN(minutes) || minutes <= 0) {
+    alert('请输入有效的分钟数（大于0）');
+    return;
+  }
+  
+  // ✅ 关键修改：保存时间后，自动将任务标记为完成
+  if (onSave) {
     onSave(task, minutes, note);
-    onClose();
-  };
-
+  }
+  
+  // ✅ 新增：自动勾选任务完成（如果尚未完成）
+  if (task.done !== true && typeof toggleDone === 'function') {
+    toggleDone(task);
+  }
+  
+  onClose();
+};
   return (
     <div style={{
       position: 'fixed',
@@ -9251,7 +9260,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
   }}
-  placeholder="输入备注..."
+  placeholder=""
   style={{
     width: '100%',
     padding: '8px 12px',
@@ -9290,14 +9299,14 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
   }}
-  placeholder="输入感想..."
+  placeholder=""
   style={{
     width: '100%',
     padding: '8px 12px',
     border: '2px solid #e0e0e0',
     borderRadius: 8,
     fontSize: 14,
-    backgroundColor: '#fff9c4',
+    backgroundColor: '#fafafa',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
     resize: 'none',
@@ -9531,7 +9540,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                 fontSize: 14,
               }}
             >
-              📊 进度跟踪
+              进度
             </label>
 
             <div
@@ -9717,7 +9726,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
             }}
           >
             <span style={{ fontSize: 14, color: '#333' }}>
-              {showMoreConfig ? '▼ 收起更多配置' : '▶ 更多配置'}
+              {showMoreConfig ? '▼' : '▶ 更多设置'}
             </span>
           </div>
 
@@ -9745,7 +9754,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                       color: '#333',
                       fontSize: 13,
                     }}>
-                      添加标签
+                      标签
                     </label>
                     <div style={{
                       display: 'flex',
@@ -9952,7 +9961,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     color: '#333',
     fontSize: 14,
   }}>
-    🔄 重复设置
+    重复
   </label>
   
   {/* 重复频率按钮 - 删除了"重复频率"标签 */}
@@ -10082,7 +10091,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     color: '#333',
     fontSize: 14,
   }}>
-    ⏰ 计划时间
+    计划
   </label>
 
   <div style={{
@@ -10238,7 +10247,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
       fontSize: 14,
     }}
   >
-    🔔 提醒时间
+    提醒时间
   </label>
 
   <div
@@ -10422,7 +10431,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
                     fontSize: 14,
                   }}
                 >
-                  📋 子任务
+                  子任务
                 </label>
 
                 <div
@@ -17627,7 +17636,6 @@ const handleTimeEditSave = (task, addedMinutes, note) => {
   const newMinutes = currentMinutes + addedMinutes;
   const newSeconds = newMinutes * 60;
   
-  // 获取当前系统时间
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
   
@@ -17636,7 +17644,7 @@ const handleTimeEditSave = (task, addedMinutes, note) => {
     change: addedMinutes,
     previousTotal: currentMinutes,
     newTotal: newMinutes,
-    note: note || '',  // 保存备注
+    note: note || '',
     timestamp: new Date().toISOString()
   };
   
@@ -17648,7 +17656,7 @@ const handleTimeEditSave = (task, addedMinutes, note) => {
     };
   };
   
-  // 根据任务类型更新
+  // 更新任务时间
   if (task.isWeekTask) {
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
@@ -17678,6 +17686,14 @@ const handleTimeEditSave = (task, addedMinutes, note) => {
         t.id === task.id ? updateTask(t) : t
       )
     }));
+  }
+  
+  // ✅ 新增：自动完成该任务（如果尚未完成）
+  if (task.done !== true) {
+    // 延迟一点点确保时间先更新，再更新完成状态
+    setTimeout(() => {
+      toggleDone(task);
+    }, 50);
   }
   
   setShowTimeEditModal(null);
@@ -18852,6 +18868,7 @@ if (isInitialized && todayTasks.length === 0) {
     onSave={handleTimeEditSave}
     onEditRecord={handleEditTimeRecord}
     onDeleteRecord={handleDeleteTimeRecord}
+    toggleDone={toggleDone}        // ✅ 新增这一行
   />
 )}
 
