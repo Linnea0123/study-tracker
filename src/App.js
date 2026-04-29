@@ -7618,10 +7618,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
         onChange={(e) => setUnit(e.target.value)}
         style={{ flex: 1, height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px', backgroundColor: '#fff' }}
       >
-        <option value="%">%</option>
-        <option value="页">页</option>
-        <option value="章">章</option>
-        <option value="题">题</option>
+        
       </select>
     </div>
 
@@ -7860,10 +7857,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
                 onChange={(e) => setEditFormData({...editFormData, unit: e.target.value})}
                 style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#fff' }}
               >
-                <option value="%">%</option>
-                <option value="页">页</option>
-                <option value="章">章</option>
-                <option value="题">题</option>
+               
               </select>
             </div>
 
@@ -10198,23 +10192,25 @@ const toggleDateCompletion = (date, isChecked) => {
       </div>
     </div>
 
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      height: '20px'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        fontSize: 11,
-        color: '#666'
-      }}>
-        <span>{Math.round(progressPercent)}%</span>
-        <span>|</span>
-        <span>{task.progress?.current || 0}/{task.progress?.target || 0} {task.progress?.unit}</span>
-      </div>
+   <div style={{
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  height: '20px'
+}}>
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 11,
+    color: '#666'
+  }}>
+    <span>{Math.round(progressPercent)}%</span>
+    <span>|</span>
+    <span>{task.progress?.current || 0}/{task.progress?.target || 0}</span>
+  </div>
+
+    
 
       {/* - + 按钮 - 默认隐藏，点击进度条后显示 */}
       {showProgressControls && (
