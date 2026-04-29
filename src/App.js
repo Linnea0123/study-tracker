@@ -396,6 +396,18 @@ const GradeModal = ({ onClose, isVisible }) => {
     }}>
       <style>{`
 
+
+.grade-close-btn,
+.grade-close-btn:hover,
+.grade-close-btn:active,
+.grade-close-btn:focus {
+  background-color: transparent !important;
+  background: transparent !important;
+  color: #999 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* 确保所有按钮都没有悬浮效果 */
 button,
 button:hover,
@@ -1118,6 +1130,7 @@ button:focus-visible {
       }} onClick={e => e.stopPropagation()}>
         
         <button
+        className="grade-close-btn"
           onClick={() => {
             setShowAddForm(false);
             setEditingGrade(null);
@@ -1506,29 +1519,32 @@ button:focus-visible {
         WebkitOverflowScrolling: 'touch'
       }} onClick={e => e.stopPropagation()}>
         
-        <button
-          onClick={() => setShowSubCategoryManager(false)}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: 'transparent',
-            border: 'none',
-            fontSize: '24px',
-            cursor: 'pointer',
-            color: '#666',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            zIndex: 10
-          }}
-        >
-          ×
-        </button>
+        <div
+  className="grade-modal-close-btn"
+  onClick={() => {
+    setShowSubCategoryManager(false);
+    setIsSortingSubCategories(false);
+    setTempSubCategories([]);
+  }}
+  style={{
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#999',
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    backgroundColor: 'transparent',
+    zIndex: 10
+  }}
+>
+  ×
+</div>
 
         <h3 style={{ 
           textAlign: 'center', 
@@ -7889,23 +7905,32 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
   // 日期圆点组件 - 修改后版本（文字颜色跟随圆点变化）
 // 日期圆点组件 - 修改后只显示完成的任务（排除常规任务）
 const DateDot = ({ date, tasksByDate }) => {
-  if (!tasksByDate) {
-    return null;
-  }
+  if (!tasksByDate) return null;
 
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dayTasks = tasksByDate[dateStr] || [];
   
-  // 只筛选已完成的且不是常规任务的任务
-  const completedNonRegularTasks = dayTasks.filter(task => {
+  // ✅ 筛选已完成的任务（排除常规任务）
+  let completedCount = 0;
+  
+  dayTasks.forEach(task => {
     // 排除常规任务
-    if (task.isRegularTask) return false;
-    // 只保留已完成的非常规任务
-    return task.done === true;
+    if (task.isRegularTask) return;
+    
+    // 跨日期任务：只统计 actualCompletedDate 等于当前日期的
+    if (task.crossDateId) {
+      if (task.actualCompletedDate === dateStr && task.done === true) {
+        completedCount++;
+      }
+    } else {
+      // 普通任务：直接统计 done === true
+      if (task.done === true) {
+        completedCount++;
+      }
+    }
   });
 
-  // 如果没有已完成的任务，不显示任何内容
-  if (completedNonRegularTasks.length === 0) return null;
+  if (completedCount === 0) return null;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -7913,9 +7938,6 @@ const DateDot = ({ date, tasksByDate }) => {
   taskDate.setHours(0, 0, 0, 0);
   
   const isFuture = taskDate > today;
-  
-  // 未来日期 - 橙色
-  // 有完成任务的过去日期 - 绿色
   const dotColor = isFuture ? softColors.dotFuture : softColors.dotComplete;
   const textColor = isFuture ? '#F39C12' : '#2ECC71';
   
@@ -7927,22 +7949,18 @@ const DateDot = ({ date, tasksByDate }) => {
       gap: '2px',
       marginTop: '2px'
     }}>
-      {/* 圆点 */}
       <div style={{
         width: '6px',
         height: '6px',
         borderRadius: '50%',
         backgroundColor: dotColor,
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
       }} />
-      
-      {/* 完成任务数 - 只显示已完成的非常规任务数量 */}
       <span style={{
         fontSize: '9px',
         fontWeight: 'bold',
         color: textColor
       }}>
-        {completedNonRegularTasks.length}
+        {completedCount}
       </span>
     </div>
   );
@@ -8175,29 +8193,22 @@ const DateDot = ({ date, tasksByDate }) => {
           })}
         </div>
 
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '10px',
-            background: softColors.primary,
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = '#7A8FB5';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = softColors.primary;
-          }}
-        >
-          关闭
-        </button>
+       <div
+  onClick={onClose}
+  style={{
+    width: '100%',
+    padding: '10px',
+    background: softColors.primary,
+    color: '#FFFFFF',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    textAlign: 'center'
+  }}
+>
+  关闭
+</div>
       </div>
     </div>
   );
