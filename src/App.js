@@ -10072,7 +10072,7 @@ const toggleDateCompletion = (date, isChecked) => {
   style={{
     wordBreak: "break-word",
     cursor: "pointer",
-    color: task.abandoned ? "#4caf50" : (task.done ? "#999" : "#000"),  // 放弃的变绿色，完成的变灰色
+    color: task.abandoned ? "#f44336" : (task.done ? "#999" : "#000"),
     fontWeight: task.pinned ? "bold" : "normal",
     fontSize: "13px",
     lineHeight: "1.5",
@@ -18873,14 +18873,28 @@ if (isInitialized && todayTasks.length === 0) {
               {completedNotAbandonedCount}/{totalCount}
             </span>
  {/* ✅ 假期标记 - 放在数字右边 */}
-    {hasHolidayTask && (
-      <span style={{
-        fontSize: "9px",
-        marginLeft: "1px"
-      }}>
-        🏖️
-      </span>
-    )}
+{hasHolidayTask && (
+  <span style={{
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "14px",
+    height: "14px",
+    backgroundColor: "transparent",
+    border: "1.5px solid #f44336",
+    borderRadius: "50%",
+    fontSize: "8px",
+    fontWeight: "bold",
+    color: "#f44336",
+    marginLeft: "2px",
+    boxSizing: "border-box",
+    padding: 0,
+    lineHeight: 1,
+    textAlign: "center"
+  }}>
+    假
+  </span>
+)}
 
 
 
