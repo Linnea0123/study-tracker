@@ -18817,23 +18817,6 @@ if (isInitialized && todayTasks.length === 0) {
       >
         <div style={{ position: "relative", display: "inline-block" }}>
          {/* ✅ 假期任务显示 "假"字 - 显示在左侧 */}
-  {hasHolidayTask && (
-    <span style={{
-      position: "absolute",
-      top: "55%",
-      transform: "translateY(-50%)",
-      left: "25px",
-      fontSize: "8px",
-      fontWeight: "bold",
-      color: "#f44336",
-      padding: "0px 2px",
-     
-      lineHeight: "1.2",
-      whiteSpace: "nowrap"
-    }}>
-      假
-    </span>
-  )}
 
 
  <span>{d.label}</span>
@@ -18884,6 +18867,18 @@ if (isInitialized && todayTasks.length === 0) {
             }}>
               {completedNotAbandonedCount}/{totalCount}
             </span>
+ {/* ✅ 假期标记 - 放在数字右边 */}
+    {hasHolidayTask && (
+      <span style={{
+        fontSize: "9px",
+        marginLeft: "1px"
+      }}>
+        🏖️
+      </span>
+    )}
+
+
+
           </div>
         )}
         
