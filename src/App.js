@@ -1886,7 +1886,7 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
 
   const getCategoryColor = (catName) => {
     switch(catName) {
-      case '语文': return '#FFFDE7';
+      case '语文': return '#FFFCE8';
       case '数学': return '#E8F5E9';
       case '英语': return '#FCE4EC';
       case '科学': return '#E1F5FE';
@@ -2581,7 +2581,7 @@ const baseCategories = [
     color: "#61A2Da",  // 保持蓝色不变
     subCategories: ["数学", "语文", "英语", "运动"]
   },
-  { name: "语文", color: "#FFFDE7", textColor: "#333" },
+  { name: "语文", color: "#FFFCE8", textColor: "#333" },
   { name: "数学", color: "#E8F5E9", textColor: "#333" },
   { name: "英语", color: "#FCE4EC", textColor: "#333" },
   { name: "科学", color: "#E1F5FE", textColor: "#333" },
@@ -10179,12 +10179,12 @@ const toggleDateCompletion = (date, isChecked) => {
   : (task.category === '校内' && task.subCategory)
     ? ({
         '数学': '#E8F5E9',
-        '语文': '#FFFDE7',
+        '语文': '#FFFCE8',
         '英语': '#FCE4EC',
         '运动': '#E3F2FD'
       }[task.subCategory] || '#61A2Da')
     : ({
-        '语文': '#FFFDE7',   // 浅黄色
+        '语文': '#FFFCE8',   // 浅黄色
         '数学': '#E8F5E9',   // 浅绿色
         '英语': '#FCE4EC',   // 浅粉色
         '科学': '#E1F5FE',   // 浅蓝色
@@ -11083,7 +11083,7 @@ const subjectTotalTime = getSubjectTotalTime();
       return subCategoryColors[subCatName] || '#E8F0FE';
     } else {
       const categoryColors = {
-        '语文': '#FFFDE7',
+        '语文': '#FFFCE8',
         '数学': '#E8F5E9',
         '英语': '#FCE4EC',
         '科学': '#E1F5FE',
@@ -11313,7 +11313,7 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
       
       const subCategoryColors = {
         '数学': '#E8F5E9',
-        '语文': '#FFFDE7',
+        '语文': '#FFFCE8',
         '英语': '#FCE4EC',
         '运动': '#E3F2FD',
         '未分类': '#F5F5F5'
@@ -11321,7 +11321,7 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
       return subCategoryColors[subCatName] || '#E8F0FE';
     } else {
       const categoryColors = {
-        '语文': '#FFFDE7',
+        '语文': '#FFFCE8',
         '数学': '#E8F5E9',
         '英语': '#FCE4EC',
         '科学': '#E1F5FE',
@@ -11548,7 +11548,7 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
 const getSubjectColor = (subject) => {
   const colors = {
     '数学': '#E8F5E9',
-    '语文': '#FFFDE7',
+    '语文': '#FFFCE8',
     '英语': '#FCE4EC',
     '运动': '#E3F2FD'
   };
@@ -13042,7 +13042,7 @@ const [categoryColors, setCategoryColors] = useState(() => {
   }
   // 默认颜色
   return {
-    '语文': '#FFFDE7',
+    '语文': '#FFFCE8',
     '数学': '#E8F5E9',
     '英语': '#FCE4EC',
     '科学': '#E1F5FE',
@@ -13078,7 +13078,7 @@ const [subCategoryColors, setSubCategoryColors] = useState(() => {
   }
   return {
     '数学': '#E8F5E9',
-    '语文': '#FFFDE7',
+    '语文': '#FFFCE8',
     '英语': '#FCE4EC',
     '运动': '#E3F2FD'
   };
@@ -18800,121 +18800,105 @@ if (isInitialized && todayTasks.length === 0) {
     
     return (
   <div
-    key={dateStr}
-    onClick={() => setSelectedDate(dateStr)}
-    style={{
-      padding: "4px 6px",
-      borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
-      textAlign: "center",
-      flex: 1,
-      margin: "0 2px",
-      fontSize: 12,
-      cursor: "pointer",
-      backgroundColor: isSelected ? "#fff9c4" : "transparent",
-      color: isSelected ? "#000" : "#000",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      minHeight: "20px",
-      background: dailyRating > 0 
-        ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
-        : isSelected ? '#fff9c4' : 'transparent'
-    }}
-  >
-    <div style={{ 
-      position: "relative", 
-      display: "inline-flex",  // 改为 inline-flex
-      alignItems: "center",    // 垂直居中对齐
-      justifyContent: "center", // 水平居中对齐
-      gap: "2px"              // 统一间距
-    }}>
-      {/* ✅ 假期标记 - 现在与星期垂直居中对齐 */}
-      {hasHolidayTask && (
-        <span style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "14px",
-          height: "14px",
-          backgroundColor: "transparent",
-          border: "1.5px solid #f44336",
-          borderRadius: "50%",
-          fontSize: "8px",
-          color: "#f44336",
-          boxSizing: "border-box",
-          padding: 0,
-          lineHeight: 1,
-          textAlign: "center",
-    marginRight: "2px" 
-        }}>
-          假
-        </span>
-      )}
-      <span>{d.label}</span>
-      
-      
-
-      {/* ✅ 跨日期标志 - 调整定位方式 */}
-      {hasCrossDateTask && (
-        <span style={{
-          display: "inline-flex",     // 改为 inline-flex
-          alignItems: "center",
-          justifyContent: "center",
-          marginLeft: "2px"          // 添加左边距
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 14C4 10.5 7 8 10.5 8L14 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M11 5L14 8L11 11" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M20 10C20 13.5 17 16 13.5 16L10 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M13 19L10 16L13 13" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
-        </span>
-      )}
-    </div>
-    
-    <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
-    
-    {/* 任务数量显示 - 格式：已完成数/总任务数 */}
-    {showNumber && (
-      <div style={{
-        display: "flex",
+  key={dateStr}
+  onClick={() => setSelectedDate(dateStr)}
+  style={{
+    padding: "4px 6px",
+    borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
+    textAlign: "center",
+    flex: 1,
+    minWidth: 0,
+    margin: "0 2px",
+    fontSize: 12,
+    cursor: "pointer",
+    backgroundColor: isSelected ? "#fff9c4" : "transparent",
+    color: isSelected ? "#000" : "#000",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    minHeight: "20px",
+    background: dailyRating > 0 
+      ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+      : isSelected ? '#fff9c4' : 'transparent'
+  }}
+>
+  {/* 第一行：周几 + 休字（休字不占位，贴在右边） */}
+  <div style={{ 
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <span>{d.label}</span>
+    {hasHolidayTask && (
+      <span style={{
+        position: "absolute",
+        left: "100%",
+        marginLeft: "2px",
+        display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "4px",
-        marginTop: "2px"
+        width: "10px",
+        height: "10px",
+        backgroundColor: "transparent",
+        border: "none",
+        borderRadius: "2px",
+        fontSize: "7px",
+        color: "#f44336",
+        boxSizing: "border-box",
+        padding: 0,
+        lineHeight: 1,
+        textAlign: "center",
+        whiteSpace: "nowrap"
       }}>
-        <div style={{
-          width: "6px",
-          height: "6px",
-          borderRadius: "50%",
-          backgroundColor: dotColor
-        }} />
-        <span style={{
-          fontSize: "9px",
-          fontWeight: "bold",
-          color: numberColor
-        }}>
-          {completedNotAbandonedCount}/{totalCount}
-        </span>
-      </div>
+        休
+      </span>
     )}
-    
-    {/* 结束时间显示 */}
-    {studyEndTime && (() => {
-      const [hour, minute] = studyEndTime.split(':').map(Number);
-      const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
-      return (
-        <div style={{
-          fontSize: "8px",
-          color: isAfter9PM ? "#f44336" : "#999",
-          marginTop: "2px",
-          whiteSpace: "nowrap"
-        }}>
-          {studyEndTime}
-        </div>
-      );
-    })()}
   </div>
+  
+  <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+  
+  {/* 任务数量显示 */}
+  {showNumber && (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "4px",
+      marginTop: "2px"
+    }}>
+      <div style={{
+        width: "6px",
+        height: "6px",
+        borderRadius: "50%",
+        backgroundColor: dotColor
+      }} />
+      <span style={{
+        fontSize: "9px",
+        fontWeight: "bold",
+        color: numberColor
+      }}>
+        {completedNotAbandonedCount}/{totalCount}
+      </span>
+    </div>
+  )}
+  
+  {/* 结束时间显示 */}
+  {studyEndTime && (() => {
+    const [hour, minute] = studyEndTime.split(':').map(Number);
+    const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+    return (
+      <div style={{
+        fontSize: "8px",
+        color: isAfter9PM ? "#f44336" : "#999",
+        marginTop: "2px",
+        whiteSpace: "nowrap"
+      }}>
+        {studyEndTime}
+      </div>
+    );
+  })()}
+</div>
 );
 
   })}
@@ -19758,7 +19742,7 @@ const getCategoryBorderColor = () => {
  
   
   switch(c.name) {
-    case '语文': return '#FFFDE7';
+    case '语文': return '#FFFCE8';
     case '数学': return '#E8F5E9';
     case '英语': return '#FCE4EC';
     case '科学': return '#E1F5FE';
@@ -19788,7 +19772,7 @@ const getCategoryBorderColor = () => {
     backgroundColor: (() => {
       return categoryColors[c.name] || (() => {
         switch(c.name) {
-          case '语文': return '#FFFDE7';
+          case '语文': return '#FFFCE8';
           case '数学': return '#E8F5E9';
           case '英语': return '#FCE4EC';
           case '科学': return '#E1F5FE';
@@ -19989,7 +19973,7 @@ const getCategoryBorderColor = () => {
     backgroundColor: (subCategoryColors[subCat] || (() => {
       switch(subCat) {
         case '数学': return '#E8F5E9';
-        case '语文': return '#FFFDE7';
+        case '语文': return '#FFFCE8';
         case '英语': return '#FCE4EC';
         case '运动': return '#E3F2FD';
         default: return '#F5F5F5';
