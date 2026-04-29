@@ -397,6 +397,33 @@ const GradeModal = ({ onClose, isVisible }) => {
       <style>{`
 
 
+/* 子分类管理图标按钮 - 与成绩记录右上角图标样式一致 */
+.subcat-icon-btn,
+.subcat-icon-btn:hover,
+.subcat-icon-btn:active,
+.subcat-icon-btn:focus {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  transform: none !important;
+  scale: 1 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: none !important;
+  color: #999 !important;
+}
+
+.subcat-icon-btn svg {
+  stroke: #999 !important;
+}
+
 .grade-close-btn,
 .grade-close-btn:hover,
 .grade-close-btn:active,
@@ -1781,82 +1808,83 @@ button:focus-visible {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isSortingSubCategories) return;
-                              const newSubCat = window.prompt(`编辑子分类 "${subCat}" 的新名称:`, subCat);
-                              if (newSubCat && newSubCat.trim() && newSubCat.trim() !== subCat) {
-                                const trimmedNew = newSubCat.trim();
-                                const currentList = subjectSubCategories[selectedSubject] || [];
-                                
-                                if (currentList.includes(trimmedNew)) {
-                                  alert('该子分类名称已存在！');
-                                  return;
-                                }
-                                
-                                setSubjectSubCategories(prev => {
-                                  const updatedList = prev[selectedSubject].map(s => 
-                                    s === subCat ? trimmedNew : s
-                                  );
-                                  return {
-                                    ...prev,
-                                    [selectedSubject]: updatedList
-                                  };
-                                });
-                                
-                                const updatedGrades = grades.map(grade => {
-                                  if (grade.subject === selectedSubject && grade.subCategory === subCat) {
-                                    return { ...grade, subCategory: trimmedNew };
-                                  }
-                                  return grade;
-                                });
-                                saveGrades(updatedGrades);
-                              }
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#FFC107',
-                              color: '#333',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: isSortingSubCategories ? 'not-allowed' : 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              opacity: isSortingSubCategories ? 0.5 : 1
-                            }}
-                          >
-                            编辑
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isSortingSubCategories) return;
-                              if (window.confirm(`确定要删除子分类 "${subCat}" 吗？\n\n删除后，该分类下的所有成绩记录也会被删除！`)) {
-                                setSubjectSubCategories(prev => ({
-                                  ...prev,
-                                  [selectedSubject]: prev[selectedSubject].filter(s => s !== subCat)
-                                }));
-                                
-                                const updatedGrades = grades.filter(g => 
-                                  !(g.subject === selectedSubject && g.subCategory === subCat)
-                                );
-                                saveGrades(updatedGrades);
-                              }
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#f44336',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: isSortingSubCategories ? 'not-allowed' : 'pointer',
-                              fontSize: '12px',
-                              opacity: isSortingSubCategories ? 0.5 : 1
-                            }}
-                          >
-                            删除
-                          </button>
+                        <button
+  className="subcat-icon-btn"
+  onClick={(e) => {
+    e.stopPropagation();
+    if (isSortingSubCategories) return;
+    const newSubCat = window.prompt(`编辑子分类 "${subCat}" 的新名称:`, subCat);
+    if (newSubCat && newSubCat.trim() && newSubCat.trim() !== subCat) {
+      const trimmedNew = newSubCat.trim();
+      const currentList = subjectSubCategories[selectedSubject] || [];
+      
+      if (currentList.includes(trimmedNew)) {
+        alert('该子分类名称已存在！');
+        return;
+      }
+      
+      setSubjectSubCategories(prev => {
+        const updatedList = prev[selectedSubject].map(s => 
+          s === subCat ? trimmedNew : s
+        );
+        return {
+          ...prev,
+          [selectedSubject]: updatedList
+        };
+      });
+      
+      const updatedGrades = grades.map(grade => {
+        if (grade.subject === selectedSubject && grade.subCategory === subCat) {
+          return { ...grade, subCategory: trimmedNew };
+        }
+        return grade;
+      });
+      saveGrades(updatedGrades);
+    }
+  }}
+  title="编辑"
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path 
+      d="M17 3L21 7L7 21H3L3 17L17 3Z" 
+      stroke="#999" 
+      strokeWidth="1.8" 
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <path 
+      d="M15 5L19 9" 
+      stroke="#999" 
+      strokeWidth="1.8" 
+      strokeLinecap="round"
+    />
+  </svg>
+</button>
+                         <button
+  className="subcat-icon-btn"
+  onClick={(e) => {
+    e.stopPropagation();
+    if (isSortingSubCategories) return;
+    if (window.confirm(`确定要删除子分类 "${subCat}" 吗？\n\n删除后，该分类下的所有成绩记录也会被删除！`)) {
+      setSubjectSubCategories(prev => ({
+        ...prev,
+        [selectedSubject]: prev[selectedSubject].filter(s => s !== subCat)
+      }));
+      
+      const updatedGrades = grades.filter(g => 
+        !(g.subject === selectedSubject && g.subCategory === subCat)
+      );
+      saveGrades(updatedGrades);
+    }
+  }}
+  title="删除"
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+    <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+  </svg>
+</button>
                         </div>
                       )}
                     </div>
@@ -10242,7 +10270,7 @@ top: "-3px",  // 往上移1px，负数越高
           <span style={{ color: '#999', fontSize: '10px' }}>
             ({weekdays[weekday]})
           </span>
-          {isToday && <span style={{ fontSize: '10px', color: '#1a73e8' }}>今日</span>}
+          {isToday && <span style={{ fontSize: '10px', color: '#1a73e8' }}>当日</span>}
         </div>
       );
     })}
@@ -11869,10 +11897,12 @@ const getSubjectColor = (subject) => {
       </div>
     ) : (
       <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-        {filteredEndTimeList.map((item, idx) => {
-          const [hour] = item.time.split(':').map(Number);
-          const isLate = hour >= 21;
-          return (
+        {filteredEndTimeList
+  .filter(item => item.time && item.time !== '0' && item.time !== '00:00')
+  .map((item, idx) => {
+    const [hour] = item.time.split(':').map(Number);
+    const isLate = hour >= 21;
+    return (
             <div
               key={item.date}
               style={{
@@ -11887,14 +11917,14 @@ const getSubjectColor = (subject) => {
               <span style={{ fontSize: '13px', color: '#333' }}>{item.date.slice(5)}</span>
               {/* 时间居中 */}
               <span style={{
-                fontSize: '13px',
-                fontWeight: 'bold',
-                color: isLate ? '#f44336' : '#4caf50',
-                textAlign: 'center',
-                flex: 1
-              }}>
-                {item.time}
-              </span>
+  fontSize: '13px',
+  fontWeight: 'normal',  // 或者直接删除这行
+  color: isLate ? '#f44336' : '#4caf50',
+  textAlign: 'center',
+  flex: 1
+}}>
+  {item.time}
+</span>
               {/* 勾/叉靠右 */}
               <div style={{ width: '24px', display: 'flex', justifyContent: 'center' }}>
                 {isLate ? (
@@ -11947,35 +11977,38 @@ const getSubjectColor = (subject) => {
                     marginBottom: '8px'
                   }}>
                     <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#61A2Da' }}>
-                      📅 {item.date.slice(5)}
+                       {item.date.slice(5)}
                     </span>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      {dailyRatings?.[item.date] && (
-                        <span style={{ fontSize: '14px' }}>
-                          {dailyRatings[item.date] === 1 && '😞'}
-                          {dailyRatings[item.date] === 2 && '😕'}
-                          {dailyRatings[item.date] === 3 && '😐'}
-                          {dailyRatings[item.date] === 4 && '😊'}
-                          {dailyRatings[item.date] === 5 && '🥳'}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`确定要删除 ${item.date} 的复盘记录吗？`)) {
-                            onDeleteReflection?.(item.date);
-                          }
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          color: '#999',
-                          padding: '0 4px'
-                        }}
-                      >
-                        🗑️
-                      </button>
+                      {dailyRatings?.[item.date] > 0 && (
+  <span style={{ fontSize: '14px' }}>
+    {dailyRatings[item.date] === 1 && '😞'}
+    {dailyRatings[item.date] === 2 && '😕'}
+    {dailyRatings[item.date] === 3 && '😐'}
+    {dailyRatings[item.date] === 4 && '😊'}
+    {dailyRatings[item.date] === 5 && '🥳'}
+  </span>
+)}
+                      <div
+  onClick={() => {
+    if (window.confirm(`确定要删除 ${item.date} 的复盘记录吗？`)) {
+      onDeleteReflection?.(item.date);
+    }
+  }}
+  style={{
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+    height: '24px',
+    color: '#999',
+    fontSize: '16px'
+  }}
+  title="删除"
+>
+  ×
+</div>
                     </div>
                   </div>
                   <div style={{
@@ -11991,28 +12024,7 @@ const getSubjectColor = (subject) => {
               ))}
             </div>
           )}
-          {filteredReviewList.length > 0 && (
-            <button
-              onClick={() => {
-                if (window.confirm(`确定要清空当前筛选范围内的所有复盘记录吗？`)) {
-                  onClearReflections?.(filteredReviewList.map(item => item.date));
-                }
-              }}
-              style={{
-                width: '100%',
-                marginTop: '15px',
-                padding: '10px',
-                backgroundColor: '#f44336',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-            >
-              清空当前列表
-            </button>
-          )}
+          
         </div>
       )}
     </div>
@@ -12708,21 +12720,22 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
           </div>
           
      {/* 进度条 */}
-<div style={{ marginBottom: '8px' }}>
-  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px' }}>
-    <span>进度</span>
-    <span>
-      {Math.round(((task.progress - (task.initial || 0)) / ((task.target || 100) - (task.initial || 0))) * 100)}% 
-      | {task.progress}/{task.target}
-    </span>
-  </div>
-  <div style={{ width: '100%', height: '6px', backgroundColor: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
-    <div style={{ 
-      width: `${((task.progress - (task.initial || 0)) / ((task.target || 100) - (task.initial || 0))) * 100}%`, 
-      height: '100%', 
-      backgroundColor: task.progress >= task.target ? '#4CAF50' : '#2196F3' 
-    }} />
-  </div>
+{/* 进度条 */}
+<div style={{
+  width: '100%',
+  height: '10px',
+  backgroundColor: '#f0f0f0',
+  borderRadius: '5px',
+  overflow: 'hidden',
+  marginBottom: '8px'
+}}>
+  <div style={{
+    width: `${progressPercent}%`,
+    height: '100%',
+    backgroundColor: getLevelColor(currentLevel),
+    borderRadius: '5px',
+    transition: 'width 0.3s ease'
+  }} />
 </div>
           
           {/* 进度数字 */}
@@ -13077,6 +13090,18 @@ const getCurrentStudyEndTime = useCallback(() => {
 
 // 设置当前日期的结束时间
 const setCurrentStudyEndTime = useCallback((timeStr) => {
+  // ✅ 如果 timeStr 无效，删除记录
+  if (!timeStr || timeStr.trim() === '') {
+    setStudyEndTimes(prev => {
+      const newTimes = { ...prev };
+      delete newTimes[selectedDate];
+      localStorage.setItem('daily_study_end_times', JSON.stringify(newTimes));
+      return newTimes;
+    });
+    return;
+  }
+  
+  // ✅ 有效时间才保存
   setStudyEndTimes(prev => {
     const newTimes = { ...prev, [selectedDate]: timeStr };
     localStorage.setItem('daily_study_end_times', JSON.stringify(newTimes));
@@ -14203,53 +14228,47 @@ const toggleDone = (task) => {
   const newDoneState = !task.done;
   const currentDate = selectedDate;
   
-  // 如果是跨日期任务
-  if (task.crossDateId) {
-    const crossDateId = task.crossDateId;
+// 如果是跨日期任务
+if (task.crossDateId) {
+  const crossDateId = task.crossDateId;
+  
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
     
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      
-      // 更新所有相关日期的任务
-      Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].map(t => {
-          if (t.crossDateId === crossDateId) {
-            // 如果是当前点击的日期，更新完成状态
-            if (date === currentDate) {
-              return { 
-                ...t, 
-                done: newDoneState,
-                actualCompletedDate: newDoneState ? currentDate : null
-              };
-            }
-            // 其他日期：如果当前日期完成了，它们也同步为完成状态（但实际完成日期不同）
-            // 如果当前日期取消了完成，其他日期不变（保持原有的完成状态）
-            if (newDoneState === true) {
-              // 当前日期完成时，其他日期也标记为完成（但保留各自的实际完成日期）
-              return { 
-                ...t, 
-                done: true,
-                // 不改变其他日期的 actualCompletedDate
-              };
-            } else {
-              // 当前日期取消完成时，其他日期保持不变
-              return t;
-            }
+    Object.keys(newTasksByDate).forEach(date => {
+      newTasksByDate[date] = newTasksByDate[date].map(t => {
+        if (t.crossDateId === crossDateId) {
+          // ✅ 完成或取消都同步所有日期
+          if (newDoneState === true) {
+            // 完成时：当前日期记录 actualCompletedDate，其他日期只标记完成
+            return { 
+              ...t, 
+              done: true,
+              actualCompletedDate: date === currentDate ? currentDate : t.actualCompletedDate
+            };
+          } else {
+            // ✅ 取消时：所有日期都取消完成，清除 actualCompletedDate
+            return { 
+              ...t, 
+              done: false,
+              actualCompletedDate: null
+            };
           }
-          return t;
-        });
+        }
+        return t;
       });
-      
-      // 触发撒花检查
-      setTimeout(() => {
-        const updatedTasks = newTasksByDate[selectedDate] || [];
-        checkConfettiWithTasks(updatedTasks);
-      }, 50);
-      
-      return newTasksByDate;
     });
-    return;
-  }
+    
+    // 触发撒花检查
+    setTimeout(() => {
+      const updatedTasks = newTasksByDate[selectedDate] || [];
+      checkConfettiWithTasks(updatedTasks);
+    }, 50);
+    
+    return newTasksByDate;
+  });
+  return;
+}
   
   // 如果是本周任务
   if (task.isWeekTask) {
@@ -16820,13 +16839,36 @@ const handleImportTasksWithDuration = (currentSelectedDate) => {
     
     i++;
   }
+  // 判断是否为每天任务的函数
+const isDailyTask = (taskText) => {
+  const dailyKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语'];
+  const excludePatterns = ['订正', '改正', '修改', '纠正', '更正', '改错'];
   
-  const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语', '口算'];
+  // 先检查排除词
+  for (const exclude of excludePatterns) {
+    if (taskText.includes(exclude)) {
+      return false;
+    }
+  }
   
+  // 口算特殊处理（只有纯口算才是每天任务）
+  if (taskText === '口算' || taskText === '口算题' || taskText === '口算练习') {
+    return true;
+  }
+  
+  // 检查每天任务关键词
+  for (const keyword of dailyKeywords) {
+    if (taskText.includes(keyword)) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+ 
   taskInfos.forEach((taskInfo, idx) => {
     const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
-    
-    const isDailyTask = dailyTaskKeywords.some(keyword => taskText.includes(keyword));
+    const isDailyTaskFlag = isDailyTask(taskText);
     const crossDateId = (!isDailyTask && taskDates.length > 1) 
       ? `cross_${Date.now()}_${idx}_${crossDateGroupIndex++}` 
       : null;
@@ -19012,37 +19054,41 @@ if (isInitialized && todayTasks.length === 0) {
     }}
   >
     <div style={{
-      flex: 1,
-      overflow: 'hidden',
-      position: 'relative',
-      height: '100%'
-    }}>
-      {reminderText ? (
-        <div
-          style={{
-            position: 'absolute',
-            whiteSpace: 'nowrap',
-            fontSize: '13px',
-            color: '#c62828',
-            fontWeight: '500',
-            lineHeight: '32px',
-            animation: 'rightToLeft 30s linear infinite'
-          }}
-        >
-          {reminderText}
-        </div>
-      ) : (
-        <div style={{
-          fontSize: '13px',
-          color: '#ef5350',
-          fontStyle: 'italic',
-          lineHeight: '32px',
-          textAlign: 'center'
-        }}>
-          点击添加每日提醒...
-        </div>
-      )}
+  flex: 1,
+  overflow: 'hidden',
+  position: 'relative',
+  height: '100%'
+}}>
+  {reminderText ? (
+    <div
+      style={{
+        position: 'absolute',
+        whiteSpace: 'nowrap',
+        fontSize: '13px',
+        color: '#c62828',
+        fontWeight: '500',
+        lineHeight: '32px',
+        animation: 'rightToLeft 30s linear infinite',
+        display: 'flex',
+        gap: '48px'  // 两段文字之间的间距
+      }}
+    >
+      <span>{reminderText}</span>
+       <span style={{ marginLeft: '80px' }}>{reminderText}</span>
+      <span style={{ marginLeft: '80px' }}>{reminderText}</span>
     </div>
+  ) : (
+    <div style={{
+      fontSize: '13px',
+      color: '#ef5350',
+      fontStyle: 'italic',
+      lineHeight: '32px',
+      textAlign: 'center'
+    }}>
+      点击添加每日提醒...
+    </div>
+  )}
+</div>
   </div>
 
 
@@ -19052,16 +19098,14 @@ if (isInitialized && todayTasks.length === 0) {
 
 {/* 跑马灯动画样式 */}
 <style>{`
-  @keyframes rightToLeft {
-    0% {
-      left: 100%;
-      transform: translateX(0);
-    }
-    100% {
-      left: 0%;
-      transform: translateX(-100%);
-    }
+ @keyframes rightToLeft {
+  0% {
+    transform: translateX(0);
   }
+  100% {
+    transform: translateX(-50%);
+  }
+}
   
 
   /* 🎉 撒花放大动画 */
@@ -19352,8 +19396,8 @@ if (isInitialized && todayTasks.length === 0) {
   }}
 >
   <option value="today">仅当天</option>
-  <option value="next3">未来3天（从选中日期开始）</option>
-  <option value="next4">未来4天（从选中日期开始）</option>
+  <option value="next3">未来3天</option>
+  <option value="next4">未来4天</option>
   <option value="custom">自定义</option>
 </select>
         
@@ -20337,16 +20381,31 @@ const getCategoryBorderColor = () => {
       studyEndHour={studyEndHour}
       studyEndMinute={studyEndMinute}
       onSave={(rating, reflection, endHour, endMinute) => {
-        setCurrentDailyRating(rating);
-        setCurrentDailyReflection(reflection);
-        if (endHour !== '' && endMinute !== '') {
-          setCurrentStudyEndTime(`${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`);
-        } else {
-          setCurrentStudyEndTime('');
-        }
-        saveDailyData(selectedDate);
-        setShowReflectionModal(false);
-      }}
+  setCurrentDailyRating(rating);
+  setCurrentDailyReflection(reflection);
+  
+  // ✅ 只有两个都有值且不是空字符串时才保存
+  const hasEndTime = endHour && endMinute && 
+                     endHour.toString().trim() !== '' && 
+                     endMinute.toString().trim() !== '';
+  
+  if (hasEndTime) {
+    const hour = String(parseInt(endHour)).padStart(2, '0');
+    const minute = String(parseInt(endMinute)).padStart(2, '0');
+    setCurrentStudyEndTime(`${hour}:${minute}`);
+  } else {
+    // ✅ 没填就删除该日期的结束时间记录
+    setStudyEndTimes(prev => {
+      const newTimes = { ...prev };
+      delete newTimes[selectedDate];
+      localStorage.setItem('daily_study_end_times', JSON.stringify(newTimes));
+      return newTimes;
+    });
+  }
+  
+  saveDailyData(selectedDate);
+  setShowReflectionModal(false);
+}}
       onClose={() => setShowReflectionModal(false)}
     />
   </div>
