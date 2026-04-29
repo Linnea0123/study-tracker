@@ -4513,11 +4513,16 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
 const generateRealTimeContent = useCallback(() => {
   const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
   
-  // 辅助函数：获取任务的完成状态（基于当天这个任务对象）
+  // ✅ 辅助函数：判断是否为常规任务
+  const isRegularTask = (task) => {
+    return task.isRegularTask === true;
+  };
+  
+  // ✅ 辅助函数：获取任务的完成状态
   const getTaskCompletedStatus = (task, currentDate) => {
     if (task.abandoned) return false;
     
-    // ✅ 跨日期任务：直接使用当天这个任务对象的 done 状态
+    // 跨日期任务：直接使用当天的 done 状态
     if (task.crossDateId) {
       return task.done === true;
     }
@@ -4526,36 +4531,28 @@ const generateRealTimeContent = useCallback(() => {
     return task.done === true;
   };
   
-  // 辅助函数：判断任务是否应该显示
+  // ✅ 辅助函数：判断任务是否应该显示
   const shouldShowTask = (task, currentDate) => {
     if (task.abandoned) return true;
     
-    // ✅ 跨日期任务：只有当天的任务对象 done === true 时才显示
+    // 跨日期任务：只有当天的任务对象 done === true 时才显示
     if (task.crossDateId) {
       return task.done === true;
     }
     
-    // 普通任务：都显示
     return true;
   };
   
-  // 筛选当前日期应该显示的任务
+  // ✅ 筛选当前日期应该显示的任务（排除所有常规任务）
   let filteredTasks = dayTasks.filter(task => {
-    if (task.isRegularTask) return false;
+    // 排除所有常规任务
+    if (isRegularTask(task)) return false;
     if (task.category === "本周任务") return false;
     if (!shouldShowTask(task, selectedDate)) return false;
     return true;
   });
   
-  // 常规任务：只显示未完成的
-  const regularTasks = dayTasks.filter(task => {
-    if (task.isRegularTask && !task.done && task.category !== "本周任务") {
-      return true;
-    }
-    return false;
-  });
-  
-  filteredTasks = [...filteredTasks, ...regularTasks];
+  // ✅ 不再添加常规任务
   
   // 按分类和子分类组织任务
   const tasksByCategory = {};
