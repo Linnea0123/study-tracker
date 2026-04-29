@@ -8816,23 +8816,17 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
   paddingBottom: 15,
   borderBottom: "2px solid #f0f0f0"
 }}>
-  <h3 style={{
-    margin: 0,
-    color: "#61A2Da",
-    fontSize: 18,
-    fontWeight: "600"
-  }}>
-    编辑
-  </h3>
+  
 
   {/* ✅ 按钮容器 - 固定间距，靠右，不自动拉伸 */}
   <div style={{ 
-    display: "flex", 
-    gap: "4px",           // ✅ 固定 4px 间距，不会自动变大
-    alignItems: "center",
-    flexShrink: 0,        // 防止收缩
-    flexWrap: "nowrap"    // 强制不换行
-  }}>
+  display: "flex", 
+  gap: "4px",
+  alignItems: "center",
+  flexShrink: 0,
+  flexWrap: "nowrap",
+  marginLeft: "auto"  // ← 添加这行，把自己推到右边
+}}>
   
 {/* 在 TaskEditModal 的标题栏按钮区域，放弃按钮旁边添加 */}
 {task.abandoned && (
@@ -10070,26 +10064,26 @@ const toggleDateCompletion = (date, isChecked) => {
 
 
   {/* 任务文字 + 📅 图标 */}
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      onOpenEditModal(task);
-    }}
-    style={{
-      wordBreak: "break-word",
-  cursor: "pointer",
-  color: task.abandoned ? "#999" : "#000",  // ✅ 放弃的文字变灰色
-  fontWeight: task.pinned ? "bold" : "normal",
-  fontSize: "13px",
-  lineHeight: "1.5",
-  flex: 1,
-  minWidth: "50px",
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: "4px"
-    }}
-  >
+ <div
+  onClick={(e) => {
+    e.stopPropagation();
+    onOpenEditModal(task);
+  }}
+  style={{
+    wordBreak: "break-word",
+    cursor: "pointer",
+    color: task.abandoned ? "#4caf50" : (task.done ? "#999" : "#000"),  // 放弃的变绿色，完成的变灰色
+    fontWeight: task.pinned ? "bold" : "normal",
+    fontSize: "13px",
+    lineHeight: "1.5",
+    flex: 1,
+    minWidth: "50px",
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "4px"
+  }}
+>
     <span>{task.text}</span>
 
     {/* ✅ 图片标记 - 紧跟在任务文字后面 */}
