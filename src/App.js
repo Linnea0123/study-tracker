@@ -15601,7 +15601,14 @@ useEffect(() => {
  
 
 
-
+// 添加这个 useEffect 在下面
+useEffect(() => {
+  // 当当前选中日期变化时，更新批量导入的默认日期范围
+  if (selectedDate) {
+    setBulkDateRangeStart(selectedDate);
+    setBulkDateRangeEnd(selectedDate);
+  }
+}, [selectedDate]);
 
 
 
@@ -16570,8 +16577,26 @@ const parseBulkTextToPreview = useCallback(() => {
 // 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
 // 修复批量导入中的图片识别功能 - 图片标记作用于上面的任务（标记行在下，任务在上）
 
-const handleImportTasksWithDuration = () => {
+// 修改函数定义，接收 currentSelectedDate 参数
+const handleImportTasksWithDuration = (currentSelectedDate) => {
   console.log('🎯 === 开始批量导入 ===');
+  
+  // ✅ 最简单的方法：直接解析 YYYY-MM-DD 格式的字符串
+  let baseYear, baseMonth, baseDay;
+  
+  if (currentSelectedDate) {
+    const parts = currentSelectedDate.split('-');
+    baseYear = parseInt(parts[0]);
+    baseMonth = parseInt(parts[1]) - 1; // 月份从0开始
+    baseDay = parseInt(parts[2]);
+  } else {
+    const parts = selectedDate.split('-');
+    baseYear = parseInt(parts[0]);
+    baseMonth = parseInt(parts[1]) - 1;
+    baseDay = parseInt(parts[2]);
+  }
+  
+  console.log('基准日期年月日:', baseYear, baseMonth + 1, baseDay);
   
   if (!bulkText.trim()) {
     alert('请输入要导入的任务内容');
@@ -16585,20 +16610,47 @@ const handleImportTasksWithDuration = () => {
     return;
   }
 
+  // 定义解析日期范围的函数
+  const parseDateRangeFromText = (text) => {
+    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
+    const match = text.match(rangePattern);
+    
+    if (match) {
+      const startMonth = parseInt(match[1]);
+      const startDay = parseInt(match[2]);
+      const endMonth = parseInt(match[3]);
+      const endDay = parseInt(match[4]);
+      const currentYear = new Date().getFullYear();
+      
+      const startDate = new Date(currentYear, startMonth - 1, startDay);
+      const endDate = new Date(currentYear, endMonth - 1, endDay);
+      
+      const dates = [];
+      const current = new Date(startDate);
+      while (current <= endDate) {
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        const day = String(current.getDate()).padStart(2, '0');
+        dates.push(`${year}-${month}-${day}`);
+        current.setDate(current.getDate() + 1);
+      }
+      return dates;
+    }
+    
+    return null;
+  };
+
   // 第一行是子分类标识
   const firstLine = lines[0];
   
-  // 固定类别为"校内"
   const category = "校内";
   let subCategory = "";
   
-  // 获取校内子分类列表
   const schoolCategory = categories.find(c => c.name === '校内');
   const schoolSubCategories = schoolCategory?.subCategories || [];
   const defaultSubCategories = ['数学', '语文', '英语', '运动'];
   const allSubCategories = [...new Set([...schoolSubCategories, ...defaultSubCategories])];
   
-  // 匹配子分类
   let matchedSubCategory = null;
   for (const subCat of allSubCategories) {
     if (firstLine.includes(subCat)) {
@@ -16629,34 +16681,46 @@ const handleImportTasksWithDuration = () => {
   subCategory = matchedSubCategory || '未分类';
   
   const allTasksByDate = {};
-  const currentYear = new Date().getFullYear();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let crossDateGroupIndex = 0;
   
+  // ✅ 获取默认日期的函数 - 直接使用年月日，不用 Date 对象
   const getDefaultDates = () => {
     const dates = [];
-    const todayDate = new Date();
+    
+    // 使用基准年月日
+    let currentYear = baseYear;
+    let currentMonth = baseMonth;
+    let currentDay = baseDay;
+    
+    console.log('原始基准日期:', `${baseYear}-${baseMonth + 1}-${baseDay}`);
+    
+    const addDays = (days) => {
+      const date = new Date(baseYear, baseMonth, baseDay + days);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
     
     switch (bulkDateRange) {
       case 'today': {
-        const dateStr = todayDate.toISOString().split('T')[0];
+        const dateStr = addDays(0);
         dates.push(dateStr);
+        console.log('today 生成:', dateStr);
         break;
       }
       case 'next3': {
         for (let i = 0; i < 3; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
-          dates.push(date.toISOString().split('T')[0]);
+          const dateStr = addDays(i);
+          dates.push(dateStr);
+          console.log(`next3 第${i + 1}天:`, dateStr);
         }
         break;
       }
       case 'next4': {
         for (let i = 0; i < 4; i++) {
-          const date = new Date(todayDate);
-          date.setDate(todayDate.getDate() + i);
-          dates.push(date.toISOString().split('T')[0]);
+          const dateStr = addDays(i);
+          dates.push(dateStr);
+          console.log(`next4 第${i + 1}天:`, dateStr);
         }
         break;
       }
@@ -16666,92 +16730,48 @@ const handleImportTasksWithDuration = () => {
           const end = new Date(bulkDateRangeEnd);
           const current = new Date(start);
           while (current <= end) {
-            dates.push(current.toISOString().split('T')[0]);
+            const year = current.getFullYear();
+            const month = String(current.getMonth() + 1).padStart(2, '0');
+            const day = String(current.getDate()).padStart(2, '0');
+            dates.push(`${year}-${month}-${day}`);
             current.setDate(current.getDate() + 1);
           }
         } else {
-          dates.push(todayDate.toISOString().split('T')[0]);
+          dates.push(addDays(0));
         }
         break;
       }
       default:
-        dates.push(todayDate.toISOString().split('T')[0]);
+        dates.push(addDays(0));
     }
     return dates;
   };
   
-  const defaultDates = getDefaultDates();
-  
-  const parseDateRangeFromText = (text) => {
-    const rangePattern = /@(\d{1,2})[./月](\d{1,2})[日]?\s*-\s*(\d{1,2})[./月](\d{1,2})[日]?/;
-    const match = text.match(rangePattern);
-    
-    if (match) {
-      const startMonth = parseInt(match[1]);
-      const startDay = parseInt(match[2]);
-      const endMonth = parseInt(match[3]);
-      const endDay = parseInt(match[4]);
-      
-      const startDate = new Date(currentYear, startMonth - 1, startDay);
-      const endDate = new Date(currentYear, endMonth - 1, endDay);
-      
-      const dates = [];
-      const current = new Date(startDate);
-      while (current <= endDate) {
-        dates.push(current.toISOString().split('T')[0]);
-        current.setDate(current.getDate() + 1);
-      }
-      return dates;
-    }
-    
-    if (text.includes('@周末')) {
-      const dayOfWeek = today.getDay();
-      const daysToFriday = (5 - dayOfWeek + 7) % 7;
-      const friday = new Date(today);
-      friday.setDate(today.getDate() + daysToFriday);
-      
-      const dates = [];
-      for (let i = 0; i < 3; i++) {
-        const date = new Date(friday);
-        date.setDate(friday.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
-      }
-      return dates;
-    }
-    
-    return null;
-  };
-  
-  // ========== 收集 taskInfos ==========
+  // 收集 taskInfos
   const taskInfos = [];
+  let crossDateGroupIndex = 0;
   
   let i = 1;
   while (i < lines.length) {
     let line = lines[i];
     
-    // 检查是否是图片标记行
     if (line === '[图片]' || line === '【图片】') {
       if (taskInfos.length > 0) {
-        const lastTask = taskInfos[taskInfos.length - 1];
-        lastTask.hasImage = true;
-        console.log(`📷 图片标记应用于上一个任务: "${lastTask.text}"`);
-      } else {
-        console.log('⚠️ 图片标记无效：没有上一个任务');
+        taskInfos[taskInfos.length - 1].hasImage = true;
       }
       i++;
       continue;
     }
     
-    // 处理任务行
     let taskLine = line;
     let taskDates = parseDateRangeFromText(taskLine);
     let cleanTaskLine = taskLine;
     
     if (taskDates) {
-      const rangePattern = /@\d{1,2}[./月]\d{1,2}[日]?\s*-\s*\d{1,2}[./月]\d{1,2}[日]?|@周末/g;
+      const rangePattern = /@\d{1,2}[./月]\d{1,2}[日]?\s*-\s*\d{1,2}[./月]\d{1,2}[日]?/g;
       cleanTaskLine = taskLine.replace(rangePattern, '').trim();
     } else {
-      taskDates = [...defaultDates];
+      taskDates = getDefaultDates();
     }
     
     let taskText = cleanTaskLine;
@@ -16771,14 +16791,13 @@ const handleImportTasksWithDuration = () => {
         dates: taskDates,
         hasImage: false
       });
-      console.log(`📝 添加任务: "${taskText}"`);
+      console.log(`📝 任务: "${taskText}", 日期: ${taskDates.join(', ')}`);
     }
     
     i++;
   }
   
-  // ========== ✅ taskInfos.forEach 放在这里！ ==========
-  const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字','阅读', '听英语', '口算'];
+  const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语', '口算'];
   
   taskInfos.forEach((taskInfo, idx) => {
     const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
@@ -16817,11 +16836,8 @@ const handleImportTasksWithDuration = () => {
           unit: "%"
         },
         createdAt: new Date().toISOString(),
-        // ✅ 假期模式标记
         isHoliday: isHolidayMode
       };
-      
-      
       
       if (crossDateId && taskDates.length > 1) {
         newTask.crossDateId = crossDateId;
@@ -16837,10 +16853,7 @@ const handleImportTasksWithDuration = () => {
     });
   });
   
-
-  
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
-  const tasksWithImage = Object.values(allTasksByDate).flat().filter(t => t.hasImage).length;
   
   if (totalTasksCount === 0) {
     alert('没有创建任何任务');
@@ -16865,8 +16878,10 @@ const handleImportTasksWithDuration = () => {
   setBulkDateRangeEnd(new Date().toISOString().split('T')[0]);
   setShowBulkImportModal(false);
   
-  alert(`✅ 导入成功！\n\n📌 导入位置：${category} / ${subCategory}\n📝 任务数量：${taskInfos.length} 个\n📅 任务实例：${totalTasksCount} 个\n🖼️ 带图片标记的任务：${tasksWithImage} 个`);
+  alert(`✅ 导入成功！\n\n📌 位置：${category} / ${subCategory}\n📝 任务：${taskInfos.length} 个\n📅 实例：${totalTasksCount} 个`);
 };
+
+
 
 
 const handleImportTasks = () => {
@@ -18805,10 +18820,10 @@ if (isInitialized && todayTasks.length === 0) {
   {hasHolidayTask && (
     <span style={{
       position: "absolute",
-      top: "50%",
+      top: "55%",
       transform: "translateY(-50%)",
-      left: "-20px",
-      fontSize: "9px",
+      left: "25px",
+      fontSize: "8px",
       fontWeight: "bold",
       color: "#f44336",
       padding: "0px 2px",
@@ -19250,31 +19265,31 @@ if (isInitialized && todayTasks.length === 0) {
       {/* 日期范围选择 */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: '#666', marginBottom: 5 }}>日期范围：</div>
-        <select
-          value={bulkDateRange}
-          onChange={(e) => {
-            setBulkDateRange(e.target.value);
-            if (e.target.value === 'custom') {
-              const today = new Date();
-              const todayStr = today.toISOString().split('T')[0];
-              setBulkDateRangeStart(todayStr);
-              setBulkDateRangeEnd(todayStr);
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            fontSize: '13px',
-            backgroundColor: '#fff'
-          }}
-        >
-          <option value="today">仅今天（默认）</option>
-          <option value="next3">未来3天（含今天）</option>
-          <option value="next4">未来4天（含今天）</option>
-          <option value="custom">自定义</option>
-        </select>
+       
+<select
+  value={bulkDateRange}
+  onChange={(e) => {
+    setBulkDateRange(e.target.value);
+    if (e.target.value === 'custom') {
+      // ✅ 使用 selectedDate 作为默认日期
+      setBulkDateRangeStart(selectedDate);
+      setBulkDateRangeEnd(selectedDate);
+    }
+  }}
+  style={{
+    width: '100%',
+    padding: '8px',
+    borderRadius: 6,
+    border: '1px solid #ccc',
+    fontSize: '13px',
+    backgroundColor: '#fff'
+  }}
+>
+  <option value="today">仅当天</option>
+  <option value="next3">未来3天（从选中日期开始）</option>
+  <option value="next4">未来4天（从选中日期开始）</option>
+  <option value="custom">自定义</option>
+</select>
         
         {bulkDateRange === 'custom' && (
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -19307,7 +19322,7 @@ if (isInitialized && todayTasks.length === 0) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, color: '#333' }}>🏖️ 假期模式</span>
-          <span style={{ fontSize: 11, color: '#999' }}>(导入的任务日期会标记红色圈)</span>
+          
         </div>
         
         {/* 滑动开关 - 无悬浮效果 */}
@@ -19374,7 +19389,8 @@ if (isInitialized && todayTasks.length === 0) {
         </div>
         <div
           onClick={() => {
-            handleImportTasksWithDuration();
+            
+            handleImportTasksWithDuration(selectedDate);
           }}
           style={{
             flex: 1,
@@ -19770,7 +19786,7 @@ const getCategoryBorderColor = () => {
       })();
     })(),
     // ✅ 永远保持正常颜色，不判断 isComplete
-    color: isComplete ? "#aaa" : (c.name === "校内" ? "#fff" : "#333"),
+    color: isComplete ? "#333" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 12px",
     fontWeight: "bold",
