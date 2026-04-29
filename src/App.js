@@ -5,7 +5,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */  // 添加这一行
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 
 
@@ -3582,7 +3581,12 @@ const autoBackup = async () => {
       }
     });
     
-    
+     // 从 localStorage 读取 studyEndTimes
+    let studyEndTimes = {};
+    const endTimesStr = localStorage.getItem('daily_study_end_times');
+    if (endTimesStr) {
+      studyEndTimes = JSON.parse(endTimesStr);
+    }
     const backupData = {
       tasks: currentTasks,
       templates: currentTemplates,
@@ -5420,7 +5424,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
     newSubTask: ''
   });
   const formTopRef = useRef(null);
-  const [showMoreConfig, setShowMoreConfig] = useState(false);
+  
   const [editingTemplateIndex, setEditingTemplateIndex] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -5652,7 +5656,9 @@ const handleEditTemplate = (index, template) => {
       padding: 10,
       overflow: 'hidden'
     }}>
-    
+     {/* ✅ 在这里添加 style 标签 */}
+   {/* ✅ 添加这个 style 标签，覆盖所有按钮样式 */}
+ 
 <div
   ref={formTopRef}   // ← ref 放在 style 之前
   style={{
@@ -5814,9 +5820,6 @@ const handleEditTemplate = (index, template) => {
             </div>
           )}
 
-          {/* 任务内容 */}
-      {/* 任务内容 */}
-{/* 任务内容 */}
 
 {/* 任务内容 */}
 <div>
@@ -5990,6 +5993,7 @@ const handleEditTemplate = (index, template) => {
 
           {/* 📊 进度跟踪 */}
          {/* 📊 进度跟踪 */}
+{/* 📊 进度跟踪 */}
 <div>
   <label
     style={{
@@ -6006,11 +6010,12 @@ const handleEditTemplate = (index, template) => {
   <div
     style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',  // 改为 3 列
+      gridTemplateColumns: 'repeat(3, 1fr)',
       gap: 12,
       alignItems: 'end',
     }}
   >
+    {/* 初始值 */}
     <div>
       <div
         style={{
@@ -6024,13 +6029,13 @@ const handleEditTemplate = (index, template) => {
       </div>
       <input
         type="number"
-        value={editData.progress?.initial || ''}
+        value={formData.progress?.initial || ''}
         placeholder="0"
         onChange={(e) =>
-          setEditData({
-            ...editData,
+          setFormData({
+            ...formData,
             progress: {
-              ...editData.progress,
+              ...formData.progress,
               initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
             },
           })
@@ -6049,6 +6054,7 @@ const handleEditTemplate = (index, template) => {
       />
     </div>
 
+    {/* 当前值 */}
     <div>
       <div
         style={{
@@ -6062,12 +6068,12 @@ const handleEditTemplate = (index, template) => {
       </div>
       <input
         type="number"
-        value={editData.progress?.current || ''}
+        value={formData.progress?.current || ''}
         onChange={(e) =>
-          setEditData({
-            ...editData,
+          setFormData({
+            ...formData,
             progress: {
-              ...editData.progress,
+              ...formData.progress,
               current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
             },
           })
@@ -6086,6 +6092,7 @@ const handleEditTemplate = (index, template) => {
       />
     </div>
 
+    {/* 目标值 */}
     <div>
       <div
         style={{
@@ -6099,12 +6106,12 @@ const handleEditTemplate = (index, template) => {
       </div>
       <input
         type="number"
-        value={editData.progress?.target || ''}
+        value={formData.progress?.target || ''}
         onChange={(e) =>
-          setEditData({
-            ...editData,
+          setFormData({
+            ...formData,
             progress: {
-              ...editData.progress,
+              ...formData.progress,
               target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
             },
           })
@@ -6125,607 +6132,293 @@ const handleEditTemplate = (index, template) => {
   </div>
 </div>
 
-          {/* 更多配置按钮 */}
-       <div
-  onClick={() => setShowMoreConfig(!showMoreConfig)}
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: '10px',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    cursor: 'pointer',
-    marginTop: 8,
-    userSelect: 'none'
-  }}
->
-  {showMoreConfig ? (
-    // ▼ 向下箭头
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6 9L12 15L18 9" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  ) : (
-    // ▶ 向右箭头
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M9 6L15 12L9 18" stroke="#333" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  )}
-  <span style={{ fontSize: 14, color: '#333' }}>更多设置</span>
-</div>
 
-          {/* 更多配置内容 */}
-          {showMoreConfig && (
+
             <div>
               {/* 标签编辑 */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                marginBottom: 12,
-              }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', width: '100%' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: 13 }}>
-                      添加标签
-                    </label>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        placeholder="标签名称"
-                        value={formData.newTagName}
-                        onChange={(e) => setFormData({ ...formData, newTagName: e.target.value })}
-                        style={{
-                          flex: 1,
-                          height: 32,
-                          padding: '0 8px',
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          fontSize: 13,
-                          backgroundColor: '#fff',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                      <input
-                        type="color"
-                        value={formData.newTagColor}
-                        onChange={(e) => setFormData({ ...formData, newTagColor: e.target.value })}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          backgroundColor: '#fff',
-                          boxSizing: 'border-box',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (formData.newTagName?.trim()) {
-                            const newTag = {
-                              name: formData.newTagName.trim(),
-                              color: formData.newTagColor,
-                              textColor: '#fff',
-                            };
-                            setFormData({
-                              ...formData,
-                              tags: [...formData.tags, newTag],
-                              newTagName: '',
-                              newTagColor: '#e0e0e0',
-                            });
-                          }
-                        }}
-                        style={{
-                          height: 32,
-                          width: 32,
-                          backgroundColor: '#f9f9f9',
-                          color: '#333',
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          fontSize: 16,
-                          fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxSizing: 'border-box',
-                          flexShrink: 0,
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+{/* 标签 - 简洁版 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    标签
+  </label>
+  
+  <div style={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    alignItems: 'center'
+  }}>
+    {/* 预设标签 */}
+    {[
+      { name: '重要', color: '#ff4444' },
+      { name: '紧急', color: '#ff9800' },
+      { name: '复习', color: '#4caf50' },
+      { name: '预习', color: '#2196f3' },
+      { name: '考试', color: '#f44336' }
+    ].map(tag => {
+      const isSelected = formData.tags?.some(t => t.name === tag.name);
+      return (
+        <span
+          key={tag.name}
+          onClick={() => {
+            if (isSelected) {
+              const newTags = formData.tags.filter(t => t.name !== tag.name);
+              setFormData({ ...formData, tags: newTags });
+            } else {
+              setFormData({
+                ...formData,
+                tags: [...(formData.tags || []), { name: tag.name, color: tag.color, textColor: '#fff' }]
+              });
+            }
+          }}
+          style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            backgroundColor: isSelected ? tag.color : '#f0f0f0',
+            color: isSelected ? '#fff' : '#999',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            transition: 'none',
+            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`,
+            minWidth: '42px',
+            textAlign: 'center'
+          }}
+        >
+          {tag.name}
+        </span>
+      );
+    })}
+    
+    {/* 自定义标签列表 */}
+    {formData.tags?.filter(tag => !['重要', '紧急', '复习', '预习', '考试', '背诵'].includes(tag.name)).map((tag, index) => (
+      <span
+        key={index}
+        style={{
+          fontSize: '12px',
+          padding: '4px 10px',
+          backgroundColor: tag.color || '#61A2Da',
+          color: '#fff',
+          borderRadius: '16px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          cursor: 'pointer',
+          border: `1px solid ${tag.color || '#61A2Da'}`,
+          minWidth: '42px'
+        }}
+        onClick={() => {
+          const newTags = formData.tags.filter((_, i) => i !== index);
+          setFormData({ ...formData, tags: newTags });
+        }}
+      >
+        {tag.name}
+        <span style={{ fontSize: '12px', opacity: 0.7 }}>×</span>
+      </span>
+    ))}
+    
+    {/* 添加自定义标签的小加号按钮 */}
+  {/* 添加自定义标签的小加号按钮 - 高度对齐 */}
+<span
+  onClick={() => {
+    const modalDiv = document.createElement('div');
+    modalDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      width: 280px;
+      text-align: center;
+    `;
+    
+    contentDiv.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
+      <input id="new-tag-name" type="text" placeholder="标签名称" style="
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+      ">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <span style="font-size: 13px; color: #666;">标签颜色：</span>
+        <input id="new-tag-color" type="color" value="#61A2Da" style="
+          width: 40px;
+          height: 40px;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          cursor: pointer;
+        ">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button id="cancel-btn" style="
+          flex: 1;
+          padding: 10px;
+          background: #f0f0f0;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+        ">取消</button>
+        <button id="confirm-btn" style="
+          flex: 1;
+          padding: 10px;
+          background: #61A2Da;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+        ">确认</button>
+      </div>
+    `;
+    
+    modalDiv.appendChild(contentDiv);
+    document.body.appendChild(modalDiv);
+    
+    const nameInput = contentDiv.querySelector('#new-tag-name');
+    const colorInput = contentDiv.querySelector('#new-tag-color');
+    
+    const confirmBtn = contentDiv.querySelector('#confirm-btn');
+    confirmBtn.onclick = () => {
+      const tagName = nameInput.value.trim();
+      if (tagName) {
+        if (!formData.tags?.some(t => t.name === tagName)) {
+          setFormData({
+            ...formData,
+            tags: [...(formData.tags || []), { 
+              name: tagName, 
+              color: colorInput.value,
+              textColor: '#fff'
+            }]
+          });
+        } else {
+          alert('标签已存在');
+        }
+      }
+      document.body.removeChild(modalDiv);
+    };
+    
+    const cancelBtn = contentDiv.querySelector('#cancel-btn');
+    cancelBtn.onclick = () => {
+      document.body.removeChild(modalDiv);
+    };
+    
+    modalDiv.onclick = (e) => {
+      if (e.target === modalDiv) {
+        document.body.removeChild(modalDiv);
+      }
+    };
+    
+    setTimeout(() => nameInput.focus(), 50);
+  }}
+  style={{
+    height: '28px',           // 改成 28px，与标签高度一致
+    padding: '0 10px',       // 改为水平内边距，让加号按钮变成胶囊形状
+    borderRadius: '16px',    // 改成 16px，与标签圆角一致
+    
+    color: '#999',
+   
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    transition: 'none',
+    lineHeight: 1
+  }}
+  title="添加自定义标签"
+>
+  +
+</span>
+  </div>
+</div>
+         
 
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: 13 }}>
-                      当前标签
-                    </label>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 4,
-                      minHeight: 32,
-                      padding: '4px 8px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      backgroundColor: '#fafafa',
-                      alignItems: 'center',
-                      boxSizing: 'border-box',
-                    }}>
-                      {formData.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          style={{
-                            fontSize: 11,
-                            padding: '3px 6px',
-                            backgroundColor: tag.color,
-                            color: tag.textColor || '#fff',
-                            borderRadius: 10,
-                            whiteSpace: 'nowrap',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                          }}
-                        >
-                          {tag.name}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newTags = [...formData.tags];
-                              newTags.splice(index, 1);
-                              setFormData({ ...formData, tags: newTags });
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontSize: 11,
-                              padding: 0,
-                              width: 12,
-                              height: 12,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'inherit',
-                              opacity: 0.8,
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      {formData.tags.length === 0 && (
-                        <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>暂无标签</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+{/* 提醒时间 */}
+<div style={{ marginTop: 16 }}>
+  <label style={{
+    display: 'block',
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: 600,
+    color: '#333',
+    fontSize: 14
+  }}>
+    🔔 提醒时间
+  </label>
+  <div style={{
+    display: 'flex',
+    gap: 4,
+    
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    width: '100%'
+  }}>
+    {/* 改成 formData */}
+    <input type="number" min="2024" max="2030" placeholder="年" value={formData.reminderYear || ''} onChange={(e) => setFormData({ ...formData, reminderYear: e.target.value })} style={{ flex: 1.2, minWidth: '50px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+    <span style={{ color: '#666' }}>/</span>
+    <input type="number" min="1" max="12" placeholder="月" value={formData.reminderMonth || ''} onChange={(e) => setFormData({ ...formData, reminderMonth: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+    <span style={{ color: '#666' }}>/</span>
+    <input type="number" min="1" max="31" placeholder="日" value={formData.reminderDay || ''} onChange={(e) => setFormData({ ...formData, reminderDay: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+    <input type="number" min="0" max="23" placeholder="时" value={formData.reminderHour || ''} onChange={(e) => setFormData({ ...formData, reminderHour: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+    <span style={{ color: '#666' }}>:</span>
+    <input type="number" min="0" max="59" placeholder="分" value={formData.reminderMinute || ''} onChange={(e) => setFormData({ ...formData, reminderMinute: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+  </div>
+</div>
 
-              {/* 常用标签 */}
-              <div style={{ marginBottom: 15 }}>
-                <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>常用标签:</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {commonTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        const isAlreadyAdded = formData.tags.some(t => t.name === tag.name);
-                        if (!isAlreadyAdded) {
-                          setFormData({ ...formData, tags: [...formData.tags, tag] });
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: tag.color,
-                        color: tag.textColor,
-                        border: 'none',
-                        borderRadius: 16,
-                        cursor: 'pointer',
-                        fontSize: 11,
-                        fontWeight: '500'
-                      }}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 重复设置 */}
-              <div style={{ marginBottom: 15 }}>
-                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
-                  🔄 重复设置
-                </label>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: formData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
-                        color: formData.repeatFrequency === 'daily' ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setFormData({ ...formData, repeatFrequency: 'daily' })}
-                    >
-                      每天
-                    </button>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: formData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
-                        color: formData.repeatFrequency === 'weekly' ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setFormData({ ...formData, repeatFrequency: 'weekly' })}
-                    >
-                      每周
-                    </button>
-                    <button
-                      type="button"
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        background: !formData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
-                        color: !formData.repeatFrequency ? '#fff' : '#000',
-                        border: 'none',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setFormData({ ...formData, repeatFrequency: '' })}
-                    >
-                      不重复
-                    </button>
-                  </div>
-                </div>
-
-                {formData.repeatFrequency === 'weekly' && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'nowrap',
-                      gap: 4,
-                      justifyContent: 'space-between',
-                    }}>
-                      {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-                        <button
-                          key={day}
-                          type="button"
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            background: formData.repeatDays[index] ? '#1a73e8' : '#f0f0f0',
-                            color: formData.repeatDays[index] ? '#fff' : '#000',
-                            border: formData.repeatDays[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            flexShrink: 0
-                          }}
-                          onClick={() => {
-                            const newRepeatDays = [...formData.repeatDays];
-                            newRepeatDays[index] = !newRepeatDays[index];
-                            setFormData({ ...formData, repeatDays: newRepeatDays });
-                          }}
-                        >
-                          {day}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {formData.repeatFrequency && (
-                  <div style={{
-                    fontSize: 11,
-                    color: '#666',
-                    textAlign: 'center',
-                    padding: '6px 8px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 4
-                  }}>
-                    {formData.repeatFrequency === 'daily' 
-                      ? '任务将在未来7天重复创建' 
-                      : formData.repeatFrequency === 'weekly' && formData.repeatDays.some(day => day)
-                        ? `已选择：${formData.repeatDays.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
-                        : '请选择重复的星期'
-                    }
-                  </div>
-                )}
-              </div>
-
-              {/* 计划时间 */}
-              <div>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
-                  ⏰ 计划时间
-                </label>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      placeholder="时"
-                      value={formData.startHour}
-                      onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    <span style={{ color: '#666' }}>:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="分"
-                      value={formData.startMinute}
-                      onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                  <span style={{ color: '#666', fontSize: 12 }}>至</span>
-                  <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      placeholder="时"
-                      value={formData.endHour}
-                      onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    <span style={{ color: '#666' }}>:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="分"
-                      value={formData.endMinute}
-                      onChange={(e) => setFormData({ ...formData, endMinute: e.target.value })}
-                      style={{
-                        width: '100%',
-                        height: 36,
-                        padding: '0 4px',
-                        border: '1px solid #ccc',
-                        borderRadius: 6,
-                        fontSize: 14,
-                        textAlign: 'center',
-                        backgroundColor: '#fff',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        startHour: '',
-                        startMinute: '',
-                        endHour: '',
-                        endMinute: '',
-                        scheduledTime: ''
-                      });
-                    }}
-                    style={{
-                      height: 36,
-                      padding: '0 12px',
-                      backgroundColor: '#f0f0f0',
-                      color: '#666',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
-                    }}
-                  >
-                    取消
-                  </button>
-                </div>
-                {formData.startHour && formData.startMinute && formData.endHour && formData.endMinute && (
-                  <div style={{
-                    fontSize: 12,
-                    color: '#28a745',
-                    textAlign: 'center',
-                    marginTop: 6,
-                    padding: 4,
-                    backgroundColor: '#e8f5e8',
-                    borderRadius: 4
-                  }}>
-                    计划时间: {formData.startHour}:{formData.startMinute} - {formData.endHour}:{formData.endMinute}
-                  </div>
-                )}
-              </div>
-
-              {/* 提醒时间 */}
-              <div>
-                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
-                  🔔 提醒时间
-                </label>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', width: '100%' }}>
-                  <input
-                    type="number"
-                    min="2024"
-                    max="2030"
-                    placeholder="年"
-                    value={formData.reminderYear}
-                    onChange={(e) => setFormData({ ...formData, reminderYear: e.target.value })}
-                    style={{ flex: 1.2, minWidth: '60px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    placeholder="月"
-                    value={formData.reminderMonth}
-                    onChange={(e) => setFormData({ ...formData, reminderMonth: e.target.value })}
-                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="日"
-                    value={formData.reminderDay}
-                    onChange={(e) => setFormData({ ...formData, reminderDay: e.target.value })}
-                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    placeholder="时"
-                    value={formData.reminderHour}
-                    onChange={(e) => setFormData({ ...formData, reminderHour: e.target.value })}
-                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>:</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    placeholder="分"
-                    value={formData.reminderMinute}
-                    onChange={(e) => setFormData({ ...formData, reminderMinute: e.target.value })}
-                    style={{ flex: 1, minWidth: '45px', height: 36, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, textAlign: 'center', backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        reminderYear: '',
-                        reminderMonth: '',
-                        reminderDay: '',
-                        reminderHour: '',
-                        reminderMinute: ''
-                      });
-                    }}
-                    style={{
-                      height: 36,
-                      padding: '0 12px',
-                      backgroundColor: '#f0f0f0',
-                      color: '#666',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
-                    }}
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-
-              {/* 子任务 */}
-              <div>
-                <label style={{ display: 'block', marginTop: 8, marginBottom: 8, fontWeight: '600', color: '#333', fontSize: 14 }}>
-                  📋 子任务
-                </label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-                  <input
-                    type="text"
-                    placeholder="输入子任务内容"
-                    value={formData.newSubTask}
-                    onChange={(e) => setFormData({ ...formData, newSubTask: e.target.value })}
-                    style={{ flex: 1, height: 36, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, backgroundColor: '#fff', boxSizing: 'border-box' }}
-                  />
-                  <button
-                    onClick={() => {
-                      if (formData.newSubTask?.trim()) {
-                        setFormData({
-                          ...formData,
-                          subTasks: [...formData.subTasks, { text: formData.newSubTask.trim(), done: false }],
-                          newSubTask: ''
-                        });
-                      }
-                    }}
-                    style={{ height: 36, width: 36, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 18, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    +
-                  </button>
-                </div>
-                {formData.subTasks.length > 0 && (
-                  <div>
-                    {formData.subTasks.map((subTask, index) => (
-                      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <input type="checkbox" checked={subTask.done} onChange={(e) => {
-                          const newSubTasks = [...formData.subTasks];
-                          newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked };
-                          setFormData({ ...formData, subTasks: newSubTasks });
-                        }} style={{ transform: 'scale(1.2)', cursor: 'pointer' }} />
-                        <input
-                          type="text"
-                          value={subTask.text}
-                          onChange={(e) => {
-                            const newSubTasks = [...formData.subTasks];
-                            newSubTasks[index] = { ...newSubTasks[index], text: e.target.value };
-                            setFormData({ ...formData, subTasks: newSubTasks });
-                          }}
-                          style={{ flex: 1, height: 36, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, backgroundColor: '#fff', boxSizing: 'border-box' }}
-                        />
-                        <button onClick={() => {
-                          setFormData({ ...formData, subTasks: formData.subTasks.filter((_, i) => i !== index) });
-                        }} style={{ height: 36, width: 48, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer' }}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+{/* 子任务 */}
+<div style={{ marginTop: 16 }}>
+  <label style={{
+    display: 'block',
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: 600,
+    color: '#333',
+    fontSize: 14
+  }}>
+    📋 子任务
+  </label>
+  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+    {/* 改成 formData */}
+    <input type="text" placeholder="输入子任务内容" value={formData.newSubTask || ''} onChange={(e) => setFormData({ ...formData, newSubTask: e.target.value })} style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
+    <button onClick={() => { if (formData.newSubTask?.trim()) { setFormData({ ...formData, subTasks: [...(formData.subTasks || []), { text: formData.newSubTask.trim(), done: false }], newSubTask: '' }); } }} style={{ height: 32, width: 32, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>+</button>
+  </div>
+  {formData.subTasks?.length > 0 && (
+    <div>
+      {formData.subTasks.map((subTask, index) => (
+        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <input type="checkbox" checked={subTask.done || false} onChange={(e) => { const newSubTasks = [...formData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked }; setFormData({ ...formData, subTasks: newSubTasks }); }} style={{ transform: 'scale(1.2)', cursor: 'pointer' }} />
+          <input type="text" value={subTask.text || ''} onChange={(e) => { const newSubTasks = [...formData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], text: e.target.value }; setFormData({ ...formData, subTasks: newSubTasks }); }} placeholder="子任务内容" style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
+          <button onClick={() => { const newSubTasks = formData.subTasks.filter((_, i) => i !== index); setFormData({ ...formData, subTasks: newSubTasks }); }} style={{ height: 32, width: 48, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>×</button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
             </div>
-          )}
+        
 
           {/* 现有模板列表 */}
           <div style={{ marginTop: 20 }}>
@@ -8943,7 +8636,7 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
 const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories, onCancelAbandoned,  onMarkAbandoned }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
-    onMarkAbandoned  ,
+    
     category: task.category || categories[0]?.name || '校内',
     subCategory: task.subCategory || '',
     note: task.note || '',
@@ -9080,6 +8773,31 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
       overflow: 'hidden'
     }}>
 
+ {/* ✅ 在这里添加 style 标签 */}
+   {/* ✅ 添加这个 style 标签，覆盖所有按钮样式 */}
+    <style>{`
+      button.clear-reminder-btn,
+      button.clear-reminder-btn:hover,
+      button.clear-reminder-btn:active,
+      button.clear-reminder-btn:focus,
+      button.clear-reminder-btn:focus-visible,
+      button.clear-reminder-btn:visited,
+      button.clear-reminder-btn:link {
+        background-color: #f0f0f0 !important;
+        color: #666 !important;
+        border: 1px solid #ccc !important;
+        transform: none !important;
+        scale: 1 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+        animation: none !important;
+        text-decoration: none !important;
+        background-image: none !important;
+      }
+    `}</style>
       
       <div style={{
         backgroundColor: 'white',
@@ -9865,876 +9583,296 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
   </div>
 </div>
 
-          {/* 更多配置按钮 */}
-          <div
-            onClick={() => setShowMoreConfig(!showMoreConfig)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              borderRadius: 8,
-              cursor: 'pointer',
-              marginTop: 8,
-              userSelect: 'none'
-            }}
-          >
-            <span style={{ fontSize: 14, color: '#333' }}>
-              {showMoreConfig ? '▼' : '▶ 更多设置'}
-            </span>
-          </div>
+     
 
-          {/* 更多配置内容 - 点击后展开 */}
-          {showMoreConfig && (
-            <div>
-              {/* 编辑任务界面 - 标签编辑 - 合并成一排 */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                marginBottom: 12,
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'flex-start',
-                  width: '100%'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: 6,
-                      fontWeight: 600,
-                      color: '#333',
-                      fontSize: 13,
-                    }}>
-                      标签
-                    </label>
-                    <div style={{
-                      display: 'flex',
-                      gap: 6,
-                      alignItems: 'center',
-                    }}>
-                      <input
-                        type="text"
-                        placeholder="标签名称"
-                        value={editData.newTagName || ''}
-                        onChange={(e) =>
-                          setEditData({ ...editData, newTagName: e.target.value })
-                        }
-                        style={{
-                          flex: 1,
-                          height: 32,
-                          padding: '0 8px',
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          fontSize: 13,
-                          backgroundColor: '#fff',
-                          boxSizing: 'border-box',
-                          minWidth: 0,
-                        }}
-                      />
-                      <input
-                        type="color"
-                        value={editData.newTagColor || '#e0e0e0'}
-                        onChange={(e) =>
-                          setEditData({ ...editData, newTagColor: e.target.value })
-                        }
-                        style={{
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          backgroundColor: '#fff',
-                          boxSizing: 'border-box',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (editData.newTagName?.trim()) {
-                            const newTag = {
-                              name: editData.newTagName.trim(),
-                              color: editData.newTagColor || '#e0e0e0',
-                              textColor: '#333',
-                            };
-                            const updatedTags = [...(editData.tags || []), newTag];
-                            setEditData({
-                              ...editData,
-                              tags: updatedTags,
-                              newTagName: '',
-                              newTagColor: '#e0e0e0',
-                            });
-                          }
-                        }}
-                        style={{
-                          height: 32,
-                          width: 32,
-                          backgroundColor: '#f9f9f9',
-                          color: '#333',
-                          border: '1px solid #ccc',
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          fontSize: 16,
-                          fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxSizing: 'border-box',
-                          flexShrink: 0,
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: 6,
-                      fontWeight: 600,
-                      color: '#333',
-                      fontSize: 13,
-                    }}>
-                      当前标签
-                    </label>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 4,
-                      minHeight: 32,
-                      padding: '4px 8px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      backgroundColor: '#fafafa',
-                      alignItems: 'center',
-                      boxSizing: 'border-box',
-                      maxHeight: 40,
-                      overflow: 'hidden',
-                    }}>
-                      {editData.tags?.map((tag, index) => (
-                        <span
-                          key={index}
-                          style={{
-                            fontSize: 11,
-                            padding: '3px 6px',
-                            backgroundColor: tag.color,
-                            color: tag.textColor || '#fff',
-                            borderRadius: 10,
-                            whiteSpace: 'nowrap',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {tag.name}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newTags = [...editData.tags];
-                              newTags.splice(index, 1);
-                              setEditData({ ...editData, tags: newTags });
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontSize: 11,
-                              padding: 0,
-                              width: 12,
-                              height: 12,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'inherit',
-                              opacity: 0.8,
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      {(!editData.tags || editData.tags.length === 0) && (
-                        <span style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>
-                          暂无标签
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 常用标签保持原样 */}
-              <div>
-                <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>常用标签:</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {commonTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        const existingTags = editData.tags || [];
-                        const isAlreadyAdded = existingTags.some(t => t.name === tag.name);
-                        if (!isAlreadyAdded) {
-                          setEditData({
-                            ...editData,
-                            tags: [...existingTags, tag]
-                          });
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: tag.color,
-                        color: tag.textColor,
-                        border: 'none',
-                        borderRadius: 16,
-                        cursor: 'pointer',
-                        fontSize: 11,
-                        fontWeight: '500'
-                      }}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-
-{/* 重复设置 */}
-<div style={{ marginBottom: 15 }}>
+  <div>
+    {/* 标签 - 简化版 */}
+    
+{/* 标签 - 简洁版 */}
+<div>
   <label style={{
     display: 'block',
-    marginTop: 8,
     marginBottom: 8,
     fontWeight: '600',
     color: '#333',
-    fontSize: 14,
+    fontSize: 14
   }}>
-    重复
+    标签
   </label>
   
-  {/* 重复频率按钮 - 删除了"重复频率"标签 */}
-  <div style={{ marginBottom: 10 }}>
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: editData.repeatFrequency === 'daily' ? '#1a73e8' : '#f0f0f0',
-          color: editData.repeatFrequency === 'daily' ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: 'daily' })}
-      >
-        每天
-      </button>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: editData.repeatFrequency === 'weekly' ? '#1a73e8' : '#f0f0f0',
-          color: editData.repeatFrequency === 'weekly' ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: 'weekly' })}
-      >
-        每周
-      </button>
-      <button
-        type="button"
-        style={{
-          flex: 1,
-          padding: '8px 12px',
-          background: !editData.repeatFrequency ? '#1a73e8' : '#f0f0f0',
-          color: !editData.repeatFrequency ? '#fff' : '#000',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: 13,
-          cursor: 'pointer'
-        }}
-        onClick={() => setEditData({ ...editData, repeatFrequency: '' })}
-      >
-        不重复
-      </button>
-    </div>
-  </div>
-
-  {/* 星期选择 */}
-  {editData.repeatFrequency === 'weekly' && (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ marginBottom: 6, fontWeight: '500', fontSize: 13 }}>选择星期:</div>
-      <div style={{
-        display: 'flex',
-        flexWrap: 'nowrap',
-        gap: 4,
-        justifyContent: 'space-between',
-        overflowX: 'auto'
-      }}>
-        {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-          <button
-            key={day}
-            type="button"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: editData.repeatDays?.[index] ? '#1a73e8' : '#f0f0f0',
-              color: editData.repeatDays?.[index] ? '#fff' : '#000',
-              border: editData.repeatDays?.[index] ? '2px solid #0b52b0' : '1px solid #e0e0e0',
-              fontSize: 12,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-            onClick={() => {
-              const currentRepeatDays = editData.repeatDays || [false, false, false, false, false, false, false];
-              const newRepeatDays = [...currentRepeatDays];
-              newRepeatDays[index] = !newRepeatDays[index];
-              setEditData({ 
-                ...editData, 
-                repeatDays: newRepeatDays 
-              });
-            }}
-            title={`周${day}`}
-          >
-            {day}
-          </button>
-        ))}
-      </div>
-    </div>
-  )}
-
-  {/* 说明文字 */}
-  {editData.repeatFrequency && (
-    <div style={{
-      fontSize: 11,
-      color: '#666',
-      textAlign: 'center',
-      padding: '6px 8px',
-      backgroundColor: '#f5f5f5',
-      borderRadius: 4
-    }}>
-      {editData.repeatFrequency === 'daily' 
-        ? '任务将在未来7天重复创建' 
-        : editData.repeatFrequency === 'weekly' && editData.repeatDays?.some(day => day)
-          ? `已选择：${editData.repeatDays?.map((selected, idx) => selected ? `周${['一','二','三','四','五','六','日'][idx]}` : '').filter(Boolean).join('、')}`
-          : '请选择重复的星期'
-      }
-    </div>
-  )}
-</div>
-
-              {/* 🕓 计划时间 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14,
-  }}>
-    计划
-  </label>
-
   <div style={{
     display: 'flex',
-    gap: 6,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
+    gap: '6px',
+    alignItems: 'center'
   }}>
-    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-      <input
-        type="number"
-        min="0"
-        max="23"
-        placeholder="时"
-        value={editData.startHour}
-        onChange={(e) => setEditData({ ...editData, startHour: e.target.value })}
+    {/* 预设标签 */}
+    {[
+      { name: '重要', color: '#ff4444' },
+      { name: '紧急', color: '#ff9800' },
+      { name: '复习', color: '#4caf50' },
+      { name: '预习', color: '#2196f3' },
+      { name: '考试', color: '#f44336' }
+    ].map(tag => {
+      const isSelected = editData.tags?.some(t => t.name === tag.name);
+      return (
+        <span
+          key={tag.name}
+          onClick={() => {
+            if (isSelected) {
+              const newTags = editData.tags.filter(t => t.name !== tag.name);
+              setEditData({ ...editData, tags: newTags });
+            } else {
+              setEditData({
+                ...editData,
+                tags: [...(editData.tags || []), { name: tag.name, color: tag.color, textColor: '#fff' }]
+              });
+            }
+          }}
+          style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            backgroundColor: isSelected ? tag.color : '#f0f0f0',
+            color: isSelected ? '#fff' : '#999',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            transition: 'none',
+            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`,
+            minWidth: '42px',
+            textAlign: 'center'
+          }}
+        >
+          {tag.name}
+        </span>
+      );
+    })}
+    
+    {/* 自定义标签列表 */}
+    {editData.tags?.filter(tag => !['重要', '紧急', '复习', '预习', '考试', '背诵'].includes(tag.name)).map((tag, index) => (
+      <span
+        key={index}
         style={{
-          width: '100%',
-          height: 36,
-          padding: '0 4px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
+          fontSize: '12px',
+          padding: '4px 10px',
+          backgroundColor: tag.color || '#61A2Da',
+          color: '#fff',
+          borderRadius: '16px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          cursor: 'pointer',
+          border: `1px solid ${tag.color || '#61A2Da'}`,
+          minWidth: '42px'
         }}
-      />
-      <span style={{ color: '#666' }}>:</span>
-      <input
-        type="number"
-        min="0"
-        max="59"
-        placeholder="分"
-        value={editData.startMinute}
-        onChange={(e) => setEditData({ ...editData, startMinute: e.target.value })}
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 4px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
+        onClick={() => {
+          const newTags = editData.tags.filter((_, i) => i !== index);
+          setEditData({ ...editData, tags: newTags });
         }}
-      />
-    </div>
-
-    <span style={{ color: '#666', fontSize: 12 }}>至</span>
-
-    <div style={{ flex: 1, display: 'flex', gap: 4, alignItems: 'center' }}>
-      <input
-        type="number"
-        min="0"
-        max="23"
-        placeholder="时"
-        value={editData.endHour}
-        onChange={(e) => setEditData({ ...editData, endHour: e.target.value })}
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 4px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
-      <span style={{ color: '#666' }}>:</span>
-      <input
-        type="number"
-        min="0"
-        max="59"
-        placeholder="分"
-        value={editData.endMinute}
-        onChange={(e) => setEditData({ ...editData, endMinute: e.target.value })}
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 4px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-
-    {/* 👇 添加取消计划时间按钮 */}
-    <button
-      type="button"
-      onClick={() => {
-        setEditData({
-          ...editData,
-          startHour: '',
-          startMinute: '',
-          endHour: '',
-          endMinute: '',
-          scheduledTime: ''
-        });
-      }}
-      style={{
-        height: 36,
-        padding: '0 12px',
-        backgroundColor: '#f0f0f0',
-        color: '#666',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        cursor: 'pointer',
-        fontSize: 12,
-        whiteSpace: 'nowrap',
-        flexShrink: 0
-      }}
-      title="取消计划时间"
-    >
-      取消
-    </button>
-  </div>
-
-  {editData.startHour && editData.startMinute && editData.endHour && editData.endMinute && (
-    <div style={{
-      fontSize: 12,
-      color: '#28a745',
-      textAlign: 'center',
-      marginTop: 6,
-      padding: 4,
-      backgroundColor: '#e8f5e8',
-      borderRadius: 4
-    }}>
-      计划时间: {editData.startHour}:{editData.startMinute} - {editData.endHour}:{editData.endMinute}
-    </div>
-  )}
-</div>
-
-              
-
-{/* 🔔 提醒时间 */}
-<div>
-  <label
-    style={{
-      display: 'block',
-      marginTop: 8,
-      marginBottom: 8,
-      fontWeight: 600,
-      color: '#333',
-      fontSize: 14,
-    }}
-  >
-    提醒时间
-  </label>
-
-  <div
-    style={{
-      display: 'flex',
-      gap: 4,
-      alignItems: 'center',
-      flexWrap: 'nowrap',
-      width: '100%',
-    }}
-  >
-    {/* 年份 */}
-    <input
-      type="number"
-      min="2024"
-      max="2030"
-      placeholder="2025"
-      value={editData.reminderYear || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, reminderYear: e.target.value })
-      }
-      style={{
-        flex: 1.2,
-        minWidth: '60px',
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
-
-    {/* 月份 */}
-    <input
-      type="number"
-      min="1"
-      max="12"
-      placeholder="MM"
-      value={editData.reminderMonth || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, reminderMonth: e.target.value })
-      }
-      style={{
-        flex: 1,
-        minWidth: '45px',
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>/</span>
-
-    {/* 日 */}
-    <input
-      type="number"
-      min="1"
-      max="31"
-      placeholder="DD"
-      value={editData.reminderDay || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, reminderDay: e.target.value })
-      }
-      style={{
-        flex: 1,
-        minWidth: '45px',
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666', marginLeft: '2px', flexShrink: 0 }}> </span>
-
-    {/* 时 */}
-    <input
-      type="number"
-      min="0"
-      max="23"
-      placeholder="HH"
-      value={editData.reminderHour || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, reminderHour: e.target.value })
-      }
-      style={{
-        flex: 1,
-        minWidth: '45px',
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    <span style={{ color: '#666', fontSize: 14, flexShrink: 0 }}>:</span>
-
-    {/* 分 */}
-    <input
-      type="number"
-      min="0"
-      max="59"
-      placeholder="MM"
-      value={editData.reminderMinute || ''}
-      onChange={(e) =>
-        setEditData({ ...editData, reminderMinute: e.target.value })
-      }
-      style={{
-        flex: 1,
-        minWidth: '45px',
-        height: 36,
-        padding: '0 4px',
-        border: '1px solid #ccc',
-        borderRadius: 6,
-        fontSize: 14,
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box',
-      }}
-    />
-
-    {/* 👇 添加取消提醒时间按钮 */}
-   <button
-  type="button"
+      >
+        {tag.name}
+        <span style={{ fontSize: '12px', opacity: 0.7 }}>×</span>
+      </span>
+    ))}
+    
+    {/* 添加自定义标签的小加号按钮 */}
+{/* 添加自定义标签的小加号按钮 - 高度对齐 */}
+<span
   onClick={() => {
-    setEditData({
-      ...editData,
-      reminderYear: '',
-      reminderMonth: '',
-      reminderDay: '',
-      reminderHour: '',
-      reminderMinute: ''
-    });
+    const modalDiv = document.createElement('div');
+    modalDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      width: 280px;
+      text-align: center;
+    `;
+    
+    contentDiv.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
+      <input id="new-tag-name" type="text" placeholder="标签名称" style="
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+      ">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <span style="font-size: 13px; color: #666;">标签颜色：</span>
+        <input id="new-tag-color" type="color" value="#61A2Da" style="
+          width: 40px;
+          height: 40px;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          cursor: pointer;
+        ">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button id="cancel-btn" style="
+          flex: 1;
+          padding: 10px;
+          background: #f0f0f0;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+        ">取消</button>
+        <button id="confirm-btn" style="
+          flex: 1;
+          padding: 10px;
+          background: #61A2Da;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+        ">确认</button>
+      </div>
+    `;
+    
+    modalDiv.appendChild(contentDiv);
+    document.body.appendChild(modalDiv);
+    
+    const nameInput = contentDiv.querySelector('#new-tag-name');
+    const colorInput = contentDiv.querySelector('#new-tag-color');
+    
+    const confirmBtn = contentDiv.querySelector('#confirm-btn');
+    confirmBtn.onclick = () => {
+      const tagName = nameInput.value.trim();
+      if (tagName) {
+        if (!editData.tags?.some(t => t.name === tagName)) {
+          setEditData({
+            ...editData,
+            tags: [...(editData.tags || []), { 
+              name: tagName, 
+              color: colorInput.value,
+              textColor: '#fff'
+            }]
+          });
+        } else {
+          alert('标签已存在');
+        }
+      }
+      document.body.removeChild(modalDiv);
+    };
+    
+    const cancelBtn = contentDiv.querySelector('#cancel-btn');
+    cancelBtn.onclick = () => {
+      document.body.removeChild(modalDiv);
+    };
+    
+    modalDiv.onclick = (e) => {
+      if (e.target === modalDiv) {
+        document.body.removeChild(modalDiv);
+      }
+    };
+    
+    setTimeout(() => nameInput.focus(), 50);
   }}
   style={{
-    height: 36,
-    padding: '0 12px',
-    backgroundColor: '#f0f0f0',
-    color: '#666',
-    border: '1px solid #ccc',
-    borderRadius: 6,
+    height: '28px',
+    padding: '0 10px',
+    borderRadius: '16px',
+    
+    color: '#999',
+   
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer',
-    fontSize: 12,
-    whiteSpace: 'nowrap',
-    flexShrink: 0
+    fontSize: '14px',
+    fontWeight: 'bold',
+    transition: 'none',
+    lineHeight: 1
   }}
-  title="取消提醒时间"
+  title="添加自定义标签"
 >
-  取消
-</button>
+  +
+</span>
+
+
+
   </div>
 </div>
 
-              {/* 📋 子任务编辑 */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginTop: 8,
-                    marginBottom: 8,
-                    fontWeight: 600,
-                    color: '#333',
-                    fontSize: 14,
-                  }}
-                >
-                  子任务
-                </label>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                    alignItems: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="输入子任务内容"
-                    value={editData.newSubTask || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, newSubTask: e.target.value })
-                    }
-                    style={{
-                      flex: 1,
-                      height: 36,
-                      padding: '0 10px',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      backgroundColor: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      if (editData.newSubTask?.trim()) {
-                        const newSubTask = {
-                          text: editData.newSubTask.trim(),
-                          done: false,
-                        };
-                        const updatedSubTasks = [
-                          ...(editData.subTasks || []),
-                          newSubTask,
-                        ];
-                        setEditData({
-                          ...editData,
-                          subTasks: updatedSubTasks,
-                          newSubTask: '',
-                        });
-                      }
-                    }}
-                    style={{
-                      height: 36,
-                      width: 36,
-                      backgroundColor: '#f9f9f9',
-                      color: '#333',
-                      border: '1px solid #ccc',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 18,
-                      fontWeight: 600,
-                      lineHeight: '36px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
 
-                {editData.subTasks?.length > 0 && (
-                  <div>
-                    {editData.subTasks.map((subTask, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          marginBottom: 6,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={subTask.done || false}
-                          onChange={(e) => {
-                            const newSubTasks = [...editData.subTasks];
-                            newSubTasks[index] = {
-                              ...newSubTasks[index],
-                              done: e.target.checked,
-                            };
-                            setEditData({ ...editData, subTasks: newSubTasks });
-                          }}
-                          style={{
-                            transform: 'scale(1.2)',
-                            cursor: 'pointer',
-                          }}
-                        />
-                        <input
-                          type="text"
-                          value={subTask.text || ''}
-                          onChange={(e) => {
-                            const newSubTasks = [...editData.subTasks];
-                            newSubTasks[index] = {
-                              ...newSubTasks[index],
-                              text: e.target.value,
-                            };
-                            setEditData({ ...editData, subTasks: newSubTasks });
-                          }}
-                          placeholder="子任务内容"
-                          style={{
-                            flex: 1,
-                            height: 36,
-                            padding: '0 10px',
-                            border: '1px solid #ccc',
-                            borderRadius: 6,
-                            fontSize: 14,
-                            backgroundColor: '#fff',
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                        <button
-                          onClick={() => {
-                            const newSubTasks = editData.subTasks.filter(
-                              (_, i) => i !== index
-                            );
-                            setEditData({ ...editData, subTasks: newSubTasks });
-                          }}
-                          style={{
-                            height: 36,
-                            width: 48,
-                            backgroundColor: '#f9f9f9',
-                            color: '#333',
-                            border: '1px solid #ccc',
-                            borderRadius: 6,
-                            cursor: 'pointer',
-                            fontSize: 13,
-                            fontWeight: 500,
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+    {/* 提醒时间 - 保持不变 */}
+    <div style={{ marginTop: 16 }}> 
+      <label style={{
+        display: 'block',
+        marginTop: 8,
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14
+      }}>
+        时间
+      </label>
+      <div style={{
+        display: 'flex',
+        gap: 4,
+        alignItems: 'center',
+        flexWrap: 'nowrap',
+        width: '100%'
+      }}>
+        <input type="number" min="2024" max="2030" placeholder="年" value={editData.reminderYear || ''} onChange={(e) => setEditData({ ...editData, reminderYear: e.target.value })} style={{ flex: 1.2, minWidth: '50px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+        <span style={{ color: '#666' }}>/</span>
+        <input type="number" min="1" max="12" placeholder="月" value={editData.reminderMonth || ''} onChange={(e) => setEditData({ ...editData, reminderMonth: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+        <span style={{ color: '#666' }}>/</span>
+        <input type="number" min="1" max="31" placeholder="日" value={editData.reminderDay || ''} onChange={(e) => setEditData({ ...editData, reminderDay: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+        <input type="number" min="0" max="23" placeholder="时" value={editData.reminderHour || ''} onChange={(e) => setEditData({ ...editData, reminderHour: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+        <span style={{ color: '#666' }}>:</span>
+        <input type="number" min="0" max="59" placeholder="分" value={editData.reminderMinute || ''} onChange={(e) => setEditData({ ...editData, reminderMinute: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
+        
+      </div>
+    </div>
+
+    {/* 子任务 */}
+    <div style={{ marginTop: 16 }}> 
+      <label style={{
+        display: 'block',
+        marginTop: 8,
+        marginBottom: 8,
+        fontWeight: 600,
+        color: '#333',
+        fontSize: 14
+      }}>
+        子任务
+      </label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+        <input type="text" placeholder="输入子任务内容" value={editData.newSubTask || ''} onChange={(e) => setEditData({ ...editData, newSubTask: e.target.value })} style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
+        <button onClick={() => { if (editData.newSubTask?.trim()) { setEditData({ ...editData, subTasks: [...(editData.subTasks || []), { text: editData.newSubTask.trim(), done: false }], newSubTask: '' }); } }} style={{ height: 32, width: 32, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>+</button>
+      </div>
+      {editData.subTasks?.length > 0 && (
+        <div>
+          {editData.subTasks.map((subTask, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <input type="checkbox" checked={subTask.done || false} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked }; setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ transform: 'scale(1.2)', cursor: 'pointer' }} />
+              <input type="text" value={subTask.text || ''} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], text: e.target.value }; setEditData({ ...editData, subTasks: newSubTasks }); }} placeholder="子任务内容" style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
+              <button onClick={() => { const newSubTasks = editData.subTasks.filter((_, i) => i !== index); setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ height: 32, width: 48, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>×</button>
             </div>
-          )}
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+
 
           <input
             ref={fileInputRef}
@@ -13743,7 +12881,8 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
 function App() {
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
-
+// 在 App 组件中，其他 useState 附近添加
+const [isHolidayMode, setIsHolidayMode] = useState(false); // 假期模式状态
 const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
   // 在 App 组件开头，其他 useState 附近添加
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
@@ -15178,6 +14317,16 @@ const toggleDone = (task) => {
       checkConfettiWithTasks(updatedTasks);
     }, 50);
     
+
+     // ✅ 使用保存的 currentDate 而不是 selectedDate
+    const updatedTasks = newTasksByDate[currentDate] || [];
+    
+    // ✅ 使用 requestAnimationFrame 代替 setTimeout
+    requestAnimationFrame(() => {
+      checkConfettiWithTasks(updatedTasks);
+    });
+    
+
     return newTasksByDate;
   });
 };
@@ -17190,41 +16339,17 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
   const weekDates = getWeekDates(currentMonday);
   const taskId = Date.now().toString();
   const weekStart = currentMonday.toISOString();
-  
-  const newTask = {
-    id: taskId,
-    text: text.trim(),
-    category: "本周任务",
-    targetCategory: targetCategory,      // 完成后移动到的分类
-    targetSubCategory: targetSubCategory, // 完成后移动到的子分类
-    done: false,
-    timeSpent: 0,
-    note: "",
-    image: null,
-    scheduledTime: "",
-    pinned: false,
-    isWeekTask: true,
-    reflection: "",
-    subTasks: [],
-    tags: [],
-    weekStart: weekStart,
-    progress: {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    reminderTime: null
-  };
 
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
+    let hasChanges = false;
 
     weekDates.forEach(dateObj => {
       if (!newTasksByDate[dateObj.date]) {
         newTasksByDate[dateObj.date] = [];
       }
 
+      // ✅ 检查是否已存在相同的本周任务
       const existingTask = newTasksByDate[dateObj.date].find(
         task => task.isWeekTask && 
                task.text === text.trim() && 
@@ -17232,6 +16357,7 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
       );
 
       if (!existingTask) {
+        hasChanges = true;
         newTasksByDate[dateObj.date].push({ 
           ...newTask, 
           id: `${taskId}_${dateObj.date}`
@@ -17239,10 +16365,9 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
       }
     });
 
-    return newTasksByDate;
+    return hasChanges ? newTasksByDate : prev;
   });
 };
-
 
 // 添加常规任务
 // 添加常规任务 - 修改为添加到所有日期
@@ -17439,11 +16564,12 @@ const parseBulkTextToPreview = useCallback(() => {
   }
   
   return tasks;
-}, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories]);
+}, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories, bulkTags]);
 
 
 // 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
 // 修复批量导入中的图片识别功能 - 图片标记作用于上面的任务（标记行在下，任务在上）
+
 const handleImportTasksWithDuration = () => {
   console.log('🎯 === 开始批量导入 ===');
   
@@ -17596,23 +16722,15 @@ const handleImportTasksWithDuration = () => {
     return null;
   };
   
-  // ========== 关键修复：图片标记作用于上面的任务 ==========
-  // 格式：
-  // 任务1
-  // 【图片】
-  // 任务2   ← 图片标记属于任务1（上面的任务）
-  
+  // ========== 收集 taskInfos ==========
   const taskInfos = [];
-  let pendingImageForPreviousTask = false;  // 上一个任务是否需要图片
   
   let i = 1;
   while (i < lines.length) {
     let line = lines[i];
     
-    // 检查是否是图片标记行（单独的 [图片] 或 【图片】）
+    // 检查是否是图片标记行
     if (line === '[图片]' || line === '【图片】') {
-      // 图片标记：标记上一个任务需要图片
-      // 如果还没有任何任务，则跳过（标记无效）
       if (taskInfos.length > 0) {
         const lastTask = taskInfos[taskInfos.length - 1];
         lastTask.hasImage = true;
@@ -17651,15 +16769,15 @@ const handleImportTasksWithDuration = () => {
         text: taskText,
         note: note,
         dates: taskDates,
-        hasImage: false  // 初始没有图片
+        hasImage: false
       });
-      
       console.log(`📝 添加任务: "${taskText}"`);
     }
     
     i++;
   }
   
+  // ========== ✅ taskInfos.forEach 放在这里！ ==========
   const dailyTaskKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字','阅读', '听英语', '口算'];
   
   taskInfos.forEach((taskInfo, idx) => {
@@ -17686,7 +16804,7 @@ const handleImportTasksWithDuration = () => {
         timeSpent: 0,
         note: note,
         image: null,
-        hasImage: hasImage,  // 保存图片标记
+        hasImage: hasImage,
         scheduledTime: "",
         pinned: false,
         reflection: "",
@@ -17698,18 +16816,13 @@ const handleImportTasksWithDuration = () => {
           target: 0,
           unit: "%"
         },
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        // ✅ 假期模式标记
+        isHoliday: isHolidayMode
       };
       
-      // ✅ 关键修改：如果 hasImage 为 true，在 note 中添加 [图片] 标记
-if (hasImage) {
-  if (newTask.note) {
-    newTask.note = newTask.note + ' [图片]';
-  } else {
-    newTask.note = '[图片]';
-  }
-}
-
+      
+      
       if (crossDateId && taskDates.length > 1) {
         newTask.crossDateId = crossDateId;
         newTask.crossDates = [...taskDates];
@@ -17723,6 +16836,8 @@ if (hasImage) {
       allTasksByDate[date].push(newTask);
     });
   });
+  
+
   
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
   const tasksWithImage = Object.values(allTasksByDate).flat().filter(t => t.hasImage).length;
@@ -17830,7 +16945,7 @@ const handleImportTasks = () => {
       scheduledTime: "",
       pinned: false,
       reflection: "",
-      tags: [...bulkTags],
+       tags: [...(bulkTags || [])],  
       subTasks: [],
       progress: {
         initial: 0,
@@ -19574,7 +18689,10 @@ if (isInitialized && todayTasks.length === 0) {
     
     const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
     
-    // 筛选有效任务：排除本周任务和未完成的常规任务
+    // ✅ 检查当天是否有假期任务
+    const hasHolidayTask = dayTasks.some(task => task.isHoliday === true);
+    
+    // 筛选有效任务
     const filteredTasks = dayTasks.filter(task => {
       if (task.category === "本周任务") return false;
       if (task.isRegularTask && !task.done) return false;
@@ -19683,7 +18801,31 @@ if (isInitialized && todayTasks.length === 0) {
         }}
       >
         <div style={{ position: "relative", display: "inline-block" }}>
-          <span>{d.label}</span>
+         {/* ✅ 假期任务显示 "假"字 - 显示在左侧 */}
+  {hasHolidayTask && (
+    <span style={{
+      position: "absolute",
+      top: "50%",
+      transform: "translateY(-50%)",
+      left: "-20px",
+      fontSize: "9px",
+      fontWeight: "bold",
+      color: "#f44336",
+      padding: "0px 2px",
+     
+      lineHeight: "1.2",
+      whiteSpace: "nowrap"
+    }}>
+      假
+    </span>
+  )}
+
+
+ <span>{d.label}</span>
+
+ 
+
+
           {hasCrossDateTask && (
             <span style={{
               position: "absolute",
@@ -20059,6 +19201,7 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 {/* 批量导入弹窗 */}
+{/* 批量导入弹窗 */}
 {showBulkImportModal && (
   <div style={{
     position: 'fixed',
@@ -20151,8 +19294,63 @@ if (isInitialized && todayTasks.length === 0) {
           </div>
         )}
       </div>
+
+      {/* 👇 新增：假期模式开关 */}
+      <div style={{ 
+        marginBottom: 16, 
+        padding: '8px 12px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: '#333' }}>🏖️ 假期模式</span>
+          <span style={{ fontSize: 11, color: '#999' }}>(导入的任务日期会标记红色圈)</span>
+        </div>
+        
+        {/* 滑动开关 - 无悬浮效果 */}
+        <div
+          onClick={() => setIsHolidayMode(!isHolidayMode)}
+          style={{
+            width: '44px',
+            height: '24px',
+            backgroundColor: isHolidayMode ? '#f44336' : '#ccc',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            transition: 'none',
+            transform: 'none',
+            scale: 1,
+            position: 'relative',
+            boxShadow: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = isHolidayMode ? '#f44336' : '#ccc';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = isHolidayMode ? '#f44336' : '#ccc';
+          }}
+        >
+          <div
+            style={{
+              width: '20px',
+              height: '20px',
+              backgroundColor: '#fff',
+              borderRadius: '10px',
+              position: 'absolute',
+              top: '2px',
+              left: isHolidayMode ? '22px' : '2px',
+              transition: 'none',
+              transform: 'none',
+              scale: 1,
+              boxShadow: 'none'
+            }}
+          />
+        </div>
+      </div>
       
-      {/* 按钮区域 - 使用 div 代替 button，彻底移除悬浮效果 */}
+      {/* 按钮区域 */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         <div
           onClick={() => setShowBulkImportModal(false)}
@@ -20170,20 +19368,6 @@ if (isInitialized && todayTasks.length === 0) {
             transform: 'none',
             scale: 1,
             boxShadow: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#ccc';
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#ccc';
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
           }}
         >
           取消
@@ -20206,20 +19390,6 @@ if (isInitialized && todayTasks.length === 0) {
             transform: 'none',
             scale: 1,
             boxShadow: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#61A2Da';
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#61A2Da';
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.scale = 1;
           }}
         >
           确认导入
