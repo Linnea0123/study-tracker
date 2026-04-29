@@ -10150,9 +10150,11 @@ const toggleDateCompletion = (date, isChecked) => {
      {/* 进度条 - 独立一行，在任务文字下方 */}
 {/* 进度条 - 独立一行，在任务文字下方 */}
 {/* 进度条 - 独立一行，在任务文字下方 */}
+{/* 进度条 - 独立一行 */}
+
+{/* 进度条 - 独立一行，在任务文字下方 */}
 {hasProgress && (
   <div style={{ marginTop: 6 }}>
-    {/* 进度条 - 点击展开/收起按钮 */}
     <div
       onClick={(e) => {
         e.stopPropagation();
@@ -10171,76 +10173,50 @@ const toggleDateCompletion = (date, isChecked) => {
         <div style={{
           width: `${progressPercent}%`,
           height: '100%',
-          backgroundColor: Number(task.progress?.current) >= Number(task.progress?.target) ? '#4CAF50' : '#2196F3',
+          // ✅ 修改：完成任务或放弃时变灰色，否则根据分类/子分类使用深色主题色
+          backgroundColor: (task.done || task.abandoned) 
+  ? '#d0d0d0'
+  : (task.category === '校内' && task.subCategory)
+    ? ({
+        '数学': '#E8F5E9',
+        '语文': '#FFFDE7',
+        '英语': '#FCE4EC',
+        '运动': '#E3F2FD'
+      }[task.subCategory] || '#61A2Da')
+    : ({
+        '语文': '#FFFDE7',   // 浅黄色
+        '数学': '#E8F5E9',   // 浅绿色
+        '英语': '#FCE4EC',   // 浅粉色
+        '科学': '#E1F5FE',   // 浅蓝色
+        '运动': '#E3F2FD',   // 浅蓝色
+        '校内': '#61A2Da'
+      }[task.category] || '#1a73e8'),
           borderRadius: 5,
           transition: 'width 0.3s ease'
         }} />
       </div>
     </div>
-
-   <div style={{
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  height: '20px'
-}}>
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 11,
-    color: '#666'
-  }}>
-    <span>{Math.round(progressPercent)}%</span>
-    <span>|</span>
-    <span>{task.progress?.current || 0}/{task.progress?.target || 0}</span>
-  </div>
-
-    
-
-      {/* - + 按钮 - 默认隐藏，点击进度条后显示 */}
-      {showProgressControls && (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProgressAdjust(-1);
-            }}
-            style={{
-              width: '20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontSize: '13px',
-              color: '#999',
-              userSelect: 'none',
-              lineHeight: '20px'
-            }}
-          >
-            -
-          </span>
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProgressAdjust(1);
-            }}
-            style={{
-              width: '20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontSize: '13px',
-              color: '#999',
-              userSelect: 'none',
-              lineHeight: '20px'
-            }}
-          >
-            +
-          </span>
-        </div>
-      )}
+    {/* 进度文字也变灰 */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      height: '20px'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 11,
+        color: (task.done || task.abandoned) ? '#ccc' : '#666'
+      }}>
+        <span>{Math.round(progressPercent)}%</span>
+        <span>|</span>
+        <span>{task.progress?.current || 0}/{task.progress?.target || 0}</span>
+      </div>
     </div>
   </div>
 )}
-
 
 {/* 跨日期任务详情 - 展开区域 */}
 {/* 跨日期任务详情 - 展开区域 */}
@@ -11098,7 +11074,7 @@ const subjectTotalTime = getSubjectTotalTime();
     if (type === 'school_sub') {
       const subCategoryColors = {
         '数学': '#E8F5E9',
-        '语文': '#FFFDE7',
+        '语文': 'FFF9C4',
         '英语': '#FCE4EC',
         '运动': '#E3F2FD',
         '未分类': '#F5F5F5'
@@ -12339,47 +12315,32 @@ const CategoryManagerModal = ({
                   }}>
                     {/* 色块 - 可点击选择颜色 */}
 
-
-<div
-  onClick={(e) => {
-    e.stopPropagation();
-    // 创建一个隐藏的 color input
-    const input = document.createElement('input');
-    input.type = 'color';
-    input.style.position = 'fixed';
-    input.style.left = '-9999px';
-    input.style.top = '-9999px';
-    input.value = categoryColors[category.name] || category.color;
-    
-    // ✅ 关键：先添加到 body，再点击，然后移除
-    document.body.appendChild(input);
-    
-    input.addEventListener('change', (e) => {
-      const newColor = e.target.value;
-      const newCategories = [...localCategories];
-      newCategories[catIndex].color = newColor;
-      setLocalCategories(newCategories);
-      if (onSaveCategoryColor) {
-        onSaveCategoryColor(category.name, newColor);
-      }
-      document.body.removeChild(input);
-    });
-    
-    input.addEventListener('cancel', () => {
-      document.body.removeChild(input);
-    });
-    
-    input.click();
+{/* 隐藏的原生 color input */}
+<input
+  type="color"
+  value={categoryColors[category.name] || category.color}
+  onChange={(e) => {
+    const newColor = e.target.value;
+    const newCategories = [...localCategories];
+    newCategories[catIndex].color = newColor;
+    setLocalCategories(newCategories);
+    if (onSaveCategoryColor) {
+      onSaveCategoryColor(category.name, newColor);
+    }
   }}
   style={{
-    width: '24px',
-    height: '24px',
-    backgroundColor: categoryColors[category.name] || category.color,
-    border: '1px solid #ccc',
+    width: '28px',
+    height: '28px',
+    border: 'none',
     borderRadius: 0,
-    cursor: 'pointer'
+    cursor: 'pointer',
+    padding: 0,
+    background: categoryColors[category.name] || category.color
   }}
+  onClick={(e) => e.stopPropagation()}
 />
+{/* 显示用的色块 div */}
+
                     
                     {/* 类别名称 */}
                     {editingCategoryName?.index === catIndex ? (
@@ -12483,27 +12444,25 @@ const CategoryManagerModal = ({
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                                 {/* 子类别色块 - 可点击选择颜色 */}
-                                <div
-                                  onClick={() => {
-                                    const input = document.createElement('input');
-                                    input.type = 'color';
-                                    input.value = subCategoryColors[subCat] || '#f5f5f5';
-                                    input.onchange = (e) => {
-                                      if (onSaveSubCategoryColor) {
-                                        onSaveSubCategoryColor(subCat, e.target.value);
-                                      }
-                                    };
-                                    input.click();
-                                  }}
-                                  style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    backgroundColor: subCategoryColors[subCat] || '#f5f5f5',
-                                    border: '1px solid #ccc',
-                                    borderRadius: 0,
-                                    cursor: 'pointer'
-                                  }}
-                                />
+                                <input
+  type="color"
+  value={subCategoryColors[subCat] || '#f5f5f5'}
+  onChange={(e) => {
+    if (onSaveSubCategoryColor) {
+      onSaveSubCategoryColor(subCat, e.target.value);
+    }
+  }}
+  style={{
+    width: '28px',
+    height: '28px',
+    border: 'none',
+    borderRadius: 0,
+    cursor: 'pointer',
+    padding: 0,
+    background: subCategoryColors[subCat] || '#f5f5f5'
+  }}
+  onClick={(e) => e.stopPropagation()}
+/>
                                 
                                 {editingSubCategory && editingSubCategory[0] === catIndex && editingSubCategory[1] === subIndex ? (
                                   <input
@@ -16337,6 +16296,7 @@ const handleUseTemplate = (template, templateIndex) => {
 };
 
 // 添加本周任务
+// 在 handleAddWeekTask 函数中（约第 4070 行）
 const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = '') => {
   if (!text.trim()) return;
 
@@ -16353,7 +16313,7 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
         newTasksByDate[dateObj.date] = [];
       }
 
-      // ✅ 检查是否已存在相同的本周任务
+      // 检查是否已存在相同的本周任务
       const existingTask = newTasksByDate[dateObj.date].find(
         task => task.isWeekTask && 
                task.text === text.trim() && 
@@ -16362,12 +16322,61 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
 
       if (!existingTask) {
         hasChanges = true;
-        newTasksByDate[dateObj.date].push({ 
-          ...newTask, 
-          id: `${taskId}_${dateObj.date}`
-        });
+        
+        // ✅ 正确创建任务对象
+        const newTask = {
+          id: `${taskId}_${dateObj.date}`,
+          text: text.trim(),
+          category: "本周任务",
+          subCategory: targetSubCategory || '',
+          done: false,
+          timeSpent: 0,
+          timeRecords: [],
+          subTasks: [],
+          note: "",
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          reminderTime: null,
+          isWeekTask: true,
+          weekStart: weekStart,
+          targetCategory: targetCategory,  // 完成后移动到的分类
+          targetSubCategory: targetSubCategory
+        };
+        
+        newTasksByDate[dateObj.date].push(newTask);
       }
     });
+
+    // 显示成功提示
+    if (hasChanges) {
+      setTimeout(() => {
+        const toast = document.createElement('div');
+        toast.textContent = `✅ 已添加本周任务: ${text.trim()}`;
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 80px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #28a745;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          z-index: 2000;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      }, 50);
+    }
 
     return hasChanges ? newTasksByDate : prev;
   });
@@ -18790,126 +18799,124 @@ if (isInitialized && todayTasks.length === 0) {
     };
     
     return (
-      <div
-        key={dateStr}
-        onClick={() => setSelectedDate(dateStr)}
-        style={{
-          padding: "4px 6px",
-          borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
-          textAlign: "center",
-          flex: 1,
-          margin: "0 2px",
-          fontSize: 12,
-          cursor: "pointer",
-          backgroundColor: isSelected ? "#fff9c4" : "transparent",
-          color: isSelected ? "#000" : "#000",
-          display: "flex",
-          flexDirection: "column",
+  <div
+    key={dateStr}
+    onClick={() => setSelectedDate(dateStr)}
+    style={{
+      padding: "4px 6px",
+      borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
+      textAlign: "center",
+      flex: 1,
+      margin: "0 2px",
+      fontSize: 12,
+      cursor: "pointer",
+      backgroundColor: isSelected ? "#fff9c4" : "transparent",
+      color: isSelected ? "#000" : "#000",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      minHeight: "20px",
+      background: dailyRating > 0 
+        ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+        : isSelected ? '#fff9c4' : 'transparent'
+    }}
+  >
+    <div style={{ 
+      position: "relative", 
+      display: "inline-flex",  // 改为 inline-flex
+      alignItems: "center",    // 垂直居中对齐
+      justifyContent: "center", // 水平居中对齐
+      gap: "2px"              // 统一间距
+    }}>
+      {/* ✅ 假期标记 - 现在与星期垂直居中对齐 */}
+      {hasHolidayTask && (
+        <span style={{
+          display: "inline-flex",
           alignItems: "center",
-          minHeight: "20px",
-          background: dailyRating > 0 
-            ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
-            : isSelected ? '#fff9c4' : 'transparent'
-        }}
-      >
-        <div style={{ position: "relative", display: "inline-block" }}>
-         {/* ✅ 假期任务显示 "假"字 - 显示在左侧 */}
+          justifyContent: "center",
+          width: "14px",
+          height: "14px",
+          backgroundColor: "transparent",
+          border: "1.5px solid #f44336",
+          borderRadius: "50%",
+          fontSize: "8px",
+          color: "#f44336",
+          boxSizing: "border-box",
+          padding: 0,
+          lineHeight: 1,
+          textAlign: "center",
+    marginRight: "2px" 
+        }}>
+          假
+        </span>
+      )}
+      <span>{d.label}</span>
+      
+      
 
-
- <span>{d.label}</span>
-
- 
-
-
-          {hasCrossDateTask && (
-            <span style={{
-              position: "absolute",
-              top: "50%",
-              right: "-18px",
-              transform: "translateY(-50%)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 14C4 10.5 7 8 10.5 8L14 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
-                <path d="M11 5L14 8L11 11" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M20 10C20 13.5 17 16 13.5 16L10 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
-                <path d="M13 19L10 16L13 13" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              </svg>
-            </span>
-          )}
-        </div>
-        <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
-        
-        {/* 任务数量显示 - 格式：已完成数/总任务数 */}
-        {showNumber && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "4px",
-            marginTop: "2px"
-          }}>
-            <div style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              backgroundColor: dotColor
-            }} />
-            <span style={{
-              fontSize: "9px",
-              fontWeight: "bold",
-              color: numberColor
-            }}>
-              {completedNotAbandonedCount}/{totalCount}
-            </span>
- {/* ✅ 假期标记 - 放在数字右边 */}
-{hasHolidayTask && (
-  <span style={{
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "14px",
-    height: "14px",
-    backgroundColor: "transparent",
-    border: "1.5px solid #f44336",
-    borderRadius: "50%",
-    fontSize: "8px",
-    fontWeight: "bold",
-    color: "#f44336",
-    marginLeft: "2px",
-    boxSizing: "border-box",
-    padding: 0,
-    lineHeight: 1,
-    textAlign: "center"
-  }}>
-    假
-  </span>
-)}
-
-
-
-          </div>
-        )}
-        
-        {/* 结束时间显示 */}
-        {studyEndTime && (() => {
-          const [hour, minute] = studyEndTime.split(':').map(Number);
-          const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
-          return (
-            <div style={{
-              fontSize: "8px",
-              color: isAfter9PM ? "#f44336" : "#999",
-              marginTop: "2px",
-              whiteSpace: "nowrap"
-            }}>
-              {studyEndTime}
-            </div>
-          );
-        })()}
+      {/* ✅ 跨日期标志 - 调整定位方式 */}
+      {hasCrossDateTask && (
+        <span style={{
+          display: "inline-flex",     // 改为 inline-flex
+          alignItems: "center",
+          justifyContent: "center",
+          marginLeft: "2px"          // 添加左边距
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 14C4 10.5 7 8 10.5 8L14 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
+            <path d="M11 5L14 8L11 11" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M20 10C20 13.5 17 16 13.5 16L10 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
+            <path d="M13 19L10 16L13 13" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
+        </span>
+      )}
+    </div>
+    
+    <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+    
+    {/* 任务数量显示 - 格式：已完成数/总任务数 */}
+    {showNumber && (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "4px",
+        marginTop: "2px"
+      }}>
+        <div style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          backgroundColor: dotColor
+        }} />
+        <span style={{
+          fontSize: "9px",
+          fontWeight: "bold",
+          color: numberColor
+        }}>
+          {completedNotAbandonedCount}/{totalCount}
+        </span>
       </div>
-    );
+    )}
+    
+    {/* 结束时间显示 */}
+    {studyEndTime && (() => {
+      const [hour, minute] = studyEndTime.split(':').map(Number);
+      const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+      return (
+        <div style={{
+          fontSize: "8px",
+          color: isAfter9PM ? "#f44336" : "#999",
+          marginTop: "2px",
+          whiteSpace: "nowrap"
+        }}>
+          {studyEndTime}
+        </div>
+      );
+    })()}
+  </div>
+);
+
   })}
 </div>
 
