@@ -10064,7 +10064,8 @@ const toggleDateCompletion = (date, isChecked) => {
 
 
   {/* 任务文字 + 📅 图标 */}
- <div
+
+<div
   onClick={(e) => {
     e.stopPropagation();
     onOpenEditModal(task);
@@ -10084,54 +10085,44 @@ const toggleDateCompletion = (date, isChecked) => {
     gap: "4px"
   }}
 >
-    <span>{task.text}</span>
-
-    {/* ✅ 图片标记 - 紧跟在任务文字后面 */}
-  {task.hasImage && (
-    <span style={{ 
-      color: '#ff4444', 
-      fontSize: '11px',
-      marginLeft: '2px'
-    }}>
-      [图片]
+  {/* 任务文字和图片标记紧贴在一起 */}
+  <span style={{ display: "inline", whiteSpace: "normal" }}>
+    {task.text}
+    {task.hasImage && (
+      <span style={{ color: '#ff4444', fontWeight: 'bold',fontSize: '11px' }}>
+        &nbsp; &nbsp; [图片]
+      </span>
+    )}
+  </span>
+  
+  {/* 📅 图标 */}
+  {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowCrossDateDetail(!showCrossDateDetail);
+      }}
+      style={{
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        marginLeft: "4px",
+        opacity: showCrossDateDetail ? 0.7 : 1
+      }}
+      title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+      </svg>
     </span>
   )}
-    
-    {/* 📅 图标 */}
-{/* 📅 图标 - 可点击展开/收起跨日期详情 */}
-{task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
-  <span
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowCrossDateDetail(!showCrossDateDetail);
-    }}
-    style={{
-      cursor: "pointer",
-      display: "inline-flex",
-      alignItems: "center",
-      marginLeft: "6px",
-      opacity: showCrossDateDetail ? 0.7 : 1
-    }}
-    title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
-  >
-    <svg 
-      width="14" 
-      height="14" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-    </svg>
-  </span>
-)}
-  </div>
+</div>
 
   {/* 时间显示 */}
   <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
