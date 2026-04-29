@@ -5989,120 +5989,141 @@ const handleEditTemplate = (index, template) => {
           </div>
 
           {/* 📊 进度跟踪 */}
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: 8,
-              fontWeight: 600,
-              color: '#333',
-              fontSize: 14,
-            }}>
-              📊 进度跟踪
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 12,
-              alignItems: 'end',
-            }}>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>初始值</div>
-                <input
-                  type="number"
-                  value={formData.progress?.initial || ''}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    progress: { ...formData.progress, initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
-                  })}
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>当前值</div>
-                <input
-                  type="number"
-                  value={formData.progress?.current || ''}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    progress: { ...formData.progress, current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
-                  })}
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>目标值</div>
-                <input
-                  type="number"
-                  value={formData.progress?.target || ''}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    progress: { ...formData.progress, target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }
-                  })}
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 4, textAlign: 'center' }}>单位</div>
-                <select
-                  value={formData.progress?.unit || '%'}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    progress: { ...formData.progress, unit: e.target.value }
-                  })}
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="%">%</option>
-                  <option value="页">页</option>
-                  <option value="章">章</option>
-                  <option value="题">题</option>
-                  <option value="本">本</option>
-                  <option value="篇">篇</option>
-                  <option value="单元">单元</option>
-                </select>
-              </div>
-            </div>
-          </div>
+         {/* 📊 进度跟踪 */}
+<div>
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    进度
+  </label>
+
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',  // 改为 3 列
+      gap: 12,
+      alignItems: 'end',
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        初始值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.initial || ''}
+        placeholder="0"
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        当前值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.current || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        目标值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.target || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  </div>
+</div>
 
           {/* 更多配置按钮 */}
        <div
@@ -8919,7 +8940,7 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
 // 任务编辑模态框
 
 // 任务编辑模态框
-const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories, onMarkAbandoned }) => {
+const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories, onCancelAbandoned,  onMarkAbandoned }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
     onMarkAbandoned  ,
@@ -9100,7 +9121,40 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     flexShrink: 0,        // 防止收缩
     flexWrap: "nowrap"    // 强制不换行
   }}>
-    {/* ❌ 放弃按钮 */}
+  
+{/* 在 TaskEditModal 的标题栏按钮区域，放弃按钮旁边添加 */}
+{task.abandoned && (
+  <button
+    onClick={() => {
+      if (window.confirm('确定要取消"做不完"标记吗？任务将恢复正常状态。')) {
+        // 调用取消放弃的函数
+        onCancelAbandoned(task);
+      }
+      onClose();
+    }}
+    style={{
+      width: '32px',
+      height: '32px',
+      padding: 0,
+      backgroundColor: 'transparent',
+      border: "none",
+      borderRadius: 6,
+      cursor: "pointer",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }}
+    title="取消放弃，恢复正常"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+      <path d="M8 12 L11 15 L16 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  </button>
+)}
+
+
   {/* 🚫 放弃按钮 - 蓝色禁止符号 */}
 <button
   onClick={() => {
@@ -9675,185 +9729,141 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 )}
 </div>
 
-          {/* 📊 进度跟踪 */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 8,
-                fontWeight: 600,
-                color: '#333',
-                fontSize: 14,
-              }}
-            >
-              进度
-            </label>
+         {/* 📊 进度跟踪 */}
+<div>
+  <label
+    style={{
+      display: 'block',
+      marginBottom: 8,
+      fontWeight: 600,
+      color: '#333',
+      fontSize: 14,
+    }}
+  >
+    进度
+  </label>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 12,
-                alignItems: 'end',
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#666',
-                    marginBottom: 4,
-                    textAlign: 'center',
-                  }}
-                >
-                  初始值
-                </div>
-                <input
-                  type="number"
-                  value={editData.progress?.initial || ''}
-                  placeholder="0"
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      progress: {
-                        ...editData.progress,
-                        initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',  // 改为 3 列
+      gap: 12,
+      alignItems: 'end',
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        初始值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.initial || ''}
+        placeholder="0"
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
 
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#666',
-                    marginBottom: 4,
-                    textAlign: 'center',
-                  }}
-                >
-                  当前值
-                </div>
-                <input
-                  type="number"
-                  value={editData.progress?.current || ''}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      progress: {
-                        ...editData.progress,
-                        current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        当前值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.current || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
 
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#666',
-                    marginBottom: 4,
-                    textAlign: 'center',
-                  }}
-                >
-                  目标值
-                </div>
-                <input
-                  type="number"
-                  value={editData.progress?.target || ''}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      progress: {
-                        ...editData.progress,
-                        target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#666',
-                    marginBottom: 4,
-                    textAlign: 'center',
-                  }}
-                >
-                  单位
-                </div>
-                <select
-                  value={editData.progress?.unit || '%'}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      progress: {
-                        ...editData.progress,
-                        unit: e.target.value,
-                      },
-                    })
-                  }
-                  style={{
-                    width: '100%',
-                    height: 36,
-                    padding: '0 6px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    textAlign: 'center',
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="本">本</option>
-                  <option value="页">页</option>
-                  <option value="章">章</option>
-                  <option value="题">题</option>
-                  <option value="篇">篇</option>
-                  <option value="单元">单元</option>
-                </select>
-              </div>
-            </div>
-          </div>
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#666',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        目标值
+      </div>
+      <input
+        type="number"
+        value={editData.progress?.target || ''}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            progress: {
+              ...editData.progress,
+              target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+            },
+          })
+        }
+        style={{
+          width: '100%',
+          height: 36,
+          padding: '0 6px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          fontSize: 14,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  </div>
+</div>
 
           {/* 更多配置按钮 */}
           <div
@@ -12681,7 +12691,7 @@ const getSubjectColor = (subject) => {
           {/* 统计卡片 */}
          <div style={{
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
+  gridTemplateColumns: 'repeat(3, 1fr)',
   gap: '8px',  // 从 8px 改为 6px，更紧凑
   marginBottom: 20
 }}>
@@ -13829,7 +13839,41 @@ const endSortingSubCategory = (subCategory, orderedTasks) => {
 
 // 在 App 组件中，找到其他 useRef 的位置，添加：
 
-
+// 取消放弃任务
+const cancelAbandoned = (task) => {
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    
+    if (task.isWeekTask) {
+      // 本周任务需要更新所有日期
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? { ...t, abandoned: false, done: false }
+            : t
+        );
+      });
+    } else if (task.crossDateId) {
+      // 跨日期任务需要更新所有关联日期
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.crossDateId === task.crossDateId
+            ? { ...t, abandoned: false, done: false }
+            : t
+        );
+      });
+    } else {
+      // 普通任务只更新当前日期
+      newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
+        t.id === task.id ? { ...t, abandoned: false, done: false } : t
+      );
+    }
+    
+    return newTasksByDate;
+  });
+  
+  console.log('✅ 任务已恢复正常:', task.text);
+};
 
 const markTaskAsAbandoned = (task) => {
   setTasksByDate(prev => {
@@ -19021,6 +19065,7 @@ if (isInitialized && todayTasks.length === 0) {
     setCategories={setCategories} 
     setShowDeleteModal={setShowDeleteModal}
  onMarkAbandoned={markTaskAsAbandoned}
+ onCancelAbandoned={cancelAbandoned} 
     setShowMoveTaskModal={setShowMoveTaskModal}
     setShowCrossDateModal={setShowCrossDateModal}
   />
@@ -19529,67 +19574,79 @@ if (isInitialized && todayTasks.length === 0) {
     
     const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
     
+    // 筛选有效任务：排除本周任务和未完成的常规任务
     const filteredTasks = dayTasks.filter(task => {
-  if (task.category === "本周任务") return false;
-  if (task.isRegularTask && !task.done) return false;
-  return true;
-});
-    
-   
-    
-
-// ✅ 总任务数包括放弃的任务
-const totalCount = filteredTasks.length;
-
-// ✅ 已完成数只计算未放弃且完成的任务
-const completedCount = filteredTasks.filter(task => {
-  if (task.abandoned) return false;
-  if (task.crossDateId) {
-    const crossTaskDates = task.crossDates || [];
-    return crossTaskDates.some(date => {
-      const dateTasks = tasksByDate[date] || [];
-      const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
-      return taskOnDate?.done === true;
+      if (task.category === "本周任务") return false;
+      if (task.isRegularTask && !task.done) return false;
+      return true;
     });
-  }
-  return task.done;
-}).length;
-
-
-
-
-// 所有未放弃的任务是否都完成了
-const allUngivenUpDone = filteredTasks
-  .filter(task => !task.abandoned)
-  .every(task => task.done === true);
-
-// 是否有未完成且未放弃的任务
-const hasPendingTasks = filteredTasks.some(task => !task.done && !task.abandoned);
-
-// 圆点和数字颜色
-let numberColor = "#666";
-let dotColor = "#666";
-
-if (allUngivenUpDone && totalCount > 0) {
-  // 所有未放弃任务都完成 → 变灰
-  numberColor = "#ccc";
-  dotColor = "#ccc";
-} else if (hasPendingTasks) {
-  // 有待处理任务 → 红色
-  numberColor = "#f44336";
-  dotColor = "#f44336";
-}
-
-const allDone = totalCount > 0 && completedCount === totalCount;
-const hasIncomplete = totalCount > 0 && completedCount < totalCount;
-
-
-
-// 是否需要显示灰色
-const shouldShowGray = allUngivenUpDone && totalCount > 0;
+    
+    // ========== 统计逻辑 ==========
+    // 总任务数（包括放弃的任务）
+    const totalCount = filteredTasks.length;
+    
+    // 未放弃的任务列表
+    const notAbandonedTasks = filteredTasks.filter(task => !task.abandoned);
+    
+    // 未放弃的数量 ⭐ 添加这一行
+    const notAbandonedCount = notAbandonedTasks.length;
+    
+    // 放弃的任务数
+    const abandonedCount = filteredTasks.filter(task => task.abandoned).length;
+    
+    // 未放弃的任务中，已完成的数量
+    const completedNotAbandonedCount = notAbandonedTasks.filter(task => {
+      if (task.crossDateId) {
+        const crossTaskDates = task.crossDates || [];
+        return crossTaskDates.some(date => {
+          const dateTasks = tasksByDate[date] || [];
+          const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
+          return taskOnDate?.done === true;
+        });
+      }
+      return task.done;
+    }).length;
+    
+    // 是否有未完成且未放弃的任务（待处理）
+    const hasPendingNotAbandoned = notAbandonedTasks.some(task => {
+      if (task.crossDateId) {
+        const crossTaskDates = task.crossDates || [];
+        return !crossTaskDates.some(date => {
+          const dateTasks = tasksByDate[date] || [];
+          const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
+          return taskOnDate?.done === true;
+        });
+      }
+      return !task.done;
+    });
+    
+    // 判断显示状态
+    let numberColor = "#666";  // 默认灰色
+    let dotColor = "#666";
+    
+    if (totalCount === 0) {
+      // 没有任务 → 不显示
+      numberColor = "transparent";
+      dotColor = "transparent";
+    } else if (hasPendingNotAbandoned) {
+      // 有待处理的未放弃任务 → 红色
+      numberColor = "#f44336";
+      dotColor = "#f44336";
+    } else if (abandonedCount > 0 && completedNotAbandonedCount === notAbandonedCount) {
+      // 有放弃的任务，且所有未放弃的任务都完成了 → 灰色
+      numberColor = "#999";
+      dotColor = "#999";
+    } else if (completedNotAbandonedCount === totalCount && totalCount > 0) {
+      // 所有任务都完成（没有放弃的任务） → 绿色
+      numberColor = "#4caf50";
+      dotColor = "#4caf50";
+    }
+    
+    // 是否显示数字（有任务时都显示）
+    const showNumber = totalCount > 0;
     
     const dailyRating = dailyRatings[dateStr] || 0;
-    const studyEndTime = studyEndTimes[dateStr] || '';  // 👈 获取当前日期的结束时间
+    const studyEndTime = studyEndTimes[dateStr] || '';
     
     const getRatingColor = (rating) => {
       switch(rating) {
@@ -19627,113 +19684,67 @@ const shouldShowGray = allUngivenUpDone && totalCount > 0;
       >
         <div style={{ position: "relative", display: "inline-block" }}>
           <span>{d.label}</span>
-        {hasCrossDateTask && (
-  <span style={{
-    position: "absolute",
-    top: "50%",
-    right: "-18px",
-    transform: "translateY(-50%)",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-   <svg 
-  width="12" 
-  height="12" 
-  viewBox="0 0 24 24" 
-  fill="none" 
-  xmlns="http://www.w3.org/2000/svg"
->
-  {/* 两个弯曲箭头组成循环 */}
-  {/* 上半圆 - 顺时针箭头 */}
-  <path 
-    d="M4 14C4 10.5 7 8 10.5 8L14 8" 
-    stroke="#61A2Da" 
-    strokeWidth="2" 
-    strokeLinecap="round"
-    fill="none"
-  />
-  {/* 上箭头头部 */}
-  <path 
-    d="M11 5L14 8L11 11" 
-    stroke="#61A2Da" 
-    strokeWidth="2" 
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    fill="none"
-  />
-  
-  {/* 下半圆 - 逆时针箭头 */}
-  <path 
-    d="M20 10C20 13.5 17 16 13.5 16L10 16" 
-    stroke="#61A2Da" 
-    strokeWidth="2" 
-    strokeLinecap="round"
-    fill="none"
-  />
-  {/* 下箭头头部 */}
-  <path 
-    d="M13 19L10 16L13 13" 
-    stroke="#61A2Da" 
-    strokeWidth="2" 
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    fill="none"
-  />
-</svg>
-  </span>
-)}
+          {hasCrossDateTask && (
+            <span style={{
+              position: "absolute",
+              top: "50%",
+              right: "-18px",
+              transform: "translateY(-50%)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 14C4 10.5 7 8 10.5 8L14 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                <path d="M11 5L14 8L11 11" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M20 10C20 13.5 17 16 13.5 16L10 16" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                <path d="M13 19L10 16L13 13" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </span>
+          )}
         </div>
         <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
         
-       
+        {/* 任务数量显示 - 格式：已完成数/总任务数 */}
+        {showNumber && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            marginTop: "2px"
+          }}>
+            <div style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: dotColor
+            }} />
+            <span style={{
+              fontSize: "9px",
+              fontWeight: "bold",
+              color: numberColor
+            }}>
+              {completedNotAbandonedCount}/{totalCount}
+            </span>
+          </div>
+        )}
         
-{/* 第三行：任务数量 + 圆点 */}
-{totalCount > 0 && (
-  <div style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "4px",
-    marginTop: "2px"
-  }}>
-    <div style={{
-      width: "6px",
-      height: "6px",
-      borderRadius: "50%",
-      backgroundColor: dotColor
-    }} />
-    <span style={{
-      fontSize: "9px",
-      fontWeight: "bold",
-      color: numberColor
-    }}>
-      {completedCount}/{totalCount}
-    </span>
-  </div>
-)}
-        
-        {/* 👇 添加结束时间显示 - 小小的 */}
-     
-
-{studyEndTime && (() => {
-  // 解析小时和分钟
-  const [hour, minute] = studyEndTime.split(':').map(Number);
-  // 判断是否超过 21:00（21:00 显示灰色，21:01 开始显示红色）
-  const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
-  
-  return (
-    <div style={{
-      fontSize: "8px",
-      color: isAfter9PM ? "#f44336" : "#999",
-      marginTop: "2px",
-      whiteSpace: "nowrap"
-   
-    }}>
-      {studyEndTime}
-    </div>
-  );
-})()}
+        {/* 结束时间显示 */}
+        {studyEndTime && (() => {
+          const [hour, minute] = studyEndTime.split(':').map(Number);
+          const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+          return (
+            <div style={{
+              fontSize: "8px",
+              color: isAfter9PM ? "#f44336" : "#999",
+              marginTop: "2px",
+              whiteSpace: "nowrap"
+            }}>
+              {studyEndTime}
+            </div>
+          );
+        })()}
       </div>
     );
   })}
