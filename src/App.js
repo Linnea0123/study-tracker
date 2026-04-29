@@ -4513,86 +4513,37 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
 const generateRealTimeContent = useCallback(() => {
   const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
   
-  // 获取所有日期的任务，用于检查跨日期任务是否在其他日期完成
-  const allTasksByDate = tasksByDate || {};
-  const allDates = Object.keys(allTasksByDate);
-  
-  // 辅助函数：检查跨日期任务是否已在任何日期完成
-  const isCrossDateTaskCompletedAnywhere = (crossDateId, currentDate) => {
-    if (!crossDateId) return false;
-    for (const date of allDates) {
-      // 跳过当前日期本身
-      if (date === currentDate) continue;
-      const tasksOnDate = allTasksByDate[date] || [];
-      const taskOnDate = tasksOnDate.find(t => t.crossDateId === crossDateId);
-      if (taskOnDate?.done === true) {
-        return true;
-      }
-    }
-    return false;
-  };
-  
-  // 获取跨日期任务在其他日期的完成日期（用于显示）
-  const getCompletedDate = (crossDateId) => {
-    if (!crossDateId) return null;
-    for (const date of allDates) {
-      const tasksOnDate = allTasksByDate[date] || [];
-      const taskOnDate = tasksOnDate.find(t => t.crossDateId === crossDateId);
-      if (taskOnDate?.done === true) {
-        return date;
-      }
-    }
-    return null;
-  };
-  
-  // 辅助函数：判断任务是否应该在当前日期显示
-  const shouldShowTaskOnCurrentDate = (task, currentDate) => {
-    // 放弃的任务始终显示
-    if (task.abandoned) return true;
-    
-    // 如果是跨日期任务
-    if (task.crossDateId) {
-      // ✅ 关键修改：检查这个任务是否已经在其他日期完成了
-      const completedElsewhere = isCrossDateTaskCompletedAnywhere(task.crossDateId, currentDate);
-      
-      if (completedElsewhere) {
-        // 已经在其他日期完成，不在当前日期显示
-        return false;
-      }
-      
-      // 如果当前日期本身已经完成，显示
-      if (task.done === true) {
-        return true;
-      }
-      
-      // 未完成的任务，显示
-      return true;
-    }
-    // 普通任务总是显示
-    return true;
-  };
-  
-  // 辅助函数：获取任务的完成状态
+  // 辅助函数：获取任务的完成状态（基于当天这个任务对象）
   const getTaskCompletedStatus = (task, currentDate) => {
     if (task.abandoned) return false;
     
+    // ✅ 跨日期任务：直接使用当天这个任务对象的 done 状态
     if (task.crossDateId) {
-      // ✅ 检查是否在任何日期完成
-      const completedAnywhere = isCrossDateTaskCompletedAnywhere(task.crossDateId, currentDate);
-      // 或者当前日期本身已完成
-      return completedAnywhere || task.done === true;
+      return task.done === true;
     }
+    
+    // 普通任务
     return task.done === true;
+  };
+  
+  // 辅助函数：判断任务是否应该显示
+  const shouldShowTask = (task, currentDate) => {
+    if (task.abandoned) return true;
+    
+    // ✅ 跨日期任务：只有当天的任务对象 done === true 时才显示
+    if (task.crossDateId) {
+      return task.done === true;
+    }
+    
+    // 普通任务：都显示
+    return true;
   };
   
   // 筛选当前日期应该显示的任务
   let filteredTasks = dayTasks.filter(task => {
-    // 排除常规任务（常规任务单独处理）
     if (task.isRegularTask) return false;
-    // 排除本周任务
     if (task.category === "本周任务") return false;
-    // 判断是否应该显示
-    if (!shouldShowTaskOnCurrentDate(task, selectedDate)) return false;
+    if (!shouldShowTask(task, selectedDate)) return false;
     return true;
   });
   
@@ -4604,7 +4555,6 @@ const generateRealTimeContent = useCallback(() => {
     return false;
   });
   
-  // 合并常规任务
   filteredTasks = [...filteredTasks, ...regularTasks];
   
   // 按分类和子分类组织任务
@@ -4632,7 +4582,7 @@ const generateRealTimeContent = useCallback(() => {
     }
   });
   
-  // 统计当前日期实际显示的任务
+  // 统计
   const totalTasksCount = filteredTasks.length;
   const completedCount = filteredTasks.filter(t => getTaskCompletedStatus(t, selectedDate)).length;
   
@@ -4652,7 +4602,6 @@ const generateRealTimeContent = useCallback(() => {
   
   return { tasksByCategory, newStats };
 }, [tasksByDate, selectedDate]);
-  
   const [currentContent, setCurrentContent] = useState(() => generateRealTimeContent());
   
 useEffect(() => {
@@ -4892,56 +4841,74 @@ const { tasksByCategory, newStats } = currentContent || { tasksByCategory: {}, n
               
               {/* 无子分类的任务 */}
               {categoryData.withoutSubCategories.map((task, idx) => {
-                const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-                const timeText = minutes > 0 ? `【${minutes}m】` : "";
-                
-                return task.isCompleted ? (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', marginLeft: '12px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-                    </svg>
-                    <span style={{ fontSize: '12px', color: '#333' }}>{task.text}</span>
-                    {timeText && <span style={{ fontSize: '10px', color: '#999' }}>{timeText}</span>}
-                  </div>
-                ) : (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', marginLeft: '12px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                      <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                    </svg>
-                    <span style={{ fontSize: '12px', color: '#999' }}>{task.text}</span>
-                    {timeText && <span style={{ fontSize: '10px', color: '#999' }}>{timeText}</span>}
-                  </div>
-                );
-              })}
+  const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+  const timeText = minutes > 0 ? `【${minutes}m】` : "";
+  
+  return task.isCompleted ? (
+    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '12px' }}>
+      {/* 复选框容器 - 固定宽度，与第一行对齐 */}
+      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+        </svg>
+      </div>
+      {/* 文字容器 - 允许换行 */}
+      <div style={{ flex: 1, fontSize: '12px', color: '#333', lineHeight: '1.4' }}>
+        {task.text}
+        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+      </div>
+    </div>
+  ) : (
+    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '12px' }}>
+      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+          <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+        </svg>
+      </div>
+      <div style={{ flex: 1, fontSize: '12px', color: '#999', lineHeight: '1.4' }}>
+        {task.text}
+        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+      </div>
+    </div>
+  );
+})}
               
               {/* 有子分类的任务 */}
               {Object.entries(categoryData.withSubCategories).map(([subCategory, subTasks]) => (
                 <div key={subCategory} style={{ marginLeft: '12px', marginTop: '4px' }}>
                   <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>- {subCategory}</div>
                   {subTasks.map((task, idx) => {
-                    const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-                    const timeText = minutes > 0 ? `【${minutes}m】` : "";
-                    
-                    return task.isCompleted ? (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-                        </svg>
-                        <span style={{ fontSize: '12px', color: '#333' }}>{task.text}</span>
-                        {timeText && <span style={{ fontSize: '10px', color: '#999' }}>{timeText}</span>}
-                      </div>
-                    ) : (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                          <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-                        </svg>
-                        <span style={{ fontSize: '12px', color: '#999' }}>{task.text}</span>
-                        {timeText && <span style={{ fontSize: '10px', color: '#999' }}>{timeText}</span>}
-                      </div>
-                    );
-                  })}
+  const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+  const timeText = minutes > 0 ? `【${minutes}m】` : "";
+  
+  return task.isCompleted ? (
+    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
+      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+        </svg>
+      </div>
+      <div style={{ flex: 1, fontSize: '12px', color: '#333', lineHeight: '1.4' }}>
+        {task.text}
+        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+      </div>
+    </div>
+  ) : (
+    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
+      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+          <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+        </svg>
+      </div>
+      <div style={{ flex: 1, fontSize: '12px', color: '#999', lineHeight: '1.4' }}>
+        {task.text}
+        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+      </div>
+    </div>
+  );
+})}
                 </div>
               ))}
             </div>
@@ -7352,18 +7319,17 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
   const [newTaskText, setNewTaskText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('校内');
   const [selectedSubCategory, setSelectedSubCategory] = useState('');
-  const [deadline, setDeadline] = useState('');
+ 
   const [target, setTarget] = useState(100);
-  const [unit, setUnit] = useState('%');
+  const [initial, setInitial] = useState(0);  // 新增
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [editFormData, setEditFormData] = useState({
     text: '',
     category: '校内',
     subCategory: '',
-    deadline: '',
-    target: 100,
-    unit: '%'
+  
+    target: 100
   });
 
   const categories = ['校内', '语文', '数学', '英语', '科学', '运动', '其他'];
@@ -7376,17 +7342,15 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     }
 
     const newTask = {
-      id: Date.now().toString(),
-      text: newTaskText.trim(),
-      category: selectedCategory,
-      subCategory: selectedSubCategory,
-      deadline: deadline,
-      progress: 0,
-      timeSpent: 0,
-      target: target,
-      unit: unit,
-      createdAt: new Date().toISOString()
-    };
+  id: Date.now().toString(),
+  text: newTaskText.trim(),
+  category: selectedCategory,
+  subCategory: selectedSubCategory,
+  progress: 0,
+  timeSpent: 0,
+  target: target,
+  createdAt: new Date().toISOString()
+};
 
     if (onAddTask) {
       onAddTask(newTask);
@@ -7395,9 +7359,9 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     setNewTaskText('');
     setSelectedCategory('校内');
     setSelectedSubCategory('');
-    setDeadline('');
+    
     setTarget(100);
-    setUnit('%');
+   
     setShowAddForm(false);
   };
 
@@ -7419,39 +7383,27 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     return acc;
   }, {});
 
-  const startEditTask = (task) => {
-    setEditingTask(task);
-    setEditFormData({
-      text: task.text,
-      category: task.category,
-      subCategory: task.subCategory || '',
-      deadline: task.deadline || '',
-      target: task.target,
-      unit: task.unit
-    });
-  };
-
+ 
   const saveEditTask = () => {
-    if (!editFormData.text.trim()) {
-      alert('任务内容不能为空');
-      return;
-    }
+  if (!editFormData.text.trim()) {
+    alert('任务内容不能为空');
+    return;
+  }
 
-    const updatedTask = {
-      ...editingTask,
-      text: editFormData.text.trim(),
-      category: editFormData.category,
-      subCategory: editFormData.subCategory,
-      deadline: editFormData.deadline,
-      target: editFormData.target,
-      unit: editFormData.unit
-    };
-
-    if (onEditTask) {
-      onEditTask(updatedTask);
-    }
-    setEditingTask(null);
+  const updatedTask = {
+    ...editingTask,
+    text: editFormData.text.trim(),
+    category: editFormData.category,
+    subCategory: editFormData.subCategory,
+    initial: editFormData.initial,  // 新增
+    target: editFormData.target
   };
+
+  if (onEditTask) {
+    onEditTask(updatedTask);
+  }
+  setEditingTask(null);
+};
 
   const cancelEdit = () => {
     setEditingTask(null);
@@ -7465,11 +7417,22 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     }
   };
 
-  const handleProgressUpdate = (taskId, newProgress) => {
-    if (onUpdateProgress) {
-      onUpdateProgress(taskId, newProgress);
-    }
-  };
+ const handleProgressUpdate = (taskId, newProgress) => {
+  // 找到对应的任务
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  
+  // 获取初始值和目标值
+  const initial = task.initial || 0;
+  const target = task.target || 100;
+  
+  // 确保新进度在 [initial, target] 范围内
+  const clampedProgress = Math.min(Math.max(initial, newProgress), target);
+  
+  if (onUpdateProgress) {
+    onUpdateProgress(taskId, clampedProgress);
+  }
+};
 
   return (
     <>
@@ -7598,29 +7561,30 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
       </select>
     )}
 
-    <input
-      type="date"
-      value={deadline}
-      onChange={(e) => setDeadline(e.target.value)}
-      style={{ width: '100%', height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px', marginBottom: '12px', boxSizing: 'border-box' }}
-    />
+    
 
-    <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-      <input
-        type="number"
-        placeholder="目标值"
-        value={target}
-        onChange={(e) => setTarget(Number(e.target.value))}
-        style={{ flex: 2, height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px' }}
-      />
-      <select
-        value={unit}
-        onChange={(e) => setUnit(e.target.value)}
-        style={{ flex: 1, height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px', backgroundColor: '#fff' }}
-      >
-        
-      </select>
-    </div>
+
+{/* 初始值和目标值 */}
+<div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+  <div style={{ flex: 1 }}>
+    <input
+      type="number"
+      placeholder="初始值"
+      value={initial}
+      onChange={(e) => setInitial(Number(e.target.value))}
+      style={{ width: '100%', height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box' }}
+    />
+  </div>
+  <div style={{ flex: 1 }}>
+    <input
+      type="number"
+      placeholder="目标值"
+      value={target}
+      onChange={(e) => setTarget(Number(e.target.value))}
+      style={{ width: '100%', height: '40px', padding: '0 10px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box' }}
+    />
+  </div>
+</div>
 
     {/* 确认添加按钮 */}
     <div
@@ -7668,10 +7632,19 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
                       <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{task.text}</div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        {task.deadline && <div style={{ fontSize: '11px', color: '#666' }}>{task.deadline}</div>}
+                        
                         {/* 编辑按钮 - 使用 div */}
                         <div
-                          onClick={() => startEditTask(task)}
+  onClick={() => {
+    setEditingTask(task);
+    setEditFormData({
+      text: task.text,
+      category: task.category,
+      subCategory: task.subCategory || '',
+      initial: task.initial || 0,
+      target: task.target
+    });
+  }}
                           style={{
                             background: 'transparent',
                             fontSize: '14px',
@@ -7711,64 +7684,51 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
-                      {/* -1 按钮 */}
-                      <div
-                        onClick={() => handleProgressUpdate(task.id, Math.max(0, task.progress - 1))}
-                        style={{
-                          padding: '8px 4px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: '#fff',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          transition: 'none',
-                          transform: 'none'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}
-                        onMouseDown={(e) => { e.currentTarget.style.transform = 'none'; }}
-                      >
-                        -1
-                      </div>
-                      {/* +1 按钮 */}
-                      <div
-                        onClick={() => handleProgressUpdate(task.id, Math.min(task.target, task.progress + 1))}
-                        style={{
-                          padding: '8px 4px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: '#fff',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          transition: 'none',
-                          transform: 'none'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}
-                        onMouseDown={(e) => { e.currentTarget.style.transform = 'none'; }}
-                      >
-                        +1
-                      </div>
-                      {/* 完成按钮 */}
-                      <div
-                        onClick={() => handleProgressUpdate(task.id, task.target)}
-                        style={{
-                          padding: '8px 4px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          backgroundColor: '#e8f5e8',
-                          fontWeight: '500',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          transition: 'none',
-                          transform: 'none'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e8f5e8'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#e8f5e8'; }}
-                        onMouseDown={(e) => { e.currentTarget.style.transform = 'none'; }}
-                      >
-                        完成
-                      </div>
+           {/* -1 按钮 */}
+<div
+  onClick={() => handleProgressUpdate(task.id, task.progress - 1)}
+  style={{
+    padding: '8px 4px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#fff',
+    textAlign: 'center',
+    cursor: 'pointer'
+  }}
+>
+  -1
+</div>
+
+{/* +1 按钮 */}
+<div
+  onClick={() => handleProgressUpdate(task.id, task.progress + 1)}
+  style={{
+    padding: '8px 4px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#fff',
+    textAlign: 'center',
+    cursor: 'pointer'
+  }}
+>
+  +1
+</div>
+
+{/* 完成按钮 */}
+<div
+  onClick={() => handleProgressUpdate(task.id, task.target)}
+  style={{
+    padding: '8px 4px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#e8f5e8',
+    fontWeight: '500',
+    textAlign: 'center',
+    cursor: 'pointer'
+  }}
+>
+  完成
+</div>
                     </div>
                   </div>
                 ))}
@@ -7837,29 +7797,30 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
               </select>
             )}
 
-            <input
-              type="date"
-              value={editFormData.deadline}
-              onChange={(e) => setEditFormData({...editFormData, deadline: e.target.value})}
-              style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }}
-            />
+            
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-              <input
-                type="number"
-                placeholder="目标值"
-                value={editFormData.target}
-                onChange={(e) => setEditFormData({...editFormData, target: Number(e.target.value)})}
-                style={{ flex: 2, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-              <select
-                value={editFormData.unit}
-                onChange={(e) => setEditFormData({...editFormData, unit: e.target.value})}
-                style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#fff' }}
-              >
-               
-              </select>
-            </div>
+            {/* 初始值和目标值 */}
+{/* 初始值和目标值 */}
+<div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+  <div style={{ flex: 1 }}>
+    <input
+      type="number"
+      placeholder="初始值"
+      value={editFormData.initial}
+      onChange={(e) => setEditFormData({...editFormData, initial: Number(e.target.value)})}
+      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }}
+    />
+  </div>
+  <div style={{ flex: 1 }}>
+    <input
+      type="number"
+      placeholder="目标值"
+      value={editFormData.target}
+      onChange={(e) => setEditFormData({...editFormData, target: Number(e.target.value)})}
+      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }}
+    />
+  </div>
+</div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
               {/* 取消按钮 - 使用 div */}
@@ -10079,50 +10040,57 @@ const toggleDateCompletion = (date, isChecked) => {
     lineHeight: "1.5",
     flex: 1,
     minWidth: "50px",
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "4px"
   }}
 >
-  {/* 任务文字和图片标记紧贴在一起 */}
-  <span style={{ display: "inline", whiteSpace: "normal" }}>
+  <span style={{ 
+    display: "inline",
+    whiteSpace: "normal",
+    wordBreak: "break-word"
+  }}>
     {task.text}
+    
     {task.hasImage && (
-      
       <span style={{ color: task.done ? '#999' : '#ff4444', fontSize: '11px' }}>
-        &nbsp; &nbsp; [图片]
+        &nbsp; [图片]
+      </span>
+    )}
+    
+    {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowCrossDateDetail(!showCrossDateDetail);
+        }}
+        style={{
+          cursor: "pointer",
+          display: "inline",
+          marginLeft: "4px",
+          opacity: showCrossDateDetail ? 0.7 : 1,
+         position: "relative",
+top: "-3px",  // 往上移1px，负数越高
+          lineHeight: 1
+        }}
+        title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
+      >
+        <svg 
+          width="14" 
+          height="14" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ display: "inline", verticalAlign: "bottom" }}
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+          <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+          <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+          <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+          <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+        </svg>
       </span>
     )}
   </span>
-  
-  {/* 📅 图标 */}
-  {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowCrossDateDetail(!showCrossDateDetail);
-      }}
-      style={{
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        marginLeft: "4px",
-        opacity: showCrossDateDetail ? 0.7 : 1
-      }}
-      title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-      </svg>
-    </span>
-  )}
 </div>
 
   {/* 时间显示 */}
@@ -12731,23 +12699,23 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
             <span>{levelEnd}</span>
           </div>
           
-          {/* 进度条 */}
-          <div style={{
-            width: '100%',
-            height: '10px',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '5px',
-            overflow: 'hidden',
-            marginBottom: '8px'
-          }}>
-            <div style={{
-              width: `${progressPercent}%`,
-              height: '100%',
-              backgroundColor: getLevelColor(currentLevel),
-              borderRadius: '5px',
-              transition: 'width 0.3s ease'
-            }} />
-          </div>
+     {/* 进度条 */}
+<div style={{ marginBottom: '8px' }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px' }}>
+    <span>进度</span>
+    <span>
+      {Math.round(((task.progress - (task.initial || 0)) / ((task.target || 100) - (task.initial || 0))) * 100)}% 
+      | {task.progress}/{task.target}
+    </span>
+  </div>
+  <div style={{ width: '100%', height: '6px', backgroundColor: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
+    <div style={{ 
+      width: `${((task.progress - (task.initial || 0)) / ((task.target || 100) - (task.initial || 0))) * 100}%`, 
+      height: '100%', 
+      backgroundColor: task.progress >= task.target ? '#4CAF50' : '#2196F3' 
+    }} />
+  </div>
+</div>
           
           {/* 进度数字 */}
           <div style={{
@@ -12838,7 +12806,7 @@ function App() {
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
 // 在 App 组件中，其他 useState 附近添加
-const [isHolidayMode, setIsHolidayMode] = useState(false); // 假期模式状态
+
 const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
   // 在 App 组件开头，其他 useState 附近添加
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
@@ -14221,6 +14189,8 @@ const handleCrossDateTask = (task, targetDates) => {
 
 // 在 App 组件中，替换 toggleDone 函数：
 
+
+
 const toggleDone = (task) => {
   const newDoneState = !task.done;
   const currentDate = selectedDate;
@@ -14232,21 +14202,58 @@ const toggleDone = (task) => {
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
       
-      // 更新所有相关日期的任务完成状态（全局同步）
+      // 更新所有相关日期的任务
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t => {
           if (t.crossDateId === crossDateId) {
-            // ✅ 关键：如果是勾选操作，记录实际完成日期
-            // 如果是取消操作，清除实际完成日期
-            const actualDate = newDoneState ? currentDate : null;
-            return { 
-              ...t, 
-              done: newDoneState,
-              actualCompletedDate: actualDate  // 记录实际完成的日期
-            };
+            // 如果是当前点击的日期，更新完成状态
+            if (date === currentDate) {
+              return { 
+                ...t, 
+                done: newDoneState,
+                actualCompletedDate: newDoneState ? currentDate : null
+              };
+            }
+            // 其他日期：如果当前日期完成了，它们也同步为完成状态（但实际完成日期不同）
+            // 如果当前日期取消了完成，其他日期不变（保持原有的完成状态）
+            if (newDoneState === true) {
+              // 当前日期完成时，其他日期也标记为完成（但保留各自的实际完成日期）
+              return { 
+                ...t, 
+                done: true,
+                // 不改变其他日期的 actualCompletedDate
+              };
+            } else {
+              // 当前日期取消完成时，其他日期保持不变
+              return t;
+            }
           }
           return t;
         });
+      });
+      
+      // 触发撒花检查
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      
+      return newTasksByDate;
+    });
+    return;
+  }
+  
+  // 如果是本周任务
+  if (task.isWeekTask) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? { ...t, done: newDoneState }
+            : t
+        );
       });
       
       setTimeout(() => {
@@ -14259,7 +14266,7 @@ const toggleDone = (task) => {
     return;
   }
   
-  // 普通任务的处理
+  // 普通任务
   setTasksByDate(prev => {
     const newTasksByDate = {
       ...prev,
@@ -14273,16 +14280,6 @@ const toggleDone = (task) => {
       checkConfettiWithTasks(updatedTasks);
     }, 50);
     
-
-     // ✅ 使用保存的 currentDate 而不是 selectedDate
-    const updatedTasks = newTasksByDate[currentDate] || [];
-    
-    // ✅ 使用 requestAnimationFrame 代替 setTimeout
-    requestAnimationFrame(() => {
-      checkConfettiWithTasks(updatedTasks);
-    });
-    
-
     return newTasksByDate;
   });
 };
@@ -16239,6 +16236,19 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
   console.log('✅ 任务添加成功:', newTask);
 };
 
+// 在 handleAddTask 函数后面添加这个函数
+const startEditTask = (task) => {
+  setEditingTask(task);
+  setEditFormData({
+    text: task.text,
+    category: task.category,
+    subCategory: task.subCategory || '',
+    initial: task.initial || 0,
+    target: task.target
+  });
+};
+
+
 // 在 handleAddTask 函数附近添加这个函数
 // 直接使用模板添加任务
 // 直接使用模板添加任务（带提示）
@@ -16841,8 +16851,7 @@ const handleImportTasksWithDuration = (currentSelectedDate) => {
           target: 0,
           unit: "%"
         },
-        createdAt: new Date().toISOString(),
-        isHoliday: isHolidayMode
+        createdAt: new Date().toISOString()
       };
       
       if (crossDateId && taskDates.length > 1) {
@@ -17252,48 +17261,61 @@ const togglePinned = (task) => {
   }
 };
 
-// 删除任务
-// 删除任务 - 确保能正确删除任务
-// 在 App 组件中，找到 deleteTask 函数，确保它正确更新状态
 const deleteTask = (task, deleteOption = 'today') => {
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
+    // ✅ 如果是本周任务
+    if (task.isWeekTask) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].filter(t => 
+          !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
+        );
+        // 清理空日期
+        if (newTasksByDate[date].length === 0) {
+          delete newTasksByDate[date];
+        }
+      });
+      return newTasksByDate;
+    }
+    
+    // ✅ 如果是跨日期任务
+    if (task.crossDateId) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].filter(t => t.crossDateId !== task.crossDateId);
+        if (newTasksByDate[date].length === 0) {
+          delete newTasksByDate[date];
+        }
+      });
+      return newTasksByDate;
+    }
+    
+    // ✅ 普通任务
     if (deleteOption === 'today') {
       if (newTasksByDate[selectedDate]) {
         newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => t.id !== task.id);
-        
-        // ✅ 关键：如果这天没有任务了，删除这个日期键
         if (newTasksByDate[selectedDate].length === 0) {
           delete newTasksByDate[selectedDate];
-          console.log(`🗑️ 删除空日期: ${selectedDate}`);
         }
       }
     } else if (deleteOption === 'future') {
       const today = new Date(selectedDate);
       today.setHours(0, 0, 0, 0);
-      
       Object.keys(newTasksByDate).forEach(date => {
         const currentDate = new Date(date);
         currentDate.setHours(0, 0, 0, 0);
         if (currentDate >= today) {
           newTasksByDate[date] = newTasksByDate[date].filter(t => t.id !== task.id);
-          
-          // ✅ 关键：如果这天没有任务了，删除这个日期键
           if (newTasksByDate[date].length === 0) {
             delete newTasksByDate[date];
-            console.log(`🗑️ 删除空日期: ${date}`);
           }
         }
       });
     } else if (deleteOption === 'all') {
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].filter(t => t.id !== task.id);
-        
-        // ✅ 关键：如果这天没有任务了，删除这个日期键
         if (newTasksByDate[date].length === 0) {
           delete newTasksByDate[date];
-          console.log(`🗑️ 删除空日期: ${date}`);
         }
       });
     }
@@ -17406,10 +17428,11 @@ const saveTaskEdit = (task, editData) => {
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
+    // ✅ 如果是本周任务
     if (task.isWeekTask) {
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text ? {
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart ? {
             ...t,
             text: editData.text,
             note: editData.note || "",
@@ -17419,33 +17442,72 @@ const saveTaskEdit = (task, editData) => {
             scheduledTime: editData.scheduledTime || "",
             tags: editData.tags || [],
             subTasks: editData.subTasks || [],
-            progress: editData.progress || t.progress,  // ← 添加这行！
+            progress: editData.progress || t.progress,
             reminderTime: reminderTime,
+            templateId: editData.templateId || t.templateId,  // 保留模板ID
+            templateText: editData.templateText || t.templateText
           } : t
         );
       });
-    } else {
-      newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
-        t.id === task.id ? {
-          ...t,
-          text: editData.text,
-          note: editData.note || "",
-          reflection: editData.reflection || "",
-          category: editData.category,
-          subCategory: editData.subCategory || '',
-          scheduledTime: editData.scheduledTime || "",
-          tags: editData.tags || [],
-          subTasks: editData.subTasks || [],
-          reminderTime: reminderTime,
-          progress: editData.progress || t.progress,
-        } : t
-      );
+      return newTasksByDate;
     }
+    
+    // ✅ 如果是跨日期任务 - 同步更新所有关联日期
+    if (task.crossDateId) {
+      console.log('🔄 跨日期任务编辑，同步更新所有关联日期:', task.crossDateId);
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t => {
+          if (t.crossDateId === task.crossDateId) {
+            // 保持原有的重要属性不变
+            return {
+              ...t,
+              text: editData.text,
+              note: editData.note || "",
+              reflection: editData.reflection || "",
+              category: editData.category,
+              subCategory: editData.subCategory || '',
+              scheduledTime: editData.scheduledTime || "",
+              tags: editData.tags || [],
+              subTasks: editData.subTasks || [],
+              progress: editData.progress || t.progress,
+              reminderTime: reminderTime,
+              // 保留跨日期相关属性
+              crossDates: t.crossDates,  // 保持原有的日期列表
+              dateRange: t.dateRange,
+              // 保留原有的完成状态（不要覆盖）
+              done: t.done,
+              actualCompletedDate: t.actualCompletedDate
+            };
+          }
+          return t;
+        });
+      });
+      return newTasksByDate;
+    }
+    
+    // ✅ 普通任务
+    newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
+      t.id === task.id ? {
+        ...t,
+        text: editData.text,
+        note: editData.note || "",
+        reflection: editData.reflection || "",
+        category: editData.category,
+        subCategory: editData.subCategory || '',
+        scheduledTime: editData.scheduledTime || "",
+        tags: editData.tags || [],
+        subTasks: editData.subTasks || [],
+        reminderTime: reminderTime,
+        progress: editData.progress || t.progress,
+        templateId: editData.templateId || t.templateId,
+        templateText: editData.templateText || t.templateText
+      } : t
+    );
     
     return newTasksByDate;
   });
   
-  console.log('✅ 任务已保存，reminderTime:', reminderTime);
+  console.log('✅ 任务已保存');
 };
 
 
@@ -18710,8 +18772,7 @@ if (isInitialized && todayTasks.length === 0) {
     
     const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
     
-    // ✅ 检查当天是否有假期任务
-    const hasHolidayTask = dayTasks.some(task => task.isHoliday === true);
+  
     
     // 筛选有效任务
     const filteredTasks = dayTasks.filter(task => {
@@ -18830,7 +18891,7 @@ if (isInitialized && todayTasks.length === 0) {
     justifyContent: "center"
   }}>
     <span>{d.label}</span>
-    {hasHolidayTask && (
+    {hasCrossDateTask && (
       <span style={{
         position: "absolute",
         left: "100%",
@@ -19307,60 +19368,7 @@ if (isInitialized && todayTasks.length === 0) {
         )}
       </div>
 
-      {/* 👇 新增：假期模式开关 */}
-      <div style={{ 
-        marginBottom: 16, 
-        padding: '8px 12px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: '#333' }}>🏖️ 假期模式</span>
-          
-        </div>
-        
-        {/* 滑动开关 - 无悬浮效果 */}
-        <div
-          onClick={() => setIsHolidayMode(!isHolidayMode)}
-          style={{
-            width: '44px',
-            height: '24px',
-            backgroundColor: isHolidayMode ? '#f44336' : '#ccc',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'none',
-            transform: 'none',
-            scale: 1,
-            position: 'relative',
-            boxShadow: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isHolidayMode ? '#f44336' : '#ccc';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = isHolidayMode ? '#f44336' : '#ccc';
-          }}
-        >
-          <div
-            style={{
-              width: '20px',
-              height: '20px',
-              backgroundColor: '#fff',
-              borderRadius: '10px',
-              position: 'absolute',
-              top: '2px',
-              left: isHolidayMode ? '22px' : '2px',
-              transition: 'none',
-              transform: 'none',
-              scale: 1,
-              boxShadow: 'none'
-            }}
-          />
-        </div>
-      </div>
+ 
       
       {/* 按钮区域 */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
