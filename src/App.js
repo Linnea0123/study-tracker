@@ -12352,14 +12352,23 @@ const CategoryManagerModal = ({
                     flex: 1
                   }}>
                     {/* 色块 - 可点击选择颜色 */}
+
+
 <div
-  onClick={() => {
+  onClick={(e) => {
+    e.stopPropagation();
+    // 创建一个隐藏的 color input
     const input = document.createElement('input');
     input.type = 'color';
-    // ✅ 优先使用 categoryColors 中的颜色
-    const currentColor = categoryColors[category.name] || category.color;
-    input.value = currentColor;
-    input.onchange = (e) => {
+    input.style.position = 'fixed';
+    input.style.left = '-9999px';
+    input.style.top = '-9999px';
+    input.value = categoryColors[category.name] || category.color;
+    
+    // ✅ 关键：先添加到 body，再点击，然后移除
+    document.body.appendChild(input);
+    
+    input.addEventListener('change', (e) => {
       const newColor = e.target.value;
       const newCategories = [...localCategories];
       newCategories[catIndex].color = newColor;
@@ -12367,7 +12376,13 @@ const CategoryManagerModal = ({
       if (onSaveCategoryColor) {
         onSaveCategoryColor(category.name, newColor);
       }
-    };
+      document.body.removeChild(input);
+    });
+    
+    input.addEventListener('cancel', () => {
+      document.body.removeChild(input);
+    });
+    
     input.click();
   }}
   style={{
