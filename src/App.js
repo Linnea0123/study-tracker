@@ -10089,7 +10089,8 @@ const toggleDateCompletion = (date, isChecked) => {
   <span style={{ display: "inline", whiteSpace: "normal" }}>
     {task.text}
     {task.hasImage && (
-      <span style={{ color: '#ff4444', fontWeight: 'bold',fontSize: '11px' }}>
+      
+      <span style={{ color: task.done ? '#999' : '#ff4444', fontSize: '11px' }}>
         &nbsp; &nbsp; [图片]
       </span>
     )}
