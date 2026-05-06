@@ -4562,13 +4562,13 @@ const generateRealTimeContent = useCallback(() => {
     return task.isRegularTask === true;
   };
   
-  // ✅ 辅助函数：获取任务的完成状态
+  // ✅ 辅助函数：获取任务的完成状态（跨日期任务只显示今天完成的）
   const getTaskCompletedStatus = (task, currentDate) => {
     if (task.abandoned) return false;
     
-    // 跨日期任务：直接使用当天的 done 状态
+    // 跨日期任务：只有当天的 actualCompletedDate 等于当前日期才算完成
     if (task.crossDateId) {
-      return task.done === true;
+      return task.actualCompletedDate === currentDate;
     }
     
     // 普通任务
@@ -4579,15 +4579,15 @@ const generateRealTimeContent = useCallback(() => {
   const shouldShowTask = (task, currentDate) => {
     if (task.abandoned) return true;
     
-    // 跨日期任务：只有当天的任务对象 done === true 时才显示
+    // 跨日期任务：只有当天的 actualCompletedDate 等于当前日期时才显示
     if (task.crossDateId) {
-      return task.done === true;
+      return task.actualCompletedDate === currentDate;
     }
     
     return true;
   };
   
-  // ✅ 筛选当前日期应该显示的任务（排除所有常规任务）
+  // ✅ 筛选当前日期应该显示的任务
   let filteredTasks = dayTasks.filter(task => {
     // 排除所有常规任务
     if (isRegularTask(task)) return false;
@@ -4595,8 +4595,6 @@ const generateRealTimeContent = useCallback(() => {
     if (!shouldShowTask(task, selectedDate)) return false;
     return true;
   });
-  
-  // ✅ 不再添加常规任务
   
   // 按分类和子分类组织任务
   const tasksByCategory = {};
@@ -4643,6 +4641,8 @@ const generateRealTimeContent = useCallback(() => {
   
   return { tasksByCategory, newStats };
 }, [tasksByDate, selectedDate]);
+
+
   const [currentContent, setCurrentContent] = useState(() => generateRealTimeContent());
   
 useEffect(() => {
@@ -7939,49 +7939,59 @@ const DateDot = ({ date, tasksByDate }) => {
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dayTasks = tasksByDate[dateStr] || [];
   
-  // 统计三种状态的数量
-  let completedCount = 0;      // 已完成（绿色）
-  let incompleteCount = 0;     // 未完成（红色）
-  let abandonedCount = 0;      // 放弃（灰色）
+  let completedCount = 0;
+  let abandonedCount = 0;
+  let totalCount = 0;
   
   dayTasks.forEach(task => {
-    // 排除本周任务
     if (task.category === "本周任务") return;
-    // 排除常规任务（未完成的常规任务不计入）
     if (task.isRegularTask && !task.done) return;
     
-    // 放弃的任务
+    totalCount++;
+    
     if (task.abandoned) {
       abandonedCount++;
       return;
     }
     
-    // 跨日期任务
     if (task.crossDateId) {
-      // 检查这个任务在该日期是否完成
-      const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
-      if (taskOnDate?.actualCompletedDate === dateStr) {
+      if (task.actualCompletedDate === dateStr) {
         completedCount++;
-      } else if (taskOnDate?.done === true) {
-        completedCount++;
-      } else {
-        incompleteCount++;
       }
       return;
     }
     
-    // 普通任务
     if (task.done === true) {
       completedCount++;
-    } else {
-      incompleteCount++;
     }
   });
   
-  // 如果没有任何任务，不显示
-  if (completedCount === 0 && incompleteCount === 0 && abandonedCount === 0) {
-    return null;
-  }
+  // ✅ 只声明一次，用 let 或 const
+  const incompleteCount = totalCount - completedCount - abandonedCount;
+// 设置颜色
+let numberColor = "#666";
+let dotColor = "#666";
+
+if (totalCount === 0) {
+  numberColor = "transparent";
+  dotColor = "transparent";
+} else if (incompleteCount === 0 && abandonedCount > 0 && completedCount === 0) {
+  // 全部放弃，没有完成也没有未完成 → 灰色
+  numberColor = "#999";
+  dotColor = "#999";
+} else if (incompleteCount === 0 && completedCount > 0) {
+  // 有完成的任务，且没有未完成 → 绿色
+  numberColor = "#4caf50";
+  dotColor = "#4caf50";
+} else if (incompleteCount > 0) {
+  // 有未完成的任务 → 红色
+  numberColor = "#f44336";
+  dotColor = "#f44336";
+} else if (completedCount === 0 && abandonedCount > 0) {
+  // 只有放弃，没有完成 → 灰色
+  numberColor = "#999";
+  dotColor = "#999";
+}
   
   return (
     <div style={{
@@ -10076,9 +10086,11 @@ const toggleDateCompletion = (date, isChecked) => {
      <div style={{ display: "flex", alignItems: "center", gap: 6, minHeight: "28px" }}>
   {/* 主复选框 - 判断是否有任何一天完成 */}
  
-{/* 复选框 - 放弃的任务显示框内叉 */}
+
+
+{/* 复选框 - 放弃的任务显示叉号，跨日期任务正常显示 */}
 {task.abandoned ? (
-  // 放弃的任务：显示带叉的复选框
+  // 放弃的任务：显示带叉的复选框，不可点击
   <span
     style={{
       display: "inline-flex",
@@ -10099,19 +10111,30 @@ const toggleDateCompletion = (date, isChecked) => {
       <line x1="19" y1="5" x2="5" y2="19" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
     </svg>
   </span>
-) : (
-  // 正常任务：使用原生复选框
+) : task.crossDateId ? (
+  // 跨日期任务（未放弃）的正常复选框
   <input
     type="checkbox"
-    checked={(() => {
-      if (!task.crossDateId) return task.done;
-      const allDates = task.crossDates || [];
-      return allDates.some(date => {
-        const dayTasks = tasksByDate[date] || [];
-        const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
-        return taskOnDate?.done === true;
-      });
-    })()}
+    checked={task.done}
+    onChange={(e) => {
+      e.stopPropagation();
+      if (typeof toggleDone === 'function') {
+        toggleDone(task, selectedDate);
+      }
+    }}
+    style={{ 
+      margin: 0, 
+      cursor: "pointer", 
+      flexShrink: 0, 
+      width: "14px", 
+      height: "14px"
+    }}
+  />
+) : (
+  // 普通任务
+  <input
+    type="checkbox"
+    checked={task.done}
     onChange={(e) => {
       e.stopPropagation();
       if (typeof toggleDone === 'function') {
@@ -10130,6 +10153,8 @@ const toggleDateCompletion = (date, isChecked) => {
 
 
 
+
+
   {/* 任务文字 + 📅 图标 */}
 
 <div
@@ -10140,7 +10165,9 @@ const toggleDateCompletion = (date, isChecked) => {
   style={{
     wordBreak: "break-word",
     cursor: "pointer",
-    color: task.abandoned ? "#f44336" : (task.done ? "#999" : "#000"),
+    color: task.abandoned 
+      ? "#999"  // 放弃的任务统一灰色
+      : (task.done ? "#999" : "#000"),
     fontWeight: task.pinned ? "bold" : "normal",
     fontSize: "13px",
     lineHeight: "1.5",
@@ -10161,41 +10188,46 @@ const toggleDateCompletion = (date, isChecked) => {
       </span>
     )}
     
-    {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
-      <span
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowCrossDateDetail(!showCrossDateDetail);
-        }}
-        style={{
-          cursor: "pointer",
-          display: "inline",
-          marginLeft: "4px",
-          opacity: showCrossDateDetail ? 0.7 : 1,
-         position: "relative",
-top: "-3px",  // 往上移1px，负数越高
-          lineHeight: 1
-        }}
-        title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
-      >
-        <svg 
-          width="14" 
-          height="14" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ display: "inline", verticalAlign: "bottom" }}
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-          <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-          <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-          <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-          <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-          <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-          <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-        </svg>
-      </span>
-    )}
+   {/* 跨日期图标 */}
+{/* 跨日期图标 */}
+{task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+  <span
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowCrossDateDetail(!showCrossDateDetail);
+    }}
+    style={{
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: "4px",
+      opacity: showCrossDateDetail ? 0.7 : 1,
+      verticalAlign: "middle",  // ✅ 垂直居中对齐
+      lineHeight: 1,
+      position: "relative",
+      top: "-2px"  // 微调位置
+    }}
+    title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
+  >
+    <svg 
+      width="14" 
+      height="14" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block" }}
+    >
+      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+      <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+      <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+    </svg>
+  </span>
+)}
   </span>
 </div>
 
@@ -10294,6 +10326,7 @@ top: "-3px",  // 往上移1px，负数越高
 
 {/* 跨日期任务详情 - 展开区域 */}
 {/* 跨日期任务详情 - 展开区域 */}
+{/* 跨日期任务详情 - 展开区域 */}
 {showCrossDateDetail && task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
   <div style={{
     marginTop: 4,
@@ -10308,7 +10341,7 @@ top: "-3px",  // 往上移1px，负数越高
       const dayTasks = tasksByDate[date] || [];
       const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
       
-      // 只有 actualCompletedDate 等于这个日期时才显示勾选
+      // ✅ 关键修改：只有 actualCompletedDate 等于这个日期时才显示勾选
       const isCompletedOnThisDate = taskOnDate?.actualCompletedDate === date;
       
       const dateStr = date.slice(5);
@@ -10323,11 +10356,12 @@ top: "-3px",  // 往上移1px，负数越高
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: "2px 8px",  // 从 4px 8px 改为 2px 8px，更紧凑
+            padding: "2px 8px",
             backgroundColor: isToday ? '#e8f0fe' : 'transparent',
             borderRadius: '4px'
           }}
         >
+          {/* ✅ 根据 actualCompletedDate 显示打钩 */}
           <span style={{ width: '16px', fontSize: '12px' }}>
             {isCompletedOnThisDate ? '✅' : '⬜'}
           </span>
@@ -12892,8 +12926,73 @@ const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
     </div>
   );
 };
+// 在 App 组件外添加这个组件
+const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10000
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 12,
+        width: '280px',
+        textAlign: 'center'
+      }} onClick={e => e.stopPropagation()}>
+        <p style={{ marginBottom: 20, fontSize: 14, lineHeight: 1.5 }}>{message}</p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={() => { onConfirm?.(); onClose(); }}
+            style={{
+              flex: 1,
+              padding: 8,
+              backgroundColor: '#61A2Da',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            全部
+          </button>
+           <button
+            onClick={() => { onCancel?.(); onClose(); }}
+            style={{
+              flex: 1,
+              padding: 8,
+              backgroundColor: '#f0f0f0',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            只今天
+          </button>
+         
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function App() {
+  // 在 App 组件内，其他 useState 附近添加（约第 5000 行）
+
+// 在 App 组件开头，其他 useState 附近添加
+const [showCustomConfirm, setShowCustomConfirm] = useState(null);
+
+
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
 // 在 App 组件中，其他 useState 附近添加
@@ -13030,10 +13129,13 @@ const cancelAbandoned = (task) => {
 };
 
 const markTaskAsAbandoned = (task) => {
+  console.log('🚫 标记任务为放弃:', task.text, task.crossDateId);
+  
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
     if (task.isWeekTask) {
+      // 本周任务：更新所有日期
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t =>
           t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
@@ -13041,7 +13143,19 @@ const markTaskAsAbandoned = (task) => {
             : t
         );
       });
+    } else if (task.crossDateId) {
+      // ✅ 跨日期任务：只更新当前日期的这个任务实例
+      // 注意：跨日期任务应该只放弃当天这个实例，不影响其他日期
+      const currentDate = selectedDate;
+      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
+        if (t.id === task.id || (t.crossDateId === task.crossDateId && t.id === task.id)) {
+          console.log(`  ✅ 放弃跨日期任务实例: ${currentDate}`);
+          return { ...t, abandoned: true, done: false };
+        }
+        return t;
+      });
     } else {
+      // 普通任务
       newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
         t.id === task.id ? { ...t, abandoned: true, done: false } : t
       );
@@ -14228,117 +14342,253 @@ const handleSave = () => {
   );
 };
 const handleCrossDateTask = (task, targetDates) => {
-  // 如果没有传入 task 对象，说明是从编辑模态框调用，需要获取当前任务
   if (!task) return;
   
-  // 生成一个唯一的跨日期ID（如果任务已经有crossDateId，则使用现有的）
-  const crossDateId = task.crossDateId || task.id || `cross_${Date.now()}`;
+  // 生成一个唯一的跨日期ID
+  const crossDateId = task.crossDateId || `cross_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
   
-  console.log('创建/更新跨日期任务:', {
+  console.log('📅 创建跨日期任务:', {
     任务: task.text,
     跨日期ID: crossDateId,
-    目标日期: targetDates,
-    原始任务: task
+    目标日期: targetDates
   });
   
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
     
-    // 1. 首先，删除这个任务所有日期的版本（如果它是跨日期任务）
-    if (task.crossDateId) {
-      Object.keys(newTasksByDate).forEach(date => {
+    // 1. 先删除这个任务所有已存在的版本
+    Object.keys(newTasksByDate).forEach(date => {
+      if (task.crossDateId) {
+        // 已有跨日期ID：删除所有相同ID的任务
         newTasksByDate[date] = newTasksByDate[date].filter(t => 
-          t.crossDateId !== task.crossDateId
+          t.crossDateId !== crossDateId
         );
-      });
-    } else {
-      // 如果不是跨日期任务，只删除当前日期的这个任务
-      if (newTasksByDate[selectedDate]) {
-        newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => 
-          t.id !== task.id
-        );
+      } else {
+        // 新任务：只删除当前日期的这个任务
+        if (date === selectedDate) {
+          newTasksByDate[date] = newTasksByDate[date].filter(t => 
+            t.id !== task.id
+          );
+        }
       }
-    }
+      // 清理空数组
+      if (newTasksByDate[date] && newTasksByDate[date].length === 0) {
+        delete newTasksByDate[date];
+      }
+    });
     
-    // 2. 在选中的目标日期创建任务
+    // 2. 在所有目标日期创建新任务（共享同一个 crossDateId）
     targetDates.forEach(date => {
       if (!newTasksByDate[date]) {
         newTasksByDate[date] = [];
       }
       
-      // 创建新任务（保持原有的完成状态）
-      const newTask = {
-  ...task,
-  id: `${crossDateId}_${date}`,
-  crossDateId: crossDateId,
-  isCrossDate: true,
-  crossDates: targetDates,
-  done: task.done || false,
-  actualCompletedDate: null,  // ✅ 初始化时没有实际完成日期
-};
-      
-      newTasksByDate[date].push(newTask);
-      console.log(`创建任务在 ${date}:`, newTask);
+      // 检查是否已存在
+      const exists = newTasksByDate[date].some(t => t.crossDateId === crossDateId);
+      if (!exists) {
+        const newTask = {
+          ...task,
+          id: `${crossDateId}_${date}`,
+          crossDateId: crossDateId,
+          isCrossDate: true,
+          crossDates: [...targetDates],  // 保存所有关联日期
+          done: false,
+          actualCompletedDate: null,
+          createdAt: new Date().toISOString()
+        };
+        
+        // 删除原任务的 id 避免冲突
+        delete newTask.originalId;
+        
+        newTasksByDate[date].push(newTask);
+        console.log(`✅ 在 ${date} 创建跨日期任务:`, newTask.text);
+      }
     });
     
-    return newTasksByDate;
+    // 强制刷新视图
+    return { ...newTasksByDate };
   });
   
-  alert(`任务已设置在 ${targetDates.length} 个日期显示`);
+  alert(`✅ 已设置跨日期任务！\n\n任务将在 ${targetDates.length} 个日期显示，任意一天完成，所有日期同步完成。`);
 };
 
 
-// 在 App 组件中，替换 toggleDone 函数：
 
-// 在 App 组件中，替换 toggleDone 函数：
-
-
-
-const toggleDone = (task) => {
+const toggleDone = (task, currentDateFromTask = null) => {
+   // ✅ 如果任务已放弃，不允许操作
+  if (task.abandoned) {
+    console.log('⚠️ 任务已放弃，无法勾选');
+    return;
+  }
+  // 使用传入的日期，如果没有则使用 selectedDate
+  const currentDate = currentDateFromTask || selectedDate;
   const newDoneState = !task.done;
-  const currentDate = selectedDate;
   
-// 如果是跨日期任务
-if (task.crossDateId) {
-  const crossDateId = task.crossDateId;
-  
-  setTasksByDate(prev => {
-    const newTasksByDate = { ...prev };
+  // 如果是跨日期任务
+  if (task.crossDateId) {
+    const crossDateId = task.crossDateId;
     
-    Object.keys(newTasksByDate).forEach(date => {
-      newTasksByDate[date] = newTasksByDate[date].map(t => {
-        if (t.crossDateId === crossDateId) {
-          // ✅ 完成或取消都同步所有日期
-          if (newDoneState === true) {
-            // 完成时：当前日期记录 actualCompletedDate，其他日期只标记完成
+    // 获取这个跨日期任务的所有关联日期
+    let allDates = task.crossDates || [];
+    if (allDates.length === 0) {
+      // 如果 crossDates 为空，从 tasksByDate 中查找
+      allDates = [];
+      Object.keys(tasksByDate).forEach(date => {
+        const hasTask = tasksByDate[date]?.some(t => t.crossDateId === crossDateId);
+        if (hasTask) {
+          allDates.push(date);
+        }
+      });
+    }
+    
+    // 排序日期
+    allDates.sort();
+    
+    // 获取当前任务是否已完成（当天）
+    const isCurrentDone = tasksByDate[currentDate]?.some(t => 
+      t.crossDateId === crossDateId && t.done === true
+    ) || false;
+    
+    // 如果是勾选完成（从未完成到完成）
+    if (newDoneState === true && isCurrentDone === false) {
+      const confirmMessage = `是否确认完成该任务？\n\n📝 任务：${task.text}\n\n📅 关联日期：\n${allDates.map(d => `  • ${d}${d === currentDate ? ' (今天)' : ''}`).join('\n')}\n\n选择"确定"：所有日期都完成 ✅\n选择"取消"：只完成今天 (${currentDate})`;
+      
+// 显示自定义确认弹窗
+setShowCustomConfirm({
+  message: `完成"${task.text}"？`,
+  onConfirm: () => {
+    // 全部完成 - 保留已有的 actualCompletedDate，只补充今天的
+    console.log(`✅ 用户选择：完成所有日期，共 ${allDates.length} 天`);
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      allDates.forEach(date => {
+        newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
+          if (t.crossDateId === crossDateId) {
+            // ✅ 关键修复：保留已有的 actualCompletedDate，如果没有才设置今天的
+            const existingCompletedDate = t.actualCompletedDate;
             return { 
               ...t, 
               done: true,
-              actualCompletedDate: date === currentDate ? currentDate : t.actualCompletedDate
-            };
-          } else {
-            // ✅ 取消时：所有日期都取消完成，清除 actualCompletedDate
-            return { 
-              ...t, 
-              done: false,
-              actualCompletedDate: null
+              // 如果已经有 actualCompletedDate 就保留，否则如果是今天才设置
+              actualCompletedDate: existingCompletedDate || (date === currentDate ? currentDate : null)
             };
           }
+          return t;
+        });
+      });
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      return newTasksByDate;
+    });
+  },
+  onCancel: () => {
+    // 只完成今天
+    console.log(`✅ 用户选择：只完成今天 ${currentDate}`);
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
+        if (t.crossDateId === crossDateId) {
+          return { ...t, done: true, actualCompletedDate: currentDate };
         }
         return t;
       });
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      return newTasksByDate;
     });
-    
-    // 触发撒花检查
-    setTimeout(() => {
-      const updatedTasks = newTasksByDate[selectedDate] || [];
-      checkConfettiWithTasks(updatedTasks);
-    }, 50);
-    
-    return newTasksByDate;
+  }
+});
+return;
+     } 
+    // 如果是取消完成（从完成到未完成）
+    // 取消完成（从完成到未完成）
+if (newDoneState === false && isCurrentDone === true) {
+  // 检查是否有其他日期已经完成了
+  let otherDatesCompleted = false;
+  let completedDates = [];
+  
+  allDates.forEach(date => {
+    if (date !== currentDate) {
+      const isCompleted = tasksByDate[date]?.some(t => 
+        t.crossDateId === crossDateId && t.done === true
+      ) || false;
+      if (isCompleted) {
+        otherDatesCompleted = true;
+        completedDates.push(date);
+      }
+    }
   });
+  
+  if (otherDatesCompleted) {
+    // ✅ 使用自定义弹窗
+    setShowCustomConfirm({
+      message: `取消完成"${task.text}"？`,
+      onConfirm: () => {
+        // 取消所有日期的完成状态
+        console.log(`✅ 用户选择：取消所有日期`);
+        setTasksByDate(prev => {
+          const newTasksByDate = { ...prev };
+          allDates.forEach(date => {
+            newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
+              if (t.crossDateId === crossDateId) {
+                return { ...t, done: false, actualCompletedDate: null };
+              }
+              return t;
+            });
+          });
+          setTimeout(() => {
+            const updatedTasks = newTasksByDate[selectedDate] || [];
+            checkConfettiWithTasks(updatedTasks);
+          }, 50);
+          return newTasksByDate;
+        });
+      },
+      onCancel: () => {
+        // 只取消今天
+        console.log(`✅ 用户选择：只取消今天 ${currentDate}`);
+        setTasksByDate(prev => {
+          const newTasksByDate = { ...prev };
+          newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
+            if (t.crossDateId === crossDateId) {
+              return { ...t, done: false, actualCompletedDate: null };
+            }
+            return t;
+          });
+          setTimeout(() => {
+            const updatedTasks = newTasksByDate[selectedDate] || [];
+            checkConfettiWithTasks(updatedTasks);
+          }, 50);
+          return newTasksByDate;
+        });
+      }
+    });
+  } else {
+    // 没有其他日期完成，直接取消今天（无需弹窗）
+    console.log(`✅ 直接取消今天 ${currentDate}`);
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
+        if (t.crossDateId === crossDateId) {
+          return { ...t, done: false, actualCompletedDate: null };
+        }
+        return t;
+      });
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      return newTasksByDate;
+    });
+  }
   return;
 }
+    
+    return;
+  }
   
   // 如果是本周任务
   if (task.isWeekTask) {
@@ -14346,7 +14596,7 @@ if (task.crossDateId) {
       const newTasksByDate = { ...prev };
       
       Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].map(t =>
+        newTasksByDate[date] = (newTasksByDate[date] || []).map(t =>
           t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
             ? { ...t, done: newDoneState }
             : t
@@ -14380,6 +14630,8 @@ if (task.crossDateId) {
     return newTasksByDate;
   });
 };
+
+
 
 
 // 检测撒花函数 - 接收当前日期的所有任务
@@ -15399,32 +15651,69 @@ const moveTask = (task, targetCategory) => {
   }
 };
 
-// 修复任务数据保存
+// ✅ 修复后 - 使用 useRef 防止循环
+const isSavingRef = useRef(false);
+const saveTimeoutRef = useRef(null);
+
 useEffect(() => {
-  const saveTasks = async () => {
+  // 清除之前的定时器
+  if (saveTimeoutRef.current) {
+    clearTimeout(saveTimeoutRef.current);
+  }
+  
+  saveTimeoutRef.current = setTimeout(async () => {
+    // 防止重复保存
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+    
     try {
-      // 即使 tasksByDate 为空也保存，避免数据丢失
       await saveMainData('tasks', tasksByDate);
       console.log('任务数据自动保存:', Object.keys(tasksByDate).length, '天的数据');
     } catch (error) {
       console.error('任务数据保存失败:', error);
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, 2000); // 增加到 2 秒防抖
+  
+  return () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
   };
-
-  // 添加防抖，避免频繁保存
-  const timeoutId = setTimeout(saveTasks, 1000);
-  return () => clearTimeout(timeoutId);
-}, [tasksByDate]);
+}, [tasksByDate]); // 保留依赖，但通过防抖和标志位避免循环
 
 // 修复其他数据的保存
+// ✅ 修复后
+const isSavingTemplatesRef = useRef(false);
+const saveTemplatesTimeoutRef = useRef(null);
+
 useEffect(() => {
-  const saveTemplateData = async () => {
-    if (templates.length > 0) {
+  if (!isInitialized) return;
+  
+  if (saveTemplatesTimeoutRef.current) {
+    clearTimeout(saveTemplatesTimeoutRef.current);
+  }
+  
+  saveTemplatesTimeoutRef.current = setTimeout(async () => {
+    if (isSavingTemplatesRef.current) return;
+    isSavingTemplatesRef.current = true;
+    
+    try {
       await saveMainData('templates', templates);
+    } catch (error) {
+      console.error('模板保存失败:', error);
+    } finally {
+      isSavingTemplatesRef.current = false;
+    }
+  }, 1000);
+  
+  return () => {
+    if (saveTemplatesTimeoutRef.current) {
+      clearTimeout(saveTemplatesTimeoutRef.current);
     }
   };
-  saveTemplateData();
-}, [templates]);
+}, [templates, isInitialized]);
 
 
 
@@ -15617,37 +15906,28 @@ setTimeout(() => {
   initializeApp();
 }, []);
 // ===== 每天第一次打开页面自动备份一次 =====
+// ✅ 修复后 - 使用 useRef 保证只执行一次
+const hasBackedUpTodayRef = useRef(false);
+
 useEffect(() => {
-  let backupTimer;
+  if (!isInitialized) return;
+  if (hasBackedUpTodayRef.current) return;
   
-  if (isInitialized) {
-    // 检查今天是否已经备份过
-    const lastBackupDate = localStorage.getItem('last_auto_backup_date');
-    const today = new Date().toISOString().split('T')[0];
+  const lastBackupDate = localStorage.getItem('last_auto_backup_date');
+  const today = new Date().toISOString().split('T')[0];
+  
+  if (lastBackupDate !== today) {
+    hasBackedUpTodayRef.current = true;
     
-    if (lastBackupDate !== today) {
-      console.log('💾 今天首次打开，执行自动备份...');
-      
-      // 延迟5秒执行备份
-      const timer = setTimeout(() => {
-        autoBackup();
-        localStorage.setItem('last_auto_backup_date', today);
-        console.log('✅ 今日自动备份完成');
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      console.log('✅ 今天已经备份过，跳过自动备份');
-    }
+    const timer = setTimeout(() => {
+      autoBackup();
+      localStorage.setItem('last_auto_backup_date', today);
+      hasBackedUpTodayRef.current = false;
+    }, 5000);
+    
+    return () => clearTimeout(timer);
   }
-  
-  // 清理函数
-  return () => {
-    if (backupTimer) {
-      clearInterval(backupTimer);
-    }
-  };
-}, [isInitialized]);
+}, [isInitialized]); // 只依赖 isInitialized
  
 
 
@@ -15746,10 +16026,35 @@ useEffect(() => {
 }, [templates, isInitialized]);
 
 // 自动保存本月任务数据
+// ✅ 修复后
+const isSavingMonthTasksRef = useRef(false);
+const saveMonthTasksTimeoutRef = useRef(null);
+
 useEffect(() => {
-  if (isInitialized) {
-    saveMainData('monthTasks', monthTasks);
+  if (!isInitialized) return;
+  
+  if (saveMonthTasksTimeoutRef.current) {
+    clearTimeout(saveMonthTasksTimeoutRef.current);
   }
+  
+  saveMonthTasksTimeoutRef.current = setTimeout(async () => {
+    if (isSavingMonthTasksRef.current) return;
+    isSavingMonthTasksRef.current = true;
+    
+    try {
+      await saveMainData('monthTasks', monthTasks);
+    } catch (error) {
+      console.error('本月任务保存失败:', error);
+    } finally {
+      isSavingMonthTasksRef.current = false;
+    }
+  }, 1000);
+  
+  return () => {
+    if (saveMonthTasksTimeoutRef.current) {
+      clearTimeout(saveMonthTasksTimeoutRef.current);
+    }
+  };
 }, [monthTasks, isInitialized]);
 
 
@@ -16026,11 +16331,33 @@ const generateStatsData = () => {
     const dayTasks = tasksByDate[day.date] || [];
     
     // 排除本周任务和未完成的常规任务
-    const learningTasks = dayTasks.filter(task => {
-      if (task.category === "本周任务") return false;
-      if (task.isRegularTask && !task.done) return false;
-      return true;
-    });
+   // 筛选有效任务（排除本周任务和未完成的常规任务）
+const learningTasks = dayTasks.filter(task => {
+  if (task.category === "本周任务") return false;
+  if (task.isRegularTask && !task.done) return false;
+  return true;  // ✅ 放弃的任务保留，计入总数
+});
+
+let totalCount = learningTasks.length;  // ✅ 放弃的任务计入总数
+let completedCount = learningTasks.filter(task => task.done === true && task.abandoned !== true).length;  // ✅ 放弃的不算完成
+
+// 根据完成情况设置颜色
+let numberColor = "#666";
+let dotColor = "#666";
+
+if (totalCount === 0) {
+  numberColor = "transparent";
+  dotColor = "transparent";
+} else if (completedCount === totalCount) {
+  numberColor = "#4caf50";  // 绿色 - 全部完成
+  dotColor = "#4caf50";
+} else if (completedCount > 0) {
+  numberColor = "#ff9800";  // 橙色 - 部分完成
+  dotColor = "#ff9800";
+} else {
+  numberColor = "#f44336";  // 红色 - 未完成（包括只有放弃任务的情况）
+  dotColor = "#f44336";
+}
     
     let dayTotalTime = 0;
     let dayCompletedTasks = 0;
@@ -16936,57 +17263,72 @@ const isDailyTask = (taskText) => {
   return false;
 };
  
-  taskInfos.forEach((taskInfo, idx) => {
-    const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
-    const isDailyTaskFlag = isDailyTask(taskText);
-    const crossDateId = (!isDailyTask && taskDates.length > 1) 
-      ? `cross_${Date.now()}_${idx}_${crossDateGroupIndex++}` 
-      : null;
+ // 在 handleImportTasksWithDuration 函数中，找到创建任务的循环部分
+// 大约在第 16840 行附近
+
+// 在 taskInfos.forEach 循环中，找到这段代码：
+taskInfos.forEach((taskInfo, idx) => {
+  const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
+  
+  // 定义排除词列表
+  const excludeKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语', '打卡', '晨读', '晚读'];
+  const hasExcludeKeyword = excludeKeywords.some(keyword => taskText.includes(keyword));
+  
+  // 🔑 关键修复：包含排除词的任务 → 独立创建（每个日期单独创建，不关联）
+  // 不包含排除词且有多日期 → 创建跨日期关联任务
+  const shouldCreateCrossDate = !hasExcludeKeyword && taskDates.length > 1;
+  const crossDateId = shouldCreateCrossDate 
+    ? `cross_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 8)}` 
+    : null;
+  
+  console.log(`📌 任务 "${taskText}": 包含排除词=${hasExcludeKeyword}, 日期数=${taskDates.length}, 跨日期=${!!crossDateId}`);
+  
+  // ✅ 无论什么情况，都要创建任务！
+  taskDates.forEach(date => {
+    if (!allTasksByDate[date]) {
+      allTasksByDate[date] = [];
+    }
     
-    taskDates.forEach(date => {
-      if (!allTasksByDate[date]) {
-        allTasksByDate[date] = [];
-      }
-      
-      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}_${idx}`;
-      
-      const newTask = {
-        id: uniqueId,
-        text: taskText,
-        category: category,
-        subCategory: subCategory,
-        done: false,
-        timeSpent: 0,
-        note: note,
-        image: null,
-        hasImage: hasImage,
-        scheduledTime: "",
-        pinned: false,
-        reflection: "",
-        tags: [...(bulkTags || [])],
-        subTasks: [],
-        progress: {
-          initial: 0,
-          current: 0,
-          target: 0,
-          unit: "%"
-        },
-        createdAt: new Date().toISOString()
-      };
-      
-      if (crossDateId && taskDates.length > 1) {
-        newTask.crossDateId = crossDateId;
-        newTask.crossDates = [...taskDates];
-        newTask.dateRange = {
-          start: taskDates[0],
-          end: taskDates[taskDates.length - 1],
-          allDates: [...taskDates]
-        };
-      }
-      
-      allTasksByDate[date].push(newTask);
-    });
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}_${idx}`;
+    
+    const newTask = {
+      id: uniqueId,
+      text: taskText,
+      category: category,
+      subCategory: subCategory,
+      done: false,
+      timeSpent: 0,
+      timeRecords: [],
+      note: note,
+      image: null,
+      hasImage: hasImage,
+      scheduledTime: "",
+      pinned: false,
+      reflection: "",
+      tags: [...(bulkTags || [])],
+      subTasks: [],
+      progress: {
+        initial: 0,
+        current: 0,
+        target: 0,
+        unit: "%"
+      },
+      createdAt: new Date().toISOString()
+    };
+    
+    // 只有满足条件时才添加跨日期关联字段
+    if (crossDateId) {
+      newTask.crossDateId = crossDateId;
+      newTask.isCrossDate = true;
+      newTask.crossDates = [...taskDates];
+      console.log(`  ✅ 在 ${date} 创建关联任务 (跨日期), ID: ${crossDateId}`);
+    } else {
+      console.log(`  ✅ 在 ${date} 创建独立任务 (不关联)`);
+    }
+    
+    allTasksByDate[date].push(newTask);
   });
+});
   
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
   
@@ -17832,12 +18174,12 @@ const getTasksBySubCategory = (catName) => {
 
 
 
-// 找到 getCategoryTasks 函数的定义，确保它是这样写的
 const getCategoryTasks = useCallback((catName) => {
   const dateTasks = tasksByDate[selectedDate] || [];
   const result = dateTasks.filter(t => 
     t.category === catName && 
     t.pinned !== true
+    // ✅ 不过滤放弃的任务，保留它们计入总数
   );
   return result;
 }, [tasksByDate, selectedDate]);
@@ -18176,7 +18518,15 @@ if (isInitialized && todayTasks.length === 0) {
       />
     )}
 
-
+{/* 自定义确认弹窗 - 放在所有其他模态框的后面 */}
+{showCustomConfirm && (
+  <CustomConfirmModal
+    message={showCustomConfirm.message}
+    onConfirm={showCustomConfirm.onConfirm}
+    onCancel={showCustomConfirm.onCancel}
+    onClose={() => setShowCustomConfirm(null)}
+  />
+)}
 
 
 
@@ -18879,213 +19229,192 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
+
 {/* 第三行：日期（周一到周日） */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   marginBottom: 10
 }}>
-  {weekDates.map((d) => {
-    const dateStr = d.date;
-    const isSelected = dateStr === selectedDate;
-    const dayTasks = tasksByDate[dateStr] || [];
-    
-    const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
-    
   
+  {weekDates.map((d) => {
+  const dateStr = d.date;
+  const isSelected = dateStr === selectedDate;
+  const dayTasks = tasksByDate[dateStr] || [];
+  
+  // 检查是否有跨日期任务（用于显示"休"字）
+  const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
+  
+  // 获取每日评分
+  const dailyRating = dailyRatings[dateStr] || 0;
+  const studyEndTime = studyEndTimes[dateStr] || '';
+  
+  const getRatingColor = (rating) => {
+    switch(rating) {
+      case 5: return '#4CAF50';
+      case 4: return '#8BC34A';
+      case 3: return '#FFC107';
+      case 2: return '#FF9800';
+      case 1: return '#F44336';
+      default: return 'transparent';
+    }
+  };
+  
+  // 筛选有效任务（排除本周任务和未完成的常规任务）
+  const learningTasks = dayTasks.filter(task => {
+    if (task.category === "本周任务") return false;
+    if (task.isRegularTask && !task.done) return false;
+    return true;
+  });
+  
+  let totalCount = 0;
+  let completedCount = 0;
+  let abandonedCount = 0;
+  let incompleteCount = 0;  // 未完成（既没完成也没放弃）
+  
+  learningTasks.forEach(task => {
+    totalCount++;
     
-    // 筛选有效任务
-    const filteredTasks = dayTasks.filter(task => {
-      if (task.category === "本周任务") return false;
-      if (task.isRegularTask && !task.done) return false;
-      return true;
-    });
-    
-    // ========== 统计逻辑 ==========
-    // 总任务数（包括放弃的任务）
-    const totalCount = filteredTasks.length;
-    
-    // 未放弃的任务列表
-    const notAbandonedTasks = filteredTasks.filter(task => !task.abandoned);
-    
-    // 未放弃的数量 ⭐ 添加这一行
-    const notAbandonedCount = notAbandonedTasks.length;
-    
-    // 放弃的任务数
-    const abandonedCount = filteredTasks.filter(task => task.abandoned).length;
-    
-    // 未放弃的任务中，已完成的数量
-    const completedNotAbandonedCount = notAbandonedTasks.filter(task => {
-      if (task.crossDateId) {
-        const crossTaskDates = task.crossDates || [];
-        return crossTaskDates.some(date => {
-          const dateTasks = tasksByDate[date] || [];
-          const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
-          return taskOnDate?.done === true;
-        });
-      }
-      return task.done;
-    }).length;
-    
-    // 是否有未完成且未放弃的任务（待处理）
-    const hasPendingNotAbandoned = notAbandonedTasks.some(task => {
-      if (task.crossDateId) {
-        const crossTaskDates = task.crossDates || [];
-        return !crossTaskDates.some(date => {
-          const dateTasks = tasksByDate[date] || [];
-          const taskOnDate = dateTasks.find(t => t.crossDateId === task.crossDateId);
-          return taskOnDate?.done === true;
-        });
-      }
-      return !task.done;
-    });
-    
-    // 判断显示状态
-    let numberColor = "#666";  // 默认灰色
-    let dotColor = "#666";
-    
-    if (totalCount === 0) {
-      // 没有任务 → 不显示
-      numberColor = "transparent";
-      dotColor = "transparent";
-    } else if (hasPendingNotAbandoned) {
-      // 有待处理的未放弃任务 → 红色
-      numberColor = "#f44336";
-      dotColor = "#f44336";
-    } else if (abandonedCount > 0 && completedNotAbandonedCount === notAbandonedCount) {
-      // 有放弃的任务，且所有未放弃的任务都完成了 → 灰色
-      numberColor = "#999";
-      dotColor = "#999";
-    } else if (completedNotAbandonedCount === totalCount && totalCount > 0) {
-      // 所有任务都完成（没有放弃的任务） → 绿色
-      numberColor = "#4caf50";
-      dotColor = "#4caf50";
+    // 放弃的任务
+    if (task.abandoned) {
+      abandonedCount++;
+      return;
     }
     
-    // 是否显示数字（有任务时都显示）
-    const showNumber = totalCount > 0;
-    
-    const dailyRating = dailyRatings[dateStr] || 0;
-    const studyEndTime = studyEndTimes[dateStr] || '';
-    
-    const getRatingColor = (rating) => {
-      switch(rating) {
-        case 5: return '#4CAF50';
-        case 4: return '#8BC34A';
-        case 3: return '#FFC107';
-        case 2: return '#FF9800';
-        case 1: return '#F44336';
-        default: return 'transparent';
+    // 跨日期任务：只有今天实际完成的才算
+    if (task.crossDateId) {
+      if (task.actualCompletedDate === dateStr) {
+        completedCount++;
+      } else {
+        incompleteCount++;  // 跨日期任务今天没完成 → 未完成
       }
-    };
+      return;
+    }
     
-    return (
-  <div
-  key={dateStr}
-  onClick={() => setSelectedDate(dateStr)}
-  style={{
-    padding: "4px 6px",
-    borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
-    textAlign: "center",
-    flex: 1,
-    minWidth: 0,
-    margin: "0 2px",
-    fontSize: 12,
-    cursor: "pointer",
-    backgroundColor: isSelected ? "#fff9c4" : "transparent",
-    color: isSelected ? "#000" : "#000",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    minHeight: "20px",
-    background: dailyRating > 0 
-      ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
-      : isSelected ? '#fff9c4' : 'transparent'
-  }}
->
-  {/* 第一行：周几 + 休字（休字不占位，贴在右边） */}
-  <div style={{ 
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-    <span>{d.label}</span>
-    {hasCrossDateTask && (
-      <span style={{
-        position: "absolute",
-        left: "100%",
-        marginLeft: "2px",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "10px",
-        height: "10px",
-        backgroundColor: "transparent",
-        border: "none",
-        borderRadius: "2px",
-        fontSize: "7px",
-        color: "#f44336",
-        boxSizing: "border-box",
-        padding: 0,
-        lineHeight: 1,
+    // 普通任务
+    if (task.done === true) {
+      completedCount++;
+    } else {
+      incompleteCount++;  // 普通任务未完成
+    }
+  });
+  
+  // 显示数字（有任务时才显示）
+  const showNumber = totalCount > 0;
+  
+  // ✅ 根据规则设置颜色
+  let numberColor = "#666";
+  let dotColor = "#666";
+  
+  if (totalCount === 0) {
+    numberColor = "transparent";
+    dotColor = "transparent";
+  } else if (incompleteCount > 0) {
+    // 有未完成的任务 → 红色
+    numberColor = "#f44336";
+    dotColor = "#f44336";
+  } else if (completedCount === totalCount) {
+    // 全部完成 → 绿色
+    numberColor = "#4caf50";
+    dotColor = "#4caf50";
+  } else {
+    // 没有未完成，但有放弃（部分完成 + 部分放弃）→ 灰色
+    numberColor = "#999";
+    dotColor = "#999";
+  }
+  
+  return (
+    <div
+      key={dateStr}
+      onClick={() => setSelectedDate(dateStr)}
+      style={{
+        padding: "4px 6px",
+        borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
         textAlign: "center",
-        whiteSpace: "nowrap"
-      }}>
-        休
-      </span>
-    )}
-  </div>
-  
-  <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
-  
-  {/* 任务数量显示 */}
-  {showNumber && (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "4px",
-      marginTop: "2px"
-    }}>
-      <div style={{
-        width: "6px",
-        height: "6px",
-        borderRadius: "50%",
-        backgroundColor: dotColor
-      }} />
-      <span style={{
-        fontSize: "9px",
-        fontWeight: "bold",
-        color: numberColor
-      }}>
-        {completedNotAbandonedCount}/{totalCount}
-      </span>
-    </div>
-  )}
-  
-  {/* 结束时间显示 */}
-  {studyEndTime && (() => {
-    const [hour, minute] = studyEndTime.split(':').map(Number);
-    const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
-    return (
-      <div style={{
-        fontSize: "8px",
-        color: isAfter9PM ? "#f44336" : "#999",
-        marginTop: "2px",
-        whiteSpace: "nowrap"
-      }}>
-        {studyEndTime}
+        flex: 1,
+        minWidth: 0,
+        margin: "0 2px",
+        fontSize: 12,
+        cursor: "pointer",
+        backgroundColor: isSelected ? "#fff9c4" : "transparent",
+        color: isSelected ? "#000" : "#000",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        minHeight: "20px",
+        background: dailyRating > 0 
+          ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+          : isSelected ? '#fff9c4' : 'transparent'
+      }}
+    >
+      {/* 星期几 */}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span>{d.label}</span>
+        {hasCrossDateTask && (
+          <span style={{
+            position: "absolute",
+            left: "100%",
+            marginLeft: "2px",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "10px",
+            height: "10px",
+            fontSize: "7px",
+            color: "#f44336",
+          }}>
+            休
+          </span>
+        )}
       </div>
-    );
-  })()}
+      
+      {/* 日期 */}
+      <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+      
+      {/* 任务数量显示 */}
+      {showNumber && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "4px",
+          marginTop: "2px"
+        }}>
+          <div style={{
+            width: "6px",
+            height: "6px",
+            borderRadius: "50%",
+            backgroundColor: dotColor
+          }} />
+          <span style={{
+            fontSize: "9px",
+            fontWeight: "bold",
+            color: numberColor
+          }}>
+            {completedCount}/{totalCount}
+          </span>
+        </div>
+      )}
+      
+      {/* 结束时间显示 */}
+      {studyEndTime && (() => {
+        const [hour, minute] = studyEndTime.split(':').map(Number);
+        const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+        return (
+          <div style={{
+            fontSize: "8px",
+            color: isAfter9PM ? "#f44336" : "#999",
+            marginTop: "2px",
+            whiteSpace: "nowrap"
+          }}>
+            {studyEndTime}
+          </div>
+        );
+      })()}
+    </div>
+  );
+})}
 </div>
-);
-
-  })}
-</div>
-
-
 
 
 
@@ -19931,7 +20260,8 @@ const getCategoryBorderColor = () => {
       onClick={() => setCollapsedCategories(prev => ({ ...prev, [c.name]: !prev[c.name] }))}
       style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
     >
-      {c.name} ({getCategoryTasks(c.name).filter(t => t.done).length}/{getCategoryTasks(c.name).length})
+
+{c.name} ({getCategoryTasks(c.name).filter(t => t.done === true && t.abandoned !== true).length}/{getCategoryTasks(c.name).length})
       {isComplete && <SquareCheckMark show={true} size={12} color="#bbb" />}
     </span>
   </div>
@@ -20129,7 +20459,8 @@ const getCategoryBorderColor = () => {
   }))}
   style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
 >
-  {subCat} ({subCatTasks.filter(t => t.done).length}/{subCatTasks.length})
+
+{subCat} ({subCatTasks.filter(t => t.done === true && t.abandoned !== true).length}/{subCatTasks.length})
   {allDone && <SquareCheckMark show={true} size={12} color="#bbb" />}
 </span>
             
