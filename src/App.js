@@ -19794,16 +19794,15 @@ if (isInitialized && todayTasks.length === 0) {
             value={newTaskName}
             onChange={(e) => setNewTaskName(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter' && newTaskName.trim()) {
-                const newId = Date.now().toString();
-                setFocusTasks(prev => [...prev, {
-                  id: newId,
-                  text: newTaskName.trim(),
-                  checked: false
-                }]);
-                setNewTaskName('');
-              }
-            }}
+  if (e.key === 'Enter' && newTaskName.trim()) {
+    const newId = Date.now().toString();
+    setFocusTaskTemplates(prev => [...prev, {
+      id: newId,
+      text: newTaskName.trim()
+    }]);
+    setNewTaskName('');
+  }
+}}
             style={{
               flex: 1,
               padding: '10px 12px',
@@ -19814,18 +19813,18 @@ if (isInitialized && todayTasks.length === 0) {
             }}
             autoFocus
           />
-          <div
-            onClick={() => {
-              if (newTaskName.trim()) {
-                const newId = Date.now().toString();
-                setFocusTasks(prev => [...prev, {
-                  id: newId,
-                  text: newTaskName.trim(),
-                  checked: false
-                }]);
-                setNewTaskName('');
-              }
-            }}
+         <div
+  onClick={() => {
+    if (newTaskName.trim()) {
+      const newId = Date.now().toString();
+      // ✅ 正确：用 setFocusTaskTemplates
+      setFocusTaskTemplates(prev => [...prev, {
+        id: newId,
+        text: newTaskName.trim()
+      }]);
+      setNewTaskName('');
+    }
+  }}
             style={{
               padding: '10px 20px',
               backgroundColor: '#61A2Da',
@@ -19952,10 +19951,11 @@ if (isInitialized && todayTasks.length === 0) {
         <div style={{ padding: '16px 20px', borderTop: '1px solid #f0f0f0' }}>
           <div
             onClick={() => {
-              if (window.confirm('确定要删除所有关注任务吗？')) {
-                currentFocusTasks.forEach(task => deleteFocusTask(task.id));
-              }
-            }}
+  if (window.confirm('确定要删除所有关注任务吗？这将从所有日期中删除！')) {
+    setFocusTaskTemplates([]);  // 清空任务模板
+    setFocusTaskStatus({});      // 清空所有日期的完成状态
+  }
+}}
             style={{
               padding: '10px',
               backgroundColor: '#fff5f5',
@@ -20043,16 +20043,15 @@ if (isInitialized && todayTasks.length === 0) {
             value={newTaskName}
             onChange={(e) => setNewTaskName(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter' && newTaskName.trim()) {
-                const newId = Date.now().toString();
-                setFocusTasksByDate(prev => [...prev, {
-                  id: newId,
-                  text: newTaskName.trim(),
-                  checked: false
-                }]);
-                setNewTaskName('');
-              }
-            }}
+  if (e.key === 'Enter' && newTaskName.trim()) {
+    const newId = Date.now().toString();
+    setFocusTaskTemplates(prev => [...prev, {
+      id: newId,
+      text: newTaskName.trim()
+    }]);
+    setNewTaskName('');
+  }
+}}
             style={{
               flex: 1,
               padding: '10px 12px',
@@ -20064,29 +20063,28 @@ if (isInitialized && todayTasks.length === 0) {
             autoFocus
           />
           <div
-            onClick={() => {
-              if (newTaskName.trim()) {
-                const newId = Date.now().toString();
-                setFocusTasksByDate(prev => [...prev, {
-                  id: newId,
-                  text: newTaskName.trim(),
-                  checked: false
-                }]);
-                setNewTaskName('');
-              }
-            }}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#61A2Da',
-              color: 'white',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            添加
-          </div>
+  onClick={() => {
+    if (newTaskName.trim()) {
+      const newId = Date.now().toString();
+      setFocusTaskTemplates(prev => [...prev, {
+        id: newId,
+        text: newTaskName.trim()
+      }]);
+      setNewTaskName('');
+    }
+  }}
+  style={{
+    padding: '10px 20px',
+    backgroundColor: '#61A2Da',
+    color: 'white',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold'
+  }}
+>
+  添加
+</div>
         </div>
       </div>
       
@@ -20200,10 +20198,11 @@ if (isInitialized && todayTasks.length === 0) {
         <div style={{ padding: '16px 20px', borderTop: '1px solid #f0f0f0' }}>
           <div
             onClick={() => {
-              if (window.confirm('确定要删除所有关注任务吗？')) {
-                currentFocusTasks.forEach(task => deleteFocusTask(task.id));
-              }
-            }}
+  if (window.confirm('确定要删除所有关注任务吗？这将从所有日期中删除！')) {
+    setFocusTaskTemplates([]);  // 清空任务模板
+    setFocusTaskStatus({});      // 清空所有日期的完成状态
+  }
+}}
             style={{
               padding: '10px',
               backgroundColor: '#fff5f5',
