@@ -7933,65 +7933,94 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
   // 日期圆点组件 - 修改后版本（文字颜色跟随圆点变化）
 // 日期圆点组件 - 修改后只显示完成的任务（排除常规任务）
 // 日期圆点组件 - 显示完成、未完成、放弃三种状态
+// 日期圆点组件 - 修改后只显示完成的任务（排除常规任务）
+// 日期圆点组件 - 显示完成、未完成、放弃三种状态
 const DateDot = ({ date, tasksByDate }) => {
   if (!tasksByDate) return null;
 
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dayTasks = tasksByDate[dateStr] || [];
   
+  // ========== 修改：跨日期任务只要任意一天完成就算完成 ==========
   let completedCount = 0;
   let abandonedCount = 0;
   let totalCount = 0;
+  
+  // 记录已经统计过的跨日期任务ID
+  const countedCrossDateIds = new Set();
   
   dayTasks.forEach(task => {
     if (task.category === "本周任务") return;
     if (task.isRegularTask && !task.done) return;
     
-    totalCount++;
-    
+    // 放弃的任务
     if (task.abandoned) {
       abandonedCount++;
+      totalCount++;
       return;
     }
     
+    // ✅ 跨日期任务：检查是否有任意一天完成
     if (task.crossDateId) {
-      if (task.actualCompletedDate === dateStr) {
-        completedCount++;
+      totalCount++;
+      
+      // 如果这个跨日期任务ID还没统计过
+      if (!countedCrossDateIds.has(task.crossDateId)) {
+        countedCrossDateIds.add(task.crossDateId);
+        
+        // 查找这个跨日期任务的所有实例，看是否有任何一天完成了
+        let isAnyDateCompleted = false;
+        
+        // 遍历所有日期，查找相同 crossDateId 的任务
+        Object.keys(tasksByDate).forEach(dateKey => {
+          const tasksOnDate = tasksByDate[dateKey] || [];
+          const hasCompleted = tasksOnDate.some(t => 
+            t.crossDateId === task.crossDateId && 
+            t.done === true &&
+            t.abandoned !== true
+          );
+          if (hasCompleted) {
+            isAnyDateCompleted = true;
+          }
+        });
+        
+        if (isAnyDateCompleted) {
+          completedCount++;
+        }
       }
       return;
     }
     
+    // 普通任务
+    totalCount++;
     if (task.done === true) {
       completedCount++;
     }
   });
   
-  // ✅ 只声明一次，用 let 或 const
+  // 未完成数量 = 总数 - 已完成 - 放弃
   const incompleteCount = totalCount - completedCount - abandonedCount;
-// 设置颜色
-let numberColor = "#666";
-let dotColor = "#666";
-
-if (totalCount === 0) {
-  numberColor = "transparent";
-  dotColor = "transparent";
-} else if (incompleteCount === 0 && abandonedCount > 0 && completedCount === 0) {
-  // 全部放弃，没有完成也没有未完成 → 灰色
-  numberColor = "#999";
-  dotColor = "#999";
-} else if (incompleteCount === 0 && completedCount > 0) {
-  // 有完成的任务，且没有未完成 → 绿色
-  numberColor = "#4caf50";
-  dotColor = "#4caf50";
-} else if (incompleteCount > 0) {
-  // 有未完成的任务 → 红色
-  numberColor = "#f44336";
-  dotColor = "#f44336";
-} else if (completedCount === 0 && abandonedCount > 0) {
-  // 只有放弃，没有完成 → 灰色
-  numberColor = "#999";
-  dotColor = "#999";
-}
+  
+  // 设置颜色
+  let numberColor = "#666";
+  let dotColor = "#666";
+  
+  if (totalCount === 0) {
+    numberColor = "transparent";
+    dotColor = "transparent";
+  } else if (incompleteCount > 0) {
+    // 有未完成的任务 → 红色
+    numberColor = "#f44336";
+    dotColor = "#f44336";
+  } else if (completedCount === totalCount) {
+    // 全部完成 → 绿色
+    numberColor = "#4caf50";
+    dotColor = "#4caf50";
+  } else {
+    // 没有未完成，但有放弃（部分完成 + 部分放弃）→ 灰色
+    numberColor = "#999";
+    dotColor = "#999";
+  }
   
   return (
     <div style={{
@@ -8073,7 +8102,6 @@ if (totalCount === 0) {
     </div>
   );
 };
-
   const isToday = (day) => {
     const today = new Date();
     return day === today.getDate() &&
