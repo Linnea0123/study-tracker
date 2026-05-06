@@ -7932,64 +7932,134 @@ const DatePickerModal = ({ onClose, onSelectDate, tasksByDate = {} }) => {
 
   // 日期圆点组件 - 修改后版本（文字颜色跟随圆点变化）
 // 日期圆点组件 - 修改后只显示完成的任务（排除常规任务）
+// 日期圆点组件 - 显示完成、未完成、放弃三种状态
 const DateDot = ({ date, tasksByDate }) => {
   if (!tasksByDate) return null;
 
   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dayTasks = tasksByDate[dateStr] || [];
   
-  // ✅ 筛选已完成的任务（排除常规任务）
-  let completedCount = 0;
+  // 统计三种状态的数量
+  let completedCount = 0;      // 已完成（绿色）
+  let incompleteCount = 0;     // 未完成（红色）
+  let abandonedCount = 0;      // 放弃（灰色）
   
   dayTasks.forEach(task => {
-    // 排除常规任务
-    if (task.isRegularTask) return;
+    // 排除本周任务
+    if (task.category === "本周任务") return;
+    // 排除常规任务（未完成的常规任务不计入）
+    if (task.isRegularTask && !task.done) return;
     
-    // 跨日期任务：只统计 actualCompletedDate 等于当前日期的
+    // 放弃的任务
+    if (task.abandoned) {
+      abandonedCount++;
+      return;
+    }
+    
+    // 跨日期任务
     if (task.crossDateId) {
-      if (task.actualCompletedDate === dateStr && task.done === true) {
+      // 检查这个任务在该日期是否完成
+      const taskOnDate = dayTasks.find(t => t.crossDateId === task.crossDateId);
+      if (taskOnDate?.actualCompletedDate === dateStr) {
         completedCount++;
+      } else if (taskOnDate?.done === true) {
+        completedCount++;
+      } else {
+        incompleteCount++;
       }
+      return;
+    }
+    
+    // 普通任务
+    if (task.done === true) {
+      completedCount++;
     } else {
-      // 普通任务：直接统计 done === true
-      if (task.done === true) {
-        completedCount++;
-      }
+      incompleteCount++;
     }
   });
-
-  if (completedCount === 0) return null;
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const taskDate = new Date(dateStr);
-  taskDate.setHours(0, 0, 0, 0);
-  
-  const isFuture = taskDate > today;
-  const dotColor = isFuture ? softColors.dotFuture : softColors.dotComplete;
-  const textColor = isFuture ? '#F39C12' : '#2ECC71';
+  // 如果没有任何任务，不显示
+  if (completedCount === 0 && incompleteCount === 0 && abandonedCount === 0) {
+    return null;
+  }
   
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '2px',
-      marginTop: '2px'
+      gap: '3px',
+      marginTop: '2px',
+      fontSize: '9px'
     }}>
-      <div style={{
-        width: '6px',
-        height: '6px',
-        borderRadius: '50%',
-        backgroundColor: dotColor,
-      }} />
-      <span style={{
-        fontSize: '9px',
-        fontWeight: 'bold',
-        color: textColor
-      }}>
-        {completedCount}
-      </span>
+      {/* 绿色点 + 完成数量 */}
+      {completedCount > 0 && (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '1px'
+        }}>
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: '#4caf50',
+          }} />
+          <span style={{
+            fontSize: '9px',
+            color: '#4caf50',
+            fontWeight: 'bold'
+          }}>
+            {completedCount}
+          </span>
+        </span>
+      )}
+      
+      {/* 红色点 + 未完成数量 */}
+      {incompleteCount > 0 && (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '1px'
+        }}>
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: '#f44336',
+          }} />
+          <span style={{
+            fontSize: '9px',
+            color: '#f44336',
+            fontWeight: 'bold'
+          }}>
+            {incompleteCount}
+          </span>
+        </span>
+      )}
+      
+      {/* 灰色点 + 放弃数量 */}
+      {abandonedCount > 0 && (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '1px'
+        }}>
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: '#999',
+          }} />
+          <span style={{
+            fontSize: '9px',
+            color: '#999',
+            fontWeight: 'bold'
+          }}>
+            {abandonedCount}
+          </span>
+        </span>
+      )}
     </div>
   );
 };
