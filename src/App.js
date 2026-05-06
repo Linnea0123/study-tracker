@@ -19663,41 +19663,26 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: 'center',
     flex: 1
   }}>
- {currentFocusTasks.map(task => (
+{currentFocusTasks.map(task => (
   <div
     key={task.id}
+    onClick={() => toggleFocusTask(task.id)}  // 点击整个块切换状态
     style={{
       display: 'flex',
-      alignItems: 'center',  // 保持居中
+      alignItems: 'center',
       gap: '6px',
       padding: '4px 10px',
       borderRadius: '20px',
       backgroundColor: task.checked ? '#e0e0e0' : '#FFA726',
+      cursor: 'pointer'
     }}
   >
-    <input
-      type="checkbox"
-      checked={task.checked}
-      onChange={() => toggleFocusTask(task.id)}
-      style={{ 
-        width: '14px', 
-        height: '14px', 
-        cursor: 'pointer', 
-        margin: 0,
-        accentColor: task.checked ? '#e0e0e0' : '#FFA726',
-        display: 'inline-block',
-        verticalAlign: 'middle'
-      }}
-    />
     <span
       style={{
-        fontSize: '13px',
+        fontSize: '12px',
         color: task.checked ? '#888' : '#fff',
         textDecoration: 'none',
-        fontWeight: 'normal',
-        lineHeight: '14px',  // 与复选框高度一致
-        display: 'inline-block',
-        verticalAlign: 'middle'
+        fontWeight: 'normal'
       }}
     >
       {task.text}
@@ -19856,115 +19841,111 @@ if (isInitialized && todayTasks.length === 0) {
         </div>
       </div>
       
-      {/* 现有任务列表 */}
-      <div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
-        <div style={{ fontSize: '13px', fontWeight: 'bold', padding: '12px 20px', color: '#666' }}>
-          📋 现有任务 ({currentFocusTasks.length})
+   
+{/* 现有任务列表 */}
+<div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
+  <div style={{ fontSize: '13px', fontWeight: 'bold', padding: '12px 20px', color: '#666' }}>
+    现有任务 ({currentFocusTasks.length})
+  </div>
+  {currentFocusTasks.length === 0 ? (
+    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>
+      暂无关注任务，点击上方添加
+    </div>
+  ) : (
+    currentFocusTasks.map((task, index) => (
+      <div
+        key={task.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          borderBottom: index < currentFocusTasks.length - 1 ? '1px solid #f0f0f0' : 'none',
+          backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
+        }}
+      >
+        {/* 只显示任务文字，没有复选框 */}
+        <span style={{
+          fontSize: '14px',
+          color: '#333',  // 普通深色文字
+          flex: 1
+        }}>
+          {task.text}
+        </span>
+        
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* 编辑按钮 */}
+          <button
+            onClick={() => {
+              const newText = window.prompt('编辑任务', task.text);
+              if (newText && newText.trim()) {
+                editFocusTask(task.id, newText.trim());
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="编辑"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path 
+                d="M17 3L21 7L7 21H3L3 17L17 3Z" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <path 
+                d="M15 5L19 9" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          
+          {/* 删除按钮 */}
+          <button
+            onClick={() => {
+              if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
+                deleteFocusTask(task.id);
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="删除"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
-        {currentFocusTasks.length === 0 ? (  // ← 改成 currentFocusTasks.length === 0
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>
-            暂无关注任务，点击上方添加
-          </div>
-        ) : (
-          currentFocusTasks.map((task, index) => (  // ← 改成 currentFocusTasks.map
-            <div
-              key={task.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 20px',
-                borderBottom: index < currentFocusTasks.length - 1 ? '1px solid #f0f0f0' : 'none',
-                backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                <input
-                  type="checkbox"
-                  checked={task.checked}
-                  onChange={() => toggleFocusTask(task.id)}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                />
-                <span style={{
-                  fontSize: '14px',
-                  color: '#e53935',
-                  textDecoration: task.checked ? 'line-through' : 'none',
-                  flex: 1
-                }}>
-                  {task.text}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                {/* 编辑按钮 - 铅笔图标 */}
-                <button
-                  onClick={() => {
-                    const newText = window.prompt('编辑任务', task.text);
-                    if (newText && newText.trim()) {
-                      editFocusTask(task.id, newText.trim());
-                    }
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '28px',
-                    height: '28px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: 0
-                  }}
-                  title="编辑"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path 
-                      d="M17 3L21 7L7 21H3L3 17L17 3Z" 
-                      stroke="#999" 
-                      strokeWidth="1.8" 
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                    />
-                    <path 
-                      d="M15 5L19 9" 
-                      stroke="#999" 
-                      strokeWidth="1.8" 
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-                {/* 删除按钮 - X 图标 */}
-                <button
-                  onClick={() => {
-                    if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
-                      deleteFocusTask(task.id);
-                    }
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '28px',
-                    height: '28px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: 0
-                  }}
-                  title="删除"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
-                    <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))
-        )}
       </div>
+    ))
+  )}
+</div>
       
       {/* 底部操作 */}
       {currentFocusTasks.length > 0 && (  // ← 改成 currentFocusTasks.length > 0
@@ -20109,8 +20090,8 @@ if (isInitialized && todayTasks.length === 0) {
         </div>
       </div>
       
-      {/* 现有任务列表 */}
-    <div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
+{/* 现有任务列表 */}
+<div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
   <div style={{ fontSize: '13px', fontWeight: 'bold', padding: '12px 20px', color: '#666' }}>
     现有任务 ({currentFocusTasks.length})
   </div>
@@ -20131,26 +20112,18 @@ if (isInitialized && todayTasks.length === 0) {
           backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-          <input
-            type="checkbox"
-            checked={task.checked}
-            onChange={() => toggleFocusTask(task.id)}
-            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-          />
-          <span style={{
-            fontSize: '14px',
-            color: '#333',  // ← 改成普通黑色/深灰色，不是红色了
-            textDecoration: task.checked ? 'line-through' : 'none',
-            flex: 1
-          }}>
-            {task.text}
-          </span>
-        </div>
+        {/* 只显示任务文字，没有复选框 */}
+        <span style={{
+          fontSize: '14px',
+          color: '#333',  // 普通深色文字
+          flex: 1
+        }}>
+          {task.text}
+        </span>
         
-        {/* 操作按钮 - 使用 SVG 图标（和成绩记录右侧一样） */}
+        {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* 编辑按钮 - 铅笔 SVG */}
+          {/* 编辑按钮 */}
           <button
             onClick={() => {
               const newText = window.prompt('编辑任务', task.text);
@@ -20190,7 +20163,7 @@ if (isInitialized && todayTasks.length === 0) {
             </svg>
           </button>
           
-          {/* 删除按钮 - X SVG */}
+          {/* 删除按钮 */}
           <button
             onClick={() => {
               if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
@@ -20283,28 +20256,7 @@ if (isInitialized && todayTasks.length === 0) {
   }
 }
 
- /* 👇 把禁用复选框的样式放在这里 👇 */
-  input[type="checkbox"],
-  input[type="checkbox"]:hover,
-  input[type="checkbox"]:active,
-  input[type="checkbox"]:focus,
-  input[type="checkbox"]:focus-visible,
-  input[type="checkbox"]:checked,
-  input[type="checkbox"]:checked:hover,
-  input[type="checkbox"]:checked:active,
-  input[type="checkbox"]:checked:focus {
-    accent-color: inherit !important;
-    filter: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    scale: 1 !important;
-    box-shadow: none !important;
-    outline: none !important;
-    background-color: transparent !important;
-    transition: none !important;
-    animation: none !important;
-  }
-
+ 
 
 
  /* 👇 在这里添加周次箭头按钮的样式 */
