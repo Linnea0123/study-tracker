@@ -19231,6 +19231,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 {/* 第三行：日期（周一到周日） */}
+{/* 第三行：日期（周一到周日） */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -19260,6 +19261,7 @@ if (isInitialized && todayTasks.length === 0) {
     }
   };
   
+  // ========== 修改这里：跨日期任务只要完成就算完成 ==========
   // 筛选有效任务（排除本周任务和未完成的常规任务）
   const learningTasks = dayTasks.filter(task => {
     if (task.category === "本周任务") return false;
@@ -19267,42 +19269,64 @@ if (isInitialized && todayTasks.length === 0) {
     return true;
   });
   
+  // 统计完成数量（跨日期任务：任意一天完成就算完成）
   let totalCount = 0;
   let completedCount = 0;
   let abandonedCount = 0;
-  let incompleteCount = 0;  // 未完成（既没完成也没放弃）
+  
+  // 记录已经统计过的跨日期任务ID（避免重复统计）
+  const countedCrossDateIds = new Set();
   
   learningTasks.forEach(task => {
-    totalCount++;
-    
     // 放弃的任务
     if (task.abandoned) {
       abandonedCount++;
+      totalCount++;
       return;
     }
     
-    // 跨日期任务：只有今天实际完成的才算
+    // ✅ 跨日期任务：检查是否有任意一天完成
     if (task.crossDateId) {
-      if (task.actualCompletedDate === dateStr) {
-        completedCount++;
-      } else {
-        incompleteCount++;  // 跨日期任务今天没完成 → 未完成
+      totalCount++;
+      
+      // 如果这个跨日期任务ID还没统计过
+      if (!countedCrossDateIds.has(task.crossDateId)) {
+        countedCrossDateIds.add(task.crossDateId);
+        
+        // 查找这个跨日期任务的所有实例，看是否有任何一天完成了
+        let isAnyDateCompleted = false;
+        
+        // 遍历所有日期，查找相同 crossDateId 的任务
+        Object.keys(tasksByDate).forEach(date => {
+          const tasksOnDate = tasksByDate[date] || [];
+          const hasCompleted = tasksOnDate.some(t => 
+            t.crossDateId === task.crossDateId && 
+            t.done === true &&
+            t.abandoned !== true
+          );
+          if (hasCompleted) {
+            isAnyDateCompleted = true;
+          }
+        });
+        
+        if (isAnyDateCompleted) {
+          completedCount++;
+        }
       }
       return;
     }
     
     // 普通任务
+    totalCount++;
     if (task.done === true) {
       completedCount++;
-    } else {
-      incompleteCount++;  // 普通任务未完成
     }
   });
   
-  // 显示数字（有任务时才显示）
-  const showNumber = totalCount > 0;
+  // 计算未完成数量（包括未完成的跨日期任务）
+  const incompleteCount = totalCount - completedCount - abandonedCount;
   
-  // ✅ 根据规则设置颜色
+  // 设置颜色
   let numberColor = "#666";
   let dotColor = "#666";
   
@@ -19318,10 +19342,13 @@ if (isInitialized && todayTasks.length === 0) {
     numberColor = "#4caf50";
     dotColor = "#4caf50";
   } else {
-    // 没有未完成，但有放弃（部分完成 + 部分放弃）→ 灰色
+    // 没有未完成，但有放弃 → 灰色
     numberColor = "#999";
     dotColor = "#999";
   }
+  
+  // 显示数字（有任务时才显示）
+  const showNumber = totalCount > 0;
   
   return (
     <div
@@ -19415,7 +19442,6 @@ if (isInitialized && todayTasks.length === 0) {
   );
 })}
 </div>
-
 
 
 
