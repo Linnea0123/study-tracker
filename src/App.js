@@ -21229,13 +21229,13 @@ if (isInitialized && todayTasks.length === 0) {
     marginBottom: 8, 
     borderRadius: 10, 
     overflow: "hidden", 
-    border: `2px solid ${isWeekComplete ? "#ccc" : "#FF9800"}`,
+    border: `2px solid ${isWeekComplete ? "#f5f5f5" : "#66BB6A"}`,
     backgroundColor: "#fff" 
   }}>
     <div 
       onClick={() => setCollapsedCategories(prev => ({ ...prev, "本周任务": !prev["本周任务"] }))}
       style={{ 
-        backgroundColor: isWeekComplete ? "#f5f5f5" : "#FF9800",
+        backgroundColor: isWeekComplete ? "#f5f5f5" : "#66BB6A",
         color: isWeekComplete ? "#bbb" : "#fff",
         fontFamily: 'Calibri, "微软雅黑", sans-serif',  // ← 添加字体
         padding: "3px 12px",                            // ← 改成 3px 12px
@@ -21280,13 +21280,13 @@ if (isInitialized && todayTasks.length === 0) {
         >
           {sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6L9 17L4 12" stroke="#333" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+              <path d="M20 6L9 17L4 12" stroke={isWeekComplete ? "#bbb" : "#fff"}  strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
             </svg>
           ) : (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="4" y1="6" x2="20" y2="6" stroke={isWeekComplete ? "#bbb" : "#fff"}  strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="4" y1="12" x2="20" y2="12" stroke={isWeekComplete ? "#bbb" : "#fff"}  strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="4" y1="18" x2="20" y2="18" stroke={isWeekComplete ? "#bbb" : "#fff"}  strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           )}
         </div>
