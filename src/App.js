@@ -1112,7 +1112,7 @@ button:focus-visible {
               backgroundColor: '#e8f5e9',
               padding: '10px',
               borderRadius: '8px',
-              borderLeft: '3px solid #4caf50',
+             
               marginTop: '6px'
             }}>
               💡 {grade.analysis}
