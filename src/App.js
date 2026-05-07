@@ -10365,6 +10365,9 @@ const toggleDateCompletion = (date, isChecked) => {
 
   {/* 任务文字 + 📅 图标 */}
 
+
+
+{/* 任务文字 */}
 <div
   onClick={(e) => {
     e.stopPropagation();
@@ -10374,70 +10377,63 @@ const toggleDateCompletion = (date, isChecked) => {
     wordBreak: "break-word",
     cursor: "pointer",
     color: task.abandoned 
-      ? "#999"  // 放弃的任务统一灰色
+      ? "#999"
       : (task.done ? "#999" : "#000"),
     fontWeight: task.pinned ? "bold" : "normal",
     fontSize: "13px",
     lineHeight: "1.5",
     flex: 1,
     minWidth: "50px",
+    whiteSpace: "pre-wrap",    // 改成 pre-wrap，保留换行符并自动换行
+    wordWrap: "break-word",
+    overflowWrap: "break-word"
   }}
 >
-  <span style={{ 
-    display: "inline",
-    whiteSpace: "normal",
-    wordBreak: "break-word"
-  }}>
-    {task.text}
-    
-    {task.hasImage && (
-      <span style={{ color: task.done ? '#999' : '#ff4444', fontSize: '11px' }}>
-        &nbsp; [图片]
-      </span>
-    )}
-    
-   {/* 跨日期图标 */}
-{/* 跨日期图标 */}
-{task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
-  <span
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowCrossDateDetail(!showCrossDateDetail);
-    }}
-    style={{
-      cursor: "pointer",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      marginLeft: "4px",
-      opacity: showCrossDateDetail ? 0.7 : 1,
-      verticalAlign: "middle",  // ✅ 垂直居中对齐
-      lineHeight: 1,
-      position: "relative",
-      top: "-2px"  // 微调位置
-    }}
-    title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
-  >
-    <svg 
-      width="14" 
-      height="14" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ display: "block" }}
+  {task.text}
+  
+  {task.hasImage && (
+    <span style={{ color: task.done ? '#999' : '#ff4444', fontSize: '11px' }}>
+      &nbsp; [图片]
+    </span>
+  )}
+  
+  {/* 跨日期图标 */}
+  {task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowCrossDateDetail(!showCrossDateDetail);
+      }}
+      style={{
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: "4px",
+        opacity: showCrossDateDetail ? 0.7 : 1,
+        verticalAlign: "middle",
+        lineHeight: 1,
+        position: "relative",
+        top: "-2px"
+      }}
+      title={showCrossDateDetail ? "收起详情" : "查看跨日期详情"}
     >
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
-      <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
-      <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
-    </svg>
-  </span>
-)}
-  </span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke="#61A2Da" strokeWidth="1.8" strokeLinecap="round"/>
+        <circle cx="12" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="16" cy="15" r="1.5" fill="#61A2Da"/>
+        <circle cx="8" cy="15" r="1.5" fill="#61A2Da"/>
+      </svg>
+    </span>
+  )}
 </div>
+
+
+
+
 
   {/* 时间显示 */}
   <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
