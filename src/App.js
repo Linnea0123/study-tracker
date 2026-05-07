@@ -6498,7 +6498,10 @@ const handleEditTemplate = (index, template) => {
           style={{ display: 'none' }}
         />
       </div>
+
     </div>
+
+    
   );
 };
 
@@ -6815,7 +6818,7 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
             color: '#61A2Da',
             fontSize: 18
           }}>
-            📅 添加本周任务
+            添加本周任务
           </h3>
           
           <div style={{ marginBottom: 15 }}>
@@ -6828,22 +6831,42 @@ const WeekTaskModal = ({ onClose, onAdd, categories }) => {
             }}>
               任务内容
             </label>
-            <input
-              type="text"
-              value={taskText}
-              onChange={(e) => setTaskText(e.target.value)}
-              placeholder="输入本周任务内容..."
-              style={{
-                width: '100%',
-                padding: 10,
-                border: '1px solid #ccc',
-                borderRadius: 6,
-                fontSize: 14,
-                boxSizing: 'border-box'
-              }}
-              autoFocus
-              onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
-            />
+            
+            <textarea
+  value={taskText}
+  onChange={(e) => {
+    setTaskText(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  }}
+  placeholder="输入本周任务内容..."
+  style={{
+    width: '100%',
+    padding: 10,
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    fontSize: 14,
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    resize: 'none',
+    overflow: 'hidden',
+    minHeight: '40px'
+  }}
+  rows="1"
+  autoFocus
+  onKeyDown={(e) => {
+    // 按 Enter 时正常换行，什么都不做
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // 什么都不做，让 textarea 默认行为（换行）生效
+      return;
+    }
+    // 如果想用 Ctrl+Enter 提交，可以这样：
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      handleAdd();
+    }
+  }}
+/>
           </div>
 
           <div style={{ marginBottom: 15 }}>
@@ -7534,7 +7557,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
           </div>
 
           <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#61A2Da', fontSize: '18px' }}>
-            📅 本月任务 ({tasks.length})
+            本月任务 ({tasks.length})
           </h2>
 
 {/* 添加任务按钮 - 只在未显示表单时显示 */}
@@ -8793,6 +8816,22 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     newSubTask: ''
   });
 
+
+const [showAbandonReason, setShowAbandonReason] = useState(false);
+const [abandonReason, setAbandonReason] = useState('');
+const [abandonNote, setAbandonNote] = useState('');
+
+const abandonReasons = [
+  { value: '太难了', label: '😰 太难了', color: '#f44336' },
+  { value: '没时间', label: '⏰ 没时间', color: '#ff9800' },
+  { value: '不重要', label: '📌 不重要', color: '#9e9e9e' },
+  { value: '重复了', label: '🔄 重复了', color: '#2196f3' },
+  { value: '已完成', label: '✅ 已完成（忘记打勾）', color: '#4caf50' },
+  { value: '等待资料', label: '📚 等待资料', color: '#ffc107' },
+  { value: '身体不适', label: '🤒 身体不适', color: '#e91e63' },
+  { value: '其他', label: '📝 其他', color: '#607d8b' }
+];
+
   const [showMoreConfig, setShowMoreConfig] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -8967,14 +9006,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
 
 
   {/* 🚫 放弃按钮 - 蓝色禁止符号 */}
+{/* 🚫 放弃按钮 - 蓝色禁止符号 */}
 <button
   onClick={() => {
-    if (window.confirm('确定标记这个任务为"做不完"吗？\n\n标记后任务会变灰色，不参与统计。')) {
-      if (onMarkAbandoned) {
-        onMarkAbandoned(task);
-      }
-      onClose();
-    }
+    setShowAbandonReason(true);  // 只打开弹窗，不做其他操作
   }}
   style={{
     width: '32px',
@@ -9976,6 +10011,150 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
           />
         </div>
       </div>
+
+{showAbandonReason && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000,
+    padding: '10px'
+  }} onClick={() => setShowAbandonReason(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '100%',
+      maxWidth: '350px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      <div style={{
+        padding: '16px 20px',
+        backgroundColor: '#61A2Da',
+        color: 'white',
+        textAlign: 'center'
+      }}>
+        <h3 style={{ margin: 0, fontSize: '16px' }}>🚫 放弃任务</h3>
+      </div>
+      
+      <div style={{ padding: '20px' }}>
+        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#333' }}>
+          任务：<strong>{task.text}</strong>
+        </p>
+        
+        {/* 标签选择 */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '16px'
+        }}>
+          {abandonReasons.map(reason => (
+            <div
+              key={reason.value}
+              onClick={() => setAbandonReason(reason.value)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '20px',
+                backgroundColor: abandonReason === reason.value ? reason.color : '#f0f0f0',
+                color: abandonReason === reason.value ? '#fff' : '#333',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'none',
+                border: `1px solid ${abandonReason === reason.value ? reason.color : '#e0e0e0'}`
+              }}
+            >
+              {reason.label}
+            </div>
+          ))}
+        </div>
+        
+        {/* 手动输入原因（可选，会覆盖标签选择） */}
+        <input
+          type="text"
+          value={abandonReason}
+          onChange={(e) => setAbandonReason(e.target.value)}
+          placeholder="或直接输入放弃原因..."
+          style={{
+            width: '100%',
+          
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '13px',
+            boxSizing: 'border-box',
+            marginBottom: '16px'
+          }}
+        />
+        
+       
+        
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => {
+              setShowAbandonReason(false);
+              setAbandonReason('');
+              setAbandonNote('');
+            }}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={() => {
+              if (!abandonReason.trim()) {
+                alert('请选择或输入放弃原因');
+                return;
+              }
+              const abandonInfo = {
+                reason: abandonReason.trim(),
+                note: abandonNote,
+                timestamp: new Date().toISOString()
+              };
+              if (onMarkAbandoned) {
+                onMarkAbandoned(task, abandonInfo);
+              }
+              setShowAbandonReason(false);
+              setAbandonReason('');
+              setAbandonNote('');
+              onClose();
+            }}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#f44336',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            确认放弃
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
@@ -10002,6 +10181,7 @@ const TaskItem = ({
   onUpdateProgress,
   onDeleteTask, 
   onDeleteImage,
+  onUpdateAbandonInfo,
   onEditSubTask = () => {},
   isSortingMode = false
 }) => {
@@ -10409,6 +10589,54 @@ const toggleDateCompletion = (date, isChecked) => {
   </div>
 )}
 
+{/* 放弃信息显示 - 放在备注和感想之前 */}
+{task.abandoned && task.abandonInfo && (
+  <div style={{ marginLeft: "20px", marginTop: 4, marginBottom: 4, position: "relative"}}>
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        // 打开编辑弹窗，让用户修改放弃原因
+        const newReason = window.prompt("修改放弃原因", task.abandonInfo.reason);
+        if (newReason && newReason.trim()) {
+          // 更新放弃原因
+          const updatedAbandonInfo = {
+            ...task.abandonInfo,
+            reason: newReason.trim()
+          };
+          // 调用更新函数（需要在 App 中实现）
+          if (onUpdateAbandonInfo) {
+            onUpdateAbandonInfo(task, updatedAbandonInfo);
+          }
+        }
+      }}
+      style={{
+        fontSize: 12,
+        color: "#333",
+        backgroundColor: "#ffebee",
+        padding: "4px 8px",
+        borderRadius: 4,
+        whiteSpace: "pre-wrap",
+        lineHeight: "1.3",
+        cursor: "pointer"
+      }}
+    >
+      <span>{task.abandonInfo.reason}</span>
+      {task.abandonInfo.note && (
+        <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+          📝 {task.abandonInfo.note}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* 第二行：备注和感想 */}
+{(task.note || task.reflection) && (
+  <div style={{ marginLeft: "20px", marginTop: 4, position: "relative" }}>
+    {/* 原来的备注和感想代码保持不变 */}
+  </div>
+)}
+
       {/* 第二行：备注和感想 */}
       {(task.note || task.reflection) && (
         <div style={{ 
@@ -10679,6 +10907,7 @@ const SortableTaskList = ({
   isSortingMode, 
   onSortingEnd,
   onDeleteTask,
+  onUpdateAbandonInfo,
   onEditTime,
   onDeleteImage,
   onEditNote,
@@ -10914,7 +11143,7 @@ const SortableTaskList = ({
             formatTimeWithSeconds={formatTimeWithSeconds}
             onMoveTask={onMoveTask}
             categories={categories}
-            
+            onUpdateAbandonInfo={onUpdateAbandonInfo}
             setShowMoveModal={setShowMoveModal}
             onUpdateProgress={onUpdateProgress}
             onEditSubTask={onEditSubTask}
@@ -11900,6 +12129,29 @@ const getSubjectColor = (subject) => {
   >
     复盘记录
   </div>
+
+{/* 👇 添加这个 */}
+  <div
+    onClick={() => setActiveTab('abandon')}
+    style={{
+      padding: '4px 12px',
+      fontSize: '13px',
+      cursor: 'pointer',
+      backgroundColor: activeTab === 'abandon' ? '#fff' : '#f0f0f0',
+      color: activeTab === 'abandon' ? '#61A2Da' : '#666',
+      borderTopLeftRadius: '8px',
+      borderTopRightRadius: '8px',
+      borderBottom: activeTab === 'abandon' ? '2px solid #61A2Da' : 'none',
+      fontWeight: activeTab === 'abandon' ? 'bold' : 'normal',
+      whiteSpace: 'nowrap',
+      flexShrink: 0
+    }}
+  >
+    放弃原因
+  </div>
+
+
+
 </div>
       
      <DateFilterButtons />
@@ -12159,6 +12411,135 @@ const getSubjectColor = (subject) => {
           
         </div>
       )}
+
+{activeTab === 'abandon' && (
+  <div style={{
+    padding: '15px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    border: '1px solid #e0e0e0'
+  }}>
+    {(() => {
+      // 收集当前界面中所有放弃的任务，按日期分组
+      const abandonByDate = {};
+      Object.entries(tasksByDate || {}).forEach(([date, tasks]) => {
+        tasks.forEach(task => {
+          if (task.abandoned && task.abandonInfo) {
+            if (!abandonByDate[date]) {
+              abandonByDate[date] = [];
+            }
+            abandonByDate[date].push({
+              taskText: task.text,
+              reason: task.abandonInfo.reason,
+              note: task.abandonInfo.note,
+              category: task.category,
+              subCategory: task.subCategory
+            });
+          }
+        });
+      });
+      
+      // 按日期倒序排序
+      const sortedDates = Object.keys(abandonByDate).sort((a, b) => b.localeCompare(a));
+      
+      if (sortedDates.length === 0) {
+        return (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            暂无放弃记录
+          </div>
+        );
+      }
+      
+      return (
+        <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+          {sortedDates.map((date, dateIdx) => (
+            <div
+              key={date}
+              style={{
+                marginBottom: '16px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}
+            >
+              {/* 日期标题 */}
+              <div style={{
+                backgroundColor: '#f5f5f5',
+                padding: '8px 12px',
+                fontWeight: 'bold',
+                color: '#61A2Da',
+                borderBottom: '1px solid #e0e0e0'
+              }}>
+                {date.slice(5)} ({abandonByDate[date].length}个任务)
+              </div>
+              
+              {/* 该日期下的所有放弃任务 */}
+              {abandonByDate[date].map((item, idx) => (
+                <div
+                  key={`${date}_${idx}`}
+                  style={{
+                    padding: '12px',
+                    borderBottom: idx < abandonByDate[date].length - 1 ? '1px solid #eee' : 'none',
+                    backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white'
+                  }}
+                >
+                  {/* 第一排：任务名 + 类别 */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '10px',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <span style={{ 
+                      fontSize: '13px', 
+                      fontWeight: 'bold',
+                      color: '#333'
+                    }}>
+                      {item.taskText}
+                    </span>
+                    {item.category && (
+                      <span style={{ 
+                        fontSize: '11px', 
+                        color: '#fff', 
+                        backgroundColor: item.category === '校内' && item.subCategory ? '#4caf50' : '#1a73e8',
+                        padding: '2px 6px',
+                        borderRadius: '10px'
+                      }}>
+                        {item.subCategory ? `${item.category}-${item.subCategory}` : item.category}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* 第二排：放弃原因 */}
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#c62828',
+                    backgroundColor: '#ffebee',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    lineHeight: '1.4'
+                  }}>
+                    <span style={{ fontWeight: 'bold' }}></span>
+                    {item.reason}
+                    {item.note && (
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                        📝 {item.note}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    })()}
+  </div>
+)}
+
+
     </div>
   );
 };
@@ -13156,8 +13537,8 @@ const cancelAbandoned = (task) => {
   console.log('✅ 任务已恢复正常:', task.text);
 };
 
-const markTaskAsAbandoned = (task) => {
-  console.log('🚫 标记任务为放弃:', task.text, task.crossDateId);
+const markTaskAsAbandoned = (task, abandonInfo = null) => {
+  console.log('🚫 标记任务为放弃:', task.text, abandonInfo);
   
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
@@ -13167,32 +13548,62 @@ const markTaskAsAbandoned = (task) => {
       Object.keys(newTasksByDate).forEach(date => {
         newTasksByDate[date] = newTasksByDate[date].map(t =>
           t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
-            ? { ...t, abandoned: true, done: false }
+            ? { ...t, abandoned: true, done: false, abandonInfo: abandonInfo }
             : t
         );
       });
     } else if (task.crossDateId) {
-      // ✅ 跨日期任务：只更新当前日期的这个任务实例
-      // 注意：跨日期任务应该只放弃当天这个实例，不影响其他日期
+      // 跨日期任务：只更新当前日期的这个任务实例
       const currentDate = selectedDate;
       newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
         if (t.id === task.id || (t.crossDateId === task.crossDateId && t.id === task.id)) {
           console.log(`  ✅ 放弃跨日期任务实例: ${currentDate}`);
-          return { ...t, abandoned: true, done: false };
+          return { ...t, abandoned: true, done: false, abandonInfo: abandonInfo };
         }
         return t;
       });
     } else {
       // 普通任务
       newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
-        t.id === task.id ? { ...t, abandoned: true, done: false } : t
+        t.id === task.id ? { ...t, abandoned: true, done: false, abandonInfo: abandonInfo } : t
       );
     }
     
     return newTasksByDate;
   });
 };
-
+// 更新放弃信息
+const updateAbandonInfo = (task, newAbandonInfo) => {
+  setTasksByDate(prev => {
+    const newTasksByDate = { ...prev };
+    
+    const updateTask = (t) => ({
+      ...t,
+      abandonInfo: newAbandonInfo
+    });
+    
+    if (task.isWeekTask) {
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? updateTask(t)
+            : t
+        );
+      });
+    } else if (task.crossDateId) {
+      const currentDate = selectedDate;
+      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t =>
+        t.crossDateId === task.crossDateId ? updateTask(t) : t
+      );
+    } else {
+      newTasksByDate[selectedDate] = (newTasksByDate[selectedDate] || []).map(t =>
+        t.id === task.id ? updateTask(t) : t
+      );
+    }
+    
+    return newTasksByDate;
+  });
+};
 const [chartView, setChartView] = useState('month');
 const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 const [editingTemplate, setEditingTemplate] = useState(null);
@@ -20656,6 +21067,7 @@ if (isInitialized && todayTasks.length === 0) {
               task={task}
               onEditTime={editTaskTime}
               tasksByDate={tasksByDate}  
+              onUpdateAbandonInfo={updateAbandonInfo}
               getTaskCompletionType={getTaskCompletionType}
               onEditNote={editTaskNote}
               onDeleteTask={deleteTask}
@@ -20887,6 +21299,7 @@ if (isInitialized && todayTasks.length === 0) {
       tasks={weekTasks}
       category="本周任务"
       subCategory={null}
+      onUpdateAbandonInfo={updateAbandonInfo}
       selectedDate={selectedDate} 
       tasksByDate={tasksByDate} 
       isSortingMode={sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory}
