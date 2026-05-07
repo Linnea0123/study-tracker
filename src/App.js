@@ -13440,7 +13440,8 @@ const isUserTogglingRef = useRef(false);
 // 关注任务管理弹窗状态
 const [showFocusModal, setShowFocusModal] = useState(false);
 const [newTaskName, setNewTaskName] = useState('');
-
+// 仿写汇总弹窗状态
+const [showImitationSummary, setShowImitationSummary] = useState(false);
 // 仿写相关状态
 // 仿写相关状态
 
@@ -20329,8 +20330,8 @@ if (isInitialized && todayTasks.length === 0) {
 {/* 仿写区域 - 展开/收起 */}
 {showImitation && (
   <div style={{
-    marginBottom: 5,
-    marginTop: -5,
+    marginBottom: 10,
+    marginTop: 5,
     paddingLeft: 0
   }}>
     <div 
@@ -20373,6 +20374,30 @@ if (isInitialized && todayTasks.length === 0) {
       >
         {currentImitation.sentence || '点击这里添加仿写句子...'}
       </span>
+      
+      {/* 汇总按钮 - 在句子右边 */}
+      <div
+        onClick={() => setShowImitationSummary(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '4px',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          flexShrink: 0
+        }}
+        title="查看所有仿写句子"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
+          <line x1="9" y1="8" x2="15" y2="8" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="9" y1="12" x2="15" y2="12" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="9" y1="16" x2="12" y2="16" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </div>
     </div>
   </div>
 )}
@@ -20625,6 +20650,113 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 )}
 
+{/* 仿写汇总弹窗 */}
+{showImitationSummary && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowImitationSummary(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '95%',
+      maxWidth: '500px',
+      maxHeight: '80vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      {/* 标题栏 */}
+      <div style={{
+        padding: '12px 16px',
+        backgroundColor: '#FFA726',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>📝 仿写句子汇总</span>
+        <div
+          onClick={() => setShowImitationSummary(false)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px'
+          }}
+        >
+          ×
+        </div>
+      </div>
+      
+      {/* 内容区域 */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: '12px'
+      }}>
+        {Object.entries(imitationData)
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([date, data]) => (
+            <div
+              key={date}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '12px',
+                borderBottom: '1px solid #f0f0f0',
+                backgroundColor: data.completed ? '#fafafa' : '#fff'
+              }}
+            >
+              <div style={{
+                minWidth: '70px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: data.completed ? '#999' : '#FFA726'
+              }}>
+                {date.slice(5)}
+              </div>
+              <div style={{
+                flex: 1,
+                fontSize: '13px',
+                lineHeight: '1.4',
+                color: data.completed ? '#bbb' : '#333',
+                wordBreak: 'break-word'
+              }}>
+                {data.sentence || <span style={{ color: '#ccc', fontStyle: 'italic' }}>未填写</span>}
+              </div>
+              {data.completed && (
+                <div style={{ fontSize: '12px', color: '#4caf50', flexShrink: 0 }}>✅</div>
+              )}
+            </div>
+          ))}
+        
+        {Object.keys(imitationData).length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            暂无仿写记录
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
 {/* 关注任务管理弹窗 */}
 {showFocusModal && (
