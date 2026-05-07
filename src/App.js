@@ -10590,20 +10590,19 @@ const toggleDateCompletion = (date, isChecked) => {
 )}
 
 {/* 放弃信息显示 - 放在备注和感想之前 */}
+{/* 放弃信息显示 */}
+{/* 放弃信息显示 */}
 {task.abandoned && task.abandonInfo && (
-  <div style={{ marginLeft: "20px", marginTop: 4, marginBottom: 4, position: "relative"}}>
+  <div style={{ marginLeft: "20px", marginTop: -2, marginBottom: 4, position: "relative"}}>
     <div
       onClick={(e) => {
         e.stopPropagation();
-        // 打开编辑弹窗，让用户修改放弃原因
         const newReason = window.prompt("修改放弃原因", task.abandonInfo.reason);
         if (newReason && newReason.trim()) {
-          // 更新放弃原因
           const updatedAbandonInfo = {
             ...task.abandonInfo,
             reason: newReason.trim()
           };
-          // 调用更新函数（需要在 App 中实现）
           if (onUpdateAbandonInfo) {
             onUpdateAbandonInfo(task, updatedAbandonInfo);
           }
@@ -10611,20 +10610,43 @@ const toggleDateCompletion = (date, isChecked) => {
       }}
       style={{
         fontSize: 12,
-        color: "#333",
-        backgroundColor: "#ffebee",
+        color: "#f44336",
+        backgroundColor: "transparent",
         padding: "4px 8px",
         borderRadius: 4,
         whiteSpace: "pre-wrap",
-        lineHeight: "1.3",
-        cursor: "pointer"
+        lineHeight: "1.4",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px"
       }}
     >
+      {/* 红色圆圈叉号 SVG */}
+      <svg 
+        width="14" 
+        height="14" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          display: "block",
+          flexShrink: 0
+        }}
+      >
+        <circle cx="12" cy="12" r="10" stroke="#f44336" strokeWidth="2" fill="none"/>
+        <line x1="8" y1="8" x2="16" y2="16" stroke="#f44336" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="16" y1="8" x2="8" y2="16" stroke="#f44336" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+      
+      {/* 放弃原因文字 */}
       <span>{task.abandonInfo.reason}</span>
+      
+      {/* 备注（如果有） */}
       {task.abandonInfo.note && (
-        <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-          📝 {task.abandonInfo.note}
-        </div>
+        <span style={{ fontSize: 11, opacity: 0.8, marginLeft: "4px" }}>
+          （{task.abandonInfo.note}）
+        </span>
       )}
     </div>
   </div>
