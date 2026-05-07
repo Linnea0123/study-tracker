@@ -13419,7 +13419,8 @@ const isUserTogglingRef = useRef(false);
 const [showFocusModal, setShowFocusModal] = useState(false);
 const [newTaskName, setNewTaskName] = useState('');
 
-
+// 仿写相关状态
+// 仿写相关状态
 
    const loadDataWithFallback = async (key, fallback) => {
     try {
@@ -13699,6 +13700,104 @@ const [subCategoryColors, setSubCategoryColors] = useState(() => {
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   // 2. 然后定义关注任务相关
+
+
+// 仿写相关状态 - 每天独立
+const [showImitation, setShowImitation] = useState(false);
+const [imitationData, setImitationData] = useState(() => {
+  const saved = localStorage.getItem('imitation_data');
+  return saved ? JSON.parse(saved) : {};
+});
+
+// 获取当前日期的仿写数据
+const currentImitation = imitationData[selectedDate] || {
+  sentence: '',
+  completed: false
+};
+
+// 保存仿写数据到 localStorage
+useEffect(() => {
+  localStorage.setItem('imitation_data', JSON.stringify(imitationData));
+}, [imitationData]);
+
+// 日期切换时，重置展开状态
+useEffect(() => {
+  setShowImitation(false);
+}, [selectedDate]);
+
+// 更新当前日期的仿写句子
+const updateImitationSentence = (newSentence) => {
+  setImitationData(prev => ({
+    ...prev,
+    [selectedDate]: {
+      sentence: newSentence,
+      completed: prev[selectedDate]?.completed || false
+    }
+  }));
+};
+
+// 切换当前日期仿写完成状态
+const toggleImitationComplete = () => {
+  setImitationData(prev => ({
+    ...prev,
+    [selectedDate]: {
+      sentence: prev[selectedDate]?.sentence || currentImitation.sentence,
+      completed: !(prev[selectedDate]?.completed || false)
+    }
+  }));
+};
+
+// 编辑句子 - 直接内联编辑
+const startEditSentence = () => {
+  if (currentImitation.completed) return;
+  
+  const input = document.createElement('input');
+  input.value = currentImitation.sentence || '';  // 空值也支持
+  input.placeholder = '输入仿写句子...';  // 添加占位提示
+  input.style.cssText = `
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #61A2Da;
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    background: white;
+  `;
+  
+  const sentenceContainer = document.querySelector('.imitation-sentence-container');
+  if (sentenceContainer) {
+    const textSpan = sentenceContainer.querySelector('.sentence-text');
+    if (textSpan) {
+      const parent = textSpan.parentNode;
+      parent.insertBefore(input, textSpan);
+      parent.removeChild(textSpan);
+      input.focus();
+      
+      const saveEdit = () => {
+        const newText = input.value.trim();
+        if (newText) {
+          updateImitationSentence(newText);
+        }
+        // 重新渲染
+        setShowImitation(prev => {
+          setShowImitation(false);
+          setTimeout(() => setShowImitation(true), 10);
+          return false;
+        });
+      };
+      
+      input.onblur = saveEdit;
+      input.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+          saveEdit();
+        }
+      };
+    }
+  }
+};
+
+
+
 
 // 1. 全局任务模板（所有日期共享）
 const [focusTaskTemplates, setFocusTaskTemplates] = useState(() => {
@@ -16556,6 +16655,41 @@ const toggleFocusTask = (taskId) => {
     }
   }));
 };
+
+// 添加新句子
+const addImitationSentence = () => {
+  const newText = window.prompt('请输入要仿写的句子：');
+  if (newText && newText.trim()) {
+    const newSentence = {
+      id: Date.now().toString(),
+      text: newText.trim(),
+      completed: false
+    };
+    setImitationSentences(prev => [...prev, newSentence]);
+  }
+};
+
+// 删除句子
+const deleteImitationSentence = (id) => {
+  if (window.confirm('确定要删除这个句子吗？')) {
+    setImitationSentences(prev => prev.filter(s => s.id !== id));
+  }
+};
+
+// 编辑句子
+const editImitationSentence = (id) => {
+  const sentence = imitationSentences.find(s => s.id === id);
+  const newText = window.prompt('编辑句子：', sentence?.text);
+  if (newText && newText.trim()) {
+    setImitationSentences(prev => prev.map(s => 
+      s.id === id ? { ...s, text: newText.trim() } : s
+    ));
+  }
+};
+
+
+
+
 
 // 编辑关注任务
 const editFocusTask = (taskId, newText) => {
@@ -20057,7 +20191,7 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
-{/* 主要关注任务 - 一行显示 */}
+{/* 主要关注任务 - 一行显示，加仿写按钮 */}
 <div style={{
   display: 'flex',
   flexWrap: 'wrap',
@@ -20074,33 +20208,62 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: 'center',
     flex: 1
   }}>
-{currentFocusTasks.map(task => (
-  <div
-    key={task.id}
-    onClick={() => toggleFocusTask(task.id)}  // 点击整个块切换状态
+    {currentFocusTasks.map(task => (
+      <div
+        key={task.id}
+        onClick={() => toggleFocusTask(task.id)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '20px',
+          backgroundColor: task.checked ? '#e0e0e0' : '#FFA726',
+          cursor: 'pointer'
+        }}
+      >
+        <span
+          style={{
+            fontSize: '12px',
+            color: task.checked ? '#888' : '#fff',
+            textDecoration: 'none',
+            fontWeight: 'normal'
+          }}
+        >
+          {task.text}
+        </span>
+      </div>
+    ))}
+    
+{/* 仿写按钮 */}
+{/* 仿写按钮 */}
+<div
+  onClick={() => {
+    if (!currentImitation.completed) {
+      setShowImitation(!showImitation);
+    }
+  }}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    backgroundColor: currentImitation.completed ? '#e0e0e0' : '#FFA726',
+    cursor: currentImitation.completed ? 'default' : 'pointer'
+  }}
+>
+  <span
     style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      padding: '4px 10px',
-      borderRadius: '20px',
-      backgroundColor: task.checked ? '#e0e0e0' : '#FFA726',
-      cursor: 'pointer'
+      fontSize: '12px',
+      color: currentImitation.completed ? '#888' : '#fff'
     }}
   >
-    <span
-      style={{
-        fontSize: '12px',
-        color: task.checked ? '#888' : '#fff',
-        textDecoration: 'none',
-        fontWeight: 'normal'
-      }}
-    >
-      {task.text}
-    </span>
-  </div>
-))}
-    
+    仿写
+  </span>
+  {/* 删除下面的箭头部分 */}
+</div>
+
   </div>
   
   {/* 右侧：管理按钮（铅笔图标）- 点击打开弹窗 */}
@@ -20137,6 +20300,60 @@ if (isInitialized && todayTasks.length === 0) {
     </svg>
   </div>
 </div>
+
+
+{/* 仿写区域 - 展开/收起 */}
+{/* 仿写区域 - 展开/收起 */}
+{/* 仿写区域 - 展开/收起 */}
+{showImitation && (
+  <div style={{
+    marginBottom: 5,
+    marginTop: -5,
+    paddingLeft: 0
+  }}>
+    <div 
+      className="imitation-sentence-container"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '6px 0'
+      }}
+    >
+      {/* 复选框 */}
+      <input
+        type="checkbox"
+        checked={currentImitation.completed}
+        onChange={toggleImitationComplete}
+        style={{ 
+          width: '14px', 
+          height: '14px', 
+          cursor: 'pointer',
+          flexShrink: 0,
+          margin: 0
+        }}
+      />
+      
+      {/* 句子文字 - 点击可编辑 */}
+      <span
+        className="sentence-text"
+        onClick={startEditSentence}
+        style={{
+          flex: 1,
+          fontSize: '13px',
+          lineHeight: '1.5',
+          color: currentImitation.completed ? '#bbb' : (currentImitation.sentence ? '#333' : '#999'),
+          cursor: currentImitation.completed ? 'default' : 'pointer',
+          backgroundColor: 'transparent',
+          padding: '2px 0',
+          fontStyle: currentImitation.sentence ? 'normal' : 'italic'
+        }}
+      >
+        {currentImitation.sentence || '点击这里添加仿写句子...'}
+      </span>
+    </div>
+  </div>
+)}
 
 {/* 关注任务管理弹窗 */}
 {showFocusModal && (
