@@ -10912,16 +10912,12 @@ const toggleDateCompletion = (date, isChecked) => {
 
 
 
-
-
-// SortableTaskList 组件 - 修复删除功能
-// SortableTaskList 组件 - 修复删除功能
-// SortableTaskList 组件 - 修复删除按钮和拖拽手柄位置
+// SortableTaskList 组件 - 支持手机端触摸拖拽
 const SortableTaskList = ({ 
   tasks, 
   category, 
   subCategory,
-  tasksByDate = {} ,
+  tasksByDate = {},
   isSortingMode, 
   onSortingEnd,
   onDeleteTask,
@@ -10945,8 +10941,13 @@ const SortableTaskList = ({
   onToggleSubTask
 }) => {
   const [taskList, setTaskList] = useState([]);
-  const dragItemIndex = useRef(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
+  const draggedElementRef = useRef(null);
   
+  // 初始化任务列表
   useEffect(() => {
     const orderKey = subCategory 
       ? `tasks_order_${category}_${subCategory}`
@@ -10981,7 +10982,8 @@ const SortableTaskList = ({
     }
   }, [tasks, category, subCategory]);
   
-  const saveOrder = (newList) => {
+  // 保存顺序到 localStorage
+  const saveOrder = useCallback((newList) => {
     const orderKey = subCategory 
       ? `tasks_order_${category}_${subCategory}`
       : `tasks_order_${category}`;
@@ -10990,56 +10992,143 @@ const SortableTaskList = ({
     if (onSortingEnd) {
       onSortingEnd(orderIds);
     }
-  };
+  }, [category, subCategory, onSortingEnd]);
   
   if (taskList.length === 0) {
     return null;
   }
   
-  // 拖拽开始
-  const handleDragStart = (e, index) => {
-    if (!isSortingMode) {
-      e.preventDefault();
-      return false;
-    }
-    dragItemIndex.current = index;
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setDragImage(new Image(), 0, 0);
-    e.currentTarget.style.opacity = '0.5';
-    return true;
-  };
-
-  // 拖拽结束
-  const handleDragEnd = (e) => {
-    if (e.currentTarget) {
-      e.currentTarget.style.opacity = '';
-    }
-    dragItemIndex.current = null;
-  };
-
-  // 拖拽经过
-  const handleDragOver = (e, targetIndex) => {
-    e.preventDefault();
+  // ========== 触摸拖拽事件处理 ==========
+  
+  // 开始拖拽
+  const handleTouchStart = (e, index) => {
     if (!isSortingMode) return;
-    if (dragItemIndex.current === null) return;
-    if (dragItemIndex.current === targetIndex) return;
-    
-    const newList = [...taskList];
-    const draggedItem = newList[dragItemIndex.current];
-    newList.splice(dragItemIndex.current, 1);
-    newList.splice(targetIndex, 0, draggedItem);
-    
-    setTaskList(newList);
-    dragItemIndex.current = targetIndex;
-  };
-
-  const handleDrop = (e) => {
     e.preventDefault();
-    if (!isSortingMode) return;
+    e.stopPropagation();
+    
+    setDraggedIndex(index);
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+    
+    // 保存被拖拽元素的引用
+    draggedElementRef.current = e.currentTarget;
+    
+    // 添加拖拽样式
+    if (draggedElementRef.current) {
+      draggedElementRef.current.style.opacity = '0.5';
+      draggedElementRef.current.style.transition = 'opacity 0.2s';
+    }
+  };
+  
+  // 拖拽移动中
+  const handleTouchMove = (e, index) => {
+    if (!isSortingMode || draggedIndex === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const currentY = e.touches[0].clientY;
+    const moveDistance = currentY - touchStartY.current;
+    
+    // 获取所有任务元素
+    const taskElements = document.querySelectorAll(`[data-task-idx]`);
+    let targetIndex = draggedIndex;
+    
+    // 根据触摸位置计算目标索引
+    for (let i = 0; i < taskElements.length; i++) {
+      const rect = taskElements[i].getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      if (currentY > centerY) {
+        targetIndex = i;
+      }
+    }
+    
+    // 如果目标索引变化，重新排序
+    if (targetIndex !== draggedIndex && targetIndex !== dragOverIndex) {
+      setDragOverIndex(targetIndex);
+      
+      setTaskList(prevList => {
+        const newList = [...prevList];
+        const [draggedItem] = newList.splice(draggedIndex, 1);
+        newList.splice(targetIndex, 0, draggedItem);
+        
+        // 更新拖拽索引
+        setDraggedIndex(targetIndex);
+        touchStartY.current = currentY;
+        
+        return newList;
+      });
+    }
+  };
+  
+  // 结束拖拽
+  const handleTouchEnd = (e) => {
+    if (!isSortingMode || draggedIndex === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 恢复样式
+    if (draggedElementRef.current) {
+      draggedElementRef.current.style.opacity = '';
+      draggedElementRef.current.style.transition = '';
+    }
+    
+    // 保存最终顺序
     saveOrder(taskList);
-    dragItemIndex.current = null;
+    
+    // 重置状态
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    draggedElementRef.current = null;
   };
+  
+  // ========== 鼠标拖拽事件处理（用于调试） ==========
+  const handleMouseDown = (e, index) => {
+    if (!isSortingMode) return;
+    e.preventDefault();
+    
+    setDraggedIndex(index);
+    
+    const handleMouseMove = (moveEvent) => {
+      moveEvent.preventDefault();
+      
+      const taskElements = document.querySelectorAll(`[data-task-idx]`);
+      let targetIndex = draggedIndex;
+      const mouseY = moveEvent.clientY;
+      
+      for (let i = 0; i < taskElements.length; i++) {
+        const rect = taskElements[i].getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        if (mouseY > centerY) {
+          targetIndex = i;
+        }
+      }
+      
+      if (targetIndex !== draggedIndex && targetIndex !== dragOverIndex) {
+        setDragOverIndex(targetIndex);
+        
+        setTaskList(prevList => {
+          const newList = [...prevList];
+          const [draggedItem] = newList.splice(draggedIndex, 1);
+          newList.splice(targetIndex, 0, draggedItem);
+          setDraggedIndex(targetIndex);
+          return newList;
+        });
+      }
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      saveOrder(taskList);
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
+  if (taskList.length === 0) return null;
   
   return (
     <ul
@@ -11049,24 +11138,25 @@ const SortableTaskList = ({
         margin: 0,
         borderLeft: subCategory ? "2px solid #e0e0e0" : "none"
       }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
     >
       {taskList.map((task, idx) => (
         <div
           key={task.id}
-          draggable={isSortingMode}
-          onDragStart={(e) => handleDragStart(e, idx)}
-          onDragEnd={handleDragEnd}
-          onDragOver={(e) => handleDragOver(e, idx)}
+          data-task-idx={idx}
           style={{
             cursor: isSortingMode ? 'grab' : 'default',
             marginBottom: '4px',
-            opacity: dragItemIndex.current === idx ? 0.5 : 1,
-            position: 'relative'
+            opacity: draggedIndex === idx ? 0.5 : 1,
+            transition: 'opacity 0.2s',
+            position: 'relative',
+            touchAction: isSortingMode ? 'none' : 'auto'  // 关键：触摸时禁用滚动
           }}
+          onTouchStart={(e) => handleTouchStart(e, idx)}
+          onTouchMove={(e) => handleTouchMove(e, idx)}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={(e) => handleMouseDown(e, idx)}
         >
-          {/* ✅ 排序模式下的删除和拖拽按钮 - 放在任务内容外部，但不在绝对定位中 */}
+          {/* 排序模式下的删除和拖拽按钮 */}
           {isSortingMode && (
             <div
               style={{
@@ -11077,7 +11167,7 @@ const SortableTaskList = ({
                 alignItems: 'center',
                 gap: '4px',
                 zIndex: 5,
-      paddingRight: '4px' 
+                paddingRight: '4px'
               }}
             >
               {/* 删除按钮 */}
@@ -11085,8 +11175,8 @@ const SortableTaskList = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  if (window.confirm(`确定要删除任务 "${task.text}" 吗？\n\n此操作不可撤销！`)) {
-                    if (onDeleteTask && typeof onDeleteTask === 'function') {
+                  if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
+                    if (onDeleteTask) {
                       onDeleteTask(task, 'today');
                     }
                   }
@@ -11096,48 +11186,38 @@ const SortableTaskList = ({
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
-                  width: '24px',
-                  height: '24px',
+                  width: '28px',
+                  height: '28px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
                 title="删除任务"
               >
-                <svg 
-                  width="14" 
-                  height="14" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
                   <path d="M6 6L18 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
                 </svg>
               </button>
               
-              {/* 拖拽手柄 */}
+              {/* 拖拽手柄 - 显示三条横线 */}
               <div
                 style={{
                   cursor: 'grab',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '24px',
-                  height: '24px'
+                  width: '28px',
+                  height: '28px',
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: '4px'
                 }}
-                title="拖拽调整顺序"
+                title="长按拖拽调整顺序"
               >
-                <svg 
-                  width="14" 
-                  height="14" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <line x1="5" y1="6" x2="19" y2="6" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="5" y1="12" x2="19" y2="12" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="5" y1="18" x2="19" y2="18" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <line x1="5" y1="6" x2="19" y2="6" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="5" y1="12" x2="19" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="5" y1="18" x2="19" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
             </div>
@@ -11148,7 +11228,6 @@ const SortableTaskList = ({
             selectedDate={selectedDate}
             isSortingMode={isSortingMode}
             getTaskCompletionType={getTaskCompletionType}
-            onDeleteTask={onDeleteTask}
             onEditTime={onEditTime}
             onDeleteImage={onDeleteImage}
             onEditNote={onEditNote}
@@ -11172,7 +11251,6 @@ const SortableTaskList = ({
     </ul>
   );
 };
-
 
 const StatsPage = ({ onClose, dailyStudyData, categoryData, subCategoryData, dailyTasksData, avgCompletion, avgDailyTime, studyEndTimes, dailyReflections, dailyRatings, onDeleteReflection, onClearReflections, selectedDate, tasksByDate, categories }) => {
   const chartHeight = window.innerWidth <= 768 ? 200 : 300;
