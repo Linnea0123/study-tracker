@@ -11157,71 +11157,70 @@ const SortableTaskList = ({
           onMouseDown={(e) => handleMouseDown(e, idx)}
         >
           {/* 排序模式下的删除和拖拽按钮 */}
-          {isSortingMode && (
-            <div
-              style={{
-                position: 'absolute',
-                right: '0px',
-                top: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                zIndex: 5,
-                paddingRight: '4px'
-              }}
-            >
-              {/* 删除按钮 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
-                    if (onDeleteTask) {
-                      onDeleteTask(task, 'today');
-                    }
-                  }
-                }}
-                style={{
-                  background: 'transparent',
-                  transform: 'translateX(11px)',  // 往右移动12px 
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title="删除任务"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
-                  <path d="M6 6L18 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
-                </svg>
-              </button>
-              
-              {/* 拖拽手柄 - 显示三条横线 */}
-              <div
-                style={{
-                  cursor: 'grab',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '4px'
-                }}
-                title="长按拖拽调整顺序"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <line x1="5" y1="6" x2="19" y2="6" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="5" y1="12" x2="19" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="5" y1="18" x2="19" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-            </div>
-          )}
+          {/* 排序模式下的删除和拖拽按钮 */}
+{isSortingMode && (
+  <>
+    {/* 删除按钮 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (window.confirm(`确定要删除任务 "${task.text}" 吗？`)) {
+          if (onDeleteTask) {
+            onDeleteTask(task, 'today');
+          }
+        }
+      }}
+      style={{
+        position: 'absolute',
+        right: '20px',
+        top: '6px',                    // ← 改成 6px，与复选框对齐
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 5
+      }}
+      title="删除任务"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
+        <path d="M6 6L18 18" stroke="#999" strokeWidth="2" strokeLinecap="square"/>
+      </svg>
+    </button>
+    
+    {/* 拖拽手柄 */}
+    <div
+      style={{
+        position: 'absolute',
+        right: '0px',
+        top: '6px',                    // ← 改成 6px，与复选框对齐
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 5
+      }}
+      title="长按拖拽调整顺序"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <line x1="5" y1="6" x2="19" y2="6" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="5" y1="12" x2="19" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="5" y1="18" x2="19" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </div>
+  </>
+)}
 
           <TaskItem
             task={task}
@@ -20412,7 +20411,7 @@ if (isInitialized && todayTasks.length === 0) {
       className="imitation-sentence-container"
       style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: '"flex-start',
         gap: '10px',
         padding: '6px 0'
       }}
@@ -21832,7 +21831,9 @@ const getCategoryBorderColor = () => {
       })();
     })(),
     // ✅ 永远保持正常颜色，不判断 isComplete
-    color: isComplete ? "#999" : (c.name === "校内" ? "#fff" : "#333"),
+    color: c.name === "校内" 
+      ? (isComplete ? "#000" : "#fff")   // 校内：完成变黑，未完成白色
+      : (isComplete ? "#bbb" : "#333"),  // 其他：完成变浅灰，未完成深灰
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 12px",
     fontWeight: "bold",
