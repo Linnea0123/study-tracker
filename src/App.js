@@ -11183,6 +11183,7 @@ const SortableTaskList = ({
                 }}
                 style={{
                   background: 'transparent',
+                  transform: 'translateX(11px)',  // 往右移动12px 
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
@@ -11209,7 +11210,6 @@ const SortableTaskList = ({
                   justifyContent: 'center',
                   width: '28px',
                   height: '28px',
-                  backgroundColor: '#f0f0f0',
                   borderRadius: '4px'
                 }}
                 title="长按拖拽调整顺序"
@@ -21832,7 +21832,7 @@ const getCategoryBorderColor = () => {
       })();
     })(),
     // ✅ 永远保持正常颜色，不判断 isComplete
-    color: isComplete ? "#333" : (c.name === "校内" ? "#fff" : "#333"),
+    color: isComplete ? "#999" : (c.name === "校内" ? "#fff" : "#333"),
     fontFamily: 'Calibri, "微软雅黑", sans-serif',
     padding: "3px 12px",
     fontWeight: "bold",
@@ -21926,7 +21926,7 @@ const getCategoryBorderColor = () => {
       >
         {sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory ? (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 6L9 17L4 12" stroke="#333" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+            <path d="M20 6L9 17L4 12"  stroke="#999" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
           </svg>
         ) : (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -22090,7 +22090,7 @@ const getCategoryBorderColor = () => {
   >
     <path 
       d="M20 6L9 17L4 12" 
-      stroke="#333" 
+      stroke={allDone ? "#999" : "#999"}  
       strokeWidth="3" 
       strokeLinecap="square"
       strokeLinejoin="miter"
