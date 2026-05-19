@@ -16658,7 +16658,7 @@ useEffect(() => {
   let isFirstLoad = true;
   
   // 订阅云端数据变化
-  const docRef = getDataDocRef();
+  const docRef = getDataRef();
   const unsubscribe = onSnapshot(docRef, (docSnap) => {
     if (!docSnap.exists()) return;
     
