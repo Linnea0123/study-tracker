@@ -1,32 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     
-    <!-- ✅ 手机端输入框点击不放大 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <!-- ✅ 手机端视图配置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     
-    <meta name="theme-color" content="#000000" />
+    <!-- ✅ 状态栏/灵动岛颜色 - 改为你的主题色 -->
+    <meta name="theme-color" content="#f5faff" />
+    
+    <!-- ✅ iOS 专用：状态栏样式 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="学习记录 - 作业跟踪与时间管理"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop.
-    -->
-    <title>React App</title>
+    <title>学习记录</title>
   </head>
-  <body>
+  <body style="margin: 0; padding: 0; background-color: #f5faff">
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-      You can add webfonts, meta tags, or analytics to this file.
-    -->
+    <div id="root" style="background-color: #f5faff; min-height: 100vh"></div>
   </body>
 </html>
