@@ -36,7 +36,7 @@ const db = getDatabase(firebaseApp);
 const DATA_PATH = "study_tracker_data";
 const getDataRef = () => ref(db, DATA_PATH);
 // 兼容旧代码（Firestore 版本的函数名）
-const getDataDocRef = getDataRef;
+const getDataRef = getDataRef;
 // 保存数据到云端
 const saveToCloud = async (data) => {
   try {
