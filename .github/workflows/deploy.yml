@@ -28,4 +28,4 @@ jobs:
       uses: amondnet/vercel-action@v20
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-args: '--prod'
+        vercel-args: '--prod --yes'  # ← 这里改成这样
