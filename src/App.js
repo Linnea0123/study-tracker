@@ -1913,6 +1913,28 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
   const [editingRecord, setEditingRecord] = useState(null);
   const [editMinutes, setEditMinutes] = useState('');
 
+   const getCategoryColor = (category, subCategory) => {
+    if (category === '校内' && subCategory) {
+      const colors = {
+        '数学': '#E8F5E9',
+        '语文': '#FFF9C4',
+        '英语': '#FCE4EC',
+        '运动': '#E3F2FD'
+      };
+      return colors[subCategory] || '#61A2Da';
+    }
+    
+    const categoryColors = {
+      '语文': '#FFF9C4',
+      '数学': '#E8F5E9',
+      '英语': '#FCE4EC',
+      '科学': '#E1F5FE',
+      '运动': '#E3F2FD',
+      '校内': '#61A2DA'
+    };
+    return categoryColors[category] || '#f0f0f0';
+  };
+
   useEffect(() => {
     const dates = Object.keys(tasksByDate || {})
       .filter(date => (tasksByDate[date] || []).length > 0)
@@ -19594,88 +19616,99 @@ if (isInitialized && todayTasks.length === 0) {
   marginBottom: 15,
   padding: "0 40px"
 }}>
- {/* 右上角成绩记录按钮 */}
-{/* 右上角成绩记录按钮 - 柱状图图标 */}
-<button
-  onClick={() => setShowGradeModal(true)}
-  style={{
-    position: "absolute",
-    top: 0,
-    right: 0,
-    width: 36,
-    height: 36,
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    padding: 0
-  }}
-  title="成绩记录"
->
-  <svg 
-    width="20" 
-    height="20" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg"
+  {/* 右上角成绩记录按钮 */}
+  <button
+    onClick={() => setShowGradeModal(true)}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 0,
+      width: 36,
+      height: 36,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="成绩记录"
   >
-    {/* 第一个柱子 */}
-    <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
-    {/* 第二个柱子 - 最高 */}
-    <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
-    {/* 第三个柱子 */}
-    <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
-    {/* 底部横线 */}
-    <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-</button>
-    {/* 🏆 左上角奖杯按钮 - 新增 */}
-{/* 🏆 左上角奖杯按钮 - 改为简笔画奖牌 */}
-<button
-  onClick={() => setShowMilestoneModal(true)}
-  style={{
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 36,
-    height: 36,
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    padding: 0
-  }}
-  title="里程碑"
->
- <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* 奖牌主体圆形 */}
-    <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-    {/* 中间五角星 */}
-    <polygon 
-      points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" 
-      fill="#61A2Da" 
-      stroke="none"
-    />
-    {/* 绶带（左） */}
-    <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-  </svg>
-</button>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
+      <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
+      <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
+      <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  </button>
+
+  {/* 统计汇总按钮 - 放在成绩记录按钮左侧 */}
+  <button
+    onClick={() => setShowStats(true)}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 42,  // 成绩记录按钮宽度36 + 间距6
+      width: 36,
+      height: 36,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="统计汇总"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* 饼图图标 - 蓝色 */}
+      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <path d="M12 2 A10 10 0 0 1 19.07 7.07 L12 12 Z" fill="#61A2Da" fillOpacity="0.8"/>
+      <path d="M12 2 A10 10 0 0 0 4.93 7.07 L12 12 Z" fill="#61A2Da" fillOpacity="0.4"/>
+    </svg>
+  </button>
+
+  {/* 左上角奖杯按钮 */}
+  <button
+    onClick={() => setShowMilestoneModal(true)}
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: 36,
+      height: 36,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="里程碑"
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da"/>
+      <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+    </svg>
+  </button>
+
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
     color: "#61A2Da",
     fontSize: "20px",
     margin: 0,
-    padding: "10px 0", // 添加上下内边距来垂直居中
-    lineHeight: "16px" // 恢复默认行高
+    padding: "10px 0",
+    lineHeight: "16px"
   }}>
     学习记录
   </h1>
@@ -21702,44 +21735,7 @@ const getCategoryBorderColor = () => {
 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
   
 {/* 统计汇总按钮 - 只在校内类别显示 */}
-{/* 统计汇总按钮 - 只在校内类别显示 */}
-{c.name === '校内' && (
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowStats(true);
-    }}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      width: "18px",
-      height: "18px",
-      borderRadius: "4px",
-      marginRight: "8px",
-      backgroundColor: "transparent"
-    }}
-    title="统计汇总"
-  >
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 根据类别是否完成，改变颜色 */}
-      <circle 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke={isComplete ? "#333" : "#fff"} 
-        strokeWidth="2" 
-        fill="none"
-      />
-      <path 
-        d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" 
-        fill={isComplete ? "#333" : "#fff"} 
-        stroke="none"
-      />
-    </svg>
-  </div>
-)}
+
     
 
     {/* 排序按钮 - 校内类别不显示排序按钮 */}
