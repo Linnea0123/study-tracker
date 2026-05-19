@@ -2,105 +2,11 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
-/* eslint-disable react-hooks/exhaustive-deps */  // 添加这111一行
+/* eslint-disable react-hooks/exhaustive-deps */  // 添加这一行
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
 
-// ========== Firebase 导入和初始化（Realtime Database 版本）==========
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { 
-  getDatabase, 
-  ref, 
-  set, 
-  get, 
-  onValue 
-} from "firebase/database";
-
-// 你的 Firebase 配置
-const firebaseConfig = {
-  apiKey: "AIzaSyBNx_GBXIwK75bdfDOML2k9_BKBu8Mblr8",
-  authDomain: "study-tracker-450e4.firebaseapp.com",
-  projectId: "study-tracker-450e4",
-  storageBucket: "study-tracker-450e4.firebasestorage.app",
-  messagingSenderId: "152420224551",
-  appId: "1:152420224551:web:039e4479761cb5b0204802",
-  databaseURL: "https://study-tracker-450e4-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-// ✅ 防止重复初始化（解决热更新问题）
-const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getDatabase(firebaseApp);
-
-// 固定路径（所有设备共享同一个路径）
-const DATA_PATH = "study_tracker_data";
-const getDataRef = () => ref(db, DATA_PATH);
-// 保存数据到云端
-// 保存数据到云端
-
-
-let lastSyncTimeRef = { current: Date.now() };
-
-// 设备唯一标识（在函数外部定义）
-let globalDeviceId = null;
-const getGlobalDeviceId = () => {
-  if (!globalDeviceId) {
-    globalDeviceId = localStorage.getItem('device_id');
-    if (!globalDeviceId) {
-      globalDeviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-      localStorage.setItem('device_id', globalDeviceId);
-    }
-  }
-  return globalDeviceId;
-};
-
-let globalLastSyncTime = Date.now();
-
-
-
-const loadFromCloud = async () => {
-  try {
-    const dataRef = getDataRef();
-    const snapshot = await get(dataRef);
-    if (snapshot.exists()) {
-      console.log('✅ 从云端加载成功 (Realtime DB)', snapshot.val());
-      return snapshot.val();
-    }
-    console.log('📭 云端暂无数据');
-    return null;
-  } catch (error) {
-    console.error('加载失败:', error);
-    return null;
-  }
-};
-
-
-// 监听实时更新
-let unsubscribeRef = null;
-const subscribeToCloud = (callback) => {
-  // 先取消之前的监听
-  if (unsubscribeRef) {
-    unsubscribeRef();
-    unsubscribeRef = null;
-  }
-  
-  const dataRef = getDataRef();
-  unsubscribeRef = onValue(dataRef, (snapshot) => {
-    if (snapshot.exists()) {
-      console.log('🔄 检测到云端更新 (Realtime DB)');
-      callback(snapshot.val());
-    }
-  }, (error) => {
-    console.error('监听失败:', error);
-  });
-  
-  return () => {
-    if (unsubscribeRef) {
-      unsubscribeRef();
-      unsubscribeRef = null;
-    }
-  };
-};
 
 
 const GradeModal = ({ onClose, isVisible }) => {
@@ -1998,29 +1904,6 @@ button:focus-visible {
   );
 };
 
-// 获取类别对应的背景色
-const getCategoryColor = (category, subCategory) => {
-  if (category === '校内' && subCategory) {
-    const colors = {
-      '数学': '#E8F5E9',
-      '语文': '#FFFCE8',
-      '英语': '#FCE4EC',
-      '运动': '#E3F2FD'
-    };
-    return colors[subCategory] || '#61A2Da';
-  }
-  
-  const categoryColors = {
-    '语文': '#FFFCE8',
-    '数学': '#E8F5E9',
-    '英语': '#FCE4EC',
-    '科学': '#E1F5FE',
-    '运动': '#E3F2FD',
-    '校内': '#61A2DA'
-  };
-  return categoryColors[category] || '#f0f0f0';
-};
-
 
 
 const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEditRecord, onDeleteRecord }) => {
@@ -2045,9 +1928,17 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
     setFilteredTasks(tasksWithRecords);
   }, [tasksByDate, selectedFilterDate]);
 
- // 获取类别对应的背景色
-
-
+  const getCategoryColor = (catName) => {
+    switch(catName) {
+      case '语文': return '#FFFCE8';
+      case '数学': return '#E8F5E9';
+      case '英语': return '#FCE4EC';
+      case '科学': return '#E1F5FE';
+      case '运动': return '#E3F2FD';
+      case '校内': return '#61A2Da';
+      default: return '#f0f0f0';
+    }
+  };
 
   const getTotalMinutes = (task) => {
     if (task.timeRecords && task.timeRecords.length > 0) {
@@ -5541,14 +5432,7 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
     newSubTask: ''
   });
   const formTopRef = useRef(null);
-  const lastTasksByDateRef = useRef({});
-  const lastSyncTimeRef = useRef(Date.now());  // 👈 添加这一行
-const hasShownPromptThisSession = useRef(false);
-
-// 设备唯一标识（用于区分是否是本设备的更新）
-
-
-const processedUpdatesRef = useRef(new Set());  // 如果还没有这个，也加上
+  
   const [editingTemplateIndex, setEditingTemplateIndex] = useState(null);
   const fileInputRef = useRef(null);
  const [showMoreConfig, setShowMoreConfig] = useState(false);
@@ -12047,8 +11931,7 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
         })}
         
         {/* 中心圆 */}
-        {/* 中心圆 */}
-<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="1" />
+        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
         <text 
           x="100" 
           y="100" 
@@ -12201,8 +12084,7 @@ const getSubjectColor = (subject) => {
           })}
           
           {/* 中心圆 */}
-        {/* 中心圆 */}
-<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="1" />
+        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
 <text 
   x="100" 
   y="100" 
@@ -13618,9 +13500,7 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 function App() {
 
 const [showCustomConfirm, setShowCustomConfirm] = useState(null);
-const [newTaskTargetCategory, setNewTaskTargetCategory] = useState('校内');
-const [newTaskTargetSubCategory, setNewTaskTargetSubCategory] = useState('');
-// 在 App 组件内部，其他 useState/useRef 附近添加
+
 
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
@@ -13631,32 +13511,7 @@ const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   // 在 App 组件中，找到其他 useRef 定义的位置，添加：
 const isUserTogglingRef = useRef(false);
-// 添加设备唯一标识（用于区分是否是本设备的更新）
-
-
-
-// 确保 deviceId 是稳定的字符串
-const deviceId = (() => {
-  let id = localStorage.getItem('device_id');
-  if (!id) {
-    id = `device_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-    localStorage.setItem('device_id', id);
-  }
-  return id;
-})();
-
-console.log('当前设备 ID:', deviceId);  // 确认是固定值
-
-
-// ✅ 添加这两个缺失的 ref
-const lastSyncTimeRef = useRef(Date.now());
-const processedUpdatesRef = useRef(new Set());
-const lastTasksByDateRef = useRef({});
-const hasShownPromptThisSession = useRef(false);
-
-
-
-// 添加这个状态定义
+  // 添加这个状态定义
   const [lastSyncStatus, setLastSyncStatus] = useState({
     success: false,
     time: null,
@@ -13665,7 +13520,10 @@ const hasShownPromptThisSession = useRef(false);
 // 关注任务管理弹窗状态
 const [showFocusModal, setShowFocusModal] = useState(false);
 const [newTaskName, setNewTaskName] = useState('');
-// 修改这个 useEffect，避免每次都弹出确认框
+// 仿写汇总弹窗状态
+const [showImitationSummary, setShowImitationSummary] = useState(false);
+// 仿写相关状态
+// 仿写相关状态
 
    const loadDataWithFallback = async (key, fallback) => {
     try {
@@ -13884,7 +13742,6 @@ const getTaskCompletionType = useCallback((task, date) => {
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const hasAttemptedRestore = useRef(false);  // 添加这一行
-  const isLocalUpdate = useRef(false);
   // 在现有状态定义区域添加
   // 在现有的状态定义区域添加
 const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -13948,8 +13805,99 @@ const [subCategoryColors, setSubCategoryColors] = useState(() => {
   // 2. 然后定义关注任务相关
 
 
+// 仿写相关状态 - 每天独立
+const [showImitation, setShowImitation] = useState(false);
+const [imitationData, setImitationData] = useState(() => {
+  const saved = localStorage.getItem('imitation_data');
+  return saved ? JSON.parse(saved) : {};
+});
 
+// 获取当前日期的仿写数据
+const currentImitation = imitationData[selectedDate] || {
+  sentence: '',
+  completed: false
+};
 
+// 保存仿写数据到 localStorage
+useEffect(() => {
+  localStorage.setItem('imitation_data', JSON.stringify(imitationData));
+}, [imitationData]);
+
+// 日期切换时，重置展开状态
+useEffect(() => {
+  setShowImitation(false);
+}, [selectedDate]);
+
+// 更新当前日期的仿写句子
+const updateImitationSentence = (newSentence) => {
+  setImitationData(prev => ({
+    ...prev,
+    [selectedDate]: {
+      sentence: newSentence,
+      completed: prev[selectedDate]?.completed || false
+    }
+  }));
+};
+
+// 切换当前日期仿写完成状态
+const toggleImitationComplete = () => {
+  setImitationData(prev => ({
+    ...prev,
+    [selectedDate]: {
+      sentence: prev[selectedDate]?.sentence || currentImitation.sentence,
+      completed: !(prev[selectedDate]?.completed || false)
+    }
+  }));
+};
+
+// 编辑句子 - 直接内联编辑
+const startEditSentence = () => {
+  if (currentImitation.completed) return;
+  
+  const input = document.createElement('input');
+  input.value = currentImitation.sentence || '';  // 空值也支持
+  input.placeholder = '输入仿写句子...';  // 添加占位提示
+  input.style.cssText = `
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #61A2Da;
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    background: white;
+  `;
+  
+  const sentenceContainer = document.querySelector('.imitation-sentence-container');
+  if (sentenceContainer) {
+    const textSpan = sentenceContainer.querySelector('.sentence-text');
+    if (textSpan) {
+      const parent = textSpan.parentNode;
+      parent.insertBefore(input, textSpan);
+      parent.removeChild(textSpan);
+      input.focus();
+      
+      const saveEdit = () => {
+        const newText = input.value.trim();
+        if (newText) {
+          updateImitationSentence(newText);
+        }
+        // 重新渲染
+        setShowImitation(prev => {
+          setShowImitation(false);
+          setTimeout(() => setShowImitation(true), 10);
+          return false;
+        });
+      };
+      
+      input.onblur = saveEdit;
+      input.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+          saveEdit();
+        }
+      };
+    }
+  }
+};
 
 
 
@@ -13957,48 +13905,17 @@ const [subCategoryColors, setSubCategoryColors] = useState(() => {
 // 1. 全局任务模板（所有日期共享）
 const [focusTaskTemplates, setFocusTaskTemplates] = useState(() => {
   const saved = localStorage.getItem('focus_task_templates');
-  if (saved) {
-    return JSON.parse(saved);
-  }
-  return [
-    { id: '1', text: '运动', targetCategory: '运动', targetSubCategory: '' },
-    { id: '2', text: '阅读', targetCategory: '语文', targetSubCategory: '' }
+  return saved ? JSON.parse(saved) : [
+    { id: '1', text: '运动' },
+    { id: '2', text: '阅读' }
   ];
 });
 
-
-
-// 大约在第 3050 行左右，找到这些代码的末尾
+// 2. 每个日期的完成状态
 const [focusTaskStatus, setFocusTaskStatus] = useState(() => {
   const saved = localStorage.getItem('focus_task_status');
   return saved ? JSON.parse(saved) : {};
 });
-
-// ========== 在这里插入 saveToCloud 函数 ==========
-const saveToCloud = async (data) => {
-  try {
-    const dataRef = getDataRef();
-    const saveTime = Date.now();
-    lastSyncTimeRef.current = saveTime;
-    
-    await set(dataRef, {
-      ...data,
-      focusTaskTemplates: focusTaskTemplates,
-      focusTaskStatus: focusTaskStatus,
-      lastUpdated: new Date().toISOString(),
-      _localSaveTime: saveTime,
-      _deviceId: deviceId,
-      _deviceTimestamp: saveTime
-    });
-    console.log('✅ 已保存到云端 (Realtime DB)');
-    return true;
-  } catch (error) {
-    console.error('保存失败:', error);
-    return false;
-  }
-};
-// ========== saveToCloud 函数结束 ==========
-
 
 // 3. 获取当前日期的完成任务列表
 const currentFocusTasks = useMemo(() => {
@@ -14006,11 +13923,10 @@ const currentFocusTasks = useMemo(() => {
   return focusTaskTemplates.map(template => ({
     id: template.id,
     text: template.text,
-    checked: todayStatus[template.id] || false,
-    targetCategory: template.targetCategory || '校内',
-    targetSubCategory: template.targetSubCategory || ''
+    checked: todayStatus[template.id] || false
   }));
 }, [focusTaskTemplates, focusTaskStatus, selectedDate]);
+
 // 4. 保存模板到 localStorage
 useEffect(() => {
   localStorage.setItem('focus_task_templates', JSON.stringify(focusTaskTemplates));
@@ -14405,20 +14321,6 @@ const handleRestoreData = useCallback(async (backupData) => {
   try {
     console.log('🔄 开始恢复数据...', backupData);
 
-
-// 恢复关注任务模板
-if (backupData.focusTaskTemplates) {
-  setFocusTaskTemplates(backupData.focusTaskTemplates);
-  localStorage.setItem('focus_task_templates', JSON.stringify(backupData.focusTaskTemplates));
-}
-
-// 恢复关注任务完成状态
-if (backupData.focusTaskStatus) {
-  setFocusTaskStatus(backupData.focusTaskStatus);
-  localStorage.setItem('focus_task_status', JSON.stringify(backupData.focusTaskStatus));
-}
-
-
      // ✅ 新增：恢复排序数据
     if (backupData.taskOrders) {
       Object.entries(backupData.taskOrders).forEach(([key, order]) => {
@@ -14585,8 +14487,6 @@ const syncToGitHub = useCallback(async (silent = false) => {
       templates,
       dailyRatings,
       dailyReflections,
-      focusTaskTemplates: focusTaskTemplates,
-  focusTaskStatus: focusTaskStatus,
       studyEndTimes: studyEndTimes, 
       monthTasks,
       categories,
@@ -14920,28 +14820,19 @@ useEffect(() => {
 
 // 在现有的初始化 useEffect 后面添加：
 
-// 修改这个 useEffect，避免每次都弹出确认框
 useEffect(() => {
   if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
-    console.log('🔄 本地无数据，检查是否需要恢复');
-    hasAttemptedRestore.current = true;
+    console.log('🔄 初始化完成，检查是否需要恢复数据');
+    hasAttemptedRestore.current = true;  // 标记已尝试恢复
     
-    // ✅ 只在真正需要恢复时才提示（本地完全无数据）
-    const timer = setTimeout(async () => {
-      const token = localStorage.getItem('github_token');
-      if (token) {
-        // 静默检查，不弹出确认框
-        const gistId = localStorage.getItem('github_gist_id');
-        if (gistId) {
-          console.log('📡 检测到 GitHub 备份，静默恢复...');
-          // 这里可以选择静默恢复，或者不处理
-        }
-      }
+    const timer = setTimeout(() => {
+      autoRestoreLatestData();
     }, 3000);
     
     return () => clearTimeout(timer);
   }
-}, [isInitialized, tasksByDate]);
+}, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
+
 
 // 👇 在这里添加新的 useEffect
 useEffect(() => {
@@ -16417,31 +16308,6 @@ const formatTimeInHours = (seconds) => {
   return `${hours}h`;
 };
 
-// 获取类别对应的背景色
-const getCategoryColor = (category, subCategory) => {
-  if (category === '校内' && subCategory) {
-    const colors = {
-        '数学': '#C8E6C9',
-    '语文': '#FFF3B0',
-    '英语': '#F8BBD0',
-    '运动': '#BBDEFB'
-  };
-    return colors[subCategory] || '#61A2Da';
-  }
-  
-  const categoryColors = {
-    '语文': '#FFF3B0',
-    '数学': '#C8E6C9',
-    '英语': '#F8BBD0',
-    '科学': '#B3E5FC',
-    '运动': '#BBDEFB',
-    '校内': '#61A2DA'
-  };
-  return categoryColors[category] || '#f0f0f0';
-};
-
-
-
 // 移动任务函数
 const moveTask = (task, targetCategory) => {
   if (task.isWeekTask) {
@@ -16528,119 +16394,194 @@ useEffect(() => {
 
 
 
+
+
+
 useEffect(() => {
   const initializeApp = async () => {
-    console.log('🚀 开始初始化应用...');
+    // 先迁移旧数据
+    await migrateLegacyData();
     
-    // ========== 第一步：立即从本地加载数据（不等待云端） ==========
-    console.log('📁 加载本地数据...');
-    const savedTasks = await loadDataWithFallback('tasks', {});
-    const savedTemplates = await loadDataWithFallback('templates', []);
-    const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
-    const savedDailyRatings = await loadDataWithFallback('dailyRatings', {});
-    const savedDailyReflections = await loadDataWithFallback('dailyReflections', {});
+    try {
+ 
+
+
+
+
+
+// 加载任务数据
+const savedTasks = await loadDataWithFallback('tasks', {});
+
+if (savedTasks) {
+  setTasksByDate(savedTasks);
+
+
+console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
+
+// ===== 确保每个日期都有独立的常规任务 =====
+if (savedTasks && Object.keys(savedTasks).length > 0) {
+  // 收集所有常规任务模板（从所有日期中获取，去重）
+  const regularTemplates = [];
+  const seenTexts = new Set();
+  
+  // 从已有数据中收集常规任务模板
+  Object.values(savedTasks).forEach(tasks => {
+    tasks.forEach(task => {
+      if (task.isRegularTask && !seenTexts.has(task.text)) {
+        seenTexts.add(task.text);
+        regularTemplates.push({
+          text: task.text,
+          targetCategory: task.targetCategory,
+          targetSubCategory: task.targetSubCategory || '',
+          note: task.note || "",
+          tags: task.tags || []
+        });
+      }
+    });
+  });
+  
+  // 如果有常规任务模板，确保每个日期都有这些任务（独立副本）
+  if (regularTemplates.length > 0) {
+    const allDates = Object.keys(savedTasks);
+    let needsUpdate = false;
     
-    const savedFocusTaskStatus = await loadDataWithFallback('focusTaskStatus', {});
-    const savedStudyEndTimes = await loadDataWithFallback('studyEndTimes', {});
-    const savedReminderText = await loadDataWithFallback('reminderText', '');
-    const savedCategories = await loadDataWithFallback('categories', baseCategories);
-    let savedFocusTaskTemplates = await loadDataWithFallback('focusTaskTemplates', null);
-if (savedFocusTaskTemplates === null) {
-  // 云端没有数据，检查本地 localStorage
-  const localData = localStorage.getItem('focus_task_templates');
-  if (localData) {
-    savedFocusTaskTemplates = JSON.parse(localData);
-  } else {
-    savedFocusTaskTemplates = [
-      { id: '1', text: '运动', targetCategory: '运动', targetSubCategory: '' },
-      { id: '2', text: '阅读', targetCategory: '语文', targetSubCategory: '' }
-    ];
+    allDates.forEach(date => {
+      const dateTasks = savedTasks[date] || [];
+      
+      // 获取这个日期已有的常规任务文本
+      const existingRegularTexts = new Set(
+        dateTasks.filter(t => t.isRegularTask).map(t => t.text)
+      );
+      
+      // 找出这个日期缺失的常规任务
+      const missingTemplates = regularTemplates.filter(
+        template => !existingRegularTexts.has(template.text)
+      );
+      
+      if (missingTemplates.length > 0) {
+        needsUpdate = true;
+        const newRegularTasks = missingTemplates.map(template => ({
+          id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
+          text: template.text,
+          targetCategory: template.targetCategory,
+          targetSubCategory: template.targetSubCategory,
+          category: "常规任务",
+          done: false,
+          timeSpent: 0,
+          subTasks: [],
+          note: template.note,
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: template.tags || [],
+          isRegularTask: true,
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          }
+        }));
+        
+        savedTasks[date] = [...dateTasks, ...newRegularTasks];
+      }
+    });
+    
+    if (needsUpdate) {
+      console.log('✅ 已为所有日期添加缺失的常规任务（独立副本）');
+      // 更新状态
+      setTasksByDate(savedTasks);
+    }
   }
+}
+}
+
+else {
+  console.log('ℹ️ 没有任务数据，使用空对象');
+  setTasksByDate({});
+}
+
+// 加载模板数据
+const savedTemplates = await loadDataWithFallback('templates', []);
+if (savedTemplates) {
+  setTemplates(savedTemplates);
+}
+
+const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
+if (savedMonthTasks) {
+  setMonthTasks(savedMonthTasks);
+  console.log('✅ 加载本月任务数据:', savedMonthTasks.length);
+} else {
+  console.log('ℹ️ 本月任务数据为空，使用空数组');
+  setMonthTasks([]);
+}
+
+// 加载分类数据
+const savedCategories = await loadDataWithFallback('categories', null);
+if (savedCategories) {
+  // 如果已有保存的分类，确保每个分类都有子类别
+  const updatedCategories = savedCategories.map(cat => {
+    let defaultSubCategories = [];
+    switch(cat.name) {
+      case '校内':
+        defaultSubCategories = ["数学", "语文", "英语", "运动"];
+        break;
+      default:
+        defaultSubCategories = [];
+    }
+    
+    // 如果保存的分类没有子类别或子类别为空，使用预设值
+    return {
+      ...cat,
+      subCategories: cat.subCategories && cat.subCategories.length > 0 
+        ? cat.subCategories 
+        : defaultSubCategories
+    };
+  });
+  
+  setCategories(updatedCategories);
+  await saveMainData('categories', updatedCategories);
+} else {
+  // 没有保存的分类数据，使用预设值初始化
+  const categoriesWithSubCategories = baseCategories.map(cat => {
+    let subCategories = [];
+    switch(cat.name) {
+      case '校内':
+        subCategories = ["数学", "语文", "英语", "运动"];
+        break;
+      default:
+        subCategories = [];
+    }
+    return { ...cat, subCategories };
+  });
+  
+  setCategories(categoriesWithSubCategories);
+  await saveMainData('categories', categoriesWithSubCategories);
 }
 
 
 
-    // 立即设置所有状态（页面立刻显示内容）
-    setTasksByDate(savedTasks);
-    setTemplates(savedTemplates);
-    setMonthTasks(savedMonthTasks);
-    setDailyRatings(savedDailyRatings);
-    setDailyReflections(savedDailyReflections);
-    setFocusTaskTemplates(savedFocusTaskTemplates);
-    setFocusTaskStatus(savedFocusTaskStatus);
-    setStudyEndTimes(savedStudyEndTimes);
-    if (savedReminderText) setReminderText(savedReminderText);
-    setCategories(savedCategories);
-    
-    setIsInitialized(true);
-    console.log('✅ 本地数据加载完成，页面已显示');
-    
-    // ========== 第二步：后台静默加载云端数据（不阻塞UI） ==========
-    setTimeout(async () => {
-      console.log('☁️ 后台检测云端数据...');
-      try {
-        const cloudData = await loadFromCloud();
-        
-        if (cloudData && cloudData.tasksByDate) {
-          console.log('📡 云端数据获取成功，检测是否有更新...');
-          
-          // 比较本地和云端的数据量（简单判断是否有差异）
-          const localTasksCount = Object.keys(savedTasks).length;
-          const cloudTasksCount = Object.keys(cloudData.tasksByDate || {}).length;
-          
-          // 如果云端有更多数据，或者数据不同，则静默更新
-          if (cloudTasksCount > localTasksCount) {
-            console.log(`🔄 云端有更多数据 (本地:${localTasksCount}天, 云端:${cloudTasksCount}天)，静默更新...`);
-            
-            // 静默更新所有状态
-            setTasksByDate(cloudData.tasksByDate || {});
-            setTemplates(cloudData.templates || []);
-            setMonthTasks(cloudData.monthTasks || []);
-            setDailyRatings(cloudData.dailyRatings || {});
-            setDailyReflections(cloudData.dailyReflections || {});
-            setFocusTaskTemplates(cloudData.focusTaskTemplates || []);
-            setFocusTaskStatus(cloudData.focusTaskStatus || {});
-            setStudyEndTimes(cloudData.studyEndTimes || {});
-            if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
-            if (cloudData.categories) setCategories(cloudData.categories);
-            if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
-            
-            // 显示一个轻提示（可选）
-            const toast = document.createElement('div');
-            toast.textContent = '☁️ 已同步最新数据';
-            toast.style.cssText = `
-              position: fixed;
-              bottom: 100px;
-              left: 50%;
-              transform: translateX(-50%);
-              background: #4caf50;
-              color: white;
-              padding: 6px 12px;
-              border-radius: 20px;
-              font-size: 12px;
-              z-index: 10000;
-              opacity: 0.9;
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
-          } else {
-            console.log('✅ 云端数据与本地一致，无需更新');
-          }
-        } else {
-          console.log('📭 云端暂无数据');
-        }
-      } catch (error) {
-        console.error('云端加载失败（不影响使用）:', error);
-      }
-    }, 500); // 延迟500ms，让页面优先渲染
+      // 设置定时备份
+      localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
+      
+      setIsInitialized(true);
+      
+// 👇 在这里添加
+setTimeout(() => {
+  isFirstLoad.current = false;
+}, 500);
+
+
+
+
+    } catch (error) {
+      console.error('初始化失败:', error);
+    }
   };
-  
+
   initializeApp();
 }, []);
-
-
-
-
 // ===== 每天第一次打开页面自动备份一次 =====
 // ✅ 修复后 - 使用 useRef 保证只执行一次
 const hasBackedUpTodayRef = useRef(false);
@@ -16802,122 +16743,63 @@ useEffect(() => {
 }, [selectedDate, isInitialized, saveDailyData]);
 
 
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  const timer = setTimeout(async () => {
-    const dataToSave = {
-      tasksByDate,
-      templates,
-      monthTasks,
-      dailyRatings,
-      dailyReflections,
-      focusTaskTemplates,
-      focusTaskStatus,
-      studyEndTimes,
-      categories,
-      reminderText,
-      lastSelectedDate: selectedDate,
-      lastCurrentMonday: currentMonday.toISOString(),
-    };
-    await saveToCloud(dataToSave);
-  }, 2000);
-  
-  return () => clearTimeout(timer);
-}, [tasksByDate, templates, monthTasks, dailyRatings, dailyReflections, 
-    focusTaskTemplates, focusTaskStatus, studyEndTimes, categories, reminderText, 
-    selectedDate, currentMonday, isInitialized]);
+  // ========== 主要关注任务相关函数 ==========
 
 
-
-    
-
-
-
-// 切换关注任务的完成状态 - 同时添加到对应类别
+  // 切换关注任务的完成状态
+// 切换关注任务的完成状态
+// 切换关注任务的完成状态
 const toggleFocusTask = (taskId) => {
-  const task = focusTaskTemplates.find(t => t.id === taskId);
-  const isCurrentlyChecked = focusTaskStatus[selectedDate]?.[taskId] || false;
-  
-  // 如果是勾选（从未完成到完成）
-  if (!isCurrentlyChecked && task) {
-    // 创建新任务添加到对应类别
-    const newTask = {
-      id: `focus_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-      text: task.text,
-      category: task.targetCategory || '校内',
-      subCategory: task.targetSubCategory || '',
-      done: true,
-      timeSpent: 0,
-      timeRecords: [],
-      subTasks: [],
-      note: "",
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      },
-      createdAt: new Date().toISOString(),
-      isFromFocusTask: true
-    };
-    
-    // 添加到对应类别的任务列表
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
-  }
-  
-  // 更新完成状态（按钮变灰）
   setFocusTaskStatus(prev => ({
     ...prev,
     [selectedDate]: {
       ...(prev[selectedDate] || {}),
-      [taskId]: !isCurrentlyChecked
+      [taskId]: !(prev[selectedDate]?.[taskId] || false)
     }
   }));
+};
+
+// 添加新句子
+const addImitationSentence = () => {
+  const newText = window.prompt('请输入要仿写的句子：');
+  if (newText && newText.trim()) {
+    const newSentence = {
+      id: Date.now().toString(),
+      text: newText.trim(),
+      completed: false
+    };
+    setImitationSentences(prev => [...prev, newSentence]);
+  }
+};
+
+// 删除句子
+const deleteImitationSentence = (id) => {
+  if (window.confirm('确定要删除这个句子吗？')) {
+    setImitationSentences(prev => prev.filter(s => s.id !== id));
+  }
+};
+
+// 编辑句子
+const editImitationSentence = (id) => {
+  const sentence = imitationSentences.find(s => s.id === id);
+  const newText = window.prompt('编辑句子：', sentence?.text);
+  if (newText && newText.trim()) {
+    setImitationSentences(prev => prev.map(s => 
+      s.id === id ? { ...s, text: newText.trim() } : s
+    ));
+  }
 };
 
 
 
 
 
-
-// 编辑关注任务（支持修改类别）
+// 编辑关注任务
 const editFocusTask = (taskId, newText) => {
   if (!newText.trim()) return;
   setFocusTaskTemplates(prev => prev.map(task =>
     task.id === taskId ? { ...task, text: newText.trim() } : task
   ));
-};
-
-// 添加编辑类别的函数
-const editFocusTaskCategory = (taskId) => {
-  const task = focusTaskTemplates.find(t => t.id === taskId);
-  if (!task) return;
-  
-  const newCategory = window.prompt(`编辑任务"${task.text}"的目标类别：`, task.targetCategory);
-  if (newCategory && newCategory.trim()) {
-    let targetCat = newCategory.trim();
-    let targetSub = task.targetSubCategory || '';
-    
-    if (targetCat === '校内') {
-      const subCat = window.prompt('选择子分类（数学/语文/英语/运动）:', task.targetSubCategory || '');
-      if (subCat !== null) targetSub = subCat;
-    }
-    
-    setFocusTaskTemplates(prev => prev.map(t =>
-      t.id === taskId 
-        ? { ...t, targetCategory: targetCat, targetSubCategory: targetSub }
-        : t
-    ));
-  }
 };
 
 // 删除关注任务
@@ -19229,8 +19111,6 @@ const handleExportData = async () => {
       dailyRatings: dailyRatings || {},
       dailyReflections: dailyReflections || {},
       grades: await loadDataWithFallback('grades', []),
-      focusTaskTemplates: focusTaskTemplates,
-  focusTaskStatus: focusTaskStatus,
       monthTasks: monthTasks || [],
       reminderText: reminderText || '',  // 添加这行
       exportDate: new Date().toISOString(),
@@ -19285,204 +19165,7 @@ const todayStats = calculateTodayStats();
 
       
     
-    useEffect(() => {
-  if (!isInitialized) return;
-  
-  let isFirstLoad = true;
- // 👈 本次会话只提示一次
-  
- const unsubscribe = subscribeToCloud((cloudData) => {
-  // 首次加载，只记录状态，不提示
-  if (isFirstLoad) {
-    isFirstLoad = false;
-    lastTasksByDateRef.current = cloudData.tasksByDate || {};
-    console.log('📌 首次加载，记录云端状态');
-    return;
-  }
-  
-  // ✅ 关键：判断是否是本设备刚刚保存的更新（10秒内）
-  const cloudDeviceId = cloudData._deviceId;
-  const cloudTimestamp = cloudData._deviceTimestamp || cloudData._localSaveTime || 0;
-  const timeDiff = Date.now() - cloudTimestamp;
-  
-  // 如果是本设备保存的更新（同一设备 ID，且 10 秒内）
-  const isOwnUpdate = cloudDeviceId === deviceId && timeDiff < 10000;
-  
-  if (isOwnUpdate) {
-    console.log(`📌 跳过本设备刚刚保存的更新 (${timeDiff}ms 前)，不显示提示`);
-    // 但仍然更新记录，用于下次对比
-    lastTasksByDateRef.current = cloudData.tasksByDate || {};
-    return;
-  }
-  
-  // 如果是其他设备的更新，显示提示
-  console.log(`📱 检测到其他设备更新 (设备: ${cloudDeviceId?.slice(-8)}, 时间差: ${timeDiff}ms)`);
-  
-  // 使用 lastUpdated 作为唯一标识，防止重复提醒
-  const updateId = cloudData.lastUpdated;
-  if (processedUpdatesRef.current.has(updateId)) {
-    console.log('📌 已处理过此更新，跳过');
-    return;
-  }
-  
-  const oldTasks = lastTasksByDateRef.current;
-  const newTasks = cloudData.tasksByDate || {};
-  
-  // 对比差异，生成提示内容
-  const changes = [];
-  
-  // 检查新增的任务
-  Object.keys(newTasks).forEach(date => {
-    const newDateTasks = newTasks[date] || [];
-    const oldDateTasks = oldTasks[date] || [];
     
-    newDateTasks.forEach(newTask => {
-      const exists = oldDateTasks.some(oldTask => oldTask.id === newTask.id);
-      if (!exists && newTask.category !== "常规任务") {
-        changes.push(`📝 新增任务: "${newTask.text}" (${date.slice(5)})`);
-      }
-    });
-  });
-  
-  // 检查删除的任务
-  Object.keys(oldTasks).forEach(date => {
-    const oldDateTasks = oldTasks[date] || [];
-    const newDateTasks = newTasks[date] || [];
-    
-    oldDateTasks.forEach(oldTask => {
-      const exists = newDateTasks.some(newTask => newTask.id === oldTask.id);
-      if (!exists && oldTask.category !== "常规任务") {
-        changes.push(`🗑️ 删除任务: "${oldTask.text}" (${date.slice(5)})`);
-      }
-    });
-  });
-  
-  // 检查完成状态变化
-  Object.keys(newTasks).forEach(date => {
-    const newDateTasks = newTasks[date] || [];
-    const oldDateTasks = oldTasks[date] || [];
-    
-    newDateTasks.forEach(newTask => {
-      const oldTask = oldDateTasks.find(old => old.id === newTask.id);
-      if (oldTask && oldTask.done !== newTask.done && newTask.category !== "常规任务") {
-        const status = newTask.done ? '✅ 完成' : '⬜ 取消完成';
-        changes.push(`${status}: "${newTask.text}" (${date.slice(5)})`);
-      }
-    });
-  });
-  
-  // 保存当前状态用于下次对比
-  lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
-  
-// ✅ 新增：对比专注任务模板的变化
-const oldFocusTemplates = lastTasksByDateRef.current._focusTaskTemplates || [];
-const newFocusTemplates = cloudData.focusTaskTemplates || [];
-
-if (JSON.stringify(oldFocusTemplates) !== JSON.stringify(newFocusTemplates)) {
-  if (oldFocusTemplates.length === 0 && newFocusTemplates.length > 0) {
-    changes.push(`📌 新增专注任务: ${newFocusTemplates.map(t => t.text).join(', ')}`);
-  } else if (oldFocusTemplates.length > 0 && newFocusTemplates.length === 0) {
-    changes.push(`📌 清空专注任务`);
-  } else {
-    changes.push(`📌 专注任务已更新`);
-  }
-}
-
-// ✅ 新增：对比专注任务完成状态的变化
-const oldFocusStatus = lastTasksByDateRef.current._focusTaskStatus || {};
-const newFocusStatus = cloudData.focusTaskStatus || {};
-
-Object.keys(newFocusStatus).forEach(date => {
-  const oldDateStatus = oldFocusStatus[date] || {};
-  const newDateStatus = newFocusStatus[date] || {};
-  
-  Object.keys(newDateStatus).forEach(taskId => {
-    if (oldDateStatus[taskId] !== newDateStatus[taskId]) {
-      const task = newFocusTemplates.find(t => t.id === taskId);
-      const status = newDateStatus[taskId] ? '✅ 完成' : '⬜ 取消';
-      changes.push(`${status}: "${task?.text || taskId}" (${date})`);
-    }
-  });
-});
-
-// 保存专注任务数据用于下次对比
-lastTasksByDateRef.current._focusTaskTemplates = newFocusTemplates;
-lastTasksByDateRef.current._focusTaskStatus = newFocusStatus;
-
-// ========== 原有的保存和判断代码 ==========
-// 保存当前状态用于下次对比
-lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
-
-
-
-  // 如果没有变化，跳过
-  if (changes.length === 0) {
-    console.log('📌 无实质性变化，跳过提示');
-    return;
-  }
-  
-  // 记录此更新ID，防止重复提醒
-  processedUpdatesRef.current.add(updateId);
-  
-  // 限制 Set 大小，防止内存过大
-  if (processedUpdatesRef.current.size > 100) {
-    const firstKey = processedUpdatesRef.current.values().next().value;
-    processedUpdatesRef.current.delete(firstKey);
-  }
-  
-  // ✅ 只有其他设备的更新才显示提示，且本次会话只提示一次
-  if (!hasShownPromptThisSession.current) {
-    hasShownPromptThisSession.current = true;
-    
-    const changeText = changes.slice(0, 5).join('\n');
-    const moreText = changes.length > 5 ? `\n... 还有 ${changes.length - 5} 处变化` : '';
-    const message = `📱 其他设备有以下更新：\n\n${changeText}${moreText}\n\n是否立即同步？`;
-    
-    if (window.confirm(message)) {
-      // 更新所有状态
-      if (cloudData.tasksByDate) setTasksByDate(cloudData.tasksByDate);
-      if (cloudData.templates) setTemplates(cloudData.templates);
-      if (cloudData.monthTasks) setMonthTasks(cloudData.monthTasks);
-      if (cloudData.dailyRatings) setDailyRatings(cloudData.dailyRatings);
-      if (cloudData.dailyReflections) setDailyReflections(cloudData.dailyReflections);
-      if (cloudData.focusTaskTemplates) setFocusTaskTemplates(cloudData.focusTaskTemplates);
-      if (cloudData.focusTaskStatus) setFocusTaskStatus(cloudData.focusTaskStatus);
-      if (cloudData.studyEndTimes) setStudyEndTimes(cloudData.studyEndTimes);
-      if (cloudData.categories) setCategories(cloudData.categories);
-      if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
-      if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
-      
-      // 显示短暂提示
-      const toast = document.createElement('div');
-      toast.textContent = '✅ 已同步其他设备的数据';
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #4caf50;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-        z-index: 10000;
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
-    } else {
-      // 用户拒绝同步，重置提示标记，下次更新还会提示
-      hasShownPromptThisSession.current = false;
-    }
-  } else {
-    console.log('📌 本次会话已提示过，不再重复提示');
-  }
-});
-
-
-  
-  return () => unsubscribe();
-}, [isInitialized]);
-
 
    
 
@@ -19561,8 +19244,6 @@ if (showStats) {
 
 
 
-
-
 // 如果任务数据为空，显示警告
 if (isInitialized && Object.keys(tasksByDate).length === 0) {
   console.warn('⚠️ 警告: 已初始化但任务数据为空');
@@ -19571,7 +19252,6 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
 if (isInitialized && todayTasks.length === 0) {
   console.warn('⚠️ 警告: 已初始化但今日任务为空');
 }
-
 
 
 
@@ -19925,125 +19605,98 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
-
 <div style={{
   position: "relative",
   textAlign: "center",
   marginBottom: 15,
   padding: "0 40px"
 }}>
-  {/* 左侧：只有奖杯按钮 */}
-  <div style={{
-    position: "absolute",
-    top: 0,
-    left: 0,
-    display: "flex",
-    gap: "8px",
-    alignItems: "center"
-  }}>
-    {/* 🏆 左上角奖杯按钮 */}
-    <button
-      onClick={() => setShowMilestoneModal(true)}
-      style={{
-        width: 36,
-        height: 36,
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 10,
-        padding: 0
-      }}
-      title="里程碑"
-    >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da" stroke="none"/>
-        <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  </div>
-
-  {/* 右侧按钮组：统计汇总 + 成绩记录 */}
-  <div style={{
+ {/* 右上角成绩记录按钮 */}
+{/* 右上角成绩记录按钮 - 柱状图图标 */}
+<button
+  onClick={() => setShowGradeModal(true)}
+  style={{
     position: "absolute",
     top: 0,
     right: 0,
+    width: 36,
+    height: 36,
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "16px",
     display: "flex",
-    gap: "2px",
-    alignItems: "center"
-  }}>
-    {/* 统计汇总按钮 - 饼图图标 */}
-    <button
-      onClick={() => setShowStats(true)}
-      style={{
-        width: 35,
-        height: 35,
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 10,
-        padding: 0
-      }}
-      title="统计汇总"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <path d="M12 12 L12 4 A8 8 0 0 1 18.93 8.93 Z" fill="#61A2Da" stroke="none" opacity="0.8"/>
-      </svg>
-    </button>
-
-    {/* 成绩记录按钮 - 柱状图图标 */}
-    <button
-      onClick={() => setShowGradeModal(true)}
-      style={{
-        width: 36,
-        height: 36,
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 10,
-        padding: 0
-      }}
-      title="成绩记录"
-    >
-      <svg 
-        width="20" 
-        height="20" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
-        <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
-        <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
-        <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    </button>
-  </div>
-
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    padding: 0
+  }}
+  title="成绩记录"
+>
+  <svg 
+    width="20" 
+    height="20" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* 第一个柱子 */}
+    <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
+    {/* 第二个柱子 - 最高 */}
+    <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
+    {/* 第三个柱子 */}
+    <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
+    {/* 底部横线 */}
+    <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+</button>
+    {/* 🏆 左上角奖杯按钮 - 新增 */}
+{/* 🏆 左上角奖杯按钮 - 改为简笔画奖牌 */}
+<button
+  onClick={() => setShowMilestoneModal(true)}
+  style={{
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 36,
+    height: 36,
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    padding: 0
+  }}
+  title="里程碑"
+>
+ <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* 奖牌主体圆形 */}
+    <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+    {/* 中间五角星 */}
+    <polygon 
+      points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" 
+      fill="#61A2Da" 
+      stroke="none"
+    />
+    {/* 绶带（左） */}
+    <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+  </svg>
+</button>
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
     color: "#61A2Da",
     fontSize: "20px",
     margin: 0,
-    padding: "10px 0",
-    lineHeight: "16px"
+    padding: "10px 0", // 添加上下内边距来垂直居中
+    lineHeight: "16px" // 恢复默认行高
   }}>
     学习记录
   </h1>
 </div>
-
 
       
       <div style={{
@@ -20090,8 +19743,7 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#61A2Da",
-    marginRight: "-4px"
+    color: "#61A2Da"
   }}
   title="上一周"
 >
@@ -20140,8 +19792,7 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#61A2Da",
-    marginLeft: "-4px" 
+    color: "#61A2Da"
   }}
   title="下一周"
 >
@@ -20569,6 +20220,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
+
 {/* 跑马灯提醒 + 两个小按钮 */}
 <div style={{
   display: "flex",
@@ -20579,121 +20231,10 @@ if (isInitialized && todayTasks.length === 0) {
   {/* 跑马灯提醒 - 点击可编辑 */}
   <div
     onClick={() => {
-      // 创建自定义编辑弹窗
-      const modalDiv = document.createElement('div');
-      modalDiv.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-      `;
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = `
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        width: 85%;
-        max-width: 350px;
-        text-align: center;
-      `;
-      
-      contentDiv.innerHTML = `
-        <h3 style="margin: 0 0 12px 0; color: #61A2Da; font-size: 16px;">编辑提醒内容</h3>
-        <textarea id="reminder-textarea" placeholder="输入每日提醒内容..." style="
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          font-size: 14px;
-          font-family: inherit;
-          box-sizing: border-box;
-          resize: none;
-          overflow: hidden;
-          margin-bottom: 16px;
-          line-height: 1.5;
-        ">${reminderText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
-        <div style="display: flex; gap: 10px;">
-          <button id="cancel-btn" style="
-            flex: 1;
-            padding: 10px;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-          ">取消</button>
-          <button id="confirm-btn" style="
-            flex: 1;
-            padding: 10px;
-            background: #61A2Da;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-          ">保存</button>
-        </div>
-      `;
-      
-      modalDiv.appendChild(contentDiv);
-      document.body.appendChild(modalDiv);
-      
-      const textarea = contentDiv.querySelector('#reminder-textarea');
-      
-      // 自动调整高度的函数
-      const autoResize = () => {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-      };
-      
-      // 初始调整高度
-      setTimeout(autoResize, 10);
-      
-      // 监听输入事件
-      textarea.addEventListener('input', autoResize);
-      
-      // 聚焦到输入框末尾
-      textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-      
-      const confirmBtn = contentDiv.querySelector('#confirm-btn');
-    confirmBtn.onclick = () => {
-  const newText = contentDiv.querySelector('#edit-task-text').value.trim();
-  const newCategory = categorySelect.value;
-  const newSubCategory = subSelect ? subSelect.value : '';
-  
-  if (newText) {
-    setFocusTaskTemplates(prev => prev.map(t =>
-      t.id === currentTask.id 
-        ? { 
-            ...t, 
-            text: newText,
-            targetCategory: newCategory,      // ✅ 添加
-            targetSubCategory: newSubCategory  // ✅ 添加
-          }
-        : t
-    ));
-  }
-  document.body.removeChild(modalDiv);
-};
-      const cancelBtn = contentDiv.querySelector('#cancel-btn');
-      cancelBtn.onclick = () => {
-        document.body.removeChild(modalDiv);
-      };
-      
-      modalDiv.onclick = (e) => {
-        if (e.target === modalDiv) {
-          document.body.removeChild(modalDiv);
-        }
-      };
+      const newText = window.prompt('编辑提醒内容：', reminderText);
+      if (newText !== null) {
+        handleReminderChange(newText);
+      }
     }}
     style={{
       flex: 1,
@@ -20710,46 +20251,50 @@ if (isInitialized && todayTasks.length === 0) {
     }}
   >
     <div style={{
-      flex: 1,
-      overflow: 'hidden',
-      position: 'relative',
-      height: '100%'
-    }}>
-      {reminderText ? (
-        <div
-          style={{
-            position: 'absolute',
-            whiteSpace: 'nowrap',
-            fontSize: '13px',
-            color: '#c62828',
-            fontWeight: '500',
-            lineHeight: '32px',
-            animation: 'rightToLeft 30s linear infinite',
-            display: 'flex',
-            gap: '48px'
-          }}
-        >
-          <span>{reminderText}</span>
-          <span style={{ marginLeft: '80px' }}>{reminderText}</span>
-          <span style={{ marginLeft: '80px' }}>{reminderText}</span>
-        </div>
-      ) : (
-        <div style={{
-          fontSize: '13px',
-          color: '#ef5350',
-          fontStyle: 'italic',
-          lineHeight: '32px',
-          textAlign: 'center'
-        }}>
-          点击添加每日提醒...
-        </div>
-      )}
+  flex: 1,
+  overflow: 'hidden',
+  position: 'relative',
+  height: '100%'
+}}>
+  {reminderText ? (
+    <div
+      style={{
+        position: 'absolute',
+        whiteSpace: 'nowrap',
+        fontSize: '13px',
+        color: '#c62828',
+        fontWeight: '500',
+        lineHeight: '32px',
+        animation: 'rightToLeft 30s linear infinite',
+        display: 'flex',
+        gap: '48px'  // 两段文字之间的间距
+      }}
+    >
+      <span>{reminderText}</span>
+       <span style={{ marginLeft: '80px' }}>{reminderText}</span>
+      <span style={{ marginLeft: '80px' }}>{reminderText}</span>
     </div>
+  ) : (
+    <div style={{
+      fontSize: '13px',
+      color: '#ef5350',
+      fontStyle: 'italic',
+      lineHeight: '32px',
+      textAlign: 'center'
+    }}>
+      点击添加每日提醒...
+    </div>
+  )}
+</div>
   </div>
+
+
+
+ 
 </div>
 
 
-{/* 主要关注任务 - 一行显示 */}
+{/* 主要关注任务 - 一行显示，加仿写按钮 */}
 <div style={{
   display: 'flex',
   flexWrap: 'wrap',
@@ -20766,37 +20311,65 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: 'center',
     flex: 1
   }}>
-    {currentFocusTasks.map(task => {
-      const buttonBgColor = getCategoryColor(task.targetCategory, task.targetSubCategory);
-      
-      return (
-        <div
-          key={task.id}
-          onClick={() => toggleFocusTask(task.id)}
+    {currentFocusTasks.map(task => (
+      <div
+        key={task.id}
+        onClick={() => toggleFocusTask(task.id)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '20px',
+          backgroundColor: task.checked ? '#e0e0e0' : '#FFA726',
+          cursor: 'pointer'
+        }}
+      >
+        <span
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '2px 8px',
-            borderRadius: '16px',
-            backgroundColor: task.checked ? '#e0e0e0' : buttonBgColor,
-            cursor: 'pointer',
-            fontSize: '11px'
+            fontSize: '12px',
+            color: task.checked ? '#888' : '#fff',
+            textDecoration: 'none',
+            fontWeight: 'normal'
           }}
-          title={`完成后移至: ${task.targetCategory}${task.targetSubCategory ? ` - ${task.targetSubCategory}` : ''}`}
         >
-          <span style={{
-            fontSize: '11px',
-            color: task.checked ? '#888' : '#333'
-          }}>
-            {task.text}
-          </span>
-        </div>
-      );
-    })}
+          {task.text}
+        </span>
+      </div>
+    ))}
+    
+{/* 仿写按钮 */}
+{/* 仿写按钮 */}
+<div
+  onClick={() => {
+    if (!currentImitation.completed) {
+      setShowImitation(!showImitation);
+    }
+  }}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    backgroundColor: currentImitation.completed ? '#e0e0e0' : '#FFA726',
+    cursor: currentImitation.completed ? 'default' : 'pointer'
+  }}
+>
+  <span
+    style={{
+      fontSize: '12px',
+      color: currentImitation.completed ? '#888' : '#fff'
+    }}
+  >
+    仿写
+  </span>
+  {/* 删除下面的箭头部分 */}
+</div>
+
   </div>
   
-  {/* 右侧：管理按钮（铅笔图标） */}
+  {/* 右侧：管理按钮（铅笔图标）- 点击打开弹窗 */}
   <div
     onClick={() => setShowFocusModal(true)}
     style={{
@@ -20832,7 +20405,82 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
-
+{/* 仿写区域 - 展开/收起 */}
+{/* 仿写区域 - 展开/收起 */}
+{/* 仿写区域 - 展开/收起 */}
+{showImitation && (
+  <div style={{
+    marginBottom: 10,
+    marginTop: 5,
+    paddingLeft: 0
+  }}>
+    <div 
+      className="imitation-sentence-container"
+      style={{
+        display: 'flex',
+        alignItems: '"flex-start',
+        gap: '10px',
+        padding: '6px 0'
+      }}
+    >
+      {/* 复选框 */}
+      <input
+        type="checkbox"
+        checked={currentImitation.completed}
+        onChange={toggleImitationComplete}
+        style={{ 
+          width: '14px', 
+          height: '14px', 
+          cursor: 'pointer',
+          flexShrink: 0,
+          margin: 0
+        }}
+      />
+      
+      {/* 句子文字 - 点击可编辑 */}
+      <span
+        className="sentence-text"
+        onClick={startEditSentence}
+        style={{
+          flex: 1,
+          fontSize: '13px',
+          lineHeight: '1.5',
+          color: currentImitation.completed ? '#bbb' : (currentImitation.sentence ? '#333' : '#999'),
+          cursor: currentImitation.completed ? 'default' : 'pointer',
+          backgroundColor: 'transparent',
+          padding: '2px 0',
+          fontStyle: currentImitation.sentence ? 'normal' : 'italic'
+        }}
+      >
+        {currentImitation.sentence || '点击这里添加仿写句子...'}
+      </span>
+      
+      {/* 汇总按钮 - 在句子右边 */}
+      <div
+        onClick={() => setShowImitationSummary(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '4px',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          flexShrink: 0
+        }}
+        title="查看所有仿写句子"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
+          <line x1="9" y1="8" x2="15" y2="8" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="9" y1="12" x2="15" y2="12" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="9" y1="16" x2="12" y2="16" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+)}
 
 {/* 关注任务管理弹窗 */}
 {showFocusModal && (
@@ -20861,154 +20509,93 @@ if (isInitialized && todayTasks.length === 0) {
       
       {/* 标题栏 */}
       <div style={{
-  padding: '16px 20px',
-  backgroundColor: 'transparent',
-  color: '#61A2Da',  // ← 这个会继承给子元素
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  borderTopLeftRadius: '16px',
-  borderTopRightRadius: '16px',
-  borderBottom: '1px solid #f0f0f0'
-}}>
-  <span style={{ fontSize: '16px', fontWeight: 'bold' }}>📌 管理关注任务</span>
-  <div
-    onClick={() => setShowFocusModal(false)}
-    style={{
-      width: '28px',
-      height: '28px',
-      borderRadius: '50%',
-      backgroundColor: 'rgba(0,0,0,0.05)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      fontSize: '18px',
-      color: '#999'  // 关闭按钮单独保持灰色
-    }}
-  >
-    ×
-  </div>
-</div>
+        padding: '16px 20px',
+        backgroundColor: '#61A2Da',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px'
+      }}>
+        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>📌 管理关注任务</span>
+        <div
+          onClick={() => setShowFocusModal(false)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px'
+          }}
+        >
+          ×
+        </div>
+      </div>
       
-{/* 添加任务区域 */}
-<div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
-  <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', color: '#333' }}>
-    添加新任务
-  </div>
-  
-  {/* 任务名称输入 */}
-  <input
-    type="text"
-    placeholder="输入任务名称"
-    value={newTaskName}
-    onChange={(e) => setNewTaskName(e.target.value)}
-    onKeyPress={(e) => {
-      if (e.key === 'Enter' && newTaskName.trim()) {
-        const newId = Date.now().toString();
-        setFocusTaskTemplates(prev => [...prev, {
-          id: newId,
-          text: newTaskName.trim(),
-          targetCategory: newTaskTargetCategory,
-          targetSubCategory: newTaskTargetSubCategory
-        }]);
-        setNewTaskName('');
-        setNewTaskTargetCategory('校内');
-        setNewTaskTargetSubCategory('');
-      }
-    }}
-    style={{
-      width: '100%',
-      padding: '10px 12px',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      fontSize: '14px',
-      marginBottom: '10px',
-      boxSizing: 'border-box'
-    }}
-  />
-  
-  {/* 目标类别选择 */}
-  <div style={{ marginBottom: '10px' }}>
-    <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>完成后移动到：</div>
-    <select
-      value={newTaskTargetCategory}
-      onChange={(e) => setNewTaskTargetCategory(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        fontSize: '13px',
-        backgroundColor: '#fff'
-      }}
-    >
-      {categories.filter(c => c.name !== "常规任务" && c.name !== "本周任务").map(c => (
-        <option key={c.name} value={c.name}>{c.name}</option>
-      ))}
-    </select>
-  </div>
-  
-  {/* 子类别选择（仅当选择校内时显示） */}
-  {newTaskTargetCategory === '校内' && (
-    <div style={{ marginBottom: '10px' }}>
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>子分类：</div>
-      <select
-        value={newTaskTargetSubCategory}
-        onChange={(e) => setNewTaskTargetSubCategory(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '8px 12px',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          fontSize: '13px',
-          backgroundColor: '#fff'
-        }}
-      >
-        <option value="">无</option>
-        {(() => {
-          const schoolCategory = categories.find(c => c.name === '校内');
-          return (schoolCategory?.subCategories || ['数学', '语文', '英语', '运动']).map(sub => (
-            <option key={sub} value={sub}>{sub}</option>
-          ));
-        })()}
-      </select>
-    </div>
-  )}
-  
-  {/* 添加按钮 */}
-  <div
-    onClick={() => {
-      if (newTaskName.trim()) {
-        const newId = Date.now().toString();
-        setFocusTaskTemplates(prev => [...prev, {
-          id: newId,
-          text: newTaskName.trim(),
-          targetCategory: newTaskTargetCategory,
-          targetSubCategory: newTaskTargetSubCategory
-        }]);
-        setNewTaskName('');
-        setNewTaskTargetCategory('校内');
-        setNewTaskTargetSubCategory('');
-      }
-    }}
-    style={{
-      padding: '10px',
-      backgroundColor: '#61A2Da',
-      color: 'white',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: 'bold',
-      textAlign: 'center'
-    }}
-  >
-    添加
-  </div>
-</div>
+      {/* 添加任务区域 */}
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', color: '#333' }}>
+          添加新任务
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input
+            type="text"
+            placeholder="输入任务名称"
+            value={newTaskName}
+            onChange={(e) => setNewTaskName(e.target.value)}
+            onKeyPress={(e) => {
+  if (e.key === 'Enter' && newTaskName.trim()) {
+    const newId = Date.now().toString();
+    setFocusTaskTemplates(prev => [...prev, {
+      id: newId,
+      text: newTaskName.trim()
+    }]);
+    setNewTaskName('');
+  }
+}}
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+            autoFocus
+          />
+         <div
+  onClick={() => {
+    if (newTaskName.trim()) {
+      const newId = Date.now().toString();
+      // ✅ 正确：用 setFocusTaskTemplates
+      setFocusTaskTemplates(prev => [...prev, {
+        id: newId,
+        text: newTaskName.trim()
+      }]);
+      setNewTaskName('');
+    }
+  }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#61A2Da',
+              color: 'white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            添加
+          </div>
+        </div>
+      </div>
       
    
-{/* 现有任务列表 */}
 {/* 现有任务列表 */}
 <div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
   <div style={{ fontSize: '13px', fontWeight: 'bold', padding: '12px 20px', color: '#666' }}>
@@ -21031,236 +20618,84 @@ if (isInitialized && todayTasks.length === 0) {
           backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
         }}
       >
-        {/* 任务文字 + 目标类别 */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            {task.text}
-          </span>
+        {/* 只显示任务文字，没有复选框 */}
+        <span style={{
+          fontSize: '14px',
+          color: '#333',  // 普通深色文字
+          flex: 1
+        }}>
+          {task.text}
+        </span>
+        
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* 编辑按钮 */}
+          <button
+            onClick={() => {
+              const newText = window.prompt('编辑任务', task.text);
+              if (newText && newText.trim()) {
+                editFocusTask(task.id, newText.trim());
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="编辑"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path 
+                d="M17 3L21 7L7 21H3L3 17L17 3Z" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <path 
+                d="M15 5L19 9" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
           
-          {/* 目标类别标签 */}
-          <span style={{
-            fontSize: '10px',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            backgroundColor: '#e8f0fe',
-            color: '#61A2Da',
-            whiteSpace: 'nowrap'
-          }}>
-            {task.targetCategory}{task.targetSubCategory ? ` / ${task.targetSubCategory}` : ''}
-          </span>
+          {/* 删除按钮 */}
+          <button
+            onClick={() => {
+              if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
+                deleteFocusTask(task.id);
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="删除"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
-        
-       {/* 操作按钮 */}
-<div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-  {/* 编辑按钮 - 同时修改文字和类别 */}
-  <button
-    onClick={() => {
-      const currentTask = task;  // ✅ 使用 task 而不是 taskId
-      
-      // 创建自定义编辑弹窗
-      const modalDiv = document.createElement('div');
-      modalDiv.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-      `;
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = `
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        width: 300px;
-        max-width: 90%;
-      `;
-      
-      contentDiv.innerHTML = `
-        <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px; text-align: center;">编辑关注任务</h3>
-        
-        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">任务内容</label>
-        <input id="edit-task-text" type="text" value="${currentTask.text.replace(/"/g, '&quot;')}" style="
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          font-size: 14px;
-          margin-bottom: 15px;
-          box-sizing: border-box;
-        ">
-        
-        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">完成后移动到</label>
-        <select id="edit-task-category" style="
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          font-size: 14px;
-          margin-bottom: 10px;
-          box-sizing: border-box;
-        ">
-          ${categories.filter(c => c.name !== "常规任务" && c.name !== "本周任务").map(c => `
-            <option value="${c.name}" ${c.name === currentTask.targetCategory ? 'selected' : ''}>${c.name}</option>
-          `).join('')}
-        </select>
-        
-        <div id="edit-subcategory-container" style="margin-bottom: 15px; ${currentTask.targetCategory !== '校内' ? 'display: none;' : ''}">
-          <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">子分类</label>
-          <select id="edit-task-subcategory" style="
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-            box-sizing: border-box;
-          ">
-            <option value="">无</option>
-            ${(() => {
-              const schoolCategory = categories.find(c => c.name === '校内');
-              const subs = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
-              return subs.map(sub => `
-                <option value="${sub}" ${sub === (currentTask.targetSubCategory || '') ? 'selected' : ''}>${sub}</option>
-              `).join('');
-            })()}
-          </select>
-        </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-          <button id="edit-cancel-btn" style="
-            flex: 1;
-            padding: 10px;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-          ">取消</button>
-          <button id="edit-confirm-btn" style="
-            flex: 1;
-            padding: 10px;
-            background: #61A2Da;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-          ">保存</button>
-        </div>
-      `;
-      
-      modalDiv.appendChild(contentDiv);
-      document.body.appendChild(modalDiv);
-      
-      const categorySelect = contentDiv.querySelector('#edit-task-category');
-      const subContainer = contentDiv.querySelector('#edit-subcategory-container');
-      const subSelect = contentDiv.querySelector('#edit-task-subcategory');
-      
-      // 监听类别变化
-      categorySelect.addEventListener('change', (e) => {
-        if (e.target.value === '校内') {
-          subContainer.style.display = 'block';
-        } else {
-          subContainer.style.display = 'none';
-        }
-      });
-      
-      const confirmBtn = contentDiv.querySelector('#edit-confirm-btn');
-      confirmBtn.onclick = () => {
-        const newText = contentDiv.querySelector('#edit-task-text').value.trim();
-        const newCategory = categorySelect.value;
-        const newSubCategory = subSelect ? subSelect.value : '';
-        
-        if (newText) {
-          setFocusTaskTemplates(prev => prev.map(t =>
-            t.id === currentTask.id 
-              ? { ...t, text: newText, targetCategory: newCategory, targetSubCategory: newSubCategory }
-              : t
-          ));
-        }
-        document.body.removeChild(modalDiv);
-      };
-      
-      const cancelBtn = contentDiv.querySelector('#edit-cancel-btn');
-      cancelBtn.onclick = () => {
-        document.body.removeChild(modalDiv);
-      };
-      
-      modalDiv.onclick = (e) => {
-        if (e.target === modalDiv) {
-          document.body.removeChild(modalDiv);
-        }
-      };
-    }}
-    style={{
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '28px',
-      height: '28px',
-      background: 'transparent',
-      border: 'none',
-      borderRadius: '4px',
-      padding: 0
-    }}
-    title="编辑任务（文字和类别）"
-  >
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path 
-        d="M17 3L21 7L7 21H3L3 17L17 3Z" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path 
-        d="M15 5L19 9" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-      />
-    </svg>
-  </button>
-  
-  {/* 删除按钮 */}
-  <button
-    onClick={() => {
-      if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
-        deleteFocusTask(task.id);
-      }
-    }}
-    style={{
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '28px',
-      height: '28px',
-      background: 'transparent',
-      border: 'none',
-      borderRadius: '4px',
-      padding: 0
-    }}
-    title="删除"
-  >
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  </button>
-</div>
-       
       </div>
     ))
   )}
@@ -21295,6 +20730,359 @@ if (isInitialized && todayTasks.length === 0) {
   </div>
 )}
 
+{/* 仿写汇总弹窗 */}
+{showImitationSummary && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowImitationSummary(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '95%',
+      maxWidth: '500px',
+      maxHeight: '80vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      {/* 标题栏 */}
+      <div style={{
+        padding: '12px 16px',
+        backgroundColor: '#FFA726',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>📝 仿写句子汇总</span>
+        <div
+          onClick={() => setShowImitationSummary(false)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px'
+          }}
+        >
+          ×
+        </div>
+      </div>
+      
+      {/* 内容区域 */}
+      <div style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: '12px'
+      }}>
+        {Object.entries(imitationData)
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([date, data]) => (
+            <div
+              key={date}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '12px',
+                borderBottom: '1px solid #f0f0f0',
+                backgroundColor: data.completed ? '#fafafa' : '#fff'
+              }}
+            >
+              <div style={{
+                minWidth: '70px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: data.completed ? '#999' : '#FFA726'
+              }}>
+                {date.slice(5)}
+              </div>
+              <div style={{
+                flex: 1,
+                fontSize: '13px',
+                lineHeight: '1.4',
+                color: data.completed ? '#bbb' : '#333',
+                wordBreak: 'break-word'
+              }}>
+                {data.sentence || <span style={{ color: '#ccc', fontStyle: 'italic' }}>未填写</span>}
+              </div>
+              {data.completed && (
+                <div style={{ fontSize: '12px', color: '#4caf50', flexShrink: 0 }}>✅</div>
+              )}
+            </div>
+          ))}
+        
+        {Object.keys(imitationData).length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            暂无仿写记录
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+{/* 关注任务管理弹窗 */}
+{showFocusModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowFocusModal(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '90%',
+      maxWidth: '400px',
+      maxHeight: '80vh',
+      overflow: 'auto',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      {/* 标题栏 */}
+      <div style={{
+        padding: '16px 20px',
+        backgroundColor: '#61A2Da',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px'
+      }}>
+        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>管理重点任务</span>
+        <div
+          onClick={() => setShowFocusModal(false)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px'
+          }}
+        >
+          ×
+        </div>
+      </div>
+      
+      {/* 添加任务区域 */}
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', color: '#333' }}>
+          添加新任务
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input
+            type="text"
+            placeholder="输入任务名称"
+            value={newTaskName}
+            onChange={(e) => setNewTaskName(e.target.value)}
+            onKeyPress={(e) => {
+  if (e.key === 'Enter' && newTaskName.trim()) {
+    const newId = Date.now().toString();
+    setFocusTaskTemplates(prev => [...prev, {
+      id: newId,
+      text: newTaskName.trim()
+    }]);
+    setNewTaskName('');
+  }
+}}
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+            autoFocus
+          />
+          <div
+  onClick={() => {
+    if (newTaskName.trim()) {
+      const newId = Date.now().toString();
+      setFocusTaskTemplates(prev => [...prev, {
+        id: newId,
+        text: newTaskName.trim()
+      }]);
+      setNewTaskName('');
+    }
+  }}
+  style={{
+    padding: '10px 20px',
+    backgroundColor: '#61A2Da',
+    color: 'white',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold'
+  }}
+>
+  添加
+</div>
+        </div>
+      </div>
+      
+{/* 现有任务列表 */}
+<div style={{ padding: '8px 0', maxHeight: '400px', overflow: 'auto' }}>
+  <div style={{ fontSize: '13px', fontWeight: 'bold', padding: '12px 20px', color: '#666' }}>
+    现有任务 ({currentFocusTasks.length})
+  </div>
+  {currentFocusTasks.length === 0 ? (
+    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999', fontSize: '13px' }}>
+      暂无关注任务，点击上方添加
+    </div>
+  ) : (
+    currentFocusTasks.map((task, index) => (
+      <div
+        key={task.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          borderBottom: index < currentFocusTasks.length - 1 ? '1px solid #f0f0f0' : 'none',
+          backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
+        }}
+      >
+        {/* 只显示任务文字，没有复选框 */}
+        <span style={{
+          fontSize: '14px',
+          color: '#333',  // 普通深色文字
+          flex: 1
+        }}>
+          {task.text}
+        </span>
+        
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* 编辑按钮 */}
+          <button
+            onClick={() => {
+              const newText = window.prompt('编辑任务', task.text);
+              if (newText && newText.trim()) {
+                editFocusTask(task.id, newText.trim());
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="编辑"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path 
+                d="M17 3L21 7L7 21H3L3 17L17 3Z" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <path 
+                d="M15 5L19 9" 
+                stroke="#999" 
+                strokeWidth="1.8" 
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          
+          {/* 删除按钮 */}
+          <button
+            onClick={() => {
+              if (window.confirm(`确定要删除任务"${task.text}"吗？`)) {
+                deleteFocusTask(task.id);
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              padding: 0
+            }}
+            title="删除"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    ))
+  )}
+</div>
+      
+      {/* 底部操作 */}
+      {currentFocusTasks.length > 0 && (
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #f0f0f0' }}>
+          <div
+            onClick={() => {
+  if (window.confirm('确定要删除所有关注任务吗？这将从所有日期中删除！')) {
+    setFocusTaskTemplates([]);  // 清空任务模板
+    setFocusTaskStatus({});      // 清空所有日期的完成状态
+  }
+}}
+            style={{
+              padding: '10px',
+              backgroundColor: '#fff5f5',
+              color: '#f44336',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              textAlign: 'center',
+              border: '1px solid #ffcccc'
+            }}
+          >
+            清空所有任务
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
 
 {/* 跑马灯动画样式 */}
@@ -22082,7 +21870,43 @@ const getCategoryBorderColor = () => {
   
 {/* 统计汇总按钮 - 只在校内类别显示 */}
 {/* 统计汇总按钮 - 只在校内类别显示 */}
-
+{c.name === '校内' && (
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      setShowStats(true);
+    }}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      width: "18px",
+      height: "18px",
+      borderRadius: "4px",
+      marginRight: "8px",
+      backgroundColor: "transparent"
+    }}
+    title="统计汇总"
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* 根据类别是否完成，改变颜色 */}
+      <circle 
+        cx="12" 
+        cy="12" 
+        r="10" 
+        stroke={isComplete ? "#333" : "#fff"} 
+        strokeWidth="2" 
+        fill="none"
+      />
+      <path 
+        d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" 
+        fill={isComplete ? "#333" : "#fff"} 
+        stroke="none"
+      />
+    </svg>
+  </div>
+)}
     
 
     {/* 排序按钮 - 校内类别不显示排序按钮 */}
