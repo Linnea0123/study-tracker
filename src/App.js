@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
-/* eslint-disable react-hooks/exhaustive-deps */  // 添加这一行
+/* eslint-disable react-hooks/exhaustive-deps */  // 添加这111一行
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
@@ -51,13 +51,12 @@ const saveToCloud = async (data) => {
   }
 };
 
-// 从云端加载数据
 const loadFromCloud = async () => {
   try {
     const dataRef = getDataRef();
     const snapshot = await get(dataRef);
     if (snapshot.exists()) {
-      console.log('✅ 从云端加载成功 (Realtime DB)');
+      console.log('✅ 从云端加载成功 (Realtime DB)', snapshot.val());
       return snapshot.val();
     }
     console.log('📭 云端暂无数据');
@@ -67,7 +66,6 @@ const loadFromCloud = async () => {
     return null;
   }
 };
-
 // 监听实时更新
 let unsubscribeRef = null;
 const subscribeToCloud = (callback) => {
@@ -16666,7 +16664,7 @@ useEffect(() => {
       return;
     }
     
-    const cloudData = docSnap.data();
+    const cloudData = docSnap.val();   // ✅ 正确
     console.log('🔄 检测到云端更新', new Date().toLocaleTimeString());
     
     // 弹出询问，让用户选择是否刷新
