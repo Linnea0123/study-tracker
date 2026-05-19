@@ -11923,7 +11923,8 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
         })}
         
         {/* 中心圆 */}
-        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        {/* 中心圆 */}
+<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="0" />
         <text 
           x="100" 
           y="100" 
@@ -12076,7 +12077,8 @@ const getSubjectColor = (subject) => {
           })}
           
           {/* 中心圆 */}
-        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        {/* 中心圆 */}
+<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="0" />
 <text 
   x="100" 
   y="100" 
