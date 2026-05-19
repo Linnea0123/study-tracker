@@ -36,12 +36,19 @@ const db = getDatabase(firebaseApp);
 const DATA_PATH = "study_tracker_data";
 const getDataRef = () => ref(db, DATA_PATH);
 // 保存数据到云端
+// 保存数据到云端
 const saveToCloud = async (data) => {
   try {
     const dataRef = getDataRef();
+    const saveTime = Date.now();
+    lastSyncTimeRef.current = saveTime;
+    
     await set(dataRef, {
       ...data,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      _localSaveTime: saveTime,
+      _deviceId: deviceId,        // 👈 添加设备ID
+      _deviceTimestamp: saveTime  // 👈 添加设备时间戳
     });
     console.log('✅ 已保存到云端 (Realtime DB)');
     return true;
@@ -66,6 +73,8 @@ const loadFromCloud = async () => {
     return null;
   }
 };
+
+
 // 监听实时更新
 let unsubscribeRef = null;
 const subscribeToCloud = (callback) => {
@@ -13590,6 +13599,8 @@ const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   // 在 App 组件中，找到其他 useRef 定义的位置，添加：
 const isUserTogglingRef = useRef(false);
+const processedUpdatesRef = useRef(new Set());
+const lastSyncTimeRef = useRef(Date.now());
   // 添加这个状态定义
   const [lastSyncStatus, setLastSyncStatus] = useState({
     success: false,
@@ -13599,7 +13610,28 @@ const isUserTogglingRef = useRef(false);
 // 关注任务管理弹窗状态
 const [showFocusModal, setShowFocusModal] = useState(false);
 const [newTaskName, setNewTaskName] = useState('');
-
+// 修改这个 useEffect，避免每次都弹出确认框
+useEffect(() => {
+  if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
+    console.log('🔄 本地无数据，检查是否需要恢复');
+    hasAttemptedRestore.current = true;
+    
+    // ✅ 只在真正需要恢复时才提示（本地完全无数据）
+    const timer = setTimeout(async () => {
+      const token = localStorage.getItem('github_token');
+      if (token) {
+        // 静默检查，不弹出确认框
+        const gistId = localStorage.getItem('github_gist_id');
+        if (gistId) {
+          console.log('📡 检测到 GitHub 备份，静默恢复...');
+          // 这里可以选择静默恢复，或者不处理
+        }
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }
+}, [isInitialized, tasksByDate]);
 
    const loadDataWithFallback = async (key, fallback) => {
     try {
@@ -13818,6 +13850,7 @@ const getTaskCompletionType = useCallback((task, date) => {
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const hasAttemptedRestore = useRef(false);  // 添加这一行
+  const isLocalUpdate = useRef(false);
   // 在现有状态定义区域添加
   // 在现有的状态定义区域添加
 const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -14825,19 +14858,28 @@ useEffect(() => {
 
 // 在现有的初始化 useEffect 后面添加：
 
+// 修改这个 useEffect，避免每次都弹出确认框
 useEffect(() => {
   if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
-    console.log('🔄 初始化完成，检查是否需要恢复数据');
-    hasAttemptedRestore.current = true;  // 标记已尝试恢复
+    console.log('🔄 本地无数据，检查是否需要恢复');
+    hasAttemptedRestore.current = true;
     
-    const timer = setTimeout(() => {
-      autoRestoreLatestData();
+    // ✅ 只在真正需要恢复时才提示（本地完全无数据）
+    const timer = setTimeout(async () => {
+      const token = localStorage.getItem('github_token');
+      if (token) {
+        // 静默检查，不弹出确认框
+        const gistId = localStorage.getItem('github_gist_id');
+        if (gistId) {
+          console.log('📡 检测到 GitHub 备份，静默恢复...');
+          // 这里可以选择静默恢复，或者不处理
+        }
+      }
     }, 3000);
     
     return () => clearTimeout(timer);
   }
-}, [isInitialized, tasksByDate, autoRestoreLatestData]);  // 这里保留所有依赖
-
+}, [isInitialized, tasksByDate]);
 
 // 👇 在这里添加新的 useEffect
 useEffect(() => {
@@ -16424,41 +16466,104 @@ useEffect(() => {
 
 
 
-
-
 useEffect(() => {
   const initializeApp = async () => {
-    // 先从云端加载
-    const cloudData = await loadFromCloud();
+    console.log('🚀 开始初始化应用...');
     
-    if (cloudData && cloudData.tasksByDate) {
-      // 有云端数据
-      setTasksByDate(cloudData.tasksByDate || {});
-      setTemplates(cloudData.templates || []);
-      setMonthTasks(cloudData.monthTasks || []);
-      setDailyRatings(cloudData.dailyRatings || {});
-      setDailyReflections(cloudData.dailyReflections || {});
-      setFocusTaskTemplates(cloudData.focusTaskTemplates || []);
-      setFocusTaskStatus(cloudData.focusTaskStatus || {});
-      setStudyEndTimes(cloudData.studyEndTimes || {});
-      if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
-      if (cloudData.categories) setCategories(cloudData.categories);
-      if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
-    } else {
-      // 没有云端数据，用本地数据
-      const savedTasks = await loadDataWithFallback('tasks', {});
-      setTasksByDate(savedTasks);
-      const savedTemplates = await loadDataWithFallback('templates', []);
-      setTemplates(savedTemplates);
-      const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
-      setMonthTasks(savedMonthTasks);
-    }
+    // ========== 第一步：立即从本地加载数据（不等待云端） ==========
+    console.log('📁 加载本地数据...');
+    const savedTasks = await loadDataWithFallback('tasks', {});
+    const savedTemplates = await loadDataWithFallback('templates', []);
+    const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
+    const savedDailyRatings = await loadDataWithFallback('dailyRatings', {});
+    const savedDailyReflections = await loadDataWithFallback('dailyReflections', {});
+    const savedFocusTaskTemplates = await loadDataWithFallback('focusTaskTemplates', []);
+    const savedFocusTaskStatus = await loadDataWithFallback('focusTaskStatus', {});
+    const savedStudyEndTimes = await loadDataWithFallback('studyEndTimes', {});
+    const savedReminderText = await loadDataWithFallback('reminderText', '');
+    const savedCategories = await loadDataWithFallback('categories', baseCategories);
+    
+    // 立即设置所有状态（页面立刻显示内容）
+    setTasksByDate(savedTasks);
+    setTemplates(savedTemplates);
+    setMonthTasks(savedMonthTasks);
+    setDailyRatings(savedDailyRatings);
+    setDailyReflections(savedDailyReflections);
+    setFocusTaskTemplates(savedFocusTaskTemplates);
+    setFocusTaskStatus(savedFocusTaskStatus);
+    setStudyEndTimes(savedStudyEndTimes);
+    if (savedReminderText) setReminderText(savedReminderText);
+    setCategories(savedCategories);
     
     setIsInitialized(true);
+    console.log('✅ 本地数据加载完成，页面已显示');
+    
+    // ========== 第二步：后台静默加载云端数据（不阻塞UI） ==========
+    setTimeout(async () => {
+      console.log('☁️ 后台检测云端数据...');
+      try {
+        const cloudData = await loadFromCloud();
+        
+        if (cloudData && cloudData.tasksByDate) {
+          console.log('📡 云端数据获取成功，检测是否有更新...');
+          
+          // 比较本地和云端的数据量（简单判断是否有差异）
+          const localTasksCount = Object.keys(savedTasks).length;
+          const cloudTasksCount = Object.keys(cloudData.tasksByDate || {}).length;
+          
+          // 如果云端有更多数据，或者数据不同，则静默更新
+          if (cloudTasksCount > localTasksCount) {
+            console.log(`🔄 云端有更多数据 (本地:${localTasksCount}天, 云端:${cloudTasksCount}天)，静默更新...`);
+            
+            // 静默更新所有状态
+            setTasksByDate(cloudData.tasksByDate || {});
+            setTemplates(cloudData.templates || []);
+            setMonthTasks(cloudData.monthTasks || []);
+            setDailyRatings(cloudData.dailyRatings || {});
+            setDailyReflections(cloudData.dailyReflections || {});
+            setFocusTaskTemplates(cloudData.focusTaskTemplates || []);
+            setFocusTaskStatus(cloudData.focusTaskStatus || {});
+            setStudyEndTimes(cloudData.studyEndTimes || {});
+            if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
+            if (cloudData.categories) setCategories(cloudData.categories);
+            if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
+            
+            // 显示一个轻提示（可选）
+            const toast = document.createElement('div');
+            toast.textContent = '☁️ 已同步最新数据';
+            toast.style.cssText = `
+              position: fixed;
+              bottom: 100px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #4caf50;
+              color: white;
+              padding: 6px 12px;
+              border-radius: 20px;
+              font-size: 12px;
+              z-index: 10000;
+              opacity: 0.9;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+          } else {
+            console.log('✅ 云端数据与本地一致，无需更新');
+          }
+        } else {
+          console.log('📭 云端暂无数据');
+        }
+      } catch (error) {
+        console.error('云端加载失败（不影响使用）:', error);
+      }
+    }, 500); // 延迟500ms，让页面优先渲染
   };
   
   initializeApp();
 }, []);
+
+
+
+
 // ===== 每天第一次打开页面自动备份一次 =====
 // ✅ 修复后 - 使用 useRef 保证只执行一次
 const hasBackedUpTodayRef = useRef(false);
@@ -16647,68 +16752,158 @@ useEffect(() => {
     selectedDate, currentMonday, isInitialized]);
 
 
-// 实时同步监听（自动检测22云端更新）
+// 实时同步监听（自动检测云端更新）
 useEffect(() => {
   if (!isInitialized) return;
   
   let isFirstLoad = true;
+  let lastTasksByDateRef = useRef({});
+  let hasShownPromptThisSession = useRef(false);  // 👈 本次会话只提示一次
   
-  // 订阅云端数据变化
-  const docRef = getDataRef();
-  const unsubscribe = onValue(docRef, (docSnap) => {
-    if (!docSnap.exists()) return;
-    
-    // 跳过首次加载（避免覆盖本地数据）
+  const unsubscribe = subscribeToCloud((cloudData) => {
+    // 首次加载，只记录状态，不提示
     if (isFirstLoad) {
       isFirstLoad = false;
+      lastTasksByDateRef.current = cloudData.tasksByDate || {};
+      console.log('📌 首次加载，记录云端状态');
       return;
     }
     
-    const cloudData = docSnap.val();   // ✅ 正确
-    console.log('🔄 检测到云端更新', new Date().toLocaleTimeString());
+    // ✅ 关键：判断是否是本设备刚刚保存的更新（5秒内）
+    const isOwnUpdate = cloudData._deviceId === deviceId && 
+                        (Date.now() - (cloudData._deviceTimestamp || cloudData._localSaveTime || 0)) < 5000;
     
-    // 弹出询问，让用户选择是否刷新
-    const shouldRefresh = window.confirm('检测到云端有新数据，是否立即同步？\n\n选择"确定"刷新数据\n选择"取消"暂不处理');
-    
-    if (shouldRefresh) {
-      // 更新所有状态
-      if (cloudData.tasksByDate) setTasksByDate(cloudData.tasksByDate);
-      if (cloudData.templates) setTemplates(cloudData.templates);
-      if (cloudData.monthTasks) setMonthTasks(cloudData.monthTasks);
-      if (cloudData.dailyRatings) setDailyRatings(cloudData.dailyRatings);
-      if (cloudData.dailyReflections) setDailyReflections(cloudData.dailyReflections);
-      if (cloudData.focusTaskTemplates) setFocusTaskTemplates(cloudData.focusTaskTemplates);
-      if (cloudData.focusTaskStatus) setFocusTaskStatus(cloudData.focusTaskStatus);
-      if (cloudData.studyEndTimes) setStudyEndTimes(cloudData.studyEndTimes);
-      if (cloudData.categories) setCategories(cloudData.categories);
-      if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
-      if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
-      
-      // 显示提示
-      const toast = document.createElement('div');
-      toast.textContent = '✅ 已同步最新数据';
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #4caf50;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-        z-index: 10000;
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+    if (isOwnUpdate) {
+      console.log('📌 跳过本设备刚刚保存的更新，不显示提示');
+      // 但仍然更新记录，用于下次对比
+      lastTasksByDateRef.current = cloudData.tasksByDate || {};
+      return;
     }
-  }, (error) => {
-    console.error('监听失败:', error);
+    
+    // 使用 lastUpdated 作为唯一标识，防止重复提醒
+    const updateId = cloudData.lastUpdated;
+    if (processedUpdatesRef.current.has(updateId)) {
+      console.log('📌 已处理过此更新，跳过');
+      return;
+    }
+    
+    const oldTasks = lastTasksByDateRef.current;
+    const newTasks = cloudData.tasksByDate || {};
+    
+    // 对比差异，生成提示内容
+    const changes = [];
+    
+    // 检查新增的任务
+    Object.keys(newTasks).forEach(date => {
+      const newDateTasks = newTasks[date] || [];
+      const oldDateTasks = oldTasks[date] || [];
+      
+      newDateTasks.forEach(newTask => {
+        const exists = oldDateTasks.some(oldTask => oldTask.id === newTask.id);
+        if (!exists && newTask.category !== "常规任务") {
+          changes.push(`📝 新增任务: "${newTask.text}" (${date.slice(5)})`);
+        }
+      });
+    });
+    
+    // 检查删除的任务
+    Object.keys(oldTasks).forEach(date => {
+      const oldDateTasks = oldTasks[date] || [];
+      const newDateTasks = newTasks[date] || [];
+      
+      oldDateTasks.forEach(oldTask => {
+        const exists = newDateTasks.some(newTask => newTask.id === oldTask.id);
+        if (!exists && oldTask.category !== "常规任务") {
+          changes.push(`🗑️ 删除任务: "${oldTask.text}" (${date.slice(5)})`);
+        }
+      });
+    });
+    
+    // 检查完成状态变化
+    Object.keys(newTasks).forEach(date => {
+      const newDateTasks = newTasks[date] || [];
+      const oldDateTasks = oldTasks[date] || [];
+      
+      newDateTasks.forEach(newTask => {
+        const oldTask = oldDateTasks.find(old => old.id === newTask.id);
+        if (oldTask && oldTask.done !== newTask.done && newTask.category !== "常规任务") {
+          const status = newTask.done ? '✅ 完成' : '⬜ 取消完成';
+          changes.push(`${status}: "${newTask.text}" (${date.slice(5)})`);
+        }
+      });
+    });
+    
+    // 保存当前状态用于下次对比
+    lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
+    
+    // 如果没有变化，跳过
+    if (changes.length === 0) {
+      console.log('📌 无实质性变化，跳过提示');
+      return;
+    }
+    
+    // 记录此更新ID，防止重复提醒
+    processedUpdatesRef.current.add(updateId);
+    
+    // 限制 Set 大小，防止内存过大
+    if (processedUpdatesRef.current.size > 100) {
+      const firstKey = processedUpdatesRef.current.values().next().value;
+      processedUpdatesRef.current.delete(firstKey);
+    }
+    
+    // ✅ 只有其他设备的更新才显示提示，且本次会话只提示一次
+    if (!hasShownPromptThisSession.current) {
+      hasShownPromptThisSession.current = true;
+      
+      const changeText = changes.slice(0, 5).join('\n');
+      const moreText = changes.length > 5 ? `\n... 还有 ${changes.length - 5} 处变化` : '';
+      const message = `📱 其他设备有以下更新：\n\n${changeText}${moreText}\n\n是否立即同步？`;
+      
+      if (window.confirm(message)) {
+        // 更新所有状态
+        if (cloudData.tasksByDate) setTasksByDate(cloudData.tasksByDate);
+        if (cloudData.templates) setTemplates(cloudData.templates);
+        if (cloudData.monthTasks) setMonthTasks(cloudData.monthTasks);
+        if (cloudData.dailyRatings) setDailyRatings(cloudData.dailyRatings);
+        if (cloudData.dailyReflections) setDailyReflections(cloudData.dailyReflections);
+        if (cloudData.focusTaskTemplates) setFocusTaskTemplates(cloudData.focusTaskTemplates);
+        if (cloudData.focusTaskStatus) setFocusTaskStatus(cloudData.focusTaskStatus);
+        if (cloudData.studyEndTimes) setStudyEndTimes(cloudData.studyEndTimes);
+        if (cloudData.categories) setCategories(cloudData.categories);
+        if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
+        if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
+        
+        // 显示短暂提示
+        const toast = document.createElement('div');
+        toast.textContent = '✅ 已同步其他设备的数据';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 100px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #4caf50;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          z-index: 10000;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      } else {
+        // 用户拒绝同步，重置提示标记，下次更新还会提示
+        hasShownPromptThisSession.current = false;
+      }
+    } else {
+      console.log('📌 本次会话已提示过，不再重复提示');
+    }
   });
   
-  // 清理订阅
   return () => unsubscribe();
 }, [isInitialized]);
+
+
+    
 
 
 
