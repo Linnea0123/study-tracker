@@ -16659,7 +16659,7 @@ useEffect(() => {
   
   // 订阅云端数据变化
   const docRef = getDataRef();
-  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+  const unsubscribe = onValue(docRef, (docSnap) => {
     if (!docSnap.exists()) return;
     
     // 跳过首次加载（避免覆盖本地数据）
