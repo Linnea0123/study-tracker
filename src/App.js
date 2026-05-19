@@ -12047,7 +12047,8 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
         })}
         
         {/* 中心圆 */}
-        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        {/* 中心圆 */}
+<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="1" />
         <text 
           x="100" 
           y="100" 
@@ -12200,7 +12201,8 @@ const getSubjectColor = (subject) => {
           })}
           
           {/* 中心圆 */}
-        <circle cx="100" cy="100" r="28" fill="#fff" stroke="#e0e0e0" strokeWidth="1" />
+        {/* 中心圆 */}
+<circle cx="100" cy="100" r="28" fill="#fff" stroke="#fff" strokeWidth="1" />
 <text 
   x="100" 
   y="100" 
@@ -22080,43 +22082,7 @@ const getCategoryBorderColor = () => {
   
 {/* 统计汇总按钮 - 只在校内类别显示 */}
 {/* 统计汇总按钮 - 只在校内类别显示 */}
-{c.name === '校内' && (
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      setShowStats(true);
-    }}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      width: "18px",
-      height: "18px",
-      borderRadius: "4px",
-      marginRight: "8px",
-      backgroundColor: "transparent"
-    }}
-    title="统计汇总"
-  >
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 根据类别是否完成，改变颜色 */}
-      <circle 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke={isComplete ? "#333" : "#fff"} 
-        strokeWidth="2" 
-        fill="none"
-      />
-      <path 
-        d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" 
-        fill={isComplete ? "#333" : "#fff"} 
-        stroke="none"
-      />
-    </svg>
-  </div>
-)}
+
     
 
     {/* 排序按钮 - 校内类别不显示排序按钮 */}
