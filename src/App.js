@@ -37,26 +37,26 @@ const DATA_PATH = "study_tracker_data";
 const getDataRef = () => ref(db, DATA_PATH);
 // 保存数据到云端
 // 保存数据到云端
-const saveToCloud = async (data) => {
-  try {
-    const dataRef = getDataRef();
-    const saveTime = Date.now();
-    lastSyncTimeRef.current = saveTime;
-    
-    await set(dataRef, {
-      ...data,
-      lastUpdated: new Date().toISOString(),
-      _localSaveTime: saveTime,
-      _deviceId: deviceId,        // 👈 添加设备ID
-      _deviceTimestamp: saveTime  // 👈 添加设备时间戳
-    });
-    console.log('✅ 已保存到云端 (Realtime DB)');
-    return true;
-  } catch (error) {
-    console.error('保存失败:', error);
-    return false;
+
+
+let lastSyncTimeRef = { current: Date.now() };
+
+// 设备唯一标识（在函数外部定义）
+let globalDeviceId = null;
+const getGlobalDeviceId = () => {
+  if (!globalDeviceId) {
+    globalDeviceId = localStorage.getItem('device_id');
+    if (!globalDeviceId) {
+      globalDeviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      localStorage.setItem('device_id', globalDeviceId);
+    }
   }
+  return globalDeviceId;
 };
+
+let globalLastSyncTime = Date.now();
+
+
 
 const loadFromCloud = async () => {
   try {
@@ -5518,7 +5518,14 @@ const TemplateModal = ({ templates, onSave, onClose, onDelete, categories = base
     newSubTask: ''
   });
   const formTopRef = useRef(null);
-  
+  const lastTasksByDateRef = useRef({});
+  const lastSyncTimeRef = useRef(Date.now());  // 👈 添加这一行
+const hasShownPromptThisSession = useRef(false);
+
+// 设备唯一标识（用于区分是否是本设备的更新）
+
+
+const processedUpdatesRef = useRef(new Set());  // 如果还没有这个，也加上
   const [editingTemplateIndex, setEditingTemplateIndex] = useState(null);
   const fileInputRef = useRef(null);
  const [showMoreConfig, setShowMoreConfig] = useState(false);
@@ -13586,9 +13593,9 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 function App() {
 
 const [showCustomConfirm, setShowCustomConfirm] = useState(null);
-// 在 focusTaskTemplates 相关状态后面添加
 const [newTaskTargetCategory, setNewTaskTargetCategory] = useState('校内');
 const [newTaskTargetSubCategory, setNewTaskTargetSubCategory] = useState('');
+// 在 App 组件内部，其他 useState/useRef 附近添加
 
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
@@ -13599,9 +13606,32 @@ const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   // 在 App 组件中，找到其他 useRef 定义的位置，添加：
 const isUserTogglingRef = useRef(false);
-const processedUpdatesRef = useRef(new Set());
+// 添加设备唯一标识（用于区分是否是本设备的更新）
+
+
+
+// 确保 deviceId 是稳定的字符串
+const deviceId = (() => {
+  let id = localStorage.getItem('device_id');
+  if (!id) {
+    id = `device_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+    localStorage.setItem('device_id', id);
+  }
+  return id;
+})();
+
+console.log('当前设备 ID:', deviceId);  // 确认是固定值
+
+
+// ✅ 添加这两个缺失的 ref
 const lastSyncTimeRef = useRef(Date.now());
-  // 添加这个状态定义
+const processedUpdatesRef = useRef(new Set());
+const lastTasksByDateRef = useRef({});
+const hasShownPromptThisSession = useRef(false);
+
+
+
+// 添加这个状态定义
   const [lastSyncStatus, setLastSyncStatus] = useState({
     success: false,
     time: null,
@@ -13611,27 +13641,6 @@ const lastSyncTimeRef = useRef(Date.now());
 const [showFocusModal, setShowFocusModal] = useState(false);
 const [newTaskName, setNewTaskName] = useState('');
 // 修改这个 useEffect，避免每次都弹出确认框
-useEffect(() => {
-  if (isInitialized && Object.keys(tasksByDate).length === 0 && !hasAttemptedRestore.current) {
-    console.log('🔄 本地无数据，检查是否需要恢复');
-    hasAttemptedRestore.current = true;
-    
-    // ✅ 只在真正需要恢复时才提示（本地完全无数据）
-    const timer = setTimeout(async () => {
-      const token = localStorage.getItem('github_token');
-      if (token) {
-        // 静默检查，不弹出确认框
-        const gistId = localStorage.getItem('github_gist_id');
-        if (gistId) {
-          console.log('📡 检测到 GitHub 备份，静默恢复...');
-          // 这里可以选择静默恢复，或者不处理
-        }
-      }
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }
-}, [isInitialized, tasksByDate]);
 
    const loadDataWithFallback = async (key, fallback) => {
     try {
@@ -13932,11 +13941,39 @@ const [focusTaskTemplates, setFocusTaskTemplates] = useState(() => {
   ];
 });
 
-// 2. 每个日期的完成状态
+
+
+// 大约在第 3050 行左右，找到这些代码的末尾
 const [focusTaskStatus, setFocusTaskStatus] = useState(() => {
   const saved = localStorage.getItem('focus_task_status');
   return saved ? JSON.parse(saved) : {};
 });
+
+// ========== 在这里插入 saveToCloud 函数 ==========
+const saveToCloud = async (data) => {
+  try {
+    const dataRef = getDataRef();
+    const saveTime = Date.now();
+    lastSyncTimeRef.current = saveTime;
+    
+    await set(dataRef, {
+      ...data,
+      focusTaskTemplates: focusTaskTemplates,
+      focusTaskStatus: focusTaskStatus,
+      lastUpdated: new Date().toISOString(),
+      _localSaveTime: saveTime,
+      _deviceId: deviceId,
+      _deviceTimestamp: saveTime
+    });
+    console.log('✅ 已保存到云端 (Realtime DB)');
+    return true;
+  } catch (error) {
+    console.error('保存失败:', error);
+    return false;
+  }
+};
+// ========== saveToCloud 函数结束 ==========
+
 
 // 3. 获取当前日期的完成任务列表
 const currentFocusTasks = useMemo(() => {
@@ -16477,12 +16514,27 @@ useEffect(() => {
     const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
     const savedDailyRatings = await loadDataWithFallback('dailyRatings', {});
     const savedDailyReflections = await loadDataWithFallback('dailyReflections', {});
-    const savedFocusTaskTemplates = await loadDataWithFallback('focusTaskTemplates', []);
+    
     const savedFocusTaskStatus = await loadDataWithFallback('focusTaskStatus', {});
     const savedStudyEndTimes = await loadDataWithFallback('studyEndTimes', {});
     const savedReminderText = await loadDataWithFallback('reminderText', '');
     const savedCategories = await loadDataWithFallback('categories', baseCategories);
-    
+    let savedFocusTaskTemplates = await loadDataWithFallback('focusTaskTemplates', null);
+if (savedFocusTaskTemplates === null) {
+  // 云端没有数据，检查本地 localStorage
+  const localData = localStorage.getItem('focus_task_templates');
+  if (localData) {
+    savedFocusTaskTemplates = JSON.parse(localData);
+  } else {
+    savedFocusTaskTemplates = [
+      { id: '1', text: '运动', targetCategory: '运动', targetSubCategory: '' },
+      { id: '2', text: '阅读', targetCategory: '语文', targetSubCategory: '' }
+    ];
+  }
+}
+
+
+
     // 立即设置所有状态（页面立刻显示内容）
     setTasksByDate(savedTasks);
     setTemplates(savedTemplates);
@@ -16751,156 +16803,6 @@ useEffect(() => {
     focusTaskTemplates, focusTaskStatus, studyEndTimes, categories, reminderText, 
     selectedDate, currentMonday, isInitialized]);
 
-
-// 实时同步监听（自动检测云端更新）
-useEffect(() => {
-  if (!isInitialized) return;
-  
-  let isFirstLoad = true;
-  let lastTasksByDateRef = useRef({});
-  let hasShownPromptThisSession = useRef(false);  // 👈 本次会话只提示一次
-  
-  const unsubscribe = subscribeToCloud((cloudData) => {
-    // 首次加载，只记录状态，不提示
-    if (isFirstLoad) {
-      isFirstLoad = false;
-      lastTasksByDateRef.current = cloudData.tasksByDate || {};
-      console.log('📌 首次加载，记录云端状态');
-      return;
-    }
-    
-    // ✅ 关键：判断是否是本设备刚刚保存的更新（5秒内）
-    const isOwnUpdate = cloudData._deviceId === deviceId && 
-                        (Date.now() - (cloudData._deviceTimestamp || cloudData._localSaveTime || 0)) < 5000;
-    
-    if (isOwnUpdate) {
-      console.log('📌 跳过本设备刚刚保存的更新，不显示提示');
-      // 但仍然更新记录，用于下次对比
-      lastTasksByDateRef.current = cloudData.tasksByDate || {};
-      return;
-    }
-    
-    // 使用 lastUpdated 作为唯一标识，防止重复提醒
-    const updateId = cloudData.lastUpdated;
-    if (processedUpdatesRef.current.has(updateId)) {
-      console.log('📌 已处理过此更新，跳过');
-      return;
-    }
-    
-    const oldTasks = lastTasksByDateRef.current;
-    const newTasks = cloudData.tasksByDate || {};
-    
-    // 对比差异，生成提示内容
-    const changes = [];
-    
-    // 检查新增的任务
-    Object.keys(newTasks).forEach(date => {
-      const newDateTasks = newTasks[date] || [];
-      const oldDateTasks = oldTasks[date] || [];
-      
-      newDateTasks.forEach(newTask => {
-        const exists = oldDateTasks.some(oldTask => oldTask.id === newTask.id);
-        if (!exists && newTask.category !== "常规任务") {
-          changes.push(`📝 新增任务: "${newTask.text}" (${date.slice(5)})`);
-        }
-      });
-    });
-    
-    // 检查删除的任务
-    Object.keys(oldTasks).forEach(date => {
-      const oldDateTasks = oldTasks[date] || [];
-      const newDateTasks = newTasks[date] || [];
-      
-      oldDateTasks.forEach(oldTask => {
-        const exists = newDateTasks.some(newTask => newTask.id === oldTask.id);
-        if (!exists && oldTask.category !== "常规任务") {
-          changes.push(`🗑️ 删除任务: "${oldTask.text}" (${date.slice(5)})`);
-        }
-      });
-    });
-    
-    // 检查完成状态变化
-    Object.keys(newTasks).forEach(date => {
-      const newDateTasks = newTasks[date] || [];
-      const oldDateTasks = oldTasks[date] || [];
-      
-      newDateTasks.forEach(newTask => {
-        const oldTask = oldDateTasks.find(old => old.id === newTask.id);
-        if (oldTask && oldTask.done !== newTask.done && newTask.category !== "常规任务") {
-          const status = newTask.done ? '✅ 完成' : '⬜ 取消完成';
-          changes.push(`${status}: "${newTask.text}" (${date.slice(5)})`);
-        }
-      });
-    });
-    
-    // 保存当前状态用于下次对比
-    lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
-    
-    // 如果没有变化，跳过
-    if (changes.length === 0) {
-      console.log('📌 无实质性变化，跳过提示');
-      return;
-    }
-    
-    // 记录此更新ID，防止重复提醒
-    processedUpdatesRef.current.add(updateId);
-    
-    // 限制 Set 大小，防止内存过大
-    if (processedUpdatesRef.current.size > 100) {
-      const firstKey = processedUpdatesRef.current.values().next().value;
-      processedUpdatesRef.current.delete(firstKey);
-    }
-    
-    // ✅ 只有其他设备的更新才显示提示，且本次会话只提示一次
-    if (!hasShownPromptThisSession.current) {
-      hasShownPromptThisSession.current = true;
-      
-      const changeText = changes.slice(0, 5).join('\n');
-      const moreText = changes.length > 5 ? `\n... 还有 ${changes.length - 5} 处变化` : '';
-      const message = `📱 其他设备有以下更新：\n\n${changeText}${moreText}\n\n是否立即同步？`;
-      
-      if (window.confirm(message)) {
-        // 更新所有状态
-        if (cloudData.tasksByDate) setTasksByDate(cloudData.tasksByDate);
-        if (cloudData.templates) setTemplates(cloudData.templates);
-        if (cloudData.monthTasks) setMonthTasks(cloudData.monthTasks);
-        if (cloudData.dailyRatings) setDailyRatings(cloudData.dailyRatings);
-        if (cloudData.dailyReflections) setDailyReflections(cloudData.dailyReflections);
-        if (cloudData.focusTaskTemplates) setFocusTaskTemplates(cloudData.focusTaskTemplates);
-        if (cloudData.focusTaskStatus) setFocusTaskStatus(cloudData.focusTaskStatus);
-        if (cloudData.studyEndTimes) setStudyEndTimes(cloudData.studyEndTimes);
-        if (cloudData.categories) setCategories(cloudData.categories);
-        if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
-        if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
-        
-        // 显示短暂提示
-        const toast = document.createElement('div');
-        toast.textContent = '✅ 已同步其他设备的数据';
-        toast.style.cssText = `
-          position: fixed;
-          bottom: 100px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #4caf50;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          z-index: 10000;
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-      } else {
-        // 用户拒绝同步，重置提示标记，下次更新还会提示
-        hasShownPromptThisSession.current = false;
-      }
-    } else {
-      console.log('📌 本次会话已提示过，不再重复提示');
-    }
-  });
-  
-  return () => unsubscribe();
-}, [isInitialized]);
 
 
     
@@ -19358,7 +19260,163 @@ const todayStats = calculateTodayStats();
 
       
     
+    useEffect(() => {
+  if (!isInitialized) return;
+  
+  let isFirstLoad = true;
+ // 👈 本次会话只提示一次
+  
+ const unsubscribe = subscribeToCloud((cloudData) => {
+  // 首次加载，只记录状态，不提示
+  if (isFirstLoad) {
+    isFirstLoad = false;
+    lastTasksByDateRef.current = cloudData.tasksByDate || {};
+    console.log('📌 首次加载，记录云端状态');
+    return;
+  }
+  
+  // ✅ 关键：判断是否是本设备刚刚保存的更新（10秒内）
+  const cloudDeviceId = cloudData._deviceId;
+  const cloudTimestamp = cloudData._deviceTimestamp || cloudData._localSaveTime || 0;
+  const timeDiff = Date.now() - cloudTimestamp;
+  
+  // 如果是本设备保存的更新（同一设备 ID，且 10 秒内）
+  const isOwnUpdate = cloudDeviceId === deviceId && timeDiff < 10000;
+  
+  if (isOwnUpdate) {
+    console.log(`📌 跳过本设备刚刚保存的更新 (${timeDiff}ms 前)，不显示提示`);
+    // 但仍然更新记录，用于下次对比
+    lastTasksByDateRef.current = cloudData.tasksByDate || {};
+    return;
+  }
+  
+  // 如果是其他设备的更新，显示提示
+  console.log(`📱 检测到其他设备更新 (设备: ${cloudDeviceId?.slice(-8)}, 时间差: ${timeDiff}ms)`);
+  
+  // 使用 lastUpdated 作为唯一标识，防止重复提醒
+  const updateId = cloudData.lastUpdated;
+  if (processedUpdatesRef.current.has(updateId)) {
+    console.log('📌 已处理过此更新，跳过');
+    return;
+  }
+  
+  const oldTasks = lastTasksByDateRef.current;
+  const newTasks = cloudData.tasksByDate || {};
+  
+  // 对比差异，生成提示内容
+  const changes = [];
+  
+  // 检查新增的任务
+  Object.keys(newTasks).forEach(date => {
+    const newDateTasks = newTasks[date] || [];
+    const oldDateTasks = oldTasks[date] || [];
     
+    newDateTasks.forEach(newTask => {
+      const exists = oldDateTasks.some(oldTask => oldTask.id === newTask.id);
+      if (!exists && newTask.category !== "常规任务") {
+        changes.push(`📝 新增任务: "${newTask.text}" (${date.slice(5)})`);
+      }
+    });
+  });
+  
+  // 检查删除的任务
+  Object.keys(oldTasks).forEach(date => {
+    const oldDateTasks = oldTasks[date] || [];
+    const newDateTasks = newTasks[date] || [];
+    
+    oldDateTasks.forEach(oldTask => {
+      const exists = newDateTasks.some(newTask => newTask.id === oldTask.id);
+      if (!exists && oldTask.category !== "常规任务") {
+        changes.push(`🗑️ 删除任务: "${oldTask.text}" (${date.slice(5)})`);
+      }
+    });
+  });
+  
+  // 检查完成状态变化
+  Object.keys(newTasks).forEach(date => {
+    const newDateTasks = newTasks[date] || [];
+    const oldDateTasks = oldTasks[date] || [];
+    
+    newDateTasks.forEach(newTask => {
+      const oldTask = oldDateTasks.find(old => old.id === newTask.id);
+      if (oldTask && oldTask.done !== newTask.done && newTask.category !== "常规任务") {
+        const status = newTask.done ? '✅ 完成' : '⬜ 取消完成';
+        changes.push(`${status}: "${newTask.text}" (${date.slice(5)})`);
+      }
+    });
+  });
+  
+  // 保存当前状态用于下次对比
+  lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
+  
+  // 如果没有变化，跳过
+  if (changes.length === 0) {
+    console.log('📌 无实质性变化，跳过提示');
+    return;
+  }
+  
+  // 记录此更新ID，防止重复提醒
+  processedUpdatesRef.current.add(updateId);
+  
+  // 限制 Set 大小，防止内存过大
+  if (processedUpdatesRef.current.size > 100) {
+    const firstKey = processedUpdatesRef.current.values().next().value;
+    processedUpdatesRef.current.delete(firstKey);
+  }
+  
+  // ✅ 只有其他设备的更新才显示提示，且本次会话只提示一次
+  if (!hasShownPromptThisSession.current) {
+    hasShownPromptThisSession.current = true;
+    
+    const changeText = changes.slice(0, 5).join('\n');
+    const moreText = changes.length > 5 ? `\n... 还有 ${changes.length - 5} 处变化` : '';
+    const message = `📱 其他设备有以下更新：\n\n${changeText}${moreText}\n\n是否立即同步？`;
+    
+    if (window.confirm(message)) {
+      // 更新所有状态
+      if (cloudData.tasksByDate) setTasksByDate(cloudData.tasksByDate);
+      if (cloudData.templates) setTemplates(cloudData.templates);
+      if (cloudData.monthTasks) setMonthTasks(cloudData.monthTasks);
+      if (cloudData.dailyRatings) setDailyRatings(cloudData.dailyRatings);
+      if (cloudData.dailyReflections) setDailyReflections(cloudData.dailyReflections);
+      if (cloudData.focusTaskTemplates) setFocusTaskTemplates(cloudData.focusTaskTemplates);
+      if (cloudData.focusTaskStatus) setFocusTaskStatus(cloudData.focusTaskStatus);
+      if (cloudData.studyEndTimes) setStudyEndTimes(cloudData.studyEndTimes);
+      if (cloudData.categories) setCategories(cloudData.categories);
+      if (cloudData.reminderText !== undefined) setReminderText(cloudData.reminderText);
+      if (cloudData.lastSelectedDate) setSelectedDate(cloudData.lastSelectedDate);
+      
+      // 显示短暂提示
+      const toast = document.createElement('div');
+      toast.textContent = '✅ 已同步其他设备的数据';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4caf50;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10000;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    } else {
+      // 用户拒绝同步，重置提示标记，下次更新还会提示
+      hasShownPromptThisSession.current = false;
+    }
+  } else {
+    console.log('📌 本次会话已提示过，不再重复提示');
+  }
+});
+
+
+  
+  return () => unsubscribe();
+}, [isInitialized]);
+
 
    
 
@@ -19437,6 +19495,8 @@ if (showStats) {
 
 
 
+
+
 // 如果任务数据为空，显示警告
 if (isInitialized && Object.keys(tasksByDate).length === 0) {
   console.warn('⚠️ 警告: 已初始化但任务数据为空');
@@ -19445,6 +19505,7 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
 if (isInitialized && todayTasks.length === 0) {
   console.warn('⚠️ 警告: 已初始化但今日任务为空');
 }
+
 
 
 
@@ -20509,12 +20570,25 @@ if (isInitialized && todayTasks.length === 0) {
       textarea.setSelectionRange(textarea.value.length, textarea.value.length);
       
       const confirmBtn = contentDiv.querySelector('#confirm-btn');
-      confirmBtn.onclick = () => {
-        const newText = textarea.value;
-        handleReminderChange(newText);
-        document.body.removeChild(modalDiv);
-      };
-      
+    confirmBtn.onclick = () => {
+  const newText = contentDiv.querySelector('#edit-task-text').value.trim();
+  const newCategory = categorySelect.value;
+  const newSubCategory = subSelect ? subSelect.value : '';
+  
+  if (newText) {
+    setFocusTaskTemplates(prev => prev.map(t =>
+      t.id === currentTask.id 
+        ? { 
+            ...t, 
+            text: newText,
+            targetCategory: newCategory,      // ✅ 添加
+            targetSubCategory: newSubCategory  // ✅ 添加
+          }
+        : t
+    ));
+  }
+  document.body.removeChild(modalDiv);
+};
       const cancelBtn = contentDiv.querySelector('#cancel-btn');
       cancelBtn.onclick = () => {
         document.body.removeChild(modalDiv);
