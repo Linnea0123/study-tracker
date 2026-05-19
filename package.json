@@ -4,11 +4,12 @@
   "homepage": ".",
   "private": true,
   "dependencies": {
+    "@cloudbase/js-sdk": "^2.22.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "gh-pages": "^6.3.0",
+    "firebase": "^12.13.0",
     "leancloud-realtime": "^5.0.0-rc.8",
     "leancloud-realtime-plugin-live-query": "^1.2.0",
     "leancloud-storage": "^4.15.2",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
+    "gh-pages": "^6.3.0",
     "react-scripts": "^5.0.1"
   }
 }
