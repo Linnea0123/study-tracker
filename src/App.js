@@ -35,7 +35,8 @@ const db = getDatabase(firebaseApp);
 // 固定路径（所有设备共享同一个路径）
 const DATA_PATH = "study_tracker_data";
 const getDataRef = () => ref(db, DATA_PATH);
-
+// 兼容旧代码（Firestore 版本的函数名）
+const getDataDocRef = getDataRef;
 // 保存数据到云端
 const saveToCloud = async (data) => {
   try {
@@ -16650,7 +16651,7 @@ useEffect(() => {
     selectedDate, currentMonday, isInitialized]);
 
 
-// 实时同步监听（自动检测云端更新）
+// 实时同步监听（自动检测22云端更新）
 useEffect(() => {
   if (!isInitialized) return;
   
