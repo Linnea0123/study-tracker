@@ -19997,7 +19997,8 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#61A2Da"
+    color: "#61A2Da",
+    marginRight: "-4px"
   }}
   title="上一周"
 >
@@ -20046,7 +20047,8 @@ if (isInitialized && todayTasks.length === 0) {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#61A2Da"
+    color: "#61A2Da",
+    marginLeft: "-4px" 
   }}
   title="下一周"
 >
