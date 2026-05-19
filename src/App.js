@@ -1998,6 +1998,29 @@ button:focus-visible {
   );
 };
 
+// 获取类别对应的背景色
+const getCategoryColor = (category, subCategory) => {
+  if (category === '校内' && subCategory) {
+    const colors = {
+      '数学': '#E8F5E9',
+      '语文': '#FFFCE8',
+      '英语': '#FCE4EC',
+      '运动': '#E3F2FD'
+    };
+    return colors[subCategory] || '#61A2Da';
+  }
+  
+  const categoryColors = {
+    '语文': '#FFFCE8',
+    '数学': '#E8F5E9',
+    '英语': '#FCE4EC',
+    '科学': '#E1F5FE',
+    '运动': '#E3F2FD',
+    '校内': '#61A2DA'
+  };
+  return categoryColors[category] || '#f0f0f0';
+};
+
 
 
 const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEditRecord, onDeleteRecord }) => {
@@ -19349,6 +19372,47 @@ const todayStats = calculateTodayStats();
   // 保存当前状态用于下次对比
   lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
   
+// ✅ 新增：对比专注任务模板的变化
+const oldFocusTemplates = lastTasksByDateRef.current._focusTaskTemplates || [];
+const newFocusTemplates = cloudData.focusTaskTemplates || [];
+
+if (JSON.stringify(oldFocusTemplates) !== JSON.stringify(newFocusTemplates)) {
+  if (oldFocusTemplates.length === 0 && newFocusTemplates.length > 0) {
+    changes.push(`📌 新增专注任务: ${newFocusTemplates.map(t => t.text).join(', ')}`);
+  } else if (oldFocusTemplates.length > 0 && newFocusTemplates.length === 0) {
+    changes.push(`📌 清空专注任务`);
+  } else {
+    changes.push(`📌 专注任务已更新`);
+  }
+}
+
+// ✅ 新增：对比专注任务完成状态的变化
+const oldFocusStatus = lastTasksByDateRef.current._focusTaskStatus || {};
+const newFocusStatus = cloudData.focusTaskStatus || {};
+
+Object.keys(newFocusStatus).forEach(date => {
+  const oldDateStatus = oldFocusStatus[date] || {};
+  const newDateStatus = newFocusStatus[date] || {};
+  
+  Object.keys(newDateStatus).forEach(taskId => {
+    if (oldDateStatus[taskId] !== newDateStatus[taskId]) {
+      const task = newFocusTemplates.find(t => t.id === taskId);
+      const status = newDateStatus[taskId] ? '✅ 完成' : '⬜ 取消';
+      changes.push(`${status}: "${task?.text || taskId}" (${date})`);
+    }
+  });
+});
+
+// 保存专注任务数据用于下次对比
+lastTasksByDateRef.current._focusTaskTemplates = newFocusTemplates;
+lastTasksByDateRef.current._focusTaskStatus = newFocusStatus;
+
+// ========== 原有的保存和判断代码 ==========
+// 保存当前状态用于下次对比
+lastTasksByDateRef.current = JSON.parse(JSON.stringify(newTasks));
+
+
+
   // 如果没有变化，跳过
   if (changes.length === 0) {
     console.log('📌 无实质性变化，跳过提示');
