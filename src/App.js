@@ -2099,13 +2099,13 @@ const insertCheckbox = () => {
   const currentEntries = entries[activeTab] || [];
   
   const allTags = useMemo(() => {
-    const tagsSet = new Set();
-    currentEntries.forEach(entry => {
-      entry.tags.forEach(tag => tagsSet.add(tag));
-    });
-    customTags.forEach(tag => tagsSet.add(tag.name));
-    return Array.from(tagsSet);
-  }, [currentEntries, customTags]);
+  const tagsSet = new Set();
+  currentEntries.forEach(entry => {
+    entry.tags.forEach(tag => tagsSet.add(tag.trim()));  // 添加 trim()
+  });
+  customTags.forEach(tag => tagsSet.add(tag.name.trim()));  // 添加 trim()
+  return Array.from(tagsSet);
+}, [currentEntries, customTags]);
   
   const filteredEntries = useMemo(() => {
     if (selectedTag === 'all') return currentEntries;
@@ -2205,16 +2205,22 @@ const insertCheckbox = () => {
     }, 100);
   };
   
-  const addTag = (tag) => {
-    if (!formData.tags.includes(tag)) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-    }
-    if (!customTags.some(t => t.name === tag)) {
-      const newTag = { name: tag, color: '#61A2Da', textColor: '#fff' };
-      setCustomTags(prev => [...prev, newTag]);
-    }
-  };
+ const addTag = (tag) => {
+  // 1. 添加到当前表单的 tags 中
+  if (!formData.tags.includes(tag)) {
+    setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+  }
   
+  // 2. 如果是新标签（不在 customTags 中），才保存到自定义标签库
+  // 注意：commonTags 中的标签不应该被添加到 customTags
+  const isCommonTag = commonTags.includes(tag);
+  const isAlreadyInCustom = customTags.some(t => t.name === tag);
+  
+  if (!isCommonTag && !isAlreadyInCustom) {
+    const newTag = { name: tag, color: '#61A2Da', textColor: '#fff' };
+    setCustomTags(prev => [...prev, newTag]);
+  }
+};
   const removeTag = (tag) => {
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
   };
@@ -22110,41 +22116,7 @@ if (isInitialized && todayTasks.length === 0) {
   }
 }
   
- /* 👇 添加这些样式 - 主界面显示复选框和列表 */
-  /* 列表样式 */
-  ul, ol {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
-  }
-  ul li {
-    list-style-type: disc;
-  }
-  ol li {
-    list-style-type: decimal;
-  }
-  
-  /* 复选框样式 */
-  input[type="checkbox"] {
-    display: inline-block !important;
-    width: 16px !important;
-    height: 16px !important;
-    margin: 0 8px 0 0 !important;
-    vertical-align: middle !important;
-    cursor: pointer !important;
-  }
-  
-  /* 确保编辑器外部的列表也正常显示 */
-  [contenteditable="false"] ul,
-  [contenteditable="false"] ol {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
-  }
-  [contenteditable="false"] ul li {
-    list-style-type: disc;
-  }
-  [contenteditable="false"] ol li {
-    list-style-type: decimal;
-  }
+ 
 
 
   /* 🎉 撒花放大动画 */
