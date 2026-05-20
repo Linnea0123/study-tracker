@@ -1973,57 +1973,50 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
   
   // 执行命令并保持光标
   const execCommand = (cmd, value = null) => {
-  saveCursorPosition();
-  if (value !== null) {
-    document.execCommand(cmd, false, value);
-  } else {
-    document.execCommand(cmd, false, null);
-  }
-  editorRef.current?.focus();
-  restoreCursorPosition();
-  
-  // ✅ 关键：手动触发更新 formData
-  if (editorRef.current) {
-    setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
-  }
-};
-  
-  // 插入复选框
-const insertCheckbox = () => {
-  saveCursorPosition();
-  
-  // 获取当前光标位置
-  const selection = window.getSelection();
-  const range = selection.getRangeAt(0);
-  
-  // 创建复选框
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.style.margin = '0 8px 0 0';
-  checkbox.style.verticalAlign = 'middle';
+    saveCursorPosition();
+    if (value !== null) {
+      document.execCommand(cmd, false, value);
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+    editorRef.current?.focus();
+    restoreCursorPosition();
+    
+    if (editorRef.current) {
+      setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+    }
+  };
   
   // 插入复选框
-  range.insertNode(checkbox);
-  
-  // 在复选框后面插入一个空格
-  const space = document.createTextNode(' ');
-  range.setStartAfter(checkbox);
-  range.insertNode(space);
-  
-  // 将光标移到空格后面
-  range.setStartAfter(space);
-  range.collapse(true);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  editorRef.current?.focus();
-  restoreCursorPosition();
-  
-  // ✅ 关键：手动触发 onInput 更新 formData
-  if (editorRef.current) {
-    setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
-  }
-};
+  const insertCheckbox = () => {
+    saveCursorPosition();
+    
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.style.margin = '0 8px 0 0';
+    checkbox.style.verticalAlign = 'middle';
+    
+    range.insertNode(checkbox);
+    
+    const space = document.createTextNode(' ');
+    range.setStartAfter(checkbox);
+    range.insertNode(space);
+    
+    range.setStartAfter(space);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    editorRef.current?.focus();
+    restoreCursorPosition();
+    
+    if (editorRef.current) {
+      setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+    }
+  };
   
   // 插入有序列表
   const insertOrderedList = () => {
@@ -2056,42 +2049,38 @@ const insertCheckbox = () => {
     return () => editor.removeEventListener('keydown', handleKeyDown);
   }, []);
   
-
+  // 监听复选框变化
   useEffect(() => {
-  const editor = editorRef.current;
-  if (!editor) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    const handleCheckboxChange = (e) => {
+      if (e.target && e.target.type === 'checkbox') {
+        setTimeout(() => {
+          if (editorRef.current) {
+            setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+          }
+        }, 10);
+      }
+    };
+    
+    editor.addEventListener('change', handleCheckboxChange);
+    editor.addEventListener('click', handleCheckboxChange);
+    
+    return () => {
+      editor.removeEventListener('change', handleCheckboxChange);
+      editor.removeEventListener('click', handleCheckboxChange);
+    };
+  }, []);
   
-  const handleCheckboxChange = (e) => {
-    // 检查点击的目标是否是复选框
-    if (e.target && e.target.type === 'checkbox') {
-      // 延迟一下，确保复选框状态已经改变
-      setTimeout(() => {
-        if (editorRef.current) {
-          // 更新 formData 中的内容
-          setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
-          console.log('复选框状态已保存');
-        }
-      }, 10);
+  // 加载编辑内容
+  useEffect(() => {
+    if (editorRef.current && formData.content) {
+      editorRef.current.innerHTML = formData.content;
     }
-  };
+  }, [formData.content, editingEntry]);
   
-  // 监听 change 事件（复选框状态变化）
-  editor.addEventListener('change', handleCheckboxChange);
-  // 也监听 click 事件作为备选
-  editor.addEventListener('click', handleCheckboxChange);
-  
-  return () => {
-    editor.removeEventListener('change', handleCheckboxChange);
-    editor.removeEventListener('click', handleCheckboxChange);
-  };
-}, []); // 依赖为空，只在组件挂载时执行一次
-
-  useEffect(() => {
-  if (editorRef.current && formData.content) {
-    editorRef.current.innerHTML = formData.content;
-  }
-}, [formData.content, editingEntry]);
-
+  // 保存条目到 localStorage
   useEffect(() => {
     localStorage.setItem('subject_guide_entries', JSON.stringify(entries));
   }, [entries]);
@@ -2099,13 +2088,13 @@ const insertCheckbox = () => {
   const currentEntries = entries[activeTab] || [];
   
   const allTags = useMemo(() => {
-  const tagsSet = new Set();
-  currentEntries.forEach(entry => {
-    entry.tags.forEach(tag => tagsSet.add(tag.trim()));  // 添加 trim()
-  });
-  customTags.forEach(tag => tagsSet.add(tag.name.trim()));  // 添加 trim()
-  return Array.from(tagsSet);
-}, [currentEntries, customTags]);
+    const tagsSet = new Set();
+    currentEntries.forEach(entry => {
+      entry.tags.forEach(tag => tagsSet.add(tag.trim()));
+    });
+    customTags.forEach(tag => tagsSet.add(tag.name.trim()));
+    return Array.from(tagsSet);
+  }, [currentEntries, customTags]);
   
   const filteredEntries = useMemo(() => {
     if (selectedTag === 'all') return currentEntries;
@@ -2134,50 +2123,46 @@ const insertCheckbox = () => {
     }
   };
   
- const handleSave = () => {
-  // ✅ 关键：保存前强制从编辑器读取最新内容
-  if (editorRef.current) {
-    const latestContent = editorRef.current.innerHTML;
-    // 如果内容变了，更新 formData
-    if (latestContent !== formData.content) {
-      setFormData(prev => ({ ...prev, content: latestContent }));
+  const handleSave = () => {
+    if (editorRef.current) {
+      const latestContent = editorRef.current.innerHTML;
+      if (latestContent !== formData.content) {
+        setFormData(prev => ({ ...prev, content: latestContent }));
+      }
     }
-  }
-  
-  // 使用最新的 formData 内容（但需要等待 state 更新）
-  // 所以直接使用 editorRef.current.innerHTML
-  const title = formData.title.trim();
-  const content = editorRef.current ? editorRef.current.innerHTML : formData.content;
-  
-  if (!title || !content || content === '<br>') {
-    alert('请填写标题和内容');
-    return;
-  }
-  
-  const newEntry = {
-    id: editingEntry ? editingEntry.id : Date.now().toString(),
-    title: title,
-    content: content,
-    date: formData.date,
-    tags: formData.tags,
-    important: formData.important,
-    updatedAt: new Date().toISOString()
+    
+    const title = formData.title.trim();
+    const content = editorRef.current ? editorRef.current.innerHTML : formData.content;
+    
+    if (!title || !content || content === '<br>') {
+      alert('请填写标题和内容');
+      return;
+    }
+    
+    const newEntry = {
+      id: editingEntry ? editingEntry.id : Date.now().toString(),
+      title: title,
+      content: content,
+      date: formData.date,
+      tags: formData.tags,
+      important: formData.important,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setEntries(prev => {
+      const subjectEntries = [...(prev[activeTab] || [])];
+      if (editingEntry) {
+        const index = subjectEntries.findIndex(e => e.id === editingEntry.id);
+        if (index !== -1) subjectEntries[index] = newEntry;
+      } else {
+        subjectEntries.unshift(newEntry);
+      }
+      return { ...prev, [activeTab]: subjectEntries };
+    });
+    
+    resetForm();
+    setShowAddForm(false);
   };
-  
-  setEntries(prev => {
-    const subjectEntries = [...(prev[activeTab] || [])];
-    if (editingEntry) {
-      const index = subjectEntries.findIndex(e => e.id === editingEntry.id);
-      if (index !== -1) subjectEntries[index] = newEntry;
-    } else {
-      subjectEntries.unshift(newEntry);
-    }
-    return { ...prev, [activeTab]: subjectEntries };
-  });
-  
-  resetForm();
-  setShowAddForm(false);
-};
   
   const handleDelete = (entryId) => {
     if (window.confirm('确定要删除这条记录吗？')) {
@@ -2205,22 +2190,20 @@ const insertCheckbox = () => {
     }, 100);
   };
   
- const addTag = (tag) => {
-  // 1. 添加到当前表单的 tags 中
-  if (!formData.tags.includes(tag)) {
-    setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-  }
+  const addTag = (tag) => {
+    if (!formData.tags.includes(tag)) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+    }
+    
+    const isCommonTag = commonTags.includes(tag);
+    const isAlreadyInCustom = customTags.some(t => t.name === tag);
+    
+    if (!isCommonTag && !isAlreadyInCustom) {
+      const newTag = { name: tag, color: '#61A2Da', textColor: '#fff' };
+      setCustomTags(prev => [...prev, newTag]);
+    }
+  };
   
-  // 2. 如果是新标签（不在 customTags 中），才保存到自定义标签库
-  // 注意：commonTags 中的标签不应该被添加到 customTags
-  const isCommonTag = commonTags.includes(tag);
-  const isAlreadyInCustom = customTags.some(t => t.name === tag);
-  
-  if (!isCommonTag && !isAlreadyInCustom) {
-    const newTag = { name: tag, color: '#61A2Da', textColor: '#fff' };
-    setCustomTags(prev => [...prev, newTag]);
-  }
-};
   const removeTag = (tag) => {
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
   };
@@ -2699,100 +2682,233 @@ const insertCheckbox = () => {
                   />
                 </div>
                 
-                {/* 标签 */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
-                    标签
-                  </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                    {[...commonTags, ...customTags.map(t => t.name)].map(tag => {
-                      const isSelected = formData.tags.includes(tag);
-                      return (
-                        <span
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          style={{
-                            fontSize: '11px',
-                            padding: '3px 8px',
-                            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
-                            color: isSelected ? 'white' : '#666',
-                            borderRadius: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={newTagInput}
-                      onChange={(e) => setNewTagInput(e.target.value)}
-                      placeholder="自定义标签"
-                      style={{
-                        flex: 1,
-                        height: 36,
-                        padding: '0 10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: 6,
-                        fontSize: 13
-                      }}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && newTagInput.trim()) {
-                          addTag(newTagInput.trim());
-                          setNewTagInput('');
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        if (newTagInput.trim()) {
-                          addTag(newTagInput.trim());
-                          setNewTagInput('');
-                        }
-                      }}
-                      style={{
-                        height: 36,
-                        padding: '0 12px',
-                        backgroundColor: '#61A2Da',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        fontSize: 12
-                      }}
-                    >
-                      添加
-                    </button>
-                  </div>
-                  {formData.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                      {formData.tags.map(tag => (
-                        <span key={tag} style={{
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          backgroundColor: '#e8f0fe',
-                          color: '#1a73e8',
-                          borderRadius: '12px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          {tag}
-                          <span
-                            onClick={() => removeTag(tag)}
-                            style={{ cursor: 'pointer', fontSize: '12px' }}
-                          >
-                            ×
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
+    {/* 标签区域 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    标签
+  </label>
+  
+  <div style={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    alignItems: 'center'
+  }}>
+    {/* 预设标签 */}
+    {commonTags.map((tag, idx) => {
+      const isSelected = formData.tags.includes(tag);
+      return (
+        <span
+          key={idx}
+          onClick={() => {
+            if (isSelected) {
+              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+            } else {
+              setFormData({ ...formData, tags: [...formData.tags, tag] });
+            }
+          }}
+          style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
+            color: isSelected ? '#fff' : '#999',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            border: `1px solid ${isSelected ? '#61A2Da' : '#e0e0e0'}`
+          }}
+        >
+          {tag}
+        </span>
+      );
+    })}
+    
+    {/* 自定义标签 */}
+    {customTags.map((tag, idx) => {
+      const isSelected = formData.tags.includes(tag.name);
+      return (
+        <span
+          key={`custom_${idx}`}
+          onClick={() => {
+            if (isSelected) {
+              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag.name) });
+            } else {
+              setFormData({ ...formData, tags: [...formData.tags, tag.name] });
+            }
+          }}
+          style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            backgroundColor: isSelected ? tag.color : '#f0f0f0',
+            color: isSelected ? '#fff' : '#999',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
+          }}
+        >
+          {tag.name}
+        </span>
+      );
+    })}
+    
+    {/* 添加自定义标签按钮 - 带颜色选择 */}
+    <span
+      onClick={() => {
+        const modalDiv = document.createElement('div');
+        modalDiv.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+        `;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.style.cssText = `
+          background: white;
+          padding: 20px;
+          border-radius: 16px;
+          width: 280px;
+          text-align: center;
+        `;
+        
+        contentDiv.innerHTML = `
+          <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
+          <input id="new-tag-name" type="text" placeholder="标签名称" style="
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+          ">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <span style="font-size: 13px; color: #666;">标签颜色：</span>
+            <input id="new-tag-color" type="color" value="#61A2Da" style="
+              width: 40px;
+              height: 40px;
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              cursor: pointer;
+            ">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button id="cancel-btn" style="
+              flex: 1;
+              padding: 10px;
+              background: #f0f0f0;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">取消</button>
+            <button id="confirm-btn" style="
+              flex: 1;
+              padding: 10px;
+              background: #61A2Da;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">确认</button>
+          </div>
+        `;
+        
+        modalDiv.appendChild(contentDiv);
+        document.body.appendChild(modalDiv);
+        
+        const nameInput = contentDiv.querySelector('#new-tag-name');
+        const colorInput = contentDiv.querySelector('#new-tag-color');
+        
+        const confirmBtn = contentDiv.querySelector('#confirm-btn');
+        confirmBtn.onclick = () => {
+          const tagName = nameInput.value.trim();
+          if (tagName) {
+            if (!customTags.some(t => t.name === tagName)) {
+              const newTag = { name: tagName, color: colorInput.value, textColor: '#fff' };
+              setCustomTags(prev => [...prev, newTag]);
+            } else {
+              alert('标签已存在');
+            }
+          }
+          document.body.removeChild(modalDiv);
+        };
+        
+        const cancelBtn = contentDiv.querySelector('#cancel-btn');
+        cancelBtn.onclick = () => {
+          document.body.removeChild(modalDiv);
+        };
+        
+        modalDiv.onclick = (e) => {
+          if (e.target === modalDiv) {
+            document.body.removeChild(modalDiv);
+          }
+        };
+        
+        setTimeout(() => nameInput.focus(), 50);
+      }}
+      style={{
+        height: '28px',
+        padding: '0 10px',
+        borderRadius: '16px',
+        color: '#999',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        lineHeight: 1
+      }}
+      title="添加自定义标签"
+    >
+      +
+    </span>
+  </div>
+  
+  {/* 显示当前选中的标签 */}
+  {formData.tags.length > 0 && (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+      {formData.tags.map((tag, idx) => {
+        const tagColor = customTags.find(t => t.name === tag)?.color || '#61A2Da';
+        return (
+          <span key={idx} style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            backgroundColor: tagColor,
+            color: '#fff',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            {tag}
+            <span
+              onClick={() => {
+                setFormData({ ...formData, tags: formData.tags.filter((_, i) => i !== idx) });
+              }}
+              style={{ cursor: 'pointer', fontSize: '12px' }}
+            >
+              ×
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  )}
+</div>
                 {/* 重要标记 */}
                 <div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -2813,164 +2929,155 @@ const insertCheckbox = () => {
                   </label>
                   
                   {/* 工具栏 */}
-<div style={{
-  display: 'flex',
-  gap: '8px',
-  marginBottom: '8px',
-  padding: '6px',
-  backgroundColor: '#f8f9fa',
-  borderRadius: '6px',
-  border: '1px solid #e0e0e0',
-  flexWrap: 'wrap'
-}}>
-  {/* 加粗 */}
-  <button
-    type="button"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      execCommand('bold');
-      setIsBold(!isBold);
-    }}
-    style={{
-      width: '32px',
-      height: '28px',
-      backgroundColor: isBold ? '#61A2Da' : '#f0f0f0',
-      color: isBold ? '#fff' : '#333',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: 'bold'
-    }}
-    title="加粗"
-  >
-    B
-  </button>
-  
-  {/* 下划线 */}
-  <button
-    type="button"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      execCommand('underline');
-      setIsUnderline(!isUnderline);
-    }}
-    style={{
-      width: '32px',
-      height: '28px',
-      backgroundColor: isUnderline ? '#61A2Da' : '#f0f0f0',
-      color: isUnderline ? '#fff' : '#333',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      textDecoration: 'underline'
-    }}
-    title="下划线"
-  >
-    U
-  </button>
-  
-  {/* 标黄 */}
-  <button
-    type="button"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      execCommand('hiliteColor', '#ffeb3b');
-      setIsHighlight(!isHighlight);
-    }}
-    style={{
-      width: '32px',
-      height: '28px',
-      backgroundColor: isHighlight ? '#ffeb3b' : '#f0f0f0',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '12px',
-      fontWeight: 'bold'
-    }}
-    title="标黄"
-  >
-    H
-  </button>
-  
-  {/* 有序列表 */}
-  <button
-    type="button"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      insertOrderedList();
-    }}
-    style={{
-      width: '32px',
-      height: '28px',
-      backgroundColor: '#f0f0f0',
-      color: '#333',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: 'bold'
-    }}
-    title="有序列表"
-  >
-    1.
-  </button>
-  
-  {/* 无序列表 */}
-  <button
-    type="button"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      insertUnorderedList();
-    }}
-    style={{
-      width: '32px',
-      height: '28px',
-      backgroundColor: '#f0f0f0',
-      color: '#333',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '16px',
-      fontWeight: 'bold'
-    }}
-    title="无序列表"
-  >
-    •
-  </button>
-</div>
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '8px',
+                    padding: '6px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '6px',
+                    border: '1px solid #e0e0e0',
+                    flexWrap: 'wrap'
+                  }}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        execCommand('bold');
+                        setIsBold(!isBold);
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '28px',
+                        backgroundColor: isBold ? '#61A2Da' : '#f0f0f0',
+                        color: isBold ? '#fff' : '#333',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                      title="加粗"
+                    >
+                      B
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        execCommand('underline');
+                        setIsUnderline(!isUnderline);
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '28px',
+                        backgroundColor: isUnderline ? '#61A2Da' : '#f0f0f0',
+                        color: isUnderline ? '#fff' : '#333',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        textDecoration: 'underline'
+                      }}
+                      title="下划线"
+                    >
+                      U
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        execCommand('hiliteColor', '#ffeb3b');
+                        setIsHighlight(!isHighlight);
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '28px',
+                        backgroundColor: isHighlight ? '#ffeb3b' : '#f0f0f0',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}
+                      title="标黄"
+                    >
+                      H
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        insertOrderedList();
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '28px',
+                        backgroundColor: '#f0f0f0',
+                        color: '#333',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                      title="有序列表"
+                    >
+                      1.
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        insertUnorderedList();
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '28px',
+                        backgroundColor: '#f0f0f0',
+                        color: '#333',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                      }}
+                      title="无序列表"
+                    >
+                      •
+                    </button>
+                  </div>
                   
                   {/* 可编辑区域 */}
-                {/* 可编辑区域 - 修改后 */}
-<div
-  ref={editorRef}
-  contentEditable
-  onInput={() => {
-    // 只更新 formData，不触发重新渲染导致光标丢失
-    if (editorRef.current) {
-      setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
-    }
-  }}
-  onKeyUp={() => {
-    setIsBold(document.queryCommandState('bold'));
-    setIsUnderline(document.queryCommandState('underline'));
-  }}
-  style={{
-    width: '100%',
-    minHeight: '150px',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-    backgroundColor: '#fff',
-    overflow: 'auto',
-    outline: 'none'
-  }}
-  // ❌ 删除这行！不要用 dangerouslySetInnerHTML
-  // dangerouslySetInnerHTML={{ __html: formData.content }}
-/>
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    onInput={() => {
+                      if (editorRef.current) {
+                        setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+                      }
+                    }}
+                    onKeyUp={() => {
+                      setIsBold(document.queryCommandState('bold'));
+                      setIsUnderline(document.queryCommandState('underline'));
+                    }}
+                    style={{
+                      width: '100%',
+                      minHeight: '150px',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      backgroundColor: '#fff',
+                      overflow: 'auto',
+                      outline: 'none'
+                    }}
+                  />
                   
                   {!formData.content && (
                     <div style={{
@@ -9929,6 +10036,15 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     newSubTask: ''
   });
 
+const [taskCustomTags, setTaskCustomTags] = useState(() => {
+    const saved = localStorage.getItem('task_custom_tags');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  // 保存任务自定义标签到 localStorage
+  useEffect(() => {
+    localStorage.setItem('task_custom_tags', JSON.stringify(taskCustomTags));
+  }, [taskCustomTags]);
 
 const [showAbandonReason, setShowAbandonReason] = useState(false);
 const [abandonReason, setAbandonReason] = useState('');
@@ -10829,6 +10945,7 @@ const abandonReasons = [
   <div>
 
  
+{/* 标签 - 只有预设标签，没有自定义 */}
 <div>
   <label style={{
     display: 'block',
@@ -10846,20 +10963,31 @@ const abandonReasons = [
     gap: '6px',
     alignItems: 'center'
   }}>
-    {/* ✅ 显示所有已保存的标签（包括预设和自定义） */}
-    {[...commonTags.map(t => ({ name: t, color: '#61A2Da' })), ...customTags].map((tag, idx) => {
-      const isSelected = formData.tags?.some(t => t.name === tag.name);
+    {/* 预设标签 */}
+    {[
+      { name: '重要', color: '#ff4444' },
+      { name: '紧急', color: '#ff9800' },
+      { name: '复习', color: '#4caf50' },
+      { name: '预习', color: '#2196f3' },
+      { name: '作业', color: '#9c27b0' },
+      { name: '考试', color: '#f44336' },
+      { name: '背诵', color: '#795548' },
+      { name: '练习', color: '#607d8b' }
+    ].map((tag, idx) => {
+      const isSelected = editData.tags?.some(t => t === tag.name || t.name === tag.name);
       return (
         <span
           key={idx}
           onClick={() => {
             if (isSelected) {
-              const newTags = formData.tags.filter(t => t.name !== tag.name);
-              setFormData({ ...formData, tags: newTags });
+              const newTags = editData.tags.filter(t => 
+                (typeof t === 'string' ? t !== tag.name : t.name !== tag.name)
+              );
+              setEditData({ ...editData, tags: newTags });
             } else {
-              setFormData({
-                ...formData,
-                tags: [...(formData.tags || []), tag]
+              setEditData({
+                ...editData,
+                tags: [...(editData.tags || []), tag.name]
               });
             }
           }}
@@ -10870,178 +10998,56 @@ const abandonReasons = [
             color: isSelected ? '#fff' : '#999',
             borderRadius: '16px',
             cursor: 'pointer',
-            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`,
-            minWidth: '42px',
-            textAlign: 'center'
+            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
           }}
         >
           {tag.name}
         </span>
       );
     })}
-    
-    {/* 添加自定义标签按钮 */}
-    <span
-      onClick={() => {
-        const modalDiv = document.createElement('div');
-        modalDiv.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 10000;
-        `;
-        
-        const contentDiv = document.createElement('div');
-        contentDiv.style.cssText = `
-          background: white;
-          padding: 20px;
-          border-radius: 16px;
-          width: 280px;
-          text-align: center;
-        `;
-        
-        contentDiv.innerHTML = `
-          <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
-          <input id="new-tag-name" type="text" placeholder="标签名称" style="
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-          ">
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-            <span style="font-size: 13px; color: #666;">标签颜色：</span>
-            <input id="new-tag-color" type="color" value="#61A2Da" style="
-              width: 40px;
-              height: 40px;
-              border: 1px solid #ccc;
-              border-radius: 8px;
-              cursor: pointer;
-            ">
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button id="cancel-btn" style="
-              flex: 1;
-              padding: 10px;
-              background: #f0f0f0;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 14px;
-            ">取消</button>
-            <button id="confirm-btn" style="
-              flex: 1;
-              padding: 10px;
-              background: #61A2Da;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 14px;
-            ">确认</button>
-          </div>
-        `;
-        
-        modalDiv.appendChild(contentDiv);
-        document.body.appendChild(modalDiv);
-        
-        const nameInput = contentDiv.querySelector('#new-tag-name');
-        const colorInput = contentDiv.querySelector('#new-tag-color');
-        
-        const confirmBtn = contentDiv.querySelector('#confirm-btn');
-        confirmBtn.onclick = () => {
-  const tagName = nameInput.value.trim();
-  console.log('点击确认，标签名:', tagName);
-  console.log('当前 customTags:', customTags);
-  
-  if (tagName) {
-    if (!customTags.some(t => t.name === tagName)) {
-      const newTag = { 
-        name: tagName, 
-        color: colorInput.value,
-        textColor: '#fff'
-      };
-      console.log('准备添加新标签:', newTag);
-      setCustomTags(prev => {
-        const newList = [...prev, newTag];
-        console.log('setCustomTags 新列表:', newList);
-        return newList;
-      });
-    } else {
-      console.log('标签已存在');
-      alert('标签已存在');
-    }
-  }
-  document.body.removeChild(modalDiv);
-};
-        
-        const cancelBtn = contentDiv.querySelector('#cancel-btn');
-        cancelBtn.onclick = () => {
-          document.body.removeChild(modalDiv);
-        };
-        
-        modalDiv.onclick = (e) => {
-          if (e.target === modalDiv) {
-            document.body.removeChild(modalDiv);
-          }
-        };
-        
-        setTimeout(() => nameInput.focus(), 50);
-      }}
-      style={{
-        height: '28px',
-        padding: '0 10px',
-        borderRadius: '16px',
-        color: '#999',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        transition: 'none',
-        lineHeight: 1
-      }}
-      title="添加自定义标签"
-    >
-      +
-    </span>
   </div>
   
   {/* 显示当前选中的标签 */}
-  {formData.tags.length > 0 && (
+  {editData.tags && editData.tags.length > 0 && (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-      {formData.tags.map((tag, idx) => (
-        <span key={idx} style={{
-          fontSize: '11px',
-          padding: '2px 8px',
-          backgroundColor: tag.color || '#e8f0fe',
-          color: tag.textColor || '#1a73e8',
-          borderRadius: '12px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}>
-          {tag.name}
-          <span
-            onClick={() => {
-              const newTags = formData.tags.filter((_, i) => i !== idx);
-              setFormData({ ...formData, tags: newTags });
-            }}
-            style={{ cursor: 'pointer', fontSize: '12px' }}
-          >
-            ×
+      {editData.tags.map((tag, idx) => {
+        const tagColors = {
+          '重要': '#ff4444',
+          '紧急': '#ff9800',
+          '复习': '#4caf50',
+          '预习': '#2196f3',
+          '作业': '#9c27b0',
+          '考试': '#f44336',
+          '背诵': '#795548',
+          '练习': '#607d8b'
+        };
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        const tagColor = tagColors[tagName] || '#61A2Da';
+        
+        return (
+          <span key={idx} style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            backgroundColor: tagColor,
+            color: '#fff',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            {tagName}
+            <span
+              onClick={() => {
+                const newTags = editData.tags.filter((_, i) => i !== idx);
+                setEditData({ ...editData, tags: newTags });
+              }}
+              style={{ cursor: 'pointer', fontSize: '12px' }}
+            >
+              ×
+            </span>
           </span>
-        </span>
-      ))}
+        );
+      })}
     </div>
   )}
 </div>
@@ -14564,8 +14570,23 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
         width: '280px',
         textAlign: 'center'
       }} onClick={e => e.stopPropagation()}>
-        <p style={{ marginBottom: 20, fontSize: 14, lineHeight: 1.5 }}>{message}</p>
+        <p style={{ marginBottom: 20, fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{message}</p>
         <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={() => { onCancel?.(); onClose(); }}
+            style={{
+              flex: 1,
+              padding: 8,
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            取消
+          </button>
           <button
             onClick={() => { onConfirm?.(); onClose(); }}
             style={{
@@ -14579,23 +14600,8 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
               fontSize: 14
             }}
           >
-            全部
+            确认
           </button>
-           <button
-            onClick={() => { onCancel?.(); onClose(); }}
-            style={{
-              flex: 1,
-              padding: 8,
-              backgroundColor: '#f0f0f0',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            只今天
-          </button>
-         
         </div>
       </div>
     </div>
@@ -17829,60 +17835,74 @@ useEffect(() => {
   // ========== 主要关注任务相关函数 ==========
 
 
-  // 切换关注任务的完成状态
-// 切换关注任务的完成状态
-// 切换关注任务的完成状态
+
 // 切换关注任务的完成状态 - 同时添加到对应类别
-// 切换关注任务的完成状态 - 同时添加到对应类别
+// 切换关注任务的完成状态 - 添加确认提示
+// 切换关注任务的完成状态 - 添加确认提示
 const toggleFocusTask = (taskId) => {
   const task = focusTaskTemplates.find(t => t.id === taskId);
   const isCurrentlyChecked = focusTaskStatus[selectedDate]?.[taskId] || false;
   
-  // 如果是勾选（从未完成到完成）
+  // 如果是勾选（从未完成到完成），显示确认对话框
   if (!isCurrentlyChecked && task) {
-    // 创建新任务添加到对应类别
-    const newTask = {
-      id: `focus_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-      text: task.text,
-      category: task.targetCategory || '校内',
-      subCategory: task.targetSubCategory || '',
-      done: true,
-      timeSpent: 0,
-      timeRecords: [],
-      subTasks: [],
-      note: "",
-      reflection: "",
-      image: null,
-      scheduledTime: "",
-      pinned: false,
-      tags: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
+    setShowCustomConfirm({
+      message: `确认完成「${task.text}」？`,
+      onConfirm: () => {
+        // 创建新任务添加到对应类别
+        const newTask = {
+          id: `focus_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+          text: task.text,
+          category: task.targetCategory || '校内',
+          subCategory: task.targetSubCategory || '',
+          done: true,
+          timeSpent: 0,
+          timeRecords: [],
+          subTasks: [],
+          note: "",
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          createdAt: new Date().toISOString(),
+          isFromFocusTask: true
+        };
+        
+        setTasksByDate(prev => ({
+          ...prev,
+          [selectedDate]: [...(prev[selectedDate] || []), newTask]
+        }));
+        
+        setFocusTaskStatus(prev => ({
+          ...prev,
+          [selectedDate]: {
+            ...(prev[selectedDate] || {}),
+            [taskId]: true
+          }
+        }));
       },
-      createdAt: new Date().toISOString(),
-      isFromFocusTask: true
-    };
-    
-    // 添加到对应类别的任务列表
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
+      onCancel: () => {}
+    });
+    return;
   }
   
-  // 更新完成状态（按钮变灰）
-  setFocusTaskStatus(prev => ({
-    ...prev,
-    [selectedDate]: {
-      ...(prev[selectedDate] || {}),
-      [taskId]: !isCurrentlyChecked
-    }
-  }));
+  // 如果是取消勾选（从完成到未完成），直接执行（不需要确认）
+  if (isCurrentlyChecked && task) {
+    setFocusTaskStatus(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...(prev[selectedDate] || {}),
+        [taskId]: false
+      }
+    }));
+  }
 };
-
 
 
 
@@ -20623,6 +20643,7 @@ if (isInitialized && todayTasks.length === 0) {
   <TaskEditModal
     task={showTaskEditModal}
     categories={categories}
+    
     onClose={() => setShowTaskEditModal(null)}
     onSave={(task, editData) => {
       console.log('🔴🔴🔴 App中的onSave被调用！');
