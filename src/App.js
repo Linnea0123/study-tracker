@@ -1904,6 +1904,1111 @@ button:focus-visible {
   );
 };
 
+const SubjectGuideModal = ({ onClose, isVisible }) => {
+  const [activeTab, setActiveTab] = useState('数学');
+  const [entries, setEntries] = useState(() => {
+    const saved = localStorage.getItem('subject_guide_entries');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [customTags, setCustomTags] = useState(() => {
+    const saved = localStorage.getItem('subject_guide_custom_tags');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('subject_guide_custom_tags', JSON.stringify(customTags));
+  }, [customTags]);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [selectedTag, setSelectedTag] = useState('all');
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    date: new Date().toISOString().split('T')[0],
+    tags: [],
+    important: false
+  });
+  const [newTagInput, setNewTagInput] = useState('');
+  
+  // 富文本相关状态
+  const [isBold, setIsBold] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [isHighlight, setIsHighlight] = useState(false);
+  const editorRef = useRef(null);
+  const lastCursorRef = useRef(null);
+  
+  const commonTags = ['学习方法', '易错点', '重点', '公式', '错题分析', '复习策略', '时间管理', '心态调整'];
+  const tabs = ['数学', '语文', '英语', '其他'];
+  
+  // 保存光标位置
+  const saveCursorPosition = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      lastCursorRef.current = selection.getRangeAt(0).cloneRange();
+    }
+  };
+  
+  // 恢复光标位置
+  const restoreCursorPosition = () => {
+    if (lastCursorRef.current) {
+      try {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(lastCursorRef.current);
+        editorRef.current?.focus();
+      } catch(e) {
+        if (editorRef.current) {
+          const range = document.createRange();
+          range.selectNodeContents(editorRef.current);
+          range.collapse(false);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+    }
+  };
+  
+  // 执行命令并保持光标
+  const execCommand = (cmd, value = null) => {
+  saveCursorPosition();
+  if (value !== null) {
+    document.execCommand(cmd, false, value);
+  } else {
+    document.execCommand(cmd, false, null);
+  }
+  editorRef.current?.focus();
+  restoreCursorPosition();
+  
+  // ✅ 关键：手动触发更新 formData
+  if (editorRef.current) {
+    setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+  }
+};
+  
+  // 插入复选框
+const insertCheckbox = () => {
+  saveCursorPosition();
+  
+  // 获取当前光标位置
+  const selection = window.getSelection();
+  const range = selection.getRangeAt(0);
+  
+  // 创建复选框
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.style.margin = '0 8px 0 0';
+  checkbox.style.verticalAlign = 'middle';
+  
+  // 插入复选框
+  range.insertNode(checkbox);
+  
+  // 在复选框后面插入一个空格
+  const space = document.createTextNode(' ');
+  range.setStartAfter(checkbox);
+  range.insertNode(space);
+  
+  // 将光标移到空格后面
+  range.setStartAfter(space);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  editorRef.current?.focus();
+  restoreCursorPosition();
+  
+  // ✅ 关键：手动触发 onInput 更新 formData
+  if (editorRef.current) {
+    setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+  }
+};
+  
+  // 插入有序列表
+  const insertOrderedList = () => {
+    saveCursorPosition();
+    document.execCommand('insertOrderedList', false, null);
+    editorRef.current?.focus();
+    restoreCursorPosition();
+  };
+  
+  // 插入无序列表
+  const insertUnorderedList = () => {
+    saveCursorPosition();
+    document.execCommand('insertUnorderedList', false, null);
+    editorRef.current?.focus();
+    restoreCursorPosition();
+  };
+  
+  // 监听删除事件修复光标
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        setTimeout(() => {
+          restoreCursorPosition();
+        }, 10);
+      }
+    };
+    editor.addEventListener('keydown', handleKeyDown);
+    return () => editor.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  
+
+  useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
+  
+  const handleCheckboxChange = (e) => {
+    // 检查点击的目标是否是复选框
+    if (e.target && e.target.type === 'checkbox') {
+      // 延迟一下，确保复选框状态已经改变
+      setTimeout(() => {
+        if (editorRef.current) {
+          // 更新 formData 中的内容
+          setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+          console.log('复选框状态已保存');
+        }
+      }, 10);
+    }
+  };
+  
+  // 监听 change 事件（复选框状态变化）
+  editor.addEventListener('change', handleCheckboxChange);
+  // 也监听 click 事件作为备选
+  editor.addEventListener('click', handleCheckboxChange);
+  
+  return () => {
+    editor.removeEventListener('change', handleCheckboxChange);
+    editor.removeEventListener('click', handleCheckboxChange);
+  };
+}, []); // 依赖为空，只在组件挂载时执行一次
+
+  useEffect(() => {
+  if (editorRef.current && formData.content) {
+    editorRef.current.innerHTML = formData.content;
+  }
+}, [formData.content, editingEntry]);
+
+  useEffect(() => {
+    localStorage.setItem('subject_guide_entries', JSON.stringify(entries));
+  }, [entries]);
+  
+  const currentEntries = entries[activeTab] || [];
+  
+  const allTags = useMemo(() => {
+    const tagsSet = new Set();
+    currentEntries.forEach(entry => {
+      entry.tags.forEach(tag => tagsSet.add(tag));
+    });
+    customTags.forEach(tag => tagsSet.add(tag.name));
+    return Array.from(tagsSet);
+  }, [currentEntries, customTags]);
+  
+  const filteredEntries = useMemo(() => {
+    if (selectedTag === 'all') return currentEntries;
+    return currentEntries.filter(entry => entry.tags.includes(selectedTag));
+  }, [currentEntries, selectedTag]);
+  
+  const sortedEntries = useMemo(() => {
+    return [...filteredEntries].sort((a, b) => b.date.localeCompare(a.date));
+  }, [filteredEntries]);
+  
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      date: new Date().toISOString().split('T')[0],
+      tags: [],
+      important: false
+    });
+    setNewTagInput('');
+    setEditingEntry(null);
+    setIsBold(false);
+    setIsUnderline(false);
+    setIsHighlight(false);
+    if (editorRef.current) {
+      editorRef.current.innerHTML = '';
+    }
+  };
+  
+ const handleSave = () => {
+  // ✅ 关键：保存前强制从编辑器读取最新内容
+  if (editorRef.current) {
+    const latestContent = editorRef.current.innerHTML;
+    // 如果内容变了，更新 formData
+    if (latestContent !== formData.content) {
+      setFormData(prev => ({ ...prev, content: latestContent }));
+    }
+  }
+  
+  // 使用最新的 formData 内容（但需要等待 state 更新）
+  // 所以直接使用 editorRef.current.innerHTML
+  const title = formData.title.trim();
+  const content = editorRef.current ? editorRef.current.innerHTML : formData.content;
+  
+  if (!title || !content || content === '<br>') {
+    alert('请填写标题和内容');
+    return;
+  }
+  
+  const newEntry = {
+    id: editingEntry ? editingEntry.id : Date.now().toString(),
+    title: title,
+    content: content,
+    date: formData.date,
+    tags: formData.tags,
+    important: formData.important,
+    updatedAt: new Date().toISOString()
+  };
+  
+  setEntries(prev => {
+    const subjectEntries = [...(prev[activeTab] || [])];
+    if (editingEntry) {
+      const index = subjectEntries.findIndex(e => e.id === editingEntry.id);
+      if (index !== -1) subjectEntries[index] = newEntry;
+    } else {
+      subjectEntries.unshift(newEntry);
+    }
+    return { ...prev, [activeTab]: subjectEntries };
+  });
+  
+  resetForm();
+  setShowAddForm(false);
+};
+  
+  const handleDelete = (entryId) => {
+    if (window.confirm('确定要删除这条记录吗？')) {
+      setEntries(prev => ({
+        ...prev,
+        [activeTab]: (prev[activeTab] || []).filter(e => e.id !== entryId)
+      }));
+    }
+  };
+  
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setFormData({
+      title: entry.title,
+      content: entry.content,
+      date: entry.date,
+      tags: [...entry.tags],
+      important: entry.important || false
+    });
+    setShowAddForm(true);
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.innerHTML = entry.content || '';
+      }
+    }, 100);
+  };
+  
+  const addTag = (tag) => {
+    if (!formData.tags.includes(tag)) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+    }
+    if (!customTags.some(t => t.name === tag)) {
+      const newTag = { name: tag, color: '#61A2Da', textColor: '#fff' };
+      setCustomTags(prev => [...prev, newTag]);
+    }
+  };
+  
+  const removeTag = (tag) => {
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+  };
+  
+  if (!isVisible) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#f5faff',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: 0,
+      overflow: 'auto'
+    }}>
+      <style>{`
+        @keyframes rightToLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        
+        [contenteditable="true"] ul,
+        [contenteditable="true"] ol {
+          margin: 0.5em 0;
+          padding-left: 1.5em;
+        }
+        [contenteditable="true"] ul li {
+          list-style-type: disc;
+        }
+        [contenteditable="true"] ol li {
+          list-style-type: decimal;
+        }
+      `}</style>
+      
+      <div style={{
+        backgroundColor: '#f5faff',
+        padding: '15px',
+        borderRadius: 0,
+        width: '100%',
+        maxWidth: '600px',
+        height: '100%',
+        maxHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        margin: '0 auto',
+        position: 'relative',
+        boxSizing: 'border-box'
+      }}>
+        {/* 标题栏 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          flexShrink: 0
+        }}>
+          <div style={{ width: '60px' }}></div>
+          <h2 style={{ 
+            textAlign: 'center', 
+            margin: 0,
+            color: '#61A2Da',
+            fontSize: '20px'
+          }}>
+            📚 科目指导
+          </h2>
+          
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            height: '28px'
+          }}>
+            <button
+              onClick={() => {
+                resetForm();
+                setShowAddForm(true);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                borderRadius: '4px'
+              }}
+              title="添加指导记录"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+            
+            <button
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                borderRadius: '4px'
+              }}
+              title="关闭"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        {/* 标签切换 */}
+        <div style={{
+          display: 'flex',
+          gap: '2px',
+          marginBottom: '15px',
+          borderBottom: '1px solid #e0e0e0',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          flexShrink: 0
+        }}>
+          {tabs.map(tab => (
+            <div
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                setSelectedTag('all');
+              }}
+              style={{
+                padding: '4px 12px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                backgroundColor: activeTab === tab ? '#61A2Da' : '#f0f0f0',
+                color: activeTab === tab ? '#fff' : '#666',
+                borderTopLeftRadius: '8px',
+                borderTopRightRadius: '8px',
+                borderBottom: activeTab === tab ? '2px solid #61A2Da' : 'none',
+                fontWeight: activeTab === tab ? 'bold' : 'normal',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+            >
+              {tab}
+            </div>
+          ))}
+        </div>
+        
+        {/* 统计卡片 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '8px',
+          marginBottom: '16px',
+          flexShrink: 0
+        }}>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>记录总数</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>{currentEntries.length}</div>
+          </div>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>标签种类</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#3b82f6' }}>{allTags.length}</div>
+          </div>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>重要记录</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>
+              {currentEntries.filter(e => e.important).length}
+            </div>
+          </div>
+        </div>
+        
+        {/* 标签筛选 */}
+        {allTags.length > 0 && (
+          <div style={{
+            display: 'flex',
+            gap: '6px',
+            marginBottom: '12px',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            flexShrink: 0
+          }}>
+            <span style={{ fontSize: '11px', color: '#666' }}>筛选：</span>
+            <div
+              onClick={() => setSelectedTag('all')}
+              style={{
+                padding: '3px 8px',
+                backgroundColor: selectedTag === 'all' ? '#61A2Da' : '#f0f0f0',
+                color: selectedTag === 'all' ? 'white' : '#333',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontSize: '10px'
+              }}
+            >
+              全部
+            </div>
+            {allTags.map(tag => (
+              <div
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                style={{
+                  padding: '3px 8px',
+                  backgroundColor: selectedTag === tag ? '#61A2Da' : '#f0f0f0',
+                  color: selectedTag === tag ? 'white' : '#333',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '10px'
+                }}
+              >
+                {tag}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* 记录列表 */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {sortedEntries.length === 0 ? (
+            <div style={{
+              padding: '40px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              📝 暂无指导记录
+              <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+                点击右上角 + 添加 {activeTab} 学习方法
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+              paddingBottom: '10px'
+            }}>
+              {sortedEntries.map(entry => (
+                <div
+                  key={entry.id}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    border: entry.important ? '2px solid #f44336' : '1px solid #e5e7eb',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}
+                >
+                  <div
+                    onClick={() => handleEdit(entry)}
+                    style={{
+                      padding: '12px 15px',
+                      backgroundColor: entry.important ? '#ffebee' : '#f8f9fa',
+                      borderBottom: '1px solid #eee',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {entry.important && <span style={{ fontSize: '14px' }}>⭐</span>}
+                      <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+                        {entry.title}
+                      </span>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {entry.tags.map(tag => (
+                          <span key={tag} style={{
+                            fontSize: '9px',
+                            padding: '2px 6px',
+                            backgroundColor: '#e8f0fe',
+                            color: '#1a73e8',
+                            borderRadius: '10px'
+                          }}>
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', color: '#999' }}>📅 {entry.date.slice(5)}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(entry.id);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 0,
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#999'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => handleEdit(entry)}
+                    style={{
+                      padding: '12px 15px',
+                      fontSize: '13px',
+                      lineHeight: '1.5',
+                      color: '#555',
+                      cursor: 'pointer',
+                      wordBreak: 'break-word',
+                      whiteSpace: 'normal',
+                      overflow: 'visible'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: entry.content }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* 添加/编辑表单弹窗 */}
+        {showAddForm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1100,
+            padding: '10px'
+          }} onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddForm(false);
+              resetForm();
+            }
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px 16px',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '450px',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }} onClick={e => e.stopPropagation()}>
+              
+              <button
+                onClick={() => {
+                  setShowAddForm(false);
+                  resetForm();
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  zIndex: 10
+                }}
+              >
+                ×
+              </button>
+
+              <h3 style={{ 
+                textAlign: 'center', 
+                marginBottom: '20px', 
+                color: '#61A2Da',
+                fontSize: '16px'
+              }}>
+                {editingEntry ? '编辑指导记录' : '添加指导记录'}
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* 标题 */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
+                    标题
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    placeholder="如：函数解题技巧"
+                    style={{
+                      width: '100%',
+                      height: 40,
+                      padding: '0 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                
+                {/* 日期 */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
+                    日期
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    style={{
+                      width: '100%',
+                      height: 40,
+                      padding: '0 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                
+                {/* 标签 */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
+                    标签
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                    {[...commonTags, ...customTags.map(t => t.name)].map(tag => {
+                      const isSelected = formData.tags.includes(tag);
+                      return (
+                        <span
+                          key={tag}
+                          onClick={() => addTag(tag)}
+                          style={{
+                            fontSize: '11px',
+                            padding: '3px 8px',
+                            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
+                            color: isSelected ? 'white' : '#666',
+                            borderRadius: '12px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      placeholder="自定义标签"
+                      style={{
+                        flex: 1,
+                        height: 36,
+                        padding: '0 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 6,
+                        fontSize: 13
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && newTagInput.trim()) {
+                          addTag(newTagInput.trim());
+                          setNewTagInput('');
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (newTagInput.trim()) {
+                          addTag(newTagInput.trim());
+                          setNewTagInput('');
+                        }
+                      }}
+                      style={{
+                        height: 36,
+                        padding: '0 12px',
+                        backgroundColor: '#61A2Da',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 12
+                      }}
+                    >
+                      添加
+                    </button>
+                  </div>
+                  {formData.tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                      {formData.tags.map(tag => (
+                        <span key={tag} style={{
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          backgroundColor: '#e8f0fe',
+                          color: '#1a73e8',
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          {tag}
+                          <span
+                            onClick={() => removeTag(tag)}
+                            style={{ cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            ×
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* 重要标记 */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.important}
+                      onChange={(e) => setFormData({...formData, important: e.target.checked})}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: 13, color: '#f44336' }}>标记为重要 ⭐</span>
+                  </label>
+                </div>
+                
+                {/* 内容 - 富文本编辑器 */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: '500' }}>
+                    内容
+                  </label>
+                  
+                  {/* 工具栏 */}
+<div style={{
+  display: 'flex',
+  gap: '8px',
+  marginBottom: '8px',
+  padding: '6px',
+  backgroundColor: '#f8f9fa',
+  borderRadius: '6px',
+  border: '1px solid #e0e0e0',
+  flexWrap: 'wrap'
+}}>
+  {/* 加粗 */}
+  <button
+    type="button"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      execCommand('bold');
+      setIsBold(!isBold);
+    }}
+    style={{
+      width: '32px',
+      height: '28px',
+      backgroundColor: isBold ? '#61A2Da' : '#f0f0f0',
+      color: isBold ? '#fff' : '#333',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: 'bold'
+    }}
+    title="加粗"
+  >
+    B
+  </button>
+  
+  {/* 下划线 */}
+  <button
+    type="button"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      execCommand('underline');
+      setIsUnderline(!isUnderline);
+    }}
+    style={{
+      width: '32px',
+      height: '28px',
+      backgroundColor: isUnderline ? '#61A2Da' : '#f0f0f0',
+      color: isUnderline ? '#fff' : '#333',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      textDecoration: 'underline'
+    }}
+    title="下划线"
+  >
+    U
+  </button>
+  
+  {/* 标黄 */}
+  <button
+    type="button"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      execCommand('hiliteColor', '#ffeb3b');
+      setIsHighlight(!isHighlight);
+    }}
+    style={{
+      width: '32px',
+      height: '28px',
+      backgroundColor: isHighlight ? '#ffeb3b' : '#f0f0f0',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: 'bold'
+    }}
+    title="标黄"
+  >
+    H
+  </button>
+  
+  {/* 有序列表 */}
+  <button
+    type="button"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      insertOrderedList();
+    }}
+    style={{
+      width: '32px',
+      height: '28px',
+      backgroundColor: '#f0f0f0',
+      color: '#333',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: 'bold'
+    }}
+    title="有序列表"
+  >
+    1.
+  </button>
+  
+  {/* 无序列表 */}
+  <button
+    type="button"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      insertUnorderedList();
+    }}
+    style={{
+      width: '32px',
+      height: '28px',
+      backgroundColor: '#f0f0f0',
+      color: '#333',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '16px',
+      fontWeight: 'bold'
+    }}
+    title="无序列表"
+  >
+    •
+  </button>
+</div>
+                  
+                  {/* 可编辑区域 */}
+                {/* 可编辑区域 - 修改后 */}
+<div
+  ref={editorRef}
+  contentEditable
+  onInput={() => {
+    // 只更新 formData，不触发重新渲染导致光标丢失
+    if (editorRef.current) {
+      setFormData(prev => ({ ...prev, content: editorRef.current.innerHTML }));
+    }
+  }}
+  onKeyUp={() => {
+    setIsBold(document.queryCommandState('bold'));
+    setIsUnderline(document.queryCommandState('underline'));
+  }}
+  style={{
+    width: '100%',
+    minHeight: '150px',
+    padding: '10px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    backgroundColor: '#fff',
+    overflow: 'auto',
+    outline: 'none'
+  }}
+  // ❌ 删除这行！不要用 dangerouslySetInnerHTML
+  // dangerouslySetInnerHTML={{ __html: formData.content }}
+/>
+                  
+                  {!formData.content && (
+                    <div style={{
+                      marginTop: '-130px',
+                      marginLeft: '12px',
+                      color: '#999',
+                      fontSize: '14px',
+                      pointerEvents: 'none'
+                    }}>
+                      记录学习方法、重点难点、心得笔记...<br/>
+                      选中文字后点击 B(加粗) / U(下划线) / H(标黄)
+                    </div>
+                  )}
+                </div>
+                
+                {/* 按钮 */}
+                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      backgroundColor: '#61A2Da',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: '500'
+                    }}
+                  >
+                    {editingEntry ? '保存修改' : '添加记录'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 
 
 const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEditRecord, onDeleteRecord }) => {
@@ -6157,8 +7262,7 @@ const handleEditTemplate = (index, template) => {
 
 
             <div>
-              {/* 标签编辑 */}
-{/* 标签 - 简洁版 */}
+
 <div>
   <label style={{
     display: 'block',
@@ -6176,26 +7280,20 @@ const handleEditTemplate = (index, template) => {
     gap: '6px',
     alignItems: 'center'
   }}>
-    {/* 预设标签 */}
-    {[
-      { name: '重要', color: '#ff4444' },
-      { name: '紧急', color: '#ff9800' },
-      { name: '复习', color: '#4caf50' },
-      { name: '预习', color: '#2196f3' },
-      { name: '考试', color: '#f44336' }
-    ].map(tag => {
-      const isSelected = formData.tags?.some(t => t.name === tag.name);
+    {/* ✅ 显示所有已保存的标签（预设 + 自定义） */}
+    {[...commonTags.map(t => ({ name: t, color: '#61A2Da' })), ...customTags].map((tag, idx) => {
+      const isSelected = editData.tags?.some(t => t.name === tag.name);
       return (
         <span
-          key={tag.name}
+          key={idx}
           onClick={() => {
             if (isSelected) {
-              const newTags = formData.tags.filter(t => t.name !== tag.name);
-              setFormData({ ...formData, tags: newTags });
+              const newTags = editData.tags.filter(t => t.name !== tag.name);
+              setEditData({ ...editData, tags: newTags });
             } else {
-              setFormData({
-                ...formData,
-                tags: [...(formData.tags || []), { name: tag.name, color: tag.color, textColor: '#fff' }]
+              setEditData({
+                ...editData,
+                tags: [...(editData.tags || []), tag]
               });
             }
           }}
@@ -6206,7 +7304,6 @@ const handleEditTemplate = (index, template) => {
             color: isSelected ? '#fff' : '#999',
             borderRadius: '16px',
             cursor: 'pointer',
-            transition: 'none',
             border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`,
             minWidth: '42px',
             textAlign: 'center'
@@ -6217,35 +7314,7 @@ const handleEditTemplate = (index, template) => {
       );
     })}
     
-    {/* 自定义标签列表 */}
-    {formData.tags?.filter(tag => !['重要', '紧急', '复习', '预习', '考试', '背诵'].includes(tag.name)).map((tag, index) => (
-      <span
-        key={index}
-        style={{
-          fontSize: '12px',
-          padding: '4px 10px',
-          backgroundColor: tag.color || '#61A2Da',
-          color: '#fff',
-          borderRadius: '16px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          cursor: 'pointer',
-          border: `1px solid ${tag.color || '#61A2Da'}`,
-          minWidth: '42px'
-        }}
-        onClick={() => {
-          const newTags = formData.tags.filter((_, i) => i !== index);
-          setFormData({ ...formData, tags: newTags });
-        }}
-      >
-        {tag.name}
-        <span style={{ fontSize: '12px', opacity: 0.7 }}>×</span>
-      </span>
-    ))}
-    
-    {/* 添加自定义标签的小加号按钮 */}
-  {/* 添加自定义标签的小加号按钮 - 高度对齐 */}
+
 <span
   onClick={() => {
     const modalDiv = document.createElement('div');
@@ -6322,24 +7391,20 @@ const handleEditTemplate = (index, template) => {
     const colorInput = contentDiv.querySelector('#new-tag-color');
     
     const confirmBtn = contentDiv.querySelector('#confirm-btn');
-    confirmBtn.onclick = () => {
-      const tagName = nameInput.value.trim();
-      if (tagName) {
-        if (!formData.tags?.some(t => t.name === tagName)) {
-          setFormData({
-            ...formData,
-            tags: [...(formData.tags || []), { 
-              name: tagName, 
-              color: colorInput.value,
-              textColor: '#fff'
-            }]
-          });
-        } else {
-          alert('标签已存在');
-        }
-      }
-      document.body.removeChild(modalDiv);
-    };
+confirmBtn.onclick = () => {
+  const tagName = nameInput.value.trim();
+  if (tagName) {
+    if (!customTags.some(t => t.name === tagName)) {
+      const newTag = { name: tagName, color: colorInput.value, textColor: '#fff' };
+      setCustomTags(prev => [...prev, newTag]);
+      // ✅ 添加这行：强制刷新表单数据，触发重新渲染
+      setFormData(prev => ({ ...prev, tags: [...prev.tags] }));
+    } else {
+      alert('标签已存在');
+    }
+  }
+  document.body.removeChild(modalDiv);
+};
     
     const cancelBtn = contentDiv.querySelector('#cancel-btn');
     cancelBtn.onclick = () => {
@@ -6355,12 +7420,10 @@ const handleEditTemplate = (index, template) => {
     setTimeout(() => nameInput.focus(), 50);
   }}
   style={{
-    height: '28px',           // 改成 28px，与标签高度一致
-    padding: '0 10px',       // 改为水平内边距，让加号按钮变成胶囊形状
-    borderRadius: '16px',    // 改成 16px，与标签圆角一致
-    
+    height: '28px',
+    padding: '0 10px',
+    borderRadius: '16px',
     color: '#999',
-   
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -6375,6 +7438,35 @@ const handleEditTemplate = (index, template) => {
   +
 </span>
   </div>
+  
+  {/* 显示当前选中的标签 */}
+  {editData.tags.length > 0 && (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+      {editData.tags.map((tag, idx) => (
+        <span key={idx} style={{
+          fontSize: '11px',
+          padding: '2px 8px',
+          backgroundColor: tag.color || '#e8f0fe',
+          color: tag.textColor || '#1a73e8',
+          borderRadius: '12px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          {tag.name}
+          <span
+            onClick={() => {
+              const newTags = editData.tags.filter((_, i) => i !== idx);
+              setEditData({ ...editData, tags: newTags });
+            }}
+            style={{ cursor: 'pointer', fontSize: '12px' }}
+          >
+            ×
+          </span>
+        </span>
+      ))}
+    </div>
+  )}
 </div>
          
 
@@ -8220,6 +9312,7 @@ const DateDot = ({ date, tasksByDate }) => {
               color: softColors.primary,
               padding: '8px',
               borderRadius: '6px',
+              
               transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
@@ -9728,9 +10821,8 @@ const abandonReasons = [
      
 
   <div>
-    {/* 标签 - 简化版 */}
-    
-{/* 标签 - 简洁版 */}
+
+ 
 <div>
   <label style={{
     display: 'block',
@@ -9748,26 +10840,20 @@ const abandonReasons = [
     gap: '6px',
     alignItems: 'center'
   }}>
-    {/* 预设标签 */}
-    {[
-      { name: '重要', color: '#ff4444' },
-      { name: '紧急', color: '#ff9800' },
-      { name: '复习', color: '#4caf50' },
-      { name: '预习', color: '#2196f3' },
-      { name: '考试', color: '#f44336' }
-    ].map(tag => {
-      const isSelected = editData.tags?.some(t => t.name === tag.name);
+    {/* ✅ 显示所有已保存的标签（包括预设和自定义） */}
+    {[...commonTags.map(t => ({ name: t, color: '#61A2Da' })), ...customTags].map((tag, idx) => {
+      const isSelected = formData.tags?.some(t => t.name === tag.name);
       return (
         <span
-          key={tag.name}
+          key={idx}
           onClick={() => {
             if (isSelected) {
-              const newTags = editData.tags.filter(t => t.name !== tag.name);
-              setEditData({ ...editData, tags: newTags });
+              const newTags = formData.tags.filter(t => t.name !== tag.name);
+              setFormData({ ...formData, tags: newTags });
             } else {
-              setEditData({
-                ...editData,
-                tags: [...(editData.tags || []), { name: tag.name, color: tag.color, textColor: '#fff' }]
+              setFormData({
+                ...formData,
+                tags: [...(formData.tags || []), tag]
               });
             }
           }}
@@ -9778,7 +10864,6 @@ const abandonReasons = [
             color: isSelected ? '#fff' : '#999',
             borderRadius: '16px',
             cursor: 'pointer',
-            transition: 'none',
             border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`,
             minWidth: '42px',
             textAlign: 'center'
@@ -9789,167 +10874,170 @@ const abandonReasons = [
       );
     })}
     
-    {/* 自定义标签列表 */}
-    {editData.tags?.filter(tag => !['重要', '紧急', '复习', '预习', '考试', '背诵'].includes(tag.name)).map((tag, index) => (
-      <span
-        key={index}
-        style={{
-          fontSize: '12px',
-          padding: '4px 10px',
-          backgroundColor: tag.color || '#61A2Da',
-          color: '#fff',
-          borderRadius: '16px',
+    {/* 添加自定义标签按钮 */}
+    <span
+      onClick={() => {
+        const modalDiv = document.createElement('div');
+        modalDiv.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+        `;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.style.cssText = `
+          background: white;
+          padding: 20px;
+          border-radius: 16px;
+          width: 280px;
+          text-align: center;
+        `;
+        
+        contentDiv.innerHTML = `
+          <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
+          <input id="new-tag-name" type="text" placeholder="标签名称" style="
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+          ">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <span style="font-size: 13px; color: #666;">标签颜色：</span>
+            <input id="new-tag-color" type="color" value="#61A2Da" style="
+              width: 40px;
+              height: 40px;
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              cursor: pointer;
+            ">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button id="cancel-btn" style="
+              flex: 1;
+              padding: 10px;
+              background: #f0f0f0;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">取消</button>
+            <button id="confirm-btn" style="
+              flex: 1;
+              padding: 10px;
+              background: #61A2Da;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">确认</button>
+          </div>
+        `;
+        
+        modalDiv.appendChild(contentDiv);
+        document.body.appendChild(modalDiv);
+        
+        const nameInput = contentDiv.querySelector('#new-tag-name');
+        const colorInput = contentDiv.querySelector('#new-tag-color');
+        
+        const confirmBtn = contentDiv.querySelector('#confirm-btn');
+        confirmBtn.onclick = () => {
+  const tagName = nameInput.value.trim();
+  console.log('点击确认，标签名:', tagName);
+  console.log('当前 customTags:', customTags);
+  
+  if (tagName) {
+    if (!customTags.some(t => t.name === tagName)) {
+      const newTag = { 
+        name: tagName, 
+        color: colorInput.value,
+        textColor: '#fff'
+      };
+      console.log('准备添加新标签:', newTag);
+      setCustomTags(prev => {
+        const newList = [...prev, newTag];
+        console.log('setCustomTags 新列表:', newList);
+        return newList;
+      });
+    } else {
+      console.log('标签已存在');
+      alert('标签已存在');
+    }
+  }
+  document.body.removeChild(modalDiv);
+};
+        
+        const cancelBtn = contentDiv.querySelector('#cancel-btn');
+        cancelBtn.onclick = () => {
+          document.body.removeChild(modalDiv);
+        };
+        
+        modalDiv.onclick = (e) => {
+          if (e.target === modalDiv) {
+            document.body.removeChild(modalDiv);
+          }
+        };
+        
+        setTimeout(() => nameInput.focus(), 50);
+      }}
+      style={{
+        height: '28px',
+        padding: '0 10px',
+        borderRadius: '16px',
+        color: '#999',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        transition: 'none',
+        lineHeight: 1
+      }}
+      title="添加自定义标签"
+    >
+      +
+    </span>
+  </div>
+  
+  {/* 显示当前选中的标签 */}
+  {formData.tags.length > 0 && (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+      {formData.tags.map((tag, idx) => (
+        <span key={idx} style={{
+          fontSize: '11px',
+          padding: '2px 8px',
+          backgroundColor: tag.color || '#e8f0fe',
+          color: tag.textColor || '#1a73e8',
+          borderRadius: '12px',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '6px',
-          cursor: 'pointer',
-          border: `1px solid ${tag.color || '#61A2Da'}`,
-          minWidth: '42px'
-        }}
-        onClick={() => {
-          const newTags = editData.tags.filter((_, i) => i !== index);
-          setEditData({ ...editData, tags: newTags });
-        }}
-      >
-        {tag.name}
-        <span style={{ fontSize: '12px', opacity: 0.7 }}>×</span>
-      </span>
-    ))}
-    
-    {/* 添加自定义标签的小加号按钮 */}
-{/* 添加自定义标签的小加号按钮 - 高度对齐 */}
-<span
-  onClick={() => {
-    const modalDiv = document.createElement('div');
-    modalDiv.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    `;
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.style.cssText = `
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      width: 280px;
-      text-align: center;
-    `;
-    
-    contentDiv.innerHTML = `
-      <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
-      <input id="new-tag-name" type="text" placeholder="标签名称" style="
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 14px;
-        margin-bottom: 12px;
-        box-sizing: border-box;
-      ">
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-        <span style="font-size: 13px; color: #666;">标签颜色：</span>
-        <input id="new-tag-color" type="color" value="#61A2Da" style="
-          width: 40px;
-          height: 40px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          cursor: pointer;
-        ">
-      </div>
-      <div style="display: flex; gap: 10px;">
-        <button id="cancel-btn" style="
-          flex: 1;
-          padding: 10px;
-          background: #f0f0f0;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 14px;
-        ">取消</button>
-        <button id="confirm-btn" style="
-          flex: 1;
-          padding: 10px;
-          background: #61A2Da;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 14px;
-        ">确认</button>
-      </div>
-    `;
-    
-    modalDiv.appendChild(contentDiv);
-    document.body.appendChild(modalDiv);
-    
-    const nameInput = contentDiv.querySelector('#new-tag-name');
-    const colorInput = contentDiv.querySelector('#new-tag-color');
-    
-    const confirmBtn = contentDiv.querySelector('#confirm-btn');
-    confirmBtn.onclick = () => {
-      const tagName = nameInput.value.trim();
-      if (tagName) {
-        if (!editData.tags?.some(t => t.name === tagName)) {
-          setEditData({
-            ...editData,
-            tags: [...(editData.tags || []), { 
-              name: tagName, 
-              color: colorInput.value,
-              textColor: '#fff'
-            }]
-          });
-        } else {
-          alert('标签已存在');
-        }
-      }
-      document.body.removeChild(modalDiv);
-    };
-    
-    const cancelBtn = contentDiv.querySelector('#cancel-btn');
-    cancelBtn.onclick = () => {
-      document.body.removeChild(modalDiv);
-    };
-    
-    modalDiv.onclick = (e) => {
-      if (e.target === modalDiv) {
-        document.body.removeChild(modalDiv);
-      }
-    };
-    
-    setTimeout(() => nameInput.focus(), 50);
-  }}
-  style={{
-    height: '28px',
-    padding: '0 10px',
-    borderRadius: '16px',
-    
-    color: '#999',
-   
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    transition: 'none',
-    lineHeight: 1
-  }}
-  title="添加自定义标签"
->
-  +
-</span>
-
-
-
-  </div>
+          gap: '6px'
+        }}>
+          {tag.name}
+          <span
+            onClick={() => {
+              const newTags = formData.tags.filter((_, i) => i !== idx);
+              setFormData({ ...formData, tags: newTags });
+            }}
+            style={{ cursor: 'pointer', fontSize: '12px' }}
+          >
+            ×
+          </span>
+        </span>
+      ))}
+    </div>
+  )}
 </div>
 
 
@@ -12184,7 +13272,7 @@ const getSubjectColor = (subject) => {
     </button>
   </div>
       
-      <div style={{
+ <div style={{
   display: 'flex',
   gap: '2px',
   marginBottom: 15,
@@ -12196,11 +13284,11 @@ const getSubjectColor = (subject) => {
   <div
     onClick={() => setActiveTab('time')}
     style={{
-      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
-      fontSize: '13px',     // 从 14px 改为 13px
+      padding: '4px 12px',
+      fontSize: '13px',
       cursor: 'pointer',
-      backgroundColor: activeTab === 'time' ? '#fff' : '#f0f0f0',
-      color: activeTab === 'time' ? '#61A2Da' : '#666',
+      backgroundColor: activeTab === 'time' ? '#61A2Da' : '#f0f0f0',
+      color: activeTab === 'time' ? '#fff' : '#666',
       borderTopLeftRadius: '8px',
       borderTopRightRadius: '8px',
       borderBottom: activeTab === 'time' ? '2px solid #61A2Da' : 'none',
@@ -12214,11 +13302,11 @@ const getSubjectColor = (subject) => {
   <div
     onClick={() => setActiveTab('endTime')}
     style={{
-      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
-      fontSize: '13px',     // 从 14px 改为 13px
+      padding: '4px 12px',
+      fontSize: '13px',
       cursor: 'pointer',
-      backgroundColor: activeTab === 'endTime' ? '#fff' : '#f0f0f0',
-      color: activeTab === 'endTime' ? '#61A2Da' : '#666',
+      backgroundColor: activeTab === 'endTime' ? '#61A2Da' : '#f0f0f0',
+      color: activeTab === 'endTime' ? '#fff' : '#666',
       borderTopLeftRadius: '8px',
       borderTopRightRadius: '8px',
       borderBottom: activeTab === 'endTime' ? '2px solid #61A2Da' : 'none',
@@ -12232,11 +13320,11 @@ const getSubjectColor = (subject) => {
   <div
     onClick={() => setActiveTab('review')}
     style={{
-      padding: '4px 12px',  // 从 8px 16px 改为 4px 12px
-      fontSize: '13px',     // 从 14px 改为 13px
+      padding: '4px 12px',
+      fontSize: '13px',
       cursor: 'pointer',
-      backgroundColor: activeTab === 'review' ? '#fff' : '#f0f0f0',
-      color: activeTab === 'review' ? '#61A2Da' : '#666',
+      backgroundColor: activeTab === 'review' ? '#61A2Da' : '#f0f0f0',
+      color: activeTab === 'review' ? '#fff' : '#666',
       borderTopLeftRadius: '8px',
       borderTopRightRadius: '8px',
       borderBottom: activeTab === 'review' ? '2px solid #61A2Da' : 'none',
@@ -12247,16 +13335,14 @@ const getSubjectColor = (subject) => {
   >
     复盘记录
   </div>
-
-{/* 👇 添加这个 */}
   <div
     onClick={() => setActiveTab('abandon')}
     style={{
       padding: '4px 12px',
       fontSize: '13px',
       cursor: 'pointer',
-      backgroundColor: activeTab === 'abandon' ? '#fff' : '#f0f0f0',
-      color: activeTab === 'abandon' ? '#61A2Da' : '#666',
+      backgroundColor: activeTab === 'abandon' ? '#61A2Da' : '#f0f0f0',
+      color: activeTab === 'abandon' ? '#fff' : '#666',
       borderTopLeftRadius: '8px',
       borderTopRightRadius: '8px',
       borderBottom: activeTab === 'abandon' ? '2px solid #61A2Da' : 'none',
@@ -12267,9 +13353,6 @@ const getSubjectColor = (subject) => {
   >
     放弃原因
   </div>
-
-
-
 </div>
       
      <DateFilterButtons />
@@ -13514,12 +14597,21 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
-
+const [showSubjectGuideModal, setShowSubjectGuideModal] = useState(false);
 const [showCustomConfirm, setShowCustomConfirm] = useState(null);
 // 在 focusTaskTemplates 相关状态后面添加
 const [newTaskTargetCategory, setNewTaskTargetCategory] = useState('校内');
 const [newTaskTargetSubCategory, setNewTaskTargetSubCategory] = useState('');
+// 👇 在这行下面添加
+const [globalCustomTags, setGlobalCustomTags] = useState(() => {
+  const saved = localStorage.getItem('subject_guide_custom_tags');
+  return saved ? JSON.parse(saved) : [];
+});
 
+// 保存到 localStorage
+useEffect(() => {
+  localStorage.setItem('subject_guide_custom_tags', JSON.stringify(globalCustomTags));
+}, [globalCustomTags]);
 const [showTimeEditModal, setShowTimeEditModal] = useState(null);
 const [showTemplateList, setShowTemplateList] = useState(false);
 // 在 App 组件中，其他 useState 附近添加
@@ -14256,6 +15348,18 @@ if (backupData.focusTaskTemplates) {
   localStorage.setItem('focus_task_templates', JSON.stringify(backupData.focusTaskTemplates));
 }
 
+    // ✅ 新增：恢复科目指导数据
+    if (backupData.subjectGuideEntries) {
+      setSubjectGuideEntries(backupData.subjectGuideEntries);
+      localStorage.setItem('subject_guide_entries', JSON.stringify(backupData.subjectGuideEntries));
+      console.log('📚 恢复科目指导数据:', Object.keys(backupData.subjectGuideEntries).length, '个科目');
+    }
+
+    // 👇 在这下面添加
+if (backupData.subjectGuideCustomTags) {
+  setGlobalCustomTags(backupData.subjectGuideCustomTags);
+  localStorage.setItem('subject_guide_custom_tags', JSON.stringify(backupData.subjectGuideCustomTags));
+}
 // 恢复关注任务完成状态
 if (backupData.focusTaskStatus) {
   setFocusTaskStatus(backupData.focusTaskStatus);
@@ -14423,6 +15527,8 @@ const syncToGitHub = useCallback(async (silent = false) => {
       }
     });
 
+     const subjectGuideEntries = localStorage.getItem('subject_guide_entries');
+
     // 收集所有需要同步的数据
     const syncData = {
       tasksByDate,
@@ -14438,6 +15544,8 @@ const syncToGitHub = useCallback(async (silent = false) => {
       reminderText: reminderText,
       taskOrders: allTaskOrders,
       subCategoryOrders: allSubCategoryOrders,
+      subjectGuideCustomTags: globalCustomTags,
+       subjectGuideEntries: subjectGuideEntries ? JSON.parse(subjectGuideEntries) : {},
       syncTime: new Date().toISOString(),
       version: '2.3',
       lastSelectedDate: selectedDate,
@@ -19117,6 +20225,7 @@ const handleExportData = async () => {
       focusTaskTemplates: focusTaskTemplates,
   focusTaskStatus: focusTaskStatus,
       monthTasks: monthTasks || [],
+      subjectGuideEntries: subjectGuideEntries ? JSON.parse(subjectGuideEntries) : {},
       reminderText: reminderText || '',  // 添加这行
       exportDate: new Date().toISOString(),
       version: '2.2'  // 更新版本号
@@ -19326,7 +20435,15 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
  
-   
+ 
+{showSubjectGuideModal && (
+  <SubjectGuideModal
+    onClose={() => setShowSubjectGuideModal(false)}
+    isVisible={showSubjectGuideModal}
+    customTags={globalCustomTags}
+    setCustomTags={setGlobalCustomTags}
+  />
+)}
 
     {showGradeModal && (
       <GradeModal 
@@ -19614,6 +20731,7 @@ if (isInitialized && todayTasks.length === 0) {
   position: "relative",
   textAlign: "center",
   marginBottom: 15,
+  
   padding: "0 40px"
 }}>
   {/* 右上角成绩记录按钮 */}
@@ -19645,6 +20763,31 @@ if (isInitialized && todayTasks.length === 0) {
     </svg>
   </button>
 
+{/* 科目指导按钮 - 放在统计汇总和成绩记录之间 */}
+<button
+  onClick={() => setShowSubjectGuideModal(true)}
+  style={{
+    position: "absolute",
+    top: 0,
+    right: 78,  // 统计汇总按钮在42，成绩记录在0，中间留36px
+    width: 36,
+    height: 36,
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    padding: 0
+  }}
+  title="科目指导"
+>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="5" width="18" height="14" rx="1" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+    <line x1="12" y1="5" x2="12" y2="19" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+</button>
   {/* 统计汇总按钮 - 放在成绩记录按钮左侧 */}
   <button
     onClick={() => setShowStats(true)}
@@ -19654,6 +20797,7 @@ if (isInitialized && todayTasks.length === 0) {
       right: 42,  // 成绩记录按钮宽度36 + 间距6
       width: 36,
       height: 36,
+      marginRight:"-7px",
       backgroundColor: "transparent",
       border: "none",
       cursor: "pointer",
@@ -19665,13 +20809,14 @@ if (isInitialized && todayTasks.length === 0) {
     }}
     title="统计汇总"
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 饼图图标 - 蓝色 */}
-      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <path d="M12 2 A10 10 0 0 1 19.07 7.07 L12 12 Z" fill="#61A2Da" fillOpacity="0.8"/>
-      <path d="M12 2 A10 10 0 0 0 4.93 7.07 L12 12 Z" fill="#61A2Da" fillOpacity="0.4"/>
-    </svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+    <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#61A2Da" stroke="none"/>
+  </svg>
   </button>
+
+
+
 
   {/* 左上角奖杯按钮 */}
   <button
@@ -19758,6 +20903,7 @@ if (isInitialized && todayTasks.length === 0) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+     marginRight: "-6px",
     flexShrink: 0,
     color: "#61A2Da"
   }}
@@ -19778,6 +20924,7 @@ if (isInitialized && todayTasks.length === 0) {
       transition: "background-color 0.2s",
       display: "inline-block",
       lineHeight: "16px",
+      
       verticalAlign: "middle",
       color: "#61A2Da"       // ← 添加文字颜色
     }}
@@ -19805,6 +20952,7 @@ if (isInitialized && todayTasks.length === 0) {
     width: "24px",
     height: "24px",
     display: "flex",
+    marginLeft: "-6px",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
@@ -20962,6 +22110,42 @@ if (isInitialized && todayTasks.length === 0) {
   }
 }
   
+ /* 👇 添加这些样式 - 主界面显示复选框和列表 */
+  /* 列表样式 */
+  ul, ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+  }
+  ul li {
+    list-style-type: disc;
+  }
+  ol li {
+    list-style-type: decimal;
+  }
+  
+  /* 复选框样式 */
+  input[type="checkbox"] {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 8px 0 0 !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+  }
+  
+  /* 确保编辑器外部的列表也正常显示 */
+  [contenteditable="false"] ul,
+  [contenteditable="false"] ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+  }
+  [contenteditable="false"] ul li {
+    list-style-type: disc;
+  }
+  [contenteditable="false"] ol li {
+    list-style-type: decimal;
+  }
+
 
   /* 🎉 撒花放大动画 */
 @keyframes confettiPop {
@@ -22775,6 +23959,13 @@ const getCategoryBorderColor = () => {
     reader.onload = async (event) => {
       try {
         const importedData = JSON.parse(event.target.result);
+
+
+          // ✅ 新增：恢复科目指导数据
+    if (importedData.subjectGuideEntries) {
+      localStorage.setItem('subject_guide_entries', JSON.stringify(importedData.subjectGuideEntries));
+      // 如果 SubjectGuideModal 组件有状态需要同步，可以在这里 setState
+    }
 
         if (!importedData.tasks || !importedData.version) {
           throw new Error('无效的数据文件格式');
