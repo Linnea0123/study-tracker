@@ -3645,43 +3645,45 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
   </div>
 </div>
 
-      {/* 评分选择 - 使用 div 避开全局 CSS */}
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '13px', fontWeight: 'bold' }}>今日状态</label>
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-          {[
-            { value: 1, emoji: '😞' },
-            { value: 2, emoji: '😕'},
-            { value: 3, emoji: '😐' },
-            { value: 4, emoji: '😊' },
-            { value: 5, emoji: '🥳' }
-          ].map((item) => (
-            <div
-              key={item.value}
-              onClick={() => {
-                console.log('点击评分:', item.value);
-                setRating(item.value);
-              }}
-              style={{
-                flex: 1,
-                padding: '8px 0',
-                borderRadius: 8,
-                backgroundColor: rating === item.value ? '#FFD700' : '#f1f3f4',
-                fontSize: 24,
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px'
-              }}
-            >
-              <span>{item.emoji}</span>
-              <span style={{ fontSize: 10, color: '#666' }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
+   
+{/* 评分选择 - 使用 div 避开全局 CSS */}
+<div style={{ marginBottom: '16px' }}>
+  <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '13px', fontWeight: 'bold' }}>今日状态</label>
+  <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+    {[
+      { value: 1, emoji: '😞', label: '很差' },
+      { value: 2, emoji: '😕', label: '较差' },
+      { value: 3, emoji: '😐', label: '一般' },
+      { value: 4, emoji: '😊', label: '不错' },
+      { value: 5, emoji: '🥳', label: '超棒' }
+    ].map((item) => (
+      <div
+        key={item.value}
+        onClick={() => {
+          console.log('点击评分:', item.value);
+          setRating(item.value);
+        }}
+        style={{
+          flex: 1,
+          padding: '8px 0',
+          borderRadius: 8,
+          backgroundColor: rating === item.value ? '#FFD700' : '#f1f3f4',
+          fontSize: 24,
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px'
+        }}
+      >
+        <span>{item.emoji}</span>
+        <span style={{ fontSize: 10, color: '#666' }}>{item.label}</span>
       </div>
+    ))}
+  </div>
+</div>
+
 
       {/* 按钮区域 */}
       <div style={{ display: 'flex', gap: '8px' }}>
@@ -15020,7 +15022,20 @@ const isAddingTask = useRef(false);
   const [showDailyLogModal, setShowDailyLogModal] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [dailyRatings, setDailyRatings] = useState({});
+  const [dailyRatings, setDailyRatings] = useState(() => {
+  const saved = localStorage.getItem(`${STORAGE_KEY}_dailyRatings`);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      console.log('📖 加载评分数据:', parsed);
+      return parsed;
+    } catch (e) {
+      console.error('解析评分数据失败:', e);
+      return {};
+    }
+  }
+  return {};
+});
   const [dailyReflections, setDailyReflections] = useState({});
   
   const [showCrossDateModal, setShowCrossDateModal] = useState(null);
@@ -15196,7 +15211,9 @@ const [syncConfig, setSyncConfig] = useState({
 // 获取当前日期的心情和评价
 
 const getCurrentDailyRating = useCallback(() => {
-  return dailyRatings[selectedDate] || 0;
+  const rating = dailyRatings[selectedDate] || 0;
+  console.log('📖 读取评分:', selectedDate, rating);
+  return rating;
 }, [dailyRatings, selectedDate]);
 
 
@@ -15225,11 +15242,18 @@ const handleDeleteImage = (task) => {
 
 // 设置当前日期的评价
 
+// 设置当前日期的评价
 const setCurrentDailyRating = (rating) => {
-  setDailyRatings(prev => ({
-    ...prev,
-    [selectedDate]: rating
-  }));
+  setDailyRatings(prev => {
+    const newRatings = {
+      ...prev,
+      [selectedDate]: rating
+    };
+    // ✅ 立即保存到 localStorage
+    localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(newRatings));
+    console.log('💾 保存评分:', selectedDate, rating);
+    return newRatings;
+  });
 };
 
 const dailyRating = getCurrentDailyRating();
@@ -17633,6 +17657,14 @@ useEffect(() => {
     saveMainData('tasks', tasksByDate);
   }
 }, [tasksByDate, isInitialized]);
+
+// 保存每日评分到 localStorage
+useEffect(() => {
+  if (isInitialized) {
+    localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(dailyRatings));
+    console.log('💾 自动保存评分:', dailyRatings);
+  }
+}, [dailyRatings, isInitialized]);
 
 
 // 每天第一次打开页面自动同步到云端
@@ -21275,7 +21307,12 @@ if (isInitialized && todayTasks.length === 0) {
       </div>
       
       {/* 日期 */}
-      <div style={{ fontSize: 10 }}>{d.date.slice(5)}</div>
+      <div style={{ 
+  fontSize: 10,
+  fontFamily: 'sans-serif'  // 添加这行
+}}>
+  {d.date.slice(5)}
+</div>
       
       {/* 任务数量显示 */}
       {showNumber && (
