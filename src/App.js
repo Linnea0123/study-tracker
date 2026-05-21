@@ -21172,7 +21172,6 @@ if (isInitialized && todayTasks.length === 0) {
     }
   };
   
-  // ========== 修改这里：跨日期任务只要完成就算完成 ==========
   // 筛选有效任务（排除本周任务和未完成的常规任务）
   const learningTasks = dayTasks.filter(task => {
     if (task.category === "本周任务") return false;
@@ -21196,7 +21195,7 @@ if (isInitialized && todayTasks.length === 0) {
       return;
     }
     
-    // ✅ 跨日期任务：检查是否有任意一天完成
+    // 跨日期任务：检查是否有任意一天完成
     if (task.crossDateId) {
       totalCount++;
       
@@ -21308,49 +21307,77 @@ if (isInitialized && todayTasks.length === 0) {
       
       {/* 日期 */}
       <div style={{ 
-  fontSize: 10,
-  fontFamily: 'sans-serif'  // 添加这行
-}}>
-  {d.date.slice(5)}
-</div>
+        fontSize: 10,
+        fontFamily: 'sans-serif'
+      }}>
+        {d.date.slice(5)}
+      </div>
       
-      {/* 任务数量显示 */}
+      {/* 任务数量显示 - 改成带外框的标签样式 */}
       {showNumber && (
         <div style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "4px",
-          marginTop: "2px"
+          marginTop: "4px"
         }}>
           <div style={{
-            width: "6px",
-            height: "6px",
-            borderRadius: "50%",
-            backgroundColor: dotColor
-          }} />
-          <span style={{
-            fontSize: "9px",
-            fontWeight: "bold",
-            color: numberColor
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "3px",
+            padding: "1px 6px",
+            backgroundColor: "#fff",
+            borderRadius: "4px",
+            border: `1px solid ${numberColor}`,
+            minWidth: "38px"
           }}>
-            {completedCount}/{totalCount}
-          </span>
+            <div style={{
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              backgroundColor: dotColor
+            }} />
+            <span style={{
+              fontSize: "9px",
+              fontWeight: "bold",
+              color: numberColor
+            }}>
+              {completedCount}/{totalCount}
+            </span>
+          </div>
         </div>
       )}
       
-      {/* 结束时间显示 */}
+      {/* 结束时间显示 - 改成带外框的标签样式 */}
       {studyEndTime && (() => {
         const [hour, minute] = studyEndTime.split(':').map(Number);
         const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
         return (
           <div style={{
-            fontSize: "8px",
-            color: isAfter9PM ? "#f44336" : "#999",
-            marginTop: "2px",
-            whiteSpace: "nowrap"
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: "2px"
           }}>
-            {studyEndTime}
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1px 6px",
+              backgroundColor: "#fff",
+              borderRadius: "4px",
+              border: `1px solid ${isAfter9PM ? "#f44336" : "#4caf50"}`,
+              minWidth: "35px"
+            }}>
+              <span style={{
+                fontSize: "8px",
+                fontWeight: "500",
+                color: isAfter9PM ? "#f44336" : "#4caf50"
+              }}>
+                {studyEndTime}
+              </span>
+            </div>
           </div>
         );
       })()}
@@ -21358,7 +21385,6 @@ if (isInitialized && todayTasks.length === 0) {
   );
 })}
 </div>
-
 
 
 
