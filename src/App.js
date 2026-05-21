@@ -2682,233 +2682,140 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
                   />
                 </div>
                 
-    {/* 标签区域 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    标签
-  </label>
-  
-  <div style={{
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-    alignItems: 'center'
-  }}>
-    {/* 预设标签 */}
-    {commonTags.map((tag, idx) => {
-      const isSelected = formData.tags.includes(tag);
-      return (
-        <span
-          key={idx}
-          onClick={() => {
-            if (isSelected) {
-              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
-            } else {
-              setFormData({ ...formData, tags: [...formData.tags, tag] });
-            }
-          }}
-          style={{
-            fontSize: '12px',
-            padding: '4px 10px',
-            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
-            color: isSelected ? '#fff' : '#999',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            border: `1px solid ${isSelected ? '#61A2Da' : '#e0e0e0'}`
-          }}
-        >
-          {tag}
-        </span>
-      );
-    })}
-    
-    {/* 自定义标签 */}
-    {customTags.map((tag, idx) => {
-      const isSelected = formData.tags.includes(tag.name);
-      return (
-        <span
-          key={`custom_${idx}`}
-          onClick={() => {
-            if (isSelected) {
-              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag.name) });
-            } else {
-              setFormData({ ...formData, tags: [...formData.tags, tag.name] });
-            }
-          }}
-          style={{
-            fontSize: '12px',
-            padding: '4px 10px',
-            backgroundColor: isSelected ? tag.color : '#f0f0f0',
-            color: isSelected ? '#fff' : '#999',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
-          }}
-        >
-          {tag.name}
-        </span>
-      );
-    })}
-    
-    {/* 添加自定义标签按钮 - 带颜色选择 */}
-    <span
-      onClick={() => {
-        const modalDiv = document.createElement('div');
-        modalDiv.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 10000;
-        `;
-        
-        const contentDiv = document.createElement('div');
-        contentDiv.style.cssText = `
-          background: white;
-          padding: 20px;
-          border-radius: 16px;
-          width: 280px;
-          text-align: center;
-        `;
-        
-        contentDiv.innerHTML = `
-          <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">添加新标签</h3>
-          <input id="new-tag-name" type="text" placeholder="标签名称" style="
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-          ">
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-            <span style="font-size: 13px; color: #666;">标签颜色：</span>
-            <input id="new-tag-color" type="color" value="#61A2Da" style="
-              width: 40px;
-              height: 40px;
-              border: 1px solid #ccc;
-              border-radius: 8px;
-              cursor: pointer;
-            ">
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button id="cancel-btn" style="
-              flex: 1;
-              padding: 10px;
-              background: #f0f0f0;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 14px;
-            ">取消</button>
-            <button id="confirm-btn" style="
-              flex: 1;
-              padding: 10px;
-              background: #61A2Da;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 14px;
-            ">确认</button>
-          </div>
-        `;
-        
-        modalDiv.appendChild(contentDiv);
-        document.body.appendChild(modalDiv);
-        
-        const nameInput = contentDiv.querySelector('#new-tag-name');
-        const colorInput = contentDiv.querySelector('#new-tag-color');
-        
-        const confirmBtn = contentDiv.querySelector('#confirm-btn');
-        confirmBtn.onclick = () => {
-          const tagName = nameInput.value.trim();
-          if (tagName) {
-            if (!customTags.some(t => t.name === tagName)) {
-              const newTag = { name: tagName, color: colorInput.value, textColor: '#fff' };
-              setCustomTags(prev => [...prev, newTag]);
-            } else {
-              alert('标签已存在');
-            }
-          }
-          document.body.removeChild(modalDiv);
-        };
-        
-        const cancelBtn = contentDiv.querySelector('#cancel-btn');
-        cancelBtn.onclick = () => {
-          document.body.removeChild(modalDiv);
-        };
-        
-        modalDiv.onclick = (e) => {
-          if (e.target === modalDiv) {
-            document.body.removeChild(modalDiv);
-          }
-        };
-        
-        setTimeout(() => nameInput.focus(), 50);
-      }}
-      style={{
-        height: '28px',
-        padding: '0 10px',
-        borderRadius: '16px',
-        color: '#999',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        lineHeight: 1
-      }}
-      title="添加自定义标签"
-    >
-      +
-    </span>
-  </div>
-  
-  {/* 显示当前选中的标签 */}
-  {formData.tags.length > 0 && (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-      {formData.tags.map((tag, idx) => {
-        const tagColor = customTags.find(t => t.name === tag)?.color || '#61A2Da';
-        return (
-          <span key={idx} style={{
-            fontSize: '11px',
-            padding: '2px 8px',
-            backgroundColor: tagColor,
-            color: '#fff',
-            borderRadius: '12px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            {tag}
-            <span
-              onClick={() => {
-                setFormData({ ...formData, tags: formData.tags.filter((_, i) => i !== idx) });
-              }}
-              style={{ cursor: 'pointer', fontSize: '12px' }}
-            >
-              ×
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  )}
-</div>
+                {/* 标签区域 */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: 8,
+                    fontWeight: '600',
+                    color: '#333',
+                    fontSize: 14
+                  }}>
+                    标签
+                  </label>
+                  
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '6px',
+                    alignItems: 'center'
+                  }}>
+                    {/* 预设标签 */}
+                    {commonTags.map((tag, idx) => {
+                      const isSelected = formData.tags.includes(tag);
+                      return (
+                        <span
+                          key={idx}
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+                            } else {
+                              setFormData({ ...formData, tags: [...formData.tags, tag] });
+                            }
+                          }}
+                          style={{
+                            fontSize: '12px',
+                            padding: '4px 10px',
+                            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
+                            color: isSelected ? '#fff' : '#999',
+                            borderRadius: '16px',
+                            cursor: 'pointer',
+                            border: `1px solid ${isSelected ? '#61A2Da' : '#e0e0e0'}`
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                    
+                    {/* 自定义标签 */}
+                    {customTags.map((tag, idx) => {
+                      const isSelected = formData.tags.includes(tag.name);
+                      return (
+                        <span
+                          key={`custom_${idx}`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag.name) });
+                            } else {
+                              setFormData({ ...formData, tags: [...formData.tags, tag.name] });
+                            }
+                          }}
+                          style={{
+                            fontSize: '12px',
+                            padding: '4px 10px',
+                            backgroundColor: isSelected ? tag.color : '#f0f0f0',
+                            color: isSelected ? '#fff' : '#999',
+                            borderRadius: '16px',
+                            cursor: 'pointer',
+                            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
+                          }}
+                        >
+                          {tag.name}
+                        </span>
+                      );
+                    })}
+                    
+                    {/* 添加自定义标签按钮 */}
+                    <span
+                      onClick={() => {
+                        const newTagName = window.prompt('输入新标签名称:');
+                        if (newTagName && newTagName.trim()) {
+                          if (!customTags.some(t => t.name === newTagName.trim())) {
+                            setCustomTags(prev => [...prev, { name: newTagName.trim(), color: '#61A2Da', textColor: '#fff' }]);
+                          } else {
+                            alert('标签已存在');
+                          }
+                        }
+                      }}
+                      style={{
+                        height: '28px',
+                        padding: '0 10px',
+                        borderRadius: '16px',
+                        color: '#999',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        lineHeight: 1
+                      }}
+                      title="添加自定义标签"
+                    >
+                      +
+                    </span>
+                  </div>
+                  
+                  {/* 显示当前选中的标签 */}
+                  {formData.tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                      {formData.tags.map((tag, idx) => (
+                        <span key={idx} style={{
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          backgroundColor: customTags.find(t => t.name === tag)?.color || '#61A2Da',
+                          color: '#fff',
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          {tag}
+                          <span
+                            onClick={() => {
+                              setFormData({ ...formData, tags: formData.tags.filter((_, i) => i !== idx) });
+                            }}
+                            style={{ cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            ×
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
                 {/* 重要标记 */}
                 <div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -3120,7 +3027,6 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
     </div>
   );
 };
-
 
 
 
@@ -14609,7 +14515,17 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
+// 在 App 组件中，其他 useState 定义附近添加（大约在第 5300 行）
 const [showSubjectGuideModal, setShowSubjectGuideModal] = useState(false);
+// 在 App 组件中，其他 useState 定义附近添加
+const [subjectGuideEntries, setSubjectGuideEntries] = useState(() => {
+  const saved = localStorage.getItem('subject_guide_entries');
+  return saved ? JSON.parse(saved) : {};
+});
+
+useEffect(() => {
+  localStorage.setItem('subject_guide_entries', JSON.stringify(subjectGuideEntries));
+}, [subjectGuideEntries]);
 const [showCustomConfirm, setShowCustomConfirm] = useState(null);
 // 在 focusTaskTemplates 相关状态后面添加
 const [newTaskTargetCategory, setNewTaskTargetCategory] = useState('校内');
