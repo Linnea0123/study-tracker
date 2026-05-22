@@ -27,6 +27,18 @@ const GradeModal = ({ onClose, isVisible }) => {
 
   const mainSubjects = ['数学', '语文', '英语'];
   
+
+
+// 在现有的 useState 后面添加以下代码
+
+// 测试内容历史记录
+const [testContentHistory, setTestContentHistory] = useState(() => {
+  const saved = localStorage.getItem('grade_test_content_history');
+  return saved ? JSON.parse(saved) : [];
+});
+const [showHistorySuggestions, setShowHistorySuggestions] = useState(false);
+const [filteredHistory, setFilteredHistory] = useState([]);
+
   const [subjectSubCategories, setSubjectSubCategories] = useState(() => {
     const saved = localStorage.getItem('grade_subcategories');
     return saved ? JSON.parse(saved) : {};
@@ -213,43 +225,85 @@ const GradeModal = ({ onClose, isVisible }) => {
       console.error('保存成绩数据失败:', error);
     }
   };
+// 在 saveGrades 函数后面添加以下代码
+
+// 保存测试内容到历史记录
+const saveToHistory = (content) => {
+  if (!content || !content.trim()) return;
+  
+  setTestContentHistory(prev => {
+    const filtered = prev.filter(item => item !== content.trim());
+    const newHistory = [content.trim(), ...filtered];
+    const limited = newHistory.slice(0, 10);
+    localStorage.setItem('grade_test_content_history', JSON.stringify(limited));
+    return limited;
+  });
+};
+
+// 处理测试内容输入变化
+const handleTestContentChange = (value) => {
+  setNewGrade({ ...newGrade, testContent: value });
+  
+  if (value.trim()) {
+    const filtered = testContentHistory.filter(item => 
+      item.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredHistory(filtered);
+    setShowHistorySuggestions(filtered.length > 0);
+  } else {
+    setFilteredHistory(testContentHistory);
+    setShowHistorySuggestions(testContentHistory.length > 0);
+  }
+};
+
+// 选择历史记录
+const selectHistoryItem = (item) => {
+  setNewGrade({ ...newGrade, testContent: item });
+  setShowHistorySuggestions(false);
+};
+
 
   // 重置表单
-  const resetNewGradeForm = () => {
-    setNewGrade({
-      date: new Date().toISOString().split('T')[0],
-      subject: selectedSubject,
-      subCategory: '',
-      testContent: '',
-      score: '',
-      scoreType: '100分制',
-      fullScore: '100',
-      wrongQuestions: '',
-      analysis: ''
-    });
-  };
+  // 1. 修改 resetNewGradeForm 函数定义
+const resetNewGradeForm = (subject, subCategory) => {
+  setNewGrade({
+    date: new Date().toISOString().split('T')[0],
+    subject: subject,          // 使用传入的科目
+    subCategory: subCategory || '',  // 使用传入的子分类
+    testContent: '',
+    score: '',
+    scoreType: '100分制',
+    fullScore: '100',
+    wrongQuestions: '',
+    analysis: ''
+  });
+};
 
   // 添加新成绩记录
-  const handleAddGrade = () => {
-    if (!newGrade.testContent || !newGrade.score) {
-      alert('请填写测试内容和得分');
-      return;
-    }
+// 修改 handleAddGrade 函数
+const handleAddGrade = () => {
+  if (!newGrade.testContent || !newGrade.score) {
+    alert('请填写测试内容和得分');
+    return;
+  }
 
-    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // 👇 添加这一行：保存测试内容到历史记录
+  saveToHistory(newGrade.testContent);
 
-    const updatedGrades = [...grades, {
-      id: uniqueId,
-      ...newGrade,
-      subCategory: newGrade.subCategory || '未分类',
-      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-    }];
-    
-    saveGrades(updatedGrades);
-    resetNewGradeForm();
-    setShowAddForm(false);
-    setEditingGrade(null);
-  };
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const updatedGrades = [...grades, {
+    id: uniqueId,
+    ...newGrade,
+    subCategory: newGrade.subCategory || '未分类',
+    isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+  }];
+  
+  saveGrades(updatedGrades);
+  resetNewGradeForm(selectedSubject, selectedSubCategory);
+  setShowAddForm(false);
+  setEditingGrade(null);
+};
 
   // 开始编辑成绩
   const handleEditGrade = (grade) => {
@@ -270,26 +324,30 @@ const GradeModal = ({ onClose, isVisible }) => {
   };
 
   // 保存编辑后的成绩
-  const handleSaveEditGrade = () => {
-    if (!newGrade.testContent || !newGrade.score) {
-      alert('请填写测试内容和得分');
-      return;
-    }
+ // 修改 handleSaveEditGrade 函数
+const handleSaveEditGrade = () => {
+  if (!newGrade.testContent || !newGrade.score) {
+    alert('请填写测试内容和得分');
+    return;
+  }
 
-    const updatedGrades = grades.map(grade => 
-      grade.id === editingGrade.id ? {
-        ...grade,
-        ...newGrade,
-        subCategory: newGrade.subCategory || '未分类',
-        isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-      } : grade
-    );
-    
-    saveGrades(updatedGrades);
-    resetNewGradeForm();
-    setShowAddForm(false);
-    setEditingGrade(null);
-  };
+  // 👇 添加这一行：保存测试内容到历史记录
+  saveToHistory(newGrade.testContent);
+
+  const updatedGrades = grades.map(grade => 
+    grade.id === editingGrade.id ? {
+      ...grade,
+      ...newGrade,
+      subCategory: newGrade.subCategory || '未分类',
+      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+    } : grade
+  );
+  
+  saveGrades(updatedGrades);
+  resetNewGradeForm(selectedSubject, selectedSubCategory);
+  setShowAddForm(false);
+  setEditingGrade(null);
+};
 
   // 删除成绩记录
   const handleDeleteGrade = (id) => {
@@ -656,35 +714,36 @@ button:focus-visible {
   alignItems: 'center',
   height: '28px'
 }}>
-  {/* 添加新成绩 - 加号图标（灰色） */}
-  <button
-    className="add-grade-btn icon-btn"
-    onClick={() => {
-      setShowAddForm(!showAddForm);
-      if (!showAddForm) {
-        resetNewGradeForm();
-        setEditingGrade(null);
-      }
-    }}
-    style={{
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      width: '28px',
-      height: '28px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-      borderRadius: '4px'
-    }}
-    title={showAddForm ? '取消添加' : '添加新成绩'}
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  </button>
+ {/* 2. 修改右上角添加按钮的 onClick */}
+<button
+  className="add-grade-btn icon-btn"
+  onClick={() => {
+    setShowAddForm(!showAddForm);
+    if (!showAddForm) {
+      // 传入当前选中的科目和子分类
+      resetNewGradeForm(selectedSubject, selectedSubCategory);
+      setEditingGrade(null);
+    }
+  }}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    borderRadius: '4px'
+  }}
+  title={showAddForm ? '取消添加' : '添加新成绩'}
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+</button>
 
   {/* 管理子分类 - 铅笔图标（灰色） */}
   <button
@@ -1293,26 +1352,71 @@ button:focus-visible {
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
-              测试内容
-            </label>
-            <input
-              type="text"
-              value={newGrade.testContent}
-              onChange={(e) => setNewGrade({...newGrade, testContent: e.target.value})}
-              placeholder="如：单元测试、期中考试等"
-              style={{
-                width: '100%',
-                height: '40px',
-                padding: '0 10px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+         {/* 测试内容 - 带历史提示 */}
+<div style={{ position: 'relative' }}>
+  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
+    测试内容
+  </label>
+  <input
+    type="text"
+    value={newGrade.testContent}
+    onChange={(e) => handleTestContentChange(e.target.value)}
+    onFocus={() => {
+      if (testContentHistory.length > 0 && !newGrade.testContent) {
+        setFilteredHistory(testContentHistory);
+        setShowHistorySuggestions(true);
+      }
+    }}
+    onBlur={() => {
+      setTimeout(() => setShowHistorySuggestions(false), 200);
+    }}
+    placeholder="如：单元测试、期中考试等"
+    style={{
+      width: '100%',
+      height: '40px',
+      padding: '0 10px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      boxSizing: 'border-box'
+    }}
+  />
+  
+  {/* 历史记录下拉提示 */}
+  {showHistorySuggestions && filteredHistory.length > 0 && (
+    <div style={{
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      backgroundColor: 'white',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      maxHeight: '200px',
+      overflowY: 'auto',
+      zIndex: 100,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      marginTop: '2px'
+    }}>
+      {filteredHistory.map((item, index) => (
+        <div
+          key={index}
+          onClick={() => selectHistoryItem(item)}
+          style={{
+            padding: '8px 12px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            borderBottom: index < filteredHistory.length - 1 ? '1px solid #f0f0f0' : 'none'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          {item}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
           <div style={{
             display: 'grid',
