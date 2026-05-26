@@ -9985,8 +9985,7 @@ const TaskMoveModal = ({ task, onClose, onMove, categories, tasksByDate }) => {
 };
 
 // 任务编辑模态框
-
-// 任务编辑模态框
+// TaskEditModal 组件 - 紧凑版样式修改
 const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTaskModal, onClose, onSave, onTogglePinned, onImageUpload, setShowDeleteModal, setCategories, onCancelAbandoned,  onMarkAbandoned }) => {
   const [editData, setEditData] = useState({
     text: task.text || '',
@@ -10152,9 +10151,7 @@ const abandonReasons = [
       overflow: 'hidden'
     }}>
 
- {/* ✅ 在这里添加 style 标签 */}
-   {/* ✅ 添加这个 style 标签，覆盖所有按钮样式 */}
-    <style>{`
+      <style>{`
       button.clear-reminder-btn,
       button.clear-reminder-btn:hover,
       button.clear-reminder-btn:active,
@@ -10178,9 +10175,10 @@ const abandonReasons = [
       }
     `}</style>
       
+      {/* 紧凑版模态框 - 减小内边距，缩小间距 */}
       <div style={{
         backgroundColor: 'white',
-        padding: '20px 15px',
+        padding: '12px 12px',  // 从 20px 15px 减小到 12px
         borderRadius: 16,
         width: '98%',
         maxWidth: 450,
@@ -10191,89 +10189,52 @@ const abandonReasons = [
         position: 'relative'
       }}>
 
-        {/* 标题栏 */}
-{/* 标题栏 */}
+        {/* 标题栏 - 紧凑版，靠近横线 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 20,
-  paddingBottom: 15,
-  borderBottom: "2px solid #f0f0f0"
+  marginBottom: '6px',      // 改小，靠近横线
+  paddingBottom: '4px',     // 改小，靠近横线
+  borderBottom: "1px solid #f0f0f0"
 }}>
   
-
-  {/* ✅ 按钮容器 - 固定间距，靠右，不自动拉伸 */}
   <div style={{ 
-  display: "flex", 
-  gap: "4px",
-  alignItems: "center",
-  flexShrink: 0,
-  flexWrap: "nowrap",
-  marginLeft: "auto"  // ← 添加这行，把自己推到右边
-}}>
-  
-{/* 在 TaskEditModal 的标题栏按钮区域，放弃按钮旁边添加 */}
-{task.abandoned && (
-  <button
-    onClick={() => {
-      if (window.confirm('确定要取消"做不完"标记吗？任务将恢复正常状态。')) {
-        // 调用取消放弃的函数
-        onCancelAbandoned(task);
-      }
-      onClose();
-    }}
-    style={{
-      width: '32px',
-      height: '32px',
-      padding: 0,
-      backgroundColor: 'transparent',
-      border: "none",
-      borderRadius: 6,
-      cursor: "pointer",
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }}
-    title="取消放弃，恢复正常"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
-      <path d="M8 12 L11 15 L16 9" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  </button>
-)}
+    display: "flex", 
+    gap: "2px",
+    alignItems: "center",
+    flexShrink: 0,
+    flexWrap: "nowrap",
+    marginLeft: "auto"
+  }}>
+    
+    {/* 1. 放弃按钮 */}
+    <button
+      onClick={() => {
+        setShowAbandonReason(true);
+      }}
+      style={{
+        width: '28px',
+        height: '28px',
+        padding: 0,
+        backgroundColor: 'transparent',
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+      title="标记为做不完"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+        <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
 
-
-  {/* 🚫 放弃按钮 - 蓝色禁止符号 */}
-{/* 🚫 放弃按钮 - 蓝色禁止符号 */}
-<button
-  onClick={() => {
-    setShowAbandonReason(true);  // 只打开弹窗，不做其他操作
-  }}
-  style={{
-    width: '32px',
-    height: '32px',
-    padding: 0,
-    backgroundColor: 'transparent',
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  }}
-  title="标记为做不完"
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
-    <line x1="6" y1="6" x2="18" y2="18" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-</button>
-
-    {/* 📅 跨日期按钮 */}
+    {/* 2. 跨日期按钮 */}
     <button
       onClick={() => {
         onClose();
@@ -10282,8 +10243,8 @@ const abandonReasons = [
         }, 100);
       }}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10307,7 +10268,7 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 📤 迁移任务按钮 */}
+    {/* 3. 迁移任务按钮 */}
     <button
       onClick={() => {
         onClose();
@@ -10316,8 +10277,8 @@ const abandonReasons = [
         }, 100);
       }}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10338,15 +10299,15 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 🔝 置顶按钮 */}
+    {/* 4. 置顶按钮 */}
     <button
       onClick={() => {
         onTogglePinned(task);
         setEditData({ ...editData, pinned: !editData.pinned });
       }}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10366,12 +10327,12 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 🗑️ 删除按钮 */}
+    {/* 5. 删除按钮 */}
     <button
       onClick={handleDelete}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10393,12 +10354,12 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 🖼️ 添加图片按钮 */}
+    {/* 6. 添加图片按钮 */}
     <button
       onClick={handleImageClick}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10418,12 +10379,12 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 保存按钮 */}
+    {/* 7. 保存按钮 */}
     <button
       onClick={handleSave}
       style={{
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         padding: 0,
         backgroundColor: 'transparent',
         border: "none",
@@ -10441,7 +10402,7 @@ const abandonReasons = [
       </svg>
     </button>
 
-    {/* 关闭按钮 */}
+    {/* 8. 关闭按钮 */}
     <button
       onClick={onClose}
       style={{
@@ -10466,667 +10427,637 @@ const abandonReasons = [
   </div>
 </div>
 
+        {/* 表单内容 - 紧凑版，减小所有间距 */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 16
+          gap: 8  // 从 16px 减小到 8px
         }}>
          
           {/* 任务内容 */}
-{/* 在 TaskEditModal 组件中，找到备注字段的位置，在它之前添加： */}
-
-{/* 任务内容 - 添加这个字段 */}
-{/* 任务内容 */}
-
-{/* 任务内容 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    📝 任务内容
-  </label>
-  <textarea
-    value={editData.text}
-    onChange={(e) => {
-      setEditData({ ...editData, text: e.target.value });
-      e.target.style.height = 'auto';
-      e.target.style.height = e.target.scrollHeight + 'px';
-    }}
-    placeholder="请输入任务内容..."
-    style={{
-      width: '100%',
-      padding: '8px 12px',
-      border: '2px solid #e0e0e0',
-      borderRadius: 8,
-      fontSize: 14,
-      backgroundColor: '#fafafa',
-      fontFamily: 'inherit',
-      boxSizing: 'border-box',
-      resize: 'none',
-      outline: 'none',
-      lineHeight: '1.4',
-      overflow: 'hidden'
-    }}
-    onFocus={(e) => {
-      e.target.style.borderColor = '#1a73e8';
-      e.target.style.backgroundColor = '#fff';
-      e.target.style.height = 'auto';
-      e.target.style.height = e.target.scrollHeight + 'px';
-    }}
-    onBlur={(e) => {
-      e.target.style.borderColor = '#e0e0e0';
-      e.target.style.backgroundColor = '#fafafa';
-    }}
-    rows="1"
-  />
-</div>
-
-{/* 备注字段保持原样放在后面 */}
-
-
-{/* 备注 */}
-{/* 备注 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    备注
-  </label>
-  <textarea
-  value={editData.note}
-  onChange={(e) => {
-    setEditData({ ...editData, note: e.target.value });
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-  }}
-  placeholder=""
-  style={{
-    width: '100%',
-    padding: '8px 12px',
-    border: '2px solid #e0e0e0',
-    borderRadius: 8,
-    fontSize: 14,
-    backgroundColor: '#fafafa',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    resize: 'none',
-    outline: 'none',
-    lineHeight: '1.4',
-    overflow: 'hidden'
-  }}
-  rows="1"
-/>
-</div>
-
-{/* 感想 */}
-{/* 感想 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    感想
-  </label>
-  {/* 感想 */}
-<textarea
-  value={editData.reflection}
-  onChange={(e) => {
-    setEditData({ ...editData, reflection: e.target.value });
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-  }}
-  placeholder=""
-  style={{
-    width: '100%',
-    padding: '8px 12px',
-    border: '2px solid #e0e0e0',
-    borderRadius: 8,
-    fontSize: 14,
-    backgroundColor: '#fafafa',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    resize: 'none',
-    outline: 'none',
-    lineHeight: '1.4',
-    overflow: 'hidden'
-  }}
-  rows="1"
-/>
-</div>
-
-         {/* 类别和子类别在同一行 */}
-<div
-  style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 16,
-    alignItems: 'start',
-    marginBottom: 8,
-  }}
->
-  {/* 任务类别 */}
-  <div>
-    <label
-      style={{
-        display: 'block',
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14,
-      }}
-    >
-      类别
-    </label>
-
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <select
-        value={editData.category}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            category: e.target.value,
-            subCategory: '',
-          })
-        }
-        style={{
-          flex: 1,
-          height: 36,
-          padding: '0 10px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-          boxSizing: 'border-box',
-        }}
-      >
-        {categories.map((cat) => (
-          <option key={cat.name} value={cat.name}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-
-      <button
-        type="button"
-        onClick={() => {
-          const newCategory = window.prompt('输入新类别名称:');
-          if (newCategory && newCategory.trim()) {
-            const exists = categories.find(cat => cat.name === newCategory.trim());
-            if (exists) {
-              alert('该类别已存在！');
-              return;
-            }
-            const newCat = {
-              name: newCategory.trim(),
-              color: '#1a73e8',
-              subCategories: []
-            };
-            const updatedCategories = [...categories, newCat];
-            setCategories(updatedCategories);
-            saveMainData('categories', updatedCategories);
-            setEditData({ ...editData, category: newCategory.trim() });
-            alert(`新类别 "${newCategory}" 添加成功！`);
-          }
-        }}
-        style={{
-          height: 36,
-          width: 36,
-          backgroundColor: '#f9f9f9',
-          color: '#333',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          cursor: 'pointer',
-          fontSize: 18,
-          fontWeight: 600,
-          lineHeight: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box',
-        }}
-        title="添加新类别"
-      >
-        +
-      </button>
-    </div>
-  </div>
-
-  {/* 子类别选择 - 仅校内类别显示 */}
-  {/* 子类别选择 - 仅校内类别显示 */}
-{(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
-  <div>
-    <label
-      style={{
-        display: 'block',
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14,
-      }}
-    >
-      子类别
-    </label>
-
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <select
-        value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
-        onChange={(e) => {
-          if (editData.isRegularTask) {
-            setEditData({ ...editData, targetSubCategory: e.target.value });
-          } else {
-            setEditData({ ...editData, subCategory: e.target.value });
-          }
-        }}
-        style={{
-          flex: 1,
-          height: 36,
-          padding: '0 10px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-          boxSizing: 'border-box',
-        }}
-      >
-        <option value="">选择</option>
-        {(() => {
-          // 从 props 传入的 categories 中获取校内子分类
-          const schoolCategory = categories.find(c => c.name === '校内');
-          const subCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
-          return subCategories.map(subCat => (
-            <option key={subCat} value={subCat}>
-              {subCat}
-            </option>
-          ));
-        })()}
-      </select>
-
-      {/* 添加子类别按钮 */}
-      <button
-        type="button"
-        onClick={() => {
-          const newSubCategory = window.prompt('输入新子类别名称:');
-          if (newSubCategory && newSubCategory.trim()) {
-            const schoolCategory = categories.find(c => c.name === '校内');
-            if (schoolCategory && schoolCategory.subCategories.includes(newSubCategory.trim())) {
-              alert('该子类别已存在！');
-              return;
-            }
-            
-            const updatedCategories = categories.map(cat => {
-              if (cat.name === '校内') {
-                return {
-                  ...cat,
-                  subCategories: [...(cat.subCategories || []), newSubCategory.trim()]
-                };
-              }
-              return cat;
-            });
-            
-            // 更新 categories 状态
-            setCategories(updatedCategories);
-            // 保存到本地存储
-            saveMainData('categories', updatedCategories);
-            
-            // 自动选中新添加的子类别
-            if (editData.isRegularTask) {
-              setEditData({ ...editData, targetSubCategory: newSubCategory.trim() });
-            } else {
-              setEditData({ ...editData, subCategory: newSubCategory.trim() });
-            }
-            
-            alert(`新子类别 "${newSubCategory}" 添加成功！`);
-          }
-        }}
-        style={{
-          height: 36,
-          width: 36,
-          backgroundColor: '#f9f9f9',
-          color: '#333',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          cursor: 'pointer',
-          fontSize: 18,
-          fontWeight: 600,
-          lineHeight: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box',
-        }}
-        title="添加新子类别"
-      >
-        +
-      </button>
-    </div>
-  </div>
-)}
-</div>
-
-         {/* 📊 进度跟踪 */}
-<div>
-  <label
-    style={{
-      display: 'block',
-      marginBottom: 8,
-      fontWeight: 600,
-      color: '#333',
-      fontSize: 14,
-    }}
-  >
-    进度
-  </label>
-
-  <div
-    style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',  // 改为 3 列
-      gap: 12,
-      alignItems: 'end',
-    }}
-  >
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          color: '#666',
-          marginBottom: 4,
-          textAlign: 'center',
-        }}
-      >
-        初始值
-      </div>
-      <input
-        type="number"
-        value={editData.progress?.initial || ''}
-        placeholder="0"
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            progress: {
-              ...editData.progress,
-              initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-            },
-          })
-        }
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 6px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          color: '#666',
-          marginBottom: 4,
-          textAlign: 'center',
-        }}
-      >
-        当前值
-      </div>
-      <input
-        type="number"
-        value={editData.progress?.current || ''}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            progress: {
-              ...editData.progress,
-              current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-            },
-          })
-        }
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 6px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          color: '#666',
-          marginBottom: 4,
-          textAlign: 'center',
-        }}
-      >
-        目标值
-      </div>
-      <input
-        type="number"
-        value={editData.progress?.target || ''}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            progress: {
-              ...editData.progress,
-              target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-            },
-          })
-        }
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 6px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-  </div>
-</div>
-
-     
-
-  <div>
-
- 
-{/* 标签 - 只有预设标签，没有自定义 */}
-<div>
-  <label style={{
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#333',
-    fontSize: 14
-  }}>
-    标签
-  </label>
-  
-  <div style={{
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-    alignItems: 'center'
-  }}>
-    {/* 预设标签 */}
-    {[
-      { name: '重要', color: '#ff4444' },
-      { name: '紧急', color: '#ff9800' },
-      { name: '复习', color: '#4caf50' },
-      { name: '预习', color: '#2196f3' },
-      { name: '作业', color: '#9c27b0' },
-      { name: '考试', color: '#f44336' },
-      { name: '背诵', color: '#795548' },
-      { name: '练习', color: '#607d8b' }
-    ].map((tag, idx) => {
-      const isSelected = editData.tags?.some(t => t === tag.name || t.name === tag.name);
-      return (
-        <span
-          key={idx}
-          onClick={() => {
-            if (isSelected) {
-              const newTags = editData.tags.filter(t => 
-                (typeof t === 'string' ? t !== tag.name : t.name !== tag.name)
-              );
-              setEditData({ ...editData, tags: newTags });
-            } else {
-              setEditData({
-                ...editData,
-                tags: [...(editData.tags || []), tag.name]
-              });
-            }
-          }}
-          style={{
-            fontSize: '12px',
-            padding: '4px 10px',
-            backgroundColor: isSelected ? tag.color : '#f0f0f0',
-            color: isSelected ? '#fff' : '#999',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
-          }}
-        >
-          {tag.name}
-        </span>
-      );
-    })}
-  </div>
-  
-  {/* 显示当前选中的标签 */}
-  {editData.tags && editData.tags.length > 0 && (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-      {editData.tags.map((tag, idx) => {
-        const tagColors = {
-          '重要': '#ff4444',
-          '紧急': '#ff9800',
-          '复习': '#4caf50',
-          '预习': '#2196f3',
-          '作业': '#9c27b0',
-          '考试': '#f44336',
-          '背诵': '#795548',
-          '练习': '#607d8b'
-        };
-        const tagName = typeof tag === 'string' ? tag : tag.name;
-        const tagColor = tagColors[tagName] || '#61A2Da';
-        
-        return (
-          <span key={idx} style={{
-            fontSize: '11px',
-            padding: '2px 8px',
-            backgroundColor: tagColor,
-            color: '#fff',
-            borderRadius: '12px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            {tagName}
-            <span
-              onClick={() => {
-                const newTags = editData.tags.filter((_, i) => i !== idx);
-                setEditData({ ...editData, tags: newTags });
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: 4,  // 从 8px 减小到 4px
+              fontWeight: '600',
+              color: '#333',
+              fontSize: 12  // 从 14px 减小到 12px
+            }}>
+              📝 任务内容
+            </label>
+            <textarea
+              value={editData.text}
+              onChange={(e) => {
+                setEditData({ ...editData, text: e.target.value });
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
               }}
-              style={{ cursor: 'pointer', fontSize: '12px' }}
-            >
-              ×
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  )}
-</div>
+              placeholder="请输入任务内容..."
+              style={{
+                width: '100%',
+                padding: '6px 10px',  // 从 8px 12px 减小到 6px 10px
+                border: '1px solid #e0e0e0',  // 从 2px 减小到 1px
+                borderRadius: 8,
+                fontSize: 13,  // 从 14px 减小到 13px
+                backgroundColor: '#fafafa',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                resize: 'none',
+                outline: 'none',
+                lineHeight: '1.4',
+                overflow: 'hidden'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#1a73e8';
+                e.target.style.backgroundColor = '#fff';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e0e0e0';
+                e.target.style.backgroundColor = '#fafafa';
+              }}
+              rows="1"
+            />
+          </div>
 
+          {/* 备注 */}
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: 4,
+              fontWeight: '600',
+              color: '#333',
+              fontSize: 12
+            }}>
+              备注
+            </label>
+            <textarea
+              value={editData.note}
+              onChange={(e) => {
+                setEditData({ ...editData, note: e.target.value });
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              placeholder=""
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                border: '1px solid #e0e0e0',
+                borderRadius: 8,
+                fontSize: 13,
+                backgroundColor: '#fafafa',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                resize: 'none',
+                outline: 'none',
+                lineHeight: '1.4',
+                overflow: 'hidden'
+              }}
+              rows="1"
+            />
+          </div>
 
+          {/* 感想 */}
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: 4,
+              fontWeight: '600',
+              color: '#333',
+              fontSize: 12
+            }}>
+              感想
+            </label>
+            <textarea
+              value={editData.reflection}
+              onChange={(e) => {
+                setEditData({ ...editData, reflection: e.target.value });
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              placeholder=""
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                border: '1px solid #e0e0e0',
+                borderRadius: 8,
+                fontSize: 13,
+                backgroundColor: '#fafafa',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                resize: 'none',
+                outline: 'none',
+                lineHeight: '1.4',
+                overflow: 'hidden'
+              }}
+              rows="1"
+            />
+          </div>
 
-    {/* 提醒时间 - 保持不变 */}
-    <div style={{ marginTop: 16 }}> 
-      <label style={{
-        display: 'block',
-        marginTop: 8,
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14
-      }}>
-        时间
-      </label>
-      <div style={{
-        display: 'flex',
-        gap: 4,
-        alignItems: 'center',
-        flexWrap: 'nowrap',
-        width: '100%'
-      }}>
-        <input type="number" min="2024" max="2030" placeholder="年" value={editData.reminderYear || ''} onChange={(e) => setEditData({ ...editData, reminderYear: e.target.value })} style={{ flex: 1.2, minWidth: '50px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
-        <span style={{ color: '#666' }}>/</span>
-        <input type="number" min="1" max="12" placeholder="月" value={editData.reminderMonth || ''} onChange={(e) => setEditData({ ...editData, reminderMonth: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
-        <span style={{ color: '#666' }}>/</span>
-        <input type="number" min="1" max="31" placeholder="日" value={editData.reminderDay || ''} onChange={(e) => setEditData({ ...editData, reminderDay: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
-        <input type="number" min="0" max="23" placeholder="时" value={editData.reminderHour || ''} onChange={(e) => setEditData({ ...editData, reminderHour: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
-        <span style={{ color: '#666' }}>:</span>
-        <input type="number" min="0" max="59" placeholder="分" value={editData.reminderMinute || ''} onChange={(e) => setEditData({ ...editData, reminderMinute: e.target.value })} style={{ flex: 1, minWidth: '45px', height: 32, padding: '0 4px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, textAlign: 'center', backgroundColor: '#fff' }} />
-        
-      </div>
-    </div>
+          {/* 类别和子类别在同一行 - 紧凑版 */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 10,  // 从 16px 减小到 10px
+              alignItems: 'start',
+              marginBottom: 0
+            }}
+          >
+            {/* 任务类别 */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: 4,
+                  fontWeight: 600,
+                  color: '#333',
+                  fontSize: 12,
+                }}
+              >
+                类别
+              </label>
 
-    {/* 子任务 */}
-    <div style={{ marginTop: 16 }}> 
-      <label style={{
-        display: 'block',
-        marginTop: 8,
-        marginBottom: 8,
-        fontWeight: 600,
-        color: '#333',
-        fontSize: 14
-      }}>
-        子任务
-      </label>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-        <input type="text" placeholder="输入子任务内容" value={editData.newSubTask || ''} onChange={(e) => setEditData({ ...editData, newSubTask: e.target.value })} style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
-        <button onClick={() => { if (editData.newSubTask?.trim()) { setEditData({ ...editData, subTasks: [...(editData.subTasks || []), { text: editData.newSubTask.trim(), done: false }], newSubTask: '' }); } }} style={{ height: 32, width: 32, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>+</button>
-      </div>
-      {editData.subTasks?.length > 0 && (
-        <div>
-          {editData.subTasks.map((subTask, index) => (
-            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <input type="checkbox" checked={subTask.done || false} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked }; setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ transform: 'scale(1.2)', cursor: 'pointer' }} />
-              <input type="text" value={subTask.text || ''} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], text: e.target.value }; setEditData({ ...editData, subTasks: newSubTasks }); }} placeholder="子任务内容" style={{ flex: 1, height: 32, padding: '0 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13, backgroundColor: '#fff' }} />
-              <button onClick={() => { const newSubTasks = editData.subTasks.filter((_, i) => i !== index); setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ height: 32, width: 48, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>×</button>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <select
+                  value={editData.category}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      category: e.target.value,
+                      subCategory: '',
+                    })
+                  }
+                  style={{
+                    flex: 1,
+                    height: 32,  // 从 36px 减小到 32px
+                    padding: '0 8px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.name} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCategory = window.prompt('输入新类别名称:');
+                    if (newCategory && newCategory.trim()) {
+                      const exists = categories.find(cat => cat.name === newCategory.trim());
+                      if (exists) {
+                        alert('该类别已存在！');
+                        return;
+                      }
+                      const newCat = {
+                        name: newCategory.trim(),
+                        color: '#1a73e8',
+                        subCategories: []
+                      };
+                      const updatedCategories = [...categories, newCat];
+                      setCategories(updatedCategories);
+                      saveMainData('categories', updatedCategories);
+                      setEditData({ ...editData, category: newCategory.trim() });
+                      alert(`新类别 "${newCategory}" 添加成功！`);
+                    }
+                  }}
+                  style={{
+                    height: 32,
+                    width: 32,
+                    backgroundColor: '#f9f9f9',
+                    color: '#333',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box',
+                  }}
+                  title="添加新类别"
+                >
+                  +
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
 
+            {/* 子类别选择 */}
+            {(editData.isRegularTask ? editData.targetCategory === '校内' : editData.category === '校内') && (
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 4,
+                    fontWeight: 600,
+                    color: '#333',
+                    fontSize: 12,
+                  }}
+                >
+                  子类别
+                </label>
+
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <select
+                    value={editData.isRegularTask ? (editData.targetSubCategory || '') : (editData.subCategory || '')}
+                    onChange={(e) => {
+                      if (editData.isRegularTask) {
+                        setEditData({ ...editData, targetSubCategory: e.target.value });
+                      } else {
+                        setEditData({ ...editData, subCategory: e.target.value });
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      height: 32,
+                      padding: '0 8px',
+                      border: '1px solid #ccc',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      backgroundColor: '#fff',
+                      cursor: 'pointer',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <option value="">选择</option>
+                    {(() => {
+                      const schoolCategory = categories.find(c => c.name === '校内');
+                      const subCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+                      return subCategories.map(subCat => (
+                        <option key={subCat} value={subCat}>
+                          {subCat}
+                        </option>
+                      ));
+                    })()}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSubCategory = window.prompt('输入新子类别名称:');
+                      if (newSubCategory && newSubCategory.trim()) {
+                        const schoolCategory = categories.find(c => c.name === '校内');
+                        if (schoolCategory && schoolCategory.subCategories.includes(newSubCategory.trim())) {
+                          alert('该子类别已存在！');
+                          return;
+                        }
+                        
+                        const updatedCategories = categories.map(cat => {
+                          if (cat.name === '校内') {
+                            return {
+                              ...cat,
+                              subCategories: [...(cat.subCategories || []), newSubCategory.trim()]
+                            };
+                          }
+                          return cat;
+                        });
+                        
+                        setCategories(updatedCategories);
+                        saveMainData('categories', updatedCategories);
+                        
+                        if (editData.isRegularTask) {
+                          setEditData({ ...editData, targetSubCategory: newSubCategory.trim() });
+                        } else {
+                          setEditData({ ...editData, subCategory: newSubCategory.trim() });
+                        }
+                        
+                        alert(`新子类别 "${newSubCategory}" 添加成功！`);
+                      }
+                    }}
+                    style={{
+                      height: 32,
+                      width: 32,
+                      backgroundColor: '#f9f9f9',
+                      color: '#333',
+                      border: '1px solid #ccc',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxSizing: 'border-box',
+                    }}
+                    title="添加新子类别"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 进度跟踪 - 紧凑版 */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontWeight: 600,
+                color: '#333',
+                fontSize: 12,
+              }}
+            >
+              进度
+            </label>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 8,
+                alignItems: 'end',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#666',
+                    marginBottom: 2,
+                    textAlign: 'center',
+                  }}
+                >
+                  初始值
+                </div>
+                <input
+                  type="number"
+                  value={editData.progress?.initial || ''}
+                  placeholder="0"
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      progress: {
+                        ...editData.progress,
+                        initial: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+                      },
+                    })
+                  }
+                  style={{
+                    width: '100%',
+                    height: 32,
+                    padding: '0 4px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#666',
+                    marginBottom: 2,
+                    textAlign: 'center',
+                  }}
+                >
+                  当前值
+                </div>
+                <input
+                  type="number"
+                  value={editData.progress?.current || ''}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      progress: {
+                        ...editData.progress,
+                        current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+                      },
+                    })
+                  }
+                  style={{
+                    width: '100%',
+                    height: 32,
+                    padding: '0 4px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#666',
+                    marginBottom: 2,
+                    textAlign: 'center',
+                  }}
+                >
+                  目标值
+                </div>
+                <input
+                  type="number"
+                  value={editData.progress?.target || ''}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      progress: {
+                        ...editData.progress,
+                        target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+                      },
+                    })
+                  }
+                  style={{
+                    width: '100%',
+                    height: 32,
+                    padding: '0 4px',
+                    border: '1px solid #ccc',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    textAlign: 'center',
+                    backgroundColor: '#fff',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            {/* 标签 - 紧凑版 */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: 4,
+                fontWeight: '600',
+                color: '#333',
+                fontSize: 12
+              }}>
+                标签
+              </label>
+              
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '4px',
+                alignItems: 'center'
+              }}>
+                {[
+                  { name: '重要', color: '#ff4444' },
+                  { name: '紧急', color: '#ff9800' },
+                  { name: '复习', color: '#4caf50' },
+                  { name: '预习', color: '#2196f3' },
+                  { name: '作业', color: '#9c27b0' },
+                  { name: '考试', color: '#f44336' },
+                  { name: '背诵', color: '#795548' },
+                  { name: '练习', color: '#607d8b' }
+                ].map((tag, idx) => {
+                  const isSelected = editData.tags?.some(t => t === tag.name || t.name === tag.name);
+                  return (
+                    <span
+                      key={idx}
+                      onClick={() => {
+                        if (isSelected) {
+                          const newTags = editData.tags.filter(t => 
+                            (typeof t === 'string' ? t !== tag.name : t.name !== tag.name)
+                          );
+                          setEditData({ ...editData, tags: newTags });
+                        } else {
+                          setEditData({
+                            ...editData,
+                            tags: [...(editData.tags || []), tag.name]
+                          });
+                        }
+                      }}
+                      style={{
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        backgroundColor: isSelected ? tag.color : '#f0f0f0',
+                        color: isSelected ? '#fff' : '#999',
+                        borderRadius: '14px',
+                        cursor: 'pointer',
+                        border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
+                      }}
+                    >
+                      {tag.name}
+                    </span>
+                  );
+                })}
+              </div>
+              
+              {/* 显示当前选中的标签 */}
+              {editData.tags && editData.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                  {editData.tags.map((tag, idx) => {
+                    const tagColors = {
+                      '重要': '#ff4444',
+                      '紧急': '#ff9800',
+                      '复习': '#4caf50',
+                      '预习': '#2196f3',
+                      '作业': '#9c27b0',
+                      '考试': '#f44336',
+                      '背诵': '#795548',
+                      '练习': '#607d8b'
+                    };
+                    const tagName = typeof tag === 'string' ? tag : tag.name;
+                    const tagColor = tagColors[tagName] || '#61A2Da';
+                    
+                    return (
+                      <span key={idx} style={{
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        backgroundColor: tagColor,
+                        color: '#fff',
+                        borderRadius: '10px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {tagName}
+                        <span
+                          onClick={() => {
+                            const newTags = editData.tags.filter((_, i) => i !== idx);
+                            setEditData({ ...editData, tags: newTags });
+                          }}
+                          style={{ cursor: 'pointer', fontSize: '10px' }}
+                        >
+                          ×
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 提醒时间 - 紧凑版 */}
+            <div style={{ marginTop: 8 }}> 
+              <label style={{
+                display: 'block',
+                marginTop: 4,
+                marginBottom: 4,
+                fontWeight: 600,
+                color: '#333',
+                fontSize: 12
+              }}>
+                时间
+              </label>
+              <div style={{
+                display: 'flex',
+                gap: 3,
+                alignItems: 'center',
+                flexWrap: 'nowrap',
+                width: '100%'
+              }}>
+                <input type="number" min="2024" max="2030" placeholder="年" value={editData.reminderYear || ''} onChange={(e) => setEditData({ ...editData, reminderYear: e.target.value })} style={{ flex: 1.2, minWidth: '45px', height: 30, padding: '0 3px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12, textAlign: 'center', backgroundColor: '#fff' }} />
+                <span style={{ color: '#666', fontSize: 12 }}>/</span>
+                <input type="number" min="1" max="12" placeholder="月" value={editData.reminderMonth || ''} onChange={(e) => setEditData({ ...editData, reminderMonth: e.target.value })} style={{ flex: 1, minWidth: '40px', height: 30, padding: '0 3px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12, textAlign: 'center', backgroundColor: '#fff' }} />
+                <span style={{ color: '#666', fontSize: 12 }}>/</span>
+                <input type="number" min="1" max="31" placeholder="日" value={editData.reminderDay || ''} onChange={(e) => setEditData({ ...editData, reminderDay: e.target.value })} style={{ flex: 1, minWidth: '40px', height: 30, padding: '0 3px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12, textAlign: 'center', backgroundColor: '#fff' }} />
+                <input type="number" min="0" max="23" placeholder="时" value={editData.reminderHour || ''} onChange={(e) => setEditData({ ...editData, reminderHour: e.target.value })} style={{ flex: 1, minWidth: '40px', height: 30, padding: '0 3px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12, textAlign: 'center', backgroundColor: '#fff' }} />
+                <span style={{ color: '#666', fontSize: 12 }}>:</span>
+                <input type="number" min="0" max="59" placeholder="分" value={editData.reminderMinute || ''} onChange={(e) => setEditData({ ...editData, reminderMinute: e.target.value })} style={{ flex: 1, minWidth: '40px', height: 30, padding: '0 3px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12, textAlign: 'center', backgroundColor: '#fff' }} />
+              </div>
+            </div>
+
+            {/* 子任务 - 紧凑版 */}
+            <div style={{ marginTop: 8 }}> 
+              <label style={{
+                display: 'block',
+                marginTop: 4,
+                marginBottom: 4,
+                fontWeight: 600,
+                color: '#333',
+                fontSize: 12
+              }}>
+                子任务
+              </label>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+                <input type="text" placeholder="输入子任务内容" value={editData.newSubTask || ''} onChange={(e) => setEditData({ ...editData, newSubTask: e.target.value })} style={{ flex: 1, height: 30, padding: '0 8px', border: '1px solid #ccc', borderRadius: 6, fontSize: 12, backgroundColor: '#fff' }} />
+                <button onClick={() => { if (editData.newSubTask?.trim()) { setEditData({ ...editData, subTasks: [...(editData.subTasks || []), { text: editData.newSubTask.trim(), done: false }], newSubTask: '' }); } }} style={{ height: 30, width: 30, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>+</button>
+              </div>
+              {editData.subTasks?.length > 0 && (
+                <div>
+                  {editData.subTasks.map((subTask, index) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <input type="checkbox" checked={subTask.done || false} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], done: e.target.checked }; setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ transform: 'scale(1.1)', cursor: 'pointer' }} />
+                      <input type="text" value={subTask.text || ''} onChange={(e) => { const newSubTasks = [...editData.subTasks]; newSubTasks[index] = { ...newSubTasks[index], text: e.target.value }; setEditData({ ...editData, subTasks: newSubTasks }); }} placeholder="子任务内容" style={{ flex: 1, height: 30, padding: '0 8px', border: '1px solid #ccc', borderRadius: 6, fontSize: 12, backgroundColor: '#fff' }} />
+                      <button onClick={() => { const newSubTasks = editData.subTasks.filter((_, i) => i !== index); setEditData({ ...editData, subTasks: newSubTasks }); }} style={{ height: 30, width: 42, backgroundColor: '#f9f9f9', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 11 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           <input
             ref={fileInputRef}
@@ -11138,152 +11069,149 @@ const abandonReasons = [
         </div>
       </div>
 
-{showAbandonReason && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10000,
-    padding: '10px'
-  }} onClick={() => setShowAbandonReason(false)}>
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      width: '100%',
-      maxWidth: '350px',
-      overflow: 'hidden',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-    }} onClick={e => e.stopPropagation()}>
-      
-      <div style={{
-        padding: '16px 20px',
-        backgroundColor: '#61A2Da',
-        color: 'white',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ margin: 0, fontSize: '16px' }}>🚫 放弃任务</h3>
-      </div>
-      
-      <div style={{ padding: '20px' }}>
-        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#333' }}>
-          任务：<strong>{task.text}</strong>
-        </p>
-        
-        {/* 标签选择 */}
+      {/* 放弃原因弹窗保持不变 */}
+      {showAbandonReason && (
         <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: '10px',
-          marginBottom: '16px'
-        }}>
-          {abandonReasons.map(reason => (
-            <div
-              key={reason.value}
-              onClick={() => setAbandonReason(reason.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '20px',
-                backgroundColor: abandonReason === reason.value ? reason.color : '#f0f0f0',
-                color: abandonReason === reason.value ? '#fff' : '#333',
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'none',
-                border: `1px solid ${abandonReason === reason.value ? reason.color : '#e0e0e0'}`
-              }}
-            >
-              {reason.label}
-            </div>
-          ))}
-        </div>
-        
-        {/* 手动输入原因（可选，会覆盖标签选择） */}
-        <input
-          type="text"
-          value={abandonReason}
-          onChange={(e) => setAbandonReason(e.target.value)}
-          placeholder="或直接输入放弃原因..."
-          style={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          padding: '10px'
+        }} onClick={() => setShowAbandonReason(false)}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
             width: '100%',
-          
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '13px',
-            boxSizing: 'border-box',
-            marginBottom: '16px'
-          }}
-        />
-        
-       
-        
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => {
-              setShowAbandonReason(false);
-              setAbandonReason('');
-              setAbandonNote('');
-            }}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            取消
-          </button>
-          <button
-            onClick={() => {
-              if (!abandonReason.trim()) {
-                alert('请选择或输入放弃原因');
-                return;
-              }
-              const abandonInfo = {
-                reason: abandonReason.trim(),
-                note: abandonNote,
-                timestamp: new Date().toISOString()
-              };
-              if (onMarkAbandoned) {
-                onMarkAbandoned(task, abandonInfo);
-              }
-              setShowAbandonReason(false);
-              setAbandonReason('');
-              setAbandonNote('');
-              onClose();
-            }}
-            style={{
-              flex: 1,
-              padding: '10px',
-              backgroundColor: '#f44336',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            确认放弃
-          </button>
+            maxWidth: '350px',
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+            
+            <div style={{
+              padding: '12px 16px',
+              backgroundColor: '#61A2Da',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>🚫 放弃任务</h3>
+            </div>
+            
+            <div style={{ padding: '16px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#333' }}>
+                任务：<strong>{task.text}</strong>
+              </p>
+              
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginBottom: '12px'
+              }}>
+                {abandonReasons.map(reason => (
+                  <div
+                    key={reason.value}
+                    onClick={() => setAbandonReason(reason.value)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '18px',
+                      backgroundColor: abandonReason === reason.value ? reason.color : '#f0f0f0',
+                      color: abandonReason === reason.value ? '#fff' : '#333',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      transition: 'none',
+                      border: `1px solid ${abandonReason === reason.value ? reason.color : '#e0e0e0'}`
+                    }}
+                  >
+                    {reason.label}
+                  </div>
+                ))}
+              </div>
+              
+              <input
+                type="text"
+                value={abandonReason}
+                onChange={(e) => setAbandonReason(e.target.value)}
+                placeholder="或直接输入放弃原因..."
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  boxSizing: 'border-box',
+                  marginBottom: '12px'
+                }}
+              />
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    setShowAbandonReason(false);
+                    setAbandonReason('');
+                    setAbandonNote('');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    backgroundColor: '#f0f0f0',
+                    color: '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    if (!abandonReason.trim()) {
+                      alert('请选择或输入放弃原因');
+                      return;
+                    }
+                    const abandonInfo = {
+                      reason: abandonReason.trim(),
+                      note: abandonNote,
+                      timestamp: new Date().toISOString()
+                    };
+                    if (onMarkAbandoned) {
+                      onMarkAbandoned(task, abandonInfo);
+                    }
+                    setShowAbandonReason(false);
+                    setAbandonReason('');
+                    setAbandonNote('');
+                    onClose();
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    backgroundColor: '#f44336',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  确认放弃
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 };
+// 任务编辑模态框
+
 
 
 const TaskItem = ({
