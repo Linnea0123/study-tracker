@@ -12234,7 +12234,7 @@ const SortableTaskList = ({
       }}
       style={{
         position: 'absolute',
-        right: '48px',
+        right: '40px',
         top: '6px',
         background: 'transparent',
         border: 'none',
