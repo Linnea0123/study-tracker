@@ -2008,6 +2008,604 @@ button:focus-visible {
   );
 };
 
+// 科目待办模态框 - 在 SubjectGuideModal 组件后面添加
+// 科目待办模态框 - 增强版（自动关联任务统计）
+const SubjectTodoModal = ({ onClose, isVisible, tasksByDate = {} }) => {
+  const [forceUpdate, setForceUpdate] = useState(Date.now());
+  const [activeTab, setActiveTab] = useState('数学');
+  const [expandedTodoId, setExpandedTodoId] = useState(null); // 展开的待办ID
+  const [todos, setTodos] = useState(() => {
+    const saved = localStorage.getItem('subject_todo_entries');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const tabs = ['数学', '语文', '英语', '其他'];
+
+  // 在 useEffect 中添加
+useEffect(() => {
+  // 每 5 秒自动刷新一次（可选）
+  const interval = setInterval(() => {
+    setForceUpdate(Date.now());
+  }, 5000);
+  return () => clearInterval(interval);
+}, []);
+
+  // 保存到 localStorage
+  useEffect(() => {
+    localStorage.setItem('subject_todo_entries', JSON.stringify(todos));
+  }, [todos]);
+
+  const currentTodos = todos[activeTab] || [];
+
+ // 根据关键词搜索主界面中已完成的关联任务
+const findRelatedTasks = (keyword) => {
+  console.log('🔍 搜索关键词:', keyword);
+  
+  if (!keyword || !tasksByDate) return [];
+  
+  const relatedTasks = [];
+  
+  Object.entries(tasksByDate).forEach(([date, tasks]) => {
+    tasks.forEach(task => {
+      // 只统计已完成的任务
+      if (task.done === true && task.text) {
+        // ✅ 改进匹配逻辑：双向包含
+        const taskText = task.text;
+        const isMatch = taskText.includes(keyword) || keyword.includes(taskText);
+        
+        if (isMatch) {
+          // 获取该任务的耗时（分钟）
+          const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
+          relatedTasks.push({
+            id: task.id,
+            text: task.text,
+            date: date,
+            timeMinutes: timeMinutes,
+            timeDisplay: timeMinutes > 0 ? `${timeMinutes}分钟` : '未记录',
+            category: task.category,
+            subCategory: task.subCategory
+          });
+          console.log(`✅ 匹配成功: "${taskText}" 包含关键词 "${keyword}"`);
+        }
+      }
+    });
+  });
+  
+  console.log(`📊 共找到 ${relatedTasks.length} 个关联任务`);
+  
+  // 按日期倒序排序（最新的在前）
+  return relatedTasks.sort((a, b) => b.date.localeCompare(a.date));
+};
+
+  // 切换完成状态
+  const toggleTodo = (todoId) => {
+    setTodos(prev => ({
+      ...prev,
+      [activeTab]: (prev[activeTab] || []).map(todo =>
+        todo.id === todoId ? { ...todo, done: !todo.done } : todo
+      )
+    }));
+  };
+
+  // 添加待办
+  const handleAddTodo = () => {
+    const title = window.prompt('请输入待办内容（将自动关联包含此关键词的任务）：');
+    if (title && title.trim()) {
+      const keyword = title.trim();
+      const newTodo = {
+        id: Date.now().toString(),
+        title: keyword,
+        keyword: keyword, // 用于搜索的关键词
+        createdAt: new Date().toISOString(),
+        done: false
+      };
+      setTodos(prev => ({
+        ...prev,
+        [activeTab]: [...(prev[activeTab] || []), newTodo]
+      }));
+    }
+  };
+
+  // 编辑待办
+  const handleEditTodo = (todo) => {
+    const newTitle = window.prompt('编辑待办内容：', todo.title);
+    if (newTitle && newTitle.trim()) {
+      setTodos(prev => ({
+        ...prev,
+        [activeTab]: (prev[activeTab] || []).map(t =>
+          t.id === todo.id ? { ...t, title: newTitle.trim(), keyword: newTitle.trim() } : t
+        )
+      }));
+    }
+  };
+
+  // 删除待办
+  const handleDeleteTodo = (todoId) => {
+    if (window.confirm('确定要删除这个待办吗？')) {
+      setTodos(prev => ({
+        ...prev,
+        [activeTab]: (prev[activeTab] || []).filter(t => t.id !== todoId)
+      }));
+    }
+  };
+
+  // 获取待办的关联任务和统计
+  const getTodoStats = (todo) => {
+    const relatedTasks = findRelatedTasks(todo.keyword || todo.title);
+    const totalCount = relatedTasks.length;
+    const totalMinutes = relatedTasks.reduce((sum, t) => sum + t.timeMinutes, 0);
+    const totalHours = (totalMinutes / 60).toFixed(1);
+    
+    return {
+      relatedTasks,
+      totalCount,
+      totalMinutes,
+      totalHours,
+      lastPracticeDate: relatedTasks.length > 0 ? relatedTasks[0].date : null
+    };
+  };
+
+  // 统计信息
+  const stats = {
+    total: currentTodos.length,
+    completed: currentTodos.filter(t => t.done).length,
+    incomplete: currentTodos.filter(t => !t.done).length
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#f5faff',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: 0,
+      overflow: 'auto'
+    }}>
+      <div style={{
+        backgroundColor: '#f5faff',
+        padding: '15px',
+        borderRadius: 0,
+        width: '100%',
+        maxWidth: '600px',
+        height: '100%',
+        maxHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        margin: '0 auto',
+        position: 'relative',
+        boxSizing: 'border-box'
+      }}>
+        {/* 标题栏 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          flexShrink: 0
+        }}>
+          <div style={{ width: '60px' }}></div>
+          <h2 style={{ 
+            textAlign: 'center', 
+            margin: 0,
+            color: '#61A2Da',
+            fontSize: '20px'
+          }}>
+            科目待办
+          </h2>
+          
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            height: '28px'
+          }}>
+            <button
+              onClick={handleAddTodo}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                borderRadius: '4px'
+              }}
+              title="添加待办"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+            
+            <button
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                borderRadius: '4px'
+              }}
+              title="关闭"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        {/* 科目标签切换 */}
+        <div style={{
+          display: 'flex',
+          gap: '2px',
+          marginBottom: '15px',
+          borderBottom: '1px solid #e0e0e0',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          flexShrink: 0
+        }}>
+          {tabs.map(tab => (
+            <div
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '4px 12px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                backgroundColor: activeTab === tab ? '#61A2Da' : '#f0f0f0',
+                color: activeTab === tab ? '#fff' : '#666',
+                borderTopLeftRadius: '8px',
+                borderTopRightRadius: '8px',
+                borderBottom: activeTab === tab ? '2px solid #61A2Da' : 'none',
+                fontWeight: activeTab === tab ? 'bold' : 'normal',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+            >
+              {tab}
+            </div>
+          ))}
+        </div>
+        
+        {/* 统计卡片 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '8px',
+          marginBottom: '16px',
+          flexShrink: 0
+        }}>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>全部</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>{stats.total}</div>
+          </div>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>已完成</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>{stats.completed}</div>
+          </div>
+          <div style={{
+            padding: '8px',
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>未完成</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>{stats.incomplete}</div>
+          </div>
+        </div>
+
+        {/* 待办列表 */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {currentTodos.length === 0 ? (
+            <div style={{
+              padding: '40px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              📝 暂无待办
+              <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
+                点击右上角 + 添加 {activeTab} 待办
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+              paddingBottom: '10px'
+            }}>
+              {currentTodos.map(todo => {
+                const { relatedTasks, totalCount, totalMinutes, totalHours } = getTodoStats(todo);
+                const isExpanded = expandedTodoId === todo.id;
+                
+                return (
+                  <div
+                    key={todo.id}
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
+                      border: '1px solid #e5e7eb',
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}
+                  >
+                    {/* 主要内容行 */}
+                    <div
+                      style={{
+                        padding: '12px 15px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setExpandedTodoId(isExpanded ? null : todo.id)}
+                    >
+                      {/* 左侧：复选框 + 内容 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={todo.done}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleTodo(todo.id);
+                          }}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            margin: 0,
+                            flexShrink: 0
+                          }}
+                        />
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTodo(todo);
+                          }}
+                          style={{
+                            fontSize: '14px',
+                            color: todo.done ? '#999' : '#333',
+                            textDecoration: todo.done ? 'line-through' : 'none',
+                            cursor: 'pointer',
+                            flex: 1,
+                            wordBreak: 'break-word'
+                          }}
+                        >
+                          {todo.title}
+                        </span>
+                      </div>
+                      
+                      {/* 右侧：统计信息和展开箭头 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                        {totalCount > 0 && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                            color: '#4caf50',
+                            backgroundColor: '#e8f5e9',
+                            padding: '2px 8px',
+                            borderRadius: '16px'
+                          }}>
+                            <span></span>
+                            <span>{totalCount}次</span>
+                            {totalMinutes > 0 && <span>({totalHours}h)</span>}
+                          </div>
+                        )}
+                        
+                        {/* 展开/收起箭头 */}
+                        <div style={{
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#999'
+                        }}>
+                          {isExpanded ? '▲' : '▼'}
+                        </div>
+                        
+                        {/* 删除按钮 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTodo(todo.id);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#999',
+                            flexShrink: 0
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* 展开区域：显示关联的任务列表 */}
+                    {isExpanded && (
+                      <div style={{
+                        padding: '12px 15px',
+                        backgroundColor: '#f8f9fa',
+                        borderTop: '1px solid #e5e7eb'
+                      }}>
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#666',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <span>关联练习记录</span>
+                          {totalCount > 0 && (
+                            <span style={{
+                              fontSize: '11px',
+                              color: '#4caf50',
+                              backgroundColor: '#e8f5e9',
+                              padding: '2px 8px',
+                              borderRadius: '12px'
+                            }}>
+                              共 {totalCount} 次
+                            </span>
+                          )}
+                        </div>
+                        
+                        {relatedTasks.length === 0 ? (
+                          <div style={{
+                            textAlign: 'center',
+                            padding: '20px',
+                            color: '#999',
+                            fontSize: '12px'
+                          }}>
+                            暂无关联练习记录
+                            <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                              在主界面完成任务后会自动统计
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}>
+                            {relatedTasks.map((task, idx) => (
+                              <div
+                                key={task.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '8px 10px',
+                                  backgroundColor: 'white',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e0e0e0'
+                                }}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    color: '#333',
+                                    wordBreak: 'break-word'
+                                  }}>
+                                    {task.text}
+                                  </div>
+                                  <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    marginTop: '4px',
+                                    fontSize: '10px',
+                                    color: '#999'
+                                  }}>
+                                    <span>{task.date.slice(5)}</span>
+                                    {task.category && (
+                                      <span>{task.category}{task.subCategory ? ` - ${task.subCategory}` : ''}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div style={{
+                                  fontSize: '11px',
+                                  color: '#61A2Da',
+                                  backgroundColor: '#e8f0fe',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  whiteSpace: 'nowrap',
+                                  marginLeft: '8px'
+                                }}>
+                                  ⏱ {task.timeDisplay}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* 总计行 */}
+                        {totalCount > 0 && (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '8px 10px',
+                            backgroundColor: '#e8f0fe',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ fontWeight: 'bold', color: '#61A2Da' }}>总计</span>
+                            <div style={{ display: 'flex', gap: '16px' }}>
+                              <span>练习次数: {totalCount}</span>
+                              {totalMinutes > 0 && <span>总时长: {totalHours}小时</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const SubjectGuideModal = ({ onClose, isVisible }) => {
   const [activeTab, setActiveTab] = useState('数学');
   const [entries, setEntries] = useState(() => {
@@ -14551,7 +15149,7 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 function App() {
 // 在 App 组件中，其他 useState 定义附近添加（大约在第 5300 行）
 const [showSubjectGuideModal, setShowSubjectGuideModal] = useState(false);
-// 在 App 组件中，其他 useState 定义附近添加
+const [showSubjectTodoModal, setShowSubjectTodoModal] = useState(false);
 const [subjectGuideEntries, setSubjectGuideEntries] = useState(() => {
   const saved = localStorage.getItem('subject_guide_entries');
   return saved ? JSON.parse(saved) : {};
@@ -20441,7 +21039,15 @@ if (isInitialized && todayTasks.length === 0) {
   />
 )}
  
- 
+
+{showSubjectTodoModal && (
+  <SubjectTodoModal
+    key={showSubjectTodoModal ? Date.now() : 'closed'}  // ← 每次打开都用新时间戳
+    onClose={() => setShowSubjectTodoModal(false)}
+    isVisible={showSubjectTodoModal}
+    tasksByDate={tasksByDate}
+  />
+)}
 {showSubjectGuideModal && (
   <SubjectGuideModal
     onClose={() => setShowSubjectGuideModal(false)}
@@ -20769,6 +21375,32 @@ if (isInitialized && todayTasks.length === 0) {
       <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   </button>
+
+{/* 科目待办按钮 */}
+<button
+  onClick={() => setShowSubjectTodoModal(true)}
+  style={{
+    position: "absolute",
+    top: 0,
+    right: 114,  // 根据其他按钮位置调整
+    width: 36,
+    height: 36,
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    padding: 0
+  }}
+  title="科目待办"
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+    <path d="M8 12L11 15L16 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+  </svg>
+</button>
 
 {/* 科目指导按钮 - 放在统计汇总和成绩记录之间 */}
 <button
