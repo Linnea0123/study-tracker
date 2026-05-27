@@ -21596,7 +21596,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
       
-  <div style={{
+      <div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -21605,12 +21605,8 @@ if (isInitialized && todayTasks.length === 0) {
   marginBottom: 10,
   padding: "0 4px"
 }}>
-  {/* 左侧：打卡统计 - 改为居中，移除右侧内容 */}
-  <div style={{ 
-    color: "#666",
-    textAlign: "center",
-    width: "100%"
-  }}>
+  {/* 左侧：打卡统计 */}
+  <div style={{ color: "#666" }}>
     已打卡 {
       Object.values(tasksByDate).filter(dailyTasks => 
         dailyTasks.some(task => task.done === true)
