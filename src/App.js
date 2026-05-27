@@ -21042,7 +21042,7 @@ if (isInitialized && todayTasks.length === 0) {
     onClick={() => setShowBulkImportModal(true)}
     style={{
       padding: "4px 8px",
-      backgroundColor: "#61A2Da",
+      backgroundColor: "#FF9800",
       color: "#fff",
       borderRadius: "4px",
       cursor: "pointer",
