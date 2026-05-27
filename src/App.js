@@ -15165,7 +15165,7 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
-  // 在 App 组件中，其他 useState 旁边添加
+const [showMoreMenu, setShowMoreMenu] = useState(false);
 const [semesterEndDate, setSemesterEndDate] = useState(() => {
   const saved = localStorage.getItem('semester_end_date');
   return saved || '2026-07-05'; // 默认暑假开始日期
@@ -21367,119 +21367,17 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
 
+
+
+
+
 <div style={{
   position: "relative",
   textAlign: "center",
   marginBottom: 15,
   padding: "0 40px"
 }}>
-  {/* 右上角成绩记录按钮 - 最右边 */}
-  <button
-    onClick={() => setShowGradeModal(true)}
-    style={{
-      position: "absolute",
-      top: 0,
-      right: 0,
-      width: 32,
-      height: 32,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
-    title="成绩记录"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
-      <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
-      <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
-      <line x1="2" y1="20" x2="22" y2="20" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  </button>
-
-  {/* 科目待办按钮 */}
-  <button
-    onClick={() => setShowSubjectTodoModal(true)}
-    style={{
-      position: "absolute",
-      top: 0,
-      right: 36,  // ← 从 100 改成 36
-      width: 32,
-      height: 32,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
-    title="科目待办"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <path d="M8 12L11 15L16 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  </button>
-
-  {/* 科目指导按钮 */}
-  <button
-    onClick={() => setShowSubjectGuideModal(true)}
-    style={{
-      position: "absolute",
-      top: 0,
-      right: 72,  // ← 从 64 改成 72
-      width: 32,
-      height: 32,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
-    title="科目指导"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="5" width="18" height="14" rx="1" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <line x1="12" y1="5" x2="12" y2="19" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  </button>
-
-  {/* 统计汇总按钮 */}
-  <button
-    onClick={() => setShowStats(true)}
-    style={{
-      position: "absolute",
-      top: 0,
-      right: 108,  // ← 从 42 改成 108
-      width: 32,
-      height: 32,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
-    title="统计汇总"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
-      <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#61A2Da" stroke="none"/>
-    </svg>
-  </button>
-
-  {/* 左上角奖杯按钮 */}
+  {/* 左上角奖杯按钮 - 保持不变 */}
   <button
     onClick={() => setShowMilestoneModal(true)}
     style={{
@@ -21506,6 +21404,33 @@ if (isInitialized && todayTasks.length === 0) {
     </svg>
   </button>
 
+  {/* 右上角更多按钮 */}
+  <button
+    onClick={() => setShowMoreMenu(!showMoreMenu)}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 0,
+      width: 32,
+      height: 32,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="更多功能"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="6" r="1.5" fill="#61A2Da"/>
+      <circle cx="12" cy="12" r="1.5" fill="#61A2Da"/>
+      <circle cx="12" cy="18" r="1.5" fill="#61A2Da"/>
+    </svg>
+  </button>
+
   {/* 标题 */}
   <h1 style={{
     textAlign: "center",
@@ -21519,8 +21444,159 @@ if (isInitialized && todayTasks.length === 0) {
   </h1>
 </div>
 
+{/* 更多菜单 - 展开的按钮行 */}
+{showMoreMenu && (
+  <div style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: 12,
+    padding: "8px 0",
+    backgroundColor: "#f0f4f8",
+    borderRadius: 12,
+    flexWrap: "wrap",
+    animation: "fadeIn 0.2s ease"
+  }}>
+    {/* 统计汇总按钮 */}
+    <div
+      onClick={() => {
+        setShowStats(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      统计汇总
+    </div>
+    
+    {/* 科目指导按钮 */}
+    <div
+      onClick={() => {
+        setShowSubjectGuideModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      科目指导
+    </div>
+    
+    {/* 科目待办按钮 */}
+    <div
+      onClick={() => {
+        setShowSubjectTodoModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      科目待办
+    </div>
+    
+    {/* 成绩记录按钮 */}
+    <div
+      onClick={() => {
+        setShowGradeModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      成绩记录
+    </div>
+    
+    {/* 本周按钮 */}
+    <div
+      onClick={() => {
+        setShowWeekTaskModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      本周
+    </div>
+    
+    {/* 本月按钮 */}
+    <div
+      onClick={() => {
+        setShowMonthTaskModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      本月
+    </div>
+    
+    {/* 模板按钮 */}
+    <div
+      onClick={() => {
+        setShowTemplateList(!showTemplateList);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "5px 12px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "20px",
+        cursor: "pointer",
+        fontSize: "12px",
+        textAlign: "center"
+      }}
+    >
+      模板
+    </div>
+  </div>
+)}
+
+
+
       
-      <div style={{
+  <div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -21529,8 +21605,12 @@ if (isInitialized && todayTasks.length === 0) {
   marginBottom: 10,
   padding: "0 4px"
 }}>
-  {/* 左侧：打卡统计 */}
-  <div style={{ color: "#666" }}>
+  {/* 左侧：打卡统计 - 改为居中，移除右侧内容 */}
+  <div style={{ 
+    color: "#666",
+    textAlign: "center",
+    width: "100%"
+  }}>
     已打卡 {
       Object.values(tasksByDate).filter(dailyTasks => 
         dailyTasks.some(task => task.done === true)
@@ -21684,52 +21764,11 @@ if (isInitialized && todayTasks.length === 0) {
 
 <div style={{ display: "flex", gap: "6px" }}>
   {/* 本周按钮 */}
-  <div
-    onClick={() => setShowWeekTaskModal(true)}
-    style={{
-      padding: "4px 8px",
-      backgroundColor: "#61A2Da",
-      color: "#fff",
-      borderRadius: "4px",
-      cursor: "pointer",
-      fontSize: "11px",
-      textAlign: "center"
-    }}
-  >
-    本周
-  </div>
   
-  {/* 本月按钮 */}
-  <div
-    onClick={() => setShowMonthTaskModal(true)}
-    style={{
-      padding: "4px 8px",
-      backgroundColor: "#61A2Da",
-      color: "#fff",
-      borderRadius: "4px",
-      cursor: "pointer",
-      fontSize: "11px",
-      textAlign: "center"
-    }}
-  >
-    本月
-  </div>
   
-  {/* 模板按钮 */}
-  <div
-    onClick={() => setShowTemplateList(!showTemplateList)}
-    style={{
-      padding: "4px 8px",
-      backgroundColor: "#61A2Da",
-      color: "#fff",
-      borderRadius: "4px",
-      cursor: "pointer",
-      fontSize: "11px",
-      textAlign: "center"
-    }}
-  >
-    模板
-  </div>
+ 
+  
+
   
   {/* 添加按钮 */}
   <div
