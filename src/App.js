@@ -21668,136 +21668,138 @@ if (isInitialized && todayTasks.length === 0) {
 </div>
 
 
-{/* 第一行：周次（左） + 四个按钮（右） */}
+{/* 第一行：周次居中 + 右侧按钮 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 4
+  marginBottom: 4,
+  position: "relative"
 }}>
-  {/* 左侧：周次显示 */}
- <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
- <button
-  className="week-nav-btn"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    prevWeek();
-  }}
-  style={{
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "0",
-    margin: "0",
-    fontSize: "14px",
-    width: "24px",
-    height: "24px",
-    display: "flex",
-    alignItems: "center",
+  {/* 左侧占位 - 保持平衡 */}
+  <div style={{ width: "70px" }}></div>
+  
+  {/* 中间：周次显示 - 居中 */}
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center", 
     justifyContent: "center",
-     marginRight: "-6px",
-    flexShrink: 0,
-    color: "#61A2Da"
-  }}
-  title="上一周"
->
-  ◀
-</button>
-
-  <span 
-    onClick={() => setShowDatePickerModal(true)}
-    style={{
-      fontWeight: "bold",
-      margin: "0",
-      fontSize: "13px",
-      cursor: "pointer",
-      padding: "4px 6px",
-      borderRadius: "6px",
-      transition: "background-color 0.2s",
-      display: "inline-block",
-      lineHeight: "16px",
-      
-      verticalAlign: "middle",
-      color: "#61A2Da"       // ← 添加文字颜色
-    }}
-    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
-    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-    title="点击选择日期"
-  >
-    {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
-  </span>
-
-<button
-  className="week-nav-btn"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    nextWeek();
-  }}
-  style={{
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "0",
-    margin: "0",
-    fontSize: "14px",
-    width: "24px",
-    height: "24px",
-    display: "flex",
-    marginLeft: "-6px",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    color: "#61A2Da"
-  }}
-  title="下一周"
->
-  ▶
-</button>
-</div>
-
-
-<div style={{ display: "flex", gap: "6px" }}>
-  {/* 本周按钮 */}
-  
-  
- 
-  
-
-  
-  {/* 添加按钮 */}
-  <div
-    onClick={() => setShowAddTaskModal(true)}
-    style={{
-      padding: "4px 8px",
-      backgroundColor: "#61A2Da",
-      color: "#fff",
-      borderRadius: "4px",
-      cursor: "pointer",
-      fontSize: "11px",
-      textAlign: "center"
-    }}
-  >
-    添加
+    position: "absolute",
+    left: "50%",
+    transform: "translateX(-50%)"
+  }}>
+    <button
+      className="week-nav-btn"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        prevWeek();
+      }}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "0",
+        margin: "0",
+        fontSize: "14px",
+        width: "28px",
+        height: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: "#61A2Da"
+      }}
+      title="上一周"
+    >
+      ◀
+    </button>
+    
+    <span 
+      onClick={() => setShowDatePickerModal(true)}
+      style={{
+        fontWeight: "bold",
+        margin: "0 4px",
+        fontSize: "13px",
+        cursor: "pointer",
+        padding: "4px 8px",
+        borderRadius: "6px",
+        transition: "background-color 0.2s",
+        display: "inline-block",
+        lineHeight: "16px",
+        verticalAlign: "middle",
+        color: "#61A2Da",
+        whiteSpace: "nowrap"
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+      title="点击选择日期"
+    >
+      {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
+    </span>
+    
+    <button
+      className="week-nav-btn"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nextWeek();
+      }}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "0",
+        margin: "0",
+        fontSize: "14px",
+        width: "28px",
+        height: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: "#61A2Da"
+      }}
+      title="下一周"
+    >
+      ▶
+    </button>
   </div>
   
-  {/* 批量按钮 */}
-  <div
-    onClick={() => setShowBulkImportModal(true)}
-    style={{
-      padding: "4px 8px",
-      backgroundColor: "#FF9800",
-      color: "#fff",
-      borderRadius: "4px",
-      cursor: "pointer",
-      fontSize: "11px",
-      textAlign: "center"
-    }}
-  >
-    批量
+  {/* 右侧：按钮组 */}
+  <div style={{ display: "flex", gap: "6px" }}>
+    {/* 添加按钮 */}
+    <div
+      onClick={() => setShowAddTaskModal(true)}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      添加
+    </div>
+    
+    {/* 批量按钮 */}
+    <div
+      onClick={() => setShowBulkImportModal(true)}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#FF9800",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      批量
+    </div>
   </div>
-</div>
 </div>
 
 
