@@ -15165,7 +15165,12 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
-// 在 App 组件中，其他 useState 定义附近添加（大约在第 5300 行）
+  // 在 App 组件中，其他 useState 旁边添加
+const [semesterEndDate, setSemesterEndDate] = useState(() => {
+  const saved = localStorage.getItem('semester_end_date');
+  return saved || '2026-07-05'; // 默认暑假开始日期
+});
+
 const [showSubjectGuideModal, setShowSubjectGuideModal] = useState(false);
 const [showSubjectTodoModal, setShowSubjectTodoModal] = useState(false);
 const [subjectGuideEntries, setSubjectGuideEntries] = useState(() => {
@@ -15714,7 +15719,11 @@ const handleReminderChange = (text) => {
   localStorage.setItem('daily_reminder', text);
 };
 
-
+// 保存学期结束日期
+const saveSemesterEndDate = (date) => {
+  setSemesterEndDate(date);
+  localStorage.setItem('semester_end_date', date);
+};
 // 添加编辑和删除函数
 const handleEditMonthTask = (updatedTask) => {
   setMonthTasks(prev => prev.map(task => 
@@ -21512,18 +21521,75 @@ if (isInitialized && todayTasks.length === 0) {
 
       
       <div style={{
-        textAlign: "center",
-        fontSize: 13,
-        marginTop: "-5px",      // 确保为0
-        marginBottom: 10
-      }}>
-        
-已打卡 {
-  Object.values(tasksByDate).filter(dailyTasks => 
-    dailyTasks.some(task => task.done === true)
-  ).length
-} 天，累计完成 {Object.values(tasksByDate).flat().filter(t => t.done).length} 个学习任务
-      </div>
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  fontSize: 12,
+  marginTop: "-5px",
+  marginBottom: 10,
+  padding: "0 4px"
+}}>
+  {/* 左侧：打卡统计 */}
+  <div style={{ color: "#666" }}>
+    已打卡 {
+      Object.values(tasksByDate).filter(dailyTasks => 
+        dailyTasks.some(task => task.done === true)
+      ).length
+    } 天，累计完成 {
+      Object.values(tasksByDate).flat().filter(t => t.done).length
+    } 个学习任务
+  </div>
+  
+{/* 右侧：本学期倒计时 - 可点击编辑 */}
+{/* 右侧：本学期倒计时 - 可点击编辑 */}
+<div 
+  onClick={() => {
+    const newDate = window.prompt('设置本学期结束日期\n\n格式: YYYY-MM-DD\n例如: 2026-06-26', semesterEndDate);
+    if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      setSemesterEndDate(newDate);
+      localStorage.setItem('semester_end_date', newDate);
+    } else if (newDate) {
+      alert('请输入正确格式，例如：2026-06-26');
+    }
+  }}
+  style={{ 
+    color: "#61A2Da", 
+    fontWeight: "500",
+    cursor: "pointer",
+    padding: "4px 10px",
+    borderRadius: "16px",
+    backgroundColor: "#e8f0fe",
+    fontSize: "12px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px"
+  }}
+  title="点击修改学期结束日期"
+>
+  <span>本学期剩余</span>
+  <span style={{ 
+    
+    color: "#FF0000", 
+    fontWeight: "bold",
+    padding: "2px 2px",
+    borderRadius: "16px",
+    fontSize: "13px"
+  }}>
+    {
+      (() => {
+        const endDate = new Date(semesterEndDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffTime = endDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays > 0 ? diffDays : 0;
+      })()
+    }
+  </span>
+  <span>天</span>
+</div>
+
+</div>
 
 
 {/* 第一行：周次（左） + 四个按钮（右） */}
