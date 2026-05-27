@@ -2038,23 +2038,46 @@ useEffect(() => {
   const currentTodos = todos[activeTab] || [];
 
  // 根据关键词搜索主界面中已完成的关联任务
-const findRelatedTasks = (keyword) => {
-  console.log('🔍 搜索关键词:', keyword);
-  
+// 根据关键词和当前科目搜索主界面中已完成的关联任务
+const findRelatedTasks = useCallback((keyword) => {
   if (!keyword || !tasksByDate) return [];
   
   const relatedTasks = [];
   
+  // 根据当前选中的科目标签，确定搜索范围
+  const getSearchCategories = (tab) => {
+    switch(tab) {
+      case '数学':
+        return ['数学', '校内-数学'];
+      case '语文':
+        return ['语文', '校内-语文'];
+      case '英语':
+        return ['英语', '校内-英语'];
+      case '其他':
+        // 其他：排除语数英主科，只保留其他分类
+        return ['科学', '运动', '其他', '校内'];  // 校内无子分类的也算
+      default:
+        return [tab];
+    }
+  };
+  
+  const searchCategories = getSearchCategories(activeTab);
+  
   Object.entries(tasksByDate).forEach(([date, tasks]) => {
     tasks.forEach(task => {
-      // 只统计已完成的任务
-      if (task.done === true && task.text) {
-        // ✅ 改进匹配逻辑：双向包含
-        const taskText = task.text;
-        const isMatch = taskText.includes(keyword) || keyword.includes(taskText);
+      if (task.done === true && task.text && task.text.includes(keyword)) {
+        // ✅ 新增：检查科目是否匹配
+        let taskCategory = task.category;
+        if (task.category === '校内' && task.subCategory) {
+          taskCategory = `校内-${task.subCategory}`;
+        }
         
-        if (isMatch) {
-          // 获取该任务的耗时（分钟）
+        // 检查任务科目是否在搜索范围内
+        const isCategoryMatch = searchCategories.some(cat => 
+          taskCategory === cat || taskCategory.includes(cat)
+        );
+        
+        if (isCategoryMatch) {
           const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
           relatedTasks.push({
             id: task.id,
@@ -2065,17 +2088,13 @@ const findRelatedTasks = (keyword) => {
             category: task.category,
             subCategory: task.subCategory
           });
-          console.log(`✅ 匹配成功: "${taskText}" 包含关键词 "${keyword}"`);
         }
       }
     });
   });
   
-  console.log(`📊 共找到 ${relatedTasks.length} 个关联任务`);
-  
-  // 按日期倒序排序（最新的在前）
   return relatedTasks.sort((a, b) => b.date.localeCompare(a.date));
-};
+}, [tasksByDate, activeTab]);  // 添加 activeTab 依赖
 
   // 切换完成状态
   const toggleTodo = (todoId) => {
@@ -2439,8 +2458,8 @@ const findRelatedTasks = (keyword) => {
                         
                         {/* 展开/收起箭头 */}
                         <div style={{
-                          width: '24px',
-                          height: '24px',
+                          width: '22px',
+                          height: '22px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -2449,28 +2468,27 @@ const findRelatedTasks = (keyword) => {
                           {isExpanded ? '▲' : '▼'}
                         </div>
                         
-                        {/* 删除按钮 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteTodo(todo.id);
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                            width: '24px',
-                            height: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#999',
-                            flexShrink: 0
-                          }}
-                        >
-                          ×
-                        </button>
+  <div
+  onClick={(e) => {
+    e.stopPropagation();
+    handleDeleteTodo(todo.id);
+  }}
+  style={{
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#999',
+    flexShrink: 0
+  }}
+>
+  ×
+</div>
                       </div>
                     </div>
                     
@@ -21344,22 +21362,20 @@ if (isInitialized && todayTasks.length === 0) {
   position: "relative",
   textAlign: "center",
   marginBottom: 15,
-  
   padding: "0 40px"
 }}>
-  {/* 右上角成绩记录按钮 */}
+  {/* 右上角成绩记录按钮 - 最右边 */}
   <button
     onClick={() => setShowGradeModal(true)}
     style={{
       position: "absolute",
       top: 0,
       right: 0,
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       backgroundColor: "transparent",
       border: "none",
       cursor: "pointer",
-      fontSize: "16px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -21368,7 +21384,7 @@ if (isInitialized && todayTasks.length === 0) {
     }}
     title="成绩记录"
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="4" y="12" width="4" height="8" fill="#61A2Da" rx="0.5"/>
       <rect x="10" y="6" width="4" height="14" fill="#61A2Da" rx="0.5"/>
       <rect x="16" y="9" width="4" height="11" fill="#61A2Da" rx="0.5"/>
@@ -21376,67 +21392,67 @@ if (isInitialized && todayTasks.length === 0) {
     </svg>
   </button>
 
-{/* 科目待办按钮 */}
-<button
-  onClick={() => setShowSubjectTodoModal(true)}
-  style={{
-    position: "absolute",
-    top: 0,
-    right: 114,  // 根据其他按钮位置调整
-    width: 36,
-    height: 36,
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    padding: 0
-  }}
-  title="科目待办"
->
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-    <path d="M8 12L11 15L16 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-  </svg>
-</button>
+  {/* 科目待办按钮 */}
+  <button
+    onClick={() => setShowSubjectTodoModal(true)}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 36,  // ← 从 100 改成 36
+      width: 32,
+      height: 32,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="科目待办"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <path d="M8 12L11 15L16 8" stroke="#61A2Da" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  </button>
 
-{/* 科目指导按钮 - 放在统计汇总和成绩记录之间 */}
-<button
-  onClick={() => setShowSubjectGuideModal(true)}
-  style={{
-    position: "absolute",
-    top: 0,
-    right: 78,  // 统计汇总按钮在42，成绩记录在0，中间留36px
-    width: 36,
-    height: 36,
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    padding: 0
-  }}
-  title="科目指导"
->
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="5" width="18" height="14" rx="1" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-    <line x1="12" y1="5" x2="12" y2="19" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-</button>
-  {/* 统计汇总按钮 - 放在成绩记录按钮左侧 */}
+  {/* 科目指导按钮 */}
+  <button
+    onClick={() => setShowSubjectGuideModal(true)}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 72,  // ← 从 64 改成 72
+      width: 32,
+      height: 32,
+      backgroundColor: "transparent",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      padding: 0
+    }}
+    title="科目指导"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="5" width="18" height="14" rx="1" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+      <line x1="12" y1="5" x2="12" y2="19" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  </button>
+
+  {/* 统计汇总按钮 */}
   <button
     onClick={() => setShowStats(true)}
     style={{
       position: "absolute",
       top: 0,
-      right: 42,  // 成绩记录按钮宽度36 + 间距6
-      width: 36,
-      height: 36,
-      marginRight:"-7px",
+      right: 108,  // ← 从 42 改成 108
+      width: 32,
+      height: 32,
       backgroundColor: "transparent",
       border: "none",
       cursor: "pointer",
@@ -21449,13 +21465,10 @@ if (isInitialized && todayTasks.length === 0) {
     title="统计汇总"
   >
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
-    <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#61A2Da" stroke="none"/>
-  </svg>
+      <circle cx="12" cy="12" r="10" stroke="#61A2Da" strokeWidth="2" fill="none"/>
+      <path d="M12 12 L12 2 A10 10 0 0 1 19.07 7.07 Z" fill="#61A2Da" stroke="none"/>
+    </svg>
   </button>
-
-
-
 
   {/* 左上角奖杯按钮 */}
   <button
@@ -21464,12 +21477,11 @@ if (isInitialized && todayTasks.length === 0) {
       position: "absolute",
       top: 0,
       left: 0,
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       backgroundColor: "transparent",
       border: "none",
       cursor: "pointer",
-      fontSize: "16px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -21478,7 +21490,7 @@ if (isInitialized && todayTasks.length === 0) {
     }}
     title="里程碑"
   >
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
       <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da"/>
       <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
