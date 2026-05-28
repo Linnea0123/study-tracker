@@ -12071,40 +12071,102 @@ const handleProgressAdjust = (increment) => {
 </div>
 
 
-{/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度显示区域 - 只有 progress 存在且 target > 0 时才显示 */}
+
+{/* 进度条区域 - 点击进度条出现 +/- 按钮 */}
 {task.progress && task.progress.target > 0 && (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    backgroundColor: '#f5f5f5',
-    padding: '2px 8px',
-    borderRadius: '12px'
-  }}>
-    <div style={{ width: '50px' }}>
-      <div style={{
+  <div style={{ marginTop: 4, marginLeft: 20 }}>
+    {/* 进度条 - 点击后显示/隐藏 +/- 按钮 */}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowProgressControls(!showProgressControls);
+      }}
+      style={{
         width: '100%',
-        height: '4px',
+        height: 6,
         backgroundColor: '#e0e0e0',
-        borderRadius: '2px',
-        overflow: 'hidden'
+        borderRadius: 3,
+        overflow: 'hidden',
+        marginBottom: 4,
+        cursor: 'pointer'
+      }}
+    >
+      <div style={{
+        width: `${(task.progress.current / task.progress.target) * 100}%`,
+        height: '100%',
+        backgroundColor: '#4caf50'
+      }} />
+    </div>
+    
+    {/* 下方：固定宽度布局，避免点击后变化 */}
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: '24px'
+    }}>
+      {/* 左边：百分比和数值 - 固定宽度 */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        fontSize: 11,
+        color: '#666',
+        minWidth: '70px'
       }}>
-        <div style={{
-          width: `${(task.progress.current / task.progress.target) * 100}%`,
-          height: '100%',
-          backgroundColor: '#4caf50'
-        }} />
+        <span>{Math.round((task.progress.current / task.progress.target) * 100)}%</span>
+        <span>|</span>
+        <span>{task.progress.current}/{task.progress.target}</span>
+      </div>
+      
+      {/* 右边：+/- 按钮 - 固定宽度，保持占位 */}
+      <div style={{
+        minWidth: '50px',
+        display: 'flex',
+        justifyContent: 'flex-end'
+      }}>
+        {showProgressControls && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                const newValue = Math.max(0, (task.progress.current || 0) - 1);
+                if (onUpdateProgress) onUpdateProgress(task, newValue);
+              }}
+              style={{
+                cursor: 'pointer',
+                fontSize: 16,
+                color: '#666',
+                padding: '0 4px'
+              }}
+            >
+              −
+            </span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                const newValue = Math.min(task.progress.target, (task.progress.current || 0) + 1);
+                if (onUpdateProgress) onUpdateProgress(task, newValue);
+              }}
+              style={{
+                cursor: 'pointer',
+                fontSize: 16,
+                color: '#666',
+                padding: '0 4px'
+              }}
+            >
+              +
+            </span>
+          </div>
+        )}
       </div>
     </div>
-    <span style={{ fontSize: '10px', color: '#666' }}>
-      {task.progress.current}/{task.progress.target}
-    </span>
   </div>
 )}
-
 
 {/* 跨日期任务详情 - 展开区域 */}
 {showCrossDateDetail && task.crossDateId && task.crossDates && task.crossDates.length > 0 && (
