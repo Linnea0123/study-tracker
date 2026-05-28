@@ -8119,7 +8119,7 @@ confirmBtn.onclick = () => {
     return;
   }
   
-  
+  const initial = parseInt(initialInput.value) || 0;
   const current = parseInt(currentInput.value) || 0;
   const target = parseInt(targetInput.value) || 0;
   
@@ -11826,12 +11826,13 @@ const toggleDateCompletion = (date, isChecked) => {
     toggleDone(taskOnDate);
   }
 };
-// 处理进度调整
+  // 处理进度调整
+ // 处理进度调整
 const handleProgressAdjust = (increment) => {
   const currentValue = Number(task.progress?.current) || 0;
   const targetValue = Number(task.progress?.target) || 100;
-  // ✅ 修复：最小值是0，最大值是目标值
-  const newCurrent = Math.min(Math.max(0, currentValue + increment), targetValue);
+  const initialValue = Number(task.progress?.initial) || 0;
+  const newCurrent = Math.min(Math.max(initialValue, currentValue + increment), targetValue);
   
   if (onUpdateProgress) {
     onUpdateProgress(task, newCurrent);
@@ -12063,36 +12064,106 @@ const handleProgressAdjust = (increment) => {
 
 
 {/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度条 - 只有设置了进度才显示 */}
-{/* 进度显示区域 - 只有 progress 存在且 target > 0 时才显示 */}
 {task.progress && task.progress.target > 0 && (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    backgroundColor: '#f5f5f5',
-    padding: '2px 8px',
-    borderRadius: '12px'
-  }}>
-    <div style={{ width: '50px' }}>
+  <div style={{ marginTop: 6 }}>
+    {/* 进度条点击区域 */}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowProgressControls(!showProgressControls);
+      }}
+      style={{ cursor: 'pointer' }}
+    >
       <div style={{
         width: '100%',
-        height: '4px',
-        backgroundColor: '#e0e0e0',
-        borderRadius: '2px',
-        overflow: 'hidden'
+        height: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 5,
+        overflow: 'hidden',
+        marginBottom: 4
       }}>
         <div style={{
-          width: `${(task.progress.current / task.progress.target) * 100}%`,
+          width: `${((task.progress.current - task.progress.initial) / (task.progress.target - task.progress.initial)) * 100}%`,
           height: '100%',
-          backgroundColor: '#4caf50'
+          backgroundColor: task.done || task.abandoned ? '#d0d0d0' : '#4caf50',
+          borderRadius: 5,
+          transition: 'width 0.3s ease'
         }} />
       </div>
     </div>
-    <span style={{ fontSize: '10px', color: '#666' }}>
-      {task.progress.current}/{task.progress.target}
-    </span>
+    
+    {/* 进度文字和 +/- 按钮 - 固定高度避免跳动 */}
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 4,
+      height: '20px'  // ✅ 固定高度
+    }}>
+      {/* 左侧：进度百分比和数值 - 始终显示 */}
+      <div style={{
+        fontSize: 11,
+        color: (task.done || task.abandoned) ? '#ccc' : '#666',
+        lineHeight: '20px'
+      }}>
+        {Math.round(((task.progress.current - task.progress.initial) / (task.progress.target - task.progress.initial)) * 100)}% | {task.progress.current}/{task.progress.target}
+      </div>
+      
+      {/* +/- 按钮 - 点击进度条后才显示，无外框 */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 12,
+        width: '52px',  // ✅ 固定宽度，避免按钮出现时宽度变化
+        justifyContent: 'flex-end'
+      }}>
+        {showProgressControls && (
+          <>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                handleProgressAdjust(-1);
+              }}
+              style={{
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 'bold',
+                color: '#61A2Da',
+                userSelect: 'none',
+                width: 20,
+                height: 20,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1
+              }}
+            >
+              −
+            </span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                handleProgressAdjust(1);
+              }}
+              style={{
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: 'bold',
+                color: '#61A2Da',
+                userSelect: 'none',
+                width: 20,
+                height: 20,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1
+              }}
+            >
+              +
+            </span>
+          </>
+        )}
+      </div>
+    </div>
   </div>
 )}
 
@@ -15064,18 +15135,16 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 function App() {
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
-const [enableProgress, setEnableProgress] = useState(false);
-
+const [newTaskProgressUnit, setNewTaskProgressUnit] = useState('%');
+const [newTaskProgressInitial, setNewTaskProgressInitial] = useState(0);
 // 编辑关注任务的进度
-
-
+// 编辑关注任务的进度
 const editFocusTaskProgress = (task) => {
   const template = focusTaskTemplates.find(t => t.id === task.id);
   if (!template) return;
-
-  // ✅ 只读取当前值和目标值
-  const progressData = template.progress || { current: 0, target: 100 };
-
+  
+  const currentProgress = template.progress || { initial: 0, current: 0, target: 100, unit: '%' };
+  
   const modalDiv = document.createElement('div');
   modalDiv.style.cssText = `
     position: fixed;
@@ -15086,26 +15155,49 @@ const editFocusTaskProgress = (task) => {
     background: rgba(0,0,0,0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    alignItems: center;
     z-index: 10000;
   `;
-
+  
   const contentDiv = document.createElement('div');
   contentDiv.style.cssText = `
     background: white;
     padding: 20px;
     border-radius: 16px;
-    width: 280px;
+    width: 300px;
     text-align: center;
   `;
-
-  // ✅ 移除初始值输入框，只保留当前值和目标值
+  
   contentDiv.innerHTML = `
     <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">设置进度目标</h3>
     
     <div style="margin-bottom: 12px;">
+      <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 4px; color: #666;">初始值</label>
+      <input id="progress-initial" type="number" value="${currentProgress.initial}" style="
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+      ">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
       <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 4px; color: #666;">当前值</label>
-      <input id="progress-current" type="number" value="${progressData.current || 0}" style="
+      <input id="progress-current" type="number" value="${currentProgress.current}" style="
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+      ">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 4px; color: #666;">目标值</label>
+      <input id="progress-target" type="number" value="${currentProgress.target}" style="
         width: 100%;
         padding: 8px;
         border: 1px solid #ccc;
@@ -15116,8 +15208,8 @@ const editFocusTaskProgress = (task) => {
     </div>
     
     <div style="margin-bottom: 16px;">
-      <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 4px; color: #666;">目标值</label>
-      <input id="progress-target" type="number" value="${progressData.target || 100}" style="
+      <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 4px; color: #666;">单位</label>
+      <select id="progress-unit" style="
         width: 100%;
         padding: 8px;
         border: 1px solid #ccc;
@@ -15125,6 +15217,12 @@ const editFocusTaskProgress = (task) => {
         font-size: 14px;
         box-sizing: border-box;
       ">
+        <option value="%" ${currentProgress.unit === '%' ? 'selected' : ''}>%</option>
+        <option value="次" ${currentProgress.unit === '次' ? 'selected' : ''}>次</option>
+        <option value="页" ${currentProgress.unit === '页' ? 'selected' : ''}>页</option>
+        <option value="分钟" ${currentProgress.unit === '分钟' ? 'selected' : ''}>分钟</option>
+        <option value="小时" ${currentProgress.unit === '小时' ? 'selected' : ''}>小时</option>
+      </select>
     </div>
     
     <div style="display: flex; gap: 10px;">
@@ -15150,40 +15248,41 @@ const editFocusTaskProgress = (task) => {
       ">保存</button>
     </div>
   `;
-
+  
   modalDiv.appendChild(contentDiv);
   document.body.appendChild(modalDiv);
-
+  
   const confirmBtn = contentDiv.querySelector('#confirm-btn');
   confirmBtn.onclick = () => {
+    const initial = parseInt(contentDiv.querySelector('#progress-initial').value) || 0;
     const current = parseInt(contentDiv.querySelector('#progress-current').value) || 0;
     const target = parseInt(contentDiv.querySelector('#progress-target').value) || 100;
-
+    const unit = contentDiv.querySelector('#progress-unit').value;
+    
     if (target <= 0) {
       alert('目标值必须大于0');
       return;
     }
-
-    // ✅ 确保当前值不超过目标值
-    const validCurrent = Math.min(current, target);
     
-    // ✅ 只保存当前值和目标值
-    const newProgress = { current: validCurrent, target: target };
-
+    // 确保当前值在初始值和目标值之间
+    const validCurrent = Math.min(Math.max(current, initial), target);
+    
+    const newProgress = { initial, current: validCurrent, target, unit };
+    
     setFocusTaskTemplates(prev => prev.map(t =>
-      t.id === task.id
+      t.id === task.id 
         ? { ...t, progress: newProgress }
         : t
     ));
-
+    
     document.body.removeChild(modalDiv);
   };
-
+  
   const cancelBtn = contentDiv.querySelector('#cancel-btn');
   cancelBtn.onclick = () => {
     document.body.removeChild(modalDiv);
   };
-
+  
   modalDiv.onclick = (e) => {
     if (e.target === modalDiv) {
       document.body.removeChild(modalDiv);
@@ -15557,6 +15656,7 @@ const [focusTaskStatus, setFocusTaskStatus] = useState(() => {
   return saved ? JSON.parse(saved) : {};
 });
 
+// 3. 获取当前日期的完成任务列表
 const currentFocusTasks = useMemo(() => {
   const todayStatus = focusTaskStatus[selectedDate] || {};
   return focusTaskTemplates.map(template => ({
@@ -15564,9 +15664,7 @@ const currentFocusTasks = useMemo(() => {
     text: template.text,
     checked: todayStatus[template.id] || false,
     targetCategory: template.targetCategory || '校内',
-    targetSubCategory: template.targetSubCategory || '',
-    // ✅ 只有 progress 存在且 target > 0 才传递，否则传 null
-    progress: (template.progress && template.progress.target > 0) ? template.progress : null
+    targetSubCategory: template.targetSubCategory || ''
   }));
 }, [focusTaskTemplates, focusTaskStatus, selectedDate]);
 // 4. 保存模板到 localStorage
@@ -17732,7 +17830,6 @@ useEffect(() => {
 
 
 // 进度更新函数 - 同时更新对应模板的进度
-// 进度更新函数
 const handleUpdateProgress = (task, newCurrent) => {
   console.log('更新进度:', task.text, '新进度:', newCurrent);
   
@@ -17746,13 +17843,11 @@ const handleUpdateProgress = (task, newCurrent) => {
         updatedTasksByDate[date] = updatedTasksByDate[date].map(t => {
           if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
             hasChanges = true;
-            const target = t.progress?.target || 100;
-            // ✅ 修复：直接使用 newCurrent，不需要加减初始值
             return {
               ...t,
               progress: {
                 ...t.progress,
-                current: Math.min(Math.max(0, newCurrent), target)
+                current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
               }
             };
           }
@@ -17769,7 +17864,6 @@ const handleUpdateProgress = (task, newCurrent) => {
     });
   } else {
     setTasksByDate(prev => {
-      const target = task.progress?.target || 100;
       const newTasksByDate = {
         ...prev,
         [selectedDate]: (prev[selectedDate] || []).map(t =>
@@ -17777,8 +17871,7 @@ const handleUpdateProgress = (task, newCurrent) => {
             ...t,
             progress: {
               ...t.progress,
-              // ✅ 修复：直接使用 newCurrent
-              current: Math.min(Math.max(0, newCurrent), target)
+              current: Math.min(Math.max(0, newCurrent), t.progress.target || 100)
             }
           } : t
         )
@@ -17792,24 +17885,36 @@ const handleUpdateProgress = (task, newCurrent) => {
     });
   }
   
-  // 同步进度到对应的模板
+  // ✅ 自动同步进度到对应的模板（静默同步，不显示提示）
   if (task.templateId && templates.length > 0) {
+    console.log('🔄 检测到模板任务，尝试同步进度到模板:', task.templateId);
+    
+    const newCurrentValue = Math.min(Math.max(0, newCurrent), task.progress?.target || 100);
+    
+    let templateUpdated = false;
     const updatedTemplates = templates.map((template) => {
       if (template.id === task.templateId) {
+        console.log(`✅ 找到匹配模板: ${template.name || template.text}`);
+        templateUpdated = true;
         return {
           ...template,
           progress: {
             ...template.progress,
-            current: newCurrent,
-            target: task.progress?.target || template.progress?.target || 100
+            current: newCurrentValue,
+            target: task.progress?.target || template.progress?.target || 100,
+            unit: task.progress?.unit || template.progress?.unit || "%"
           }
         };
       }
       return template;
     });
     
-    setTemplates(updatedTemplates);
-    saveMainData('templates', updatedTemplates);
+    if (templateUpdated) {
+      setTemplates(updatedTemplates);
+      saveMainData('templates', updatedTemplates);
+      console.log(`✅ 模板进度已自动更新为: ${newCurrentValue}`);
+      // ❌ 移除了 toast 提示，静默同步
+    }
   }
 };
   
@@ -22412,7 +22517,7 @@ if (isInitialized && todayTasks.length === 0) {
               setNewTaskTargetCategory('校内');
               setNewTaskTargetSubCategory('');
               setNewTaskTargetProgress(100);
-              
+              setNewTaskProgressInitial(0);
               setNewTaskProgressCurrent(0);
               setNewTaskProgressUnit('%');
             }
@@ -22477,121 +22582,104 @@ if (isInitialized && todayTasks.length === 0) {
         )}
         
 {/* 目标进度设置 */}
-{/* 目标进度设置 */}
 <div style={{ marginBottom: '10px' }}>
-  <div style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    marginBottom: '8px' 
-  }}>
-    <input
-      type="checkbox"
-      id="enableProgress"
-      checked={enableProgress}
-      onChange={(e) => {
-        setEnableProgress(e.target.checked);
-        // 如果取消勾选，清空进度值
-        if (!e.target.checked) {
-          setNewTaskProgressCurrent(0);
-          setNewTaskTargetProgress(0);
-        }
-      }}
-      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-    />
-    <label 
-      htmlFor="enableProgress" 
-      style={{ fontSize: '12px', color: '#666', cursor: 'pointer' }}
-    >
-      设置目标进度
-    </label>
+  <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>目标进度（可选）：</div>
+  
+  {/* 初始值 + 当前值 + 目标值 同一行 */}
+  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px' }}>初始值</div>
+      <input
+        type="number"
+        placeholder="0"
+        value={newTaskProgressInitial}
+        onChange={(e) => setNewTaskProgressInitial(parseInt(e.target.value) || 0)}
+        style={{
+          width: '100%',
+          padding: '8px 8px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          fontSize: '13px',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px' }}>当前值</div>
+      <input
+        type="number"
+        placeholder="0"
+        value={newTaskProgressCurrent}
+        onChange={(e) => setNewTaskProgressCurrent(parseInt(e.target.value) || 0)}
+        style={{
+          width: '100%',
+          padding: '8px 8px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          fontSize: '13px',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px' }}>目标值</div>
+      <input
+        type="number"
+        placeholder="目标值"
+        value={newTaskTargetProgress}
+        onChange={(e) => setNewTaskTargetProgress(parseInt(e.target.value) || 0)}
+        style={{
+          width: '100%',
+          padding: '8px 8px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          fontSize: '13px',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
   </div>
   
-  {/* 只有勾选后才显示输入框 */}
-  {enableProgress && (
-    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '11px', color: '#999', marginBottom: '4px' }}>当前值</div>
-        <input
-          type="number"
-          placeholder="0"
-          value={newTaskProgressCurrent}
-          onChange={(e) => setNewTaskProgressCurrent(parseInt(e.target.value) || 0)}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '14px',
-            boxSizing: 'border-box'
-          }}
-        />
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '11px', color: '#999', marginBottom: '4px' }}>目标值</div>
-        <input
-          type="number"
-          placeholder="目标值"
-          value={newTaskTargetProgress}
-          onChange={(e) => setNewTaskTargetProgress(parseInt(e.target.value) || 0)}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '14px',
-            boxSizing: 'border-box'
-          }}
-        />
-      </div>
-    </div>
-  )}
+  
 </div>
         
-<div
-  onClick={() => {
-    if (newTaskName.trim()) {
-      const newId = Date.now().toString();
-      
-      // ✅ 只有勾选了启用进度且目标值 > 0 时才添加 progress
-      let progressData = null;
-      if (enableProgress && newTaskTargetProgress > 0) {
-        progressData = { 
-          current: newTaskProgressCurrent || 0,
-          target: newTaskTargetProgress
-        };
-      }
-      
-      setFocusTaskTemplates(prev => [...prev, {
-        id: newId,
-        text: newTaskName.trim(),
-        targetCategory: newTaskTargetCategory,
-        targetSubCategory: newTaskTargetSubCategory,
-        progress: progressData  // 不勾选时为 null
-      }]);
-      
-      // 清空表单
-      setNewTaskName('');
-      setNewTaskTargetCategory('校内');
-      setNewTaskTargetSubCategory('');
-      setNewTaskTargetProgress(100);
-      setNewTaskProgressCurrent(0);
-      setEnableProgress(false);
-    }
-  }}
-  style={{
-    padding: '10px',
-    backgroundColor: '#61A2Da',
-    color: 'white',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    textAlign: 'center'
-  }}
->
-  添加
-</div>
+        {/* 添加按钮 */}
+        <div
+          onClick={() => {
+            if (newTaskName.trim()) {
+              const newId = Date.now().toString();
+              setFocusTaskTemplates(prev => [...prev, {
+                id: newId,
+                text: newTaskName.trim(),
+                targetCategory: newTaskTargetCategory,
+                targetSubCategory: newTaskTargetSubCategory,
+                progress: { 
+                  
+                  current: newTaskProgressInitial,
+                  target: newTaskTargetProgress || 100
+                }
+              }]);
+              setNewTaskName('');
+              setNewTaskTargetCategory('校内');
+              setNewTaskTargetSubCategory('');
+              setNewTaskTargetProgress(100);
+              setNewTaskProgressInitial(0);
+              setNewTaskProgressUnit('%');
+            }
+          }}
+          style={{
+            padding: '10px',
+            backgroundColor: '#61A2Da',
+            color: 'white',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}
+        >
+          添加
+        </div>
       </div>
       
       {/* 现有任务列表 */}
@@ -22614,7 +22702,7 @@ if (isInitialized && todayTasks.length === 0) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '6px 16px',
+                  padding: '12px 20px',
                   borderBottom: index < currentFocusTasks.length - 1 ? '1px solid #f0f0f0' : 'none',
                   backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
                 }}
@@ -22634,12 +22722,11 @@ if (isInitialized && todayTasks.length === 0) {
                     color: '#61A2Da',
                     whiteSpace: 'nowrap'
                   }}>
-                   {task.targetCategory}{task.targetSubCategory ? ` / ${task.targetSubCategory}` : ''}
+                    → {task.targetCategory}{task.targetSubCategory ? ` / ${task.targetSubCategory}` : ''}
                   </span>
                   
                   {/* 进度显示区域 */}
           {/* 进度显示区域 */}
-{/* 进度显示区域 */}
 {progress.target > 0 && (
   <div style={{
     display: 'flex',
@@ -22658,7 +22745,9 @@ if (isInitialized && todayTasks.length === 0) {
         overflow: 'hidden'
       }}>
         <div style={{
-          width: `${(progress.current / progress.target) * 100}%`,
+          width: progress.target > progress.initial 
+            ? `${((progress.current - progress.initial) / (progress.target - progress.initial)) * 100}%`
+            : '0%',
           height: '100%',
           backgroundColor: '#4caf50'
         }} />
@@ -22667,8 +22756,7 @@ if (isInitialized && todayTasks.length === 0) {
     <span style={{ fontSize: '10px', color: '#666' }}>
       {progress.current}/{progress.target}
     </span>
-    {/* ❌ 删除下面的编辑按钮 */}
-    {/* <span
+    <span
       onClick={() => editFocusTaskProgress(task)}
       style={{
         cursor: 'pointer',
@@ -22678,7 +22766,7 @@ if (isInitialized && todayTasks.length === 0) {
       title="编辑进度"
     >
       ✏️
-    </span> */}
+    </span>
   </div>
 )}
                   
@@ -22697,7 +22785,12 @@ if (isInitialized && todayTasks.length === 0) {
     // ✅ 直接从 task 中读取 progress
     const progressData = currentTask.progress || { initial: 0, current: 0, target: 0 };
     
-
+    // 调试：打印看看读到了什么
+    console.log('编辑任务 - 完整task:', currentTask);
+    console.log('编辑任务 - progress数据:', progressData);
+    console.log('初始值:', progressData.initial);
+    console.log('当前值:', progressData.current);
+    console.log('目标值:', progressData.target);
     
     const modalDiv = document.createElement('div');
     modalDiv.style.cssText = `
@@ -22786,7 +22879,17 @@ if (isInitialized && todayTasks.length === 0) {
         <div style="font-size: 12px; color: #666; margin-bottom: 8px;">目标进度（可选）：</div>
         
         <div style="display: flex; gap: 12px; align-items: center;">
-          
+          <div style="flex: 1;">
+            <div style="font-size: 11px; color: #999; margin-bottom: 4px;">初始值</div>
+            <input id="edit-progress-initial" type="number" value="${initialValue}" style="
+              width: 100%;
+              padding: 10px;
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              font-size: 14px;
+              box-sizing: border-box;
+            ">
+          </div>
           <div style="flex: 1;">
             <div style="font-size: 11px; color: #999; margin-bottom: 4px;">当前值</div>
             <input id="edit-progress-current" type="number" value="${currentValue}" style="
@@ -22865,7 +22968,7 @@ if (isInitialized && todayTasks.length === 0) {
         return;
       }
       
-      
+      const initial = parseInt(initialInput.value) || 0;
       const current = parseInt(currentInput.value) || 0;
       const target = parseInt(targetInput.value) || 0;
       
@@ -22914,9 +23017,6 @@ if (isInitialized && todayTasks.length === 0) {
     padding: 0
   }}
   title="编辑任务"
-
-
-
 >
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M17 3L21 7L7 21H3L3 17L17 3Z" stroke="#999" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
