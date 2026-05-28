@@ -10309,7 +10309,7 @@ const abandonReasons = [
           style={{
             flex: 1,
             minWidth: 0,  // 允许输入框收缩
-            height: 36,
+            height: 32,
             padding: '0 6px',
             border: '1px solid #ccc',
             borderRadius: 6,
@@ -10355,7 +10355,7 @@ const abandonReasons = [
           style={{
             flex: 1,
             minWidth: 0,  // 允许输入框收缩
-            height: 36,
+            height: 32,
             padding: '0 6px',
             border: '1px solid #ccc',
             borderRadius: 6,
@@ -10391,7 +10391,7 @@ const abandonReasons = [
               }}>
                 {[
                   { name: '重要', color: '#ff4444' },
-                  { name: '紧急', color: '#ff9800' },
+                  
                   { name: '复习', color: '#4caf50' },
                   { name: '预习', color: '#2196f3' },
                   { name: '作业', color: '#9c27b0' },
