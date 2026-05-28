@@ -5599,7 +5599,7 @@ window.debugStudyTracker = {
   // 检查所有存储数据
   checkStorage: () => {
     console.log('=== 学习跟踪器存储调试 ===');
-    const keys = ['tasks', 'templates', 'categories'];
+    const keys = ['tasks', 'categories'];
     keys.forEach(key => {
       const storageKey = `${STORAGE_KEY}_${key}`;
       const data = localStorage.getItem(storageKey);
@@ -5698,7 +5698,7 @@ window.debugStudyTracker = {
   // 清除所有数据
   clearAll: () => {
     if (window.confirm('确定要清除所有数据吗？')) {
-      const keys = ['tasks', 'templates',  'categories'];
+      const keys = ['tasks',   'categories'];
       keys.forEach(key => {
         localStorage.removeItem(`${STORAGE_KEY}_${key}`);
       });
@@ -5745,7 +5745,7 @@ const migrateLegacyData = async () => {
     if (legacyTasks && !hasNewData) {
       console.log('🔁 检测到旧版本数据，开始迁移...');
       
-      const keys = ['tasks', 'templates'];
+      const keys = ['tasks'];
       let migratedCount = 0;
       
       keys.forEach(key => {
@@ -9534,9 +9534,10 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
       })() : '',
     
     progress: task.progress || {
-     
+      initial: 0,
       current: 0,
-      target: 0
+      target: 0,
+      unit: "%"
     },
     pinned: task.pinned || false,
     newTagName: '',
@@ -9595,9 +9596,10 @@ const abandonReasons = [
         : null,
       
       progress: editData.progress || {
-       
+        initial: 0,
         current: 0,
-        target: 0
+        target: 0,
+        unit: "%"
       }
     };
     onSave(task, editData);
@@ -9678,7 +9680,7 @@ const abandonReasons = [
         borderRadius: 16,
         width: '98%',
         maxWidth: 450,
-        maxHeight: '85vh',
+        
         overflow: 'auto',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
         border: '1px solid #e0e0e0',
@@ -9939,7 +9941,7 @@ const abandonReasons = [
               color: '#333',
               fontSize: 12  // 从 14px 减小到 12px
             }}>
-              📝 任务内容
+              任务
             </label>
             <textarea
               value={editData.text}
@@ -10252,6 +10254,7 @@ const abandonReasons = [
             )}
           </div>
 
+
 {/* 📊 进度跟踪 */}
 <div>
   <label
@@ -10268,86 +10271,101 @@ const abandonReasons = [
 
   <div
     style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: 12,
-      alignItems: 'end',
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
     }}
   >
     {/* 当前值 */}
-    <div>
-      <div
-        style={{
-          fontSize: 11,
+    <div style={{ 
+      flex: 1,
+      minWidth: 0,  // 允许内容收缩
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+      }}>
+        <span style={{
+          fontSize: 12,
           color: '#666',
-          marginBottom: 4,
-          textAlign: 'center',
-        }}
-      >
-        当前值
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+        }}>
+          当前值
+        </span>
+        <input
+          type="number"
+          value={editData.progress?.current || ''}
+          onChange={(e) =>
+            setEditData({
+              ...editData,
+              progress: {
+                ...editData.progress,
+                current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+              },
+            })
+          }
+          style={{
+            flex: 1,
+            minWidth: 0,  // 允许输入框收缩
+            height: 36,
+            padding: '0 6px',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            fontSize: 13,
+            textAlign: 'left',
+            backgroundColor: '#fff',
+            boxSizing: 'border-box',
+          }}
+        />
       </div>
-      <input
-        type="number"
-        value={editData.progress?.current || ''}  // ← 改成 editData
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            progress: {
-              ...editData.progress,
-              current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-            },
-          })
-        }
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 6px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
     </div>
 
     {/* 目标值 */}
-    <div>
-      <div
-        style={{
-          fontSize: 11,
+    <div style={{ 
+      flex: 1,
+      minWidth: 0,  // 允许内容收缩
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+      }}>
+        <span style={{
+          fontSize: 12,
           color: '#666',
-          marginBottom: 4,
-          textAlign: 'center',
-        }}
-      >
-        目标值
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+        }}>
+          目标值
+        </span>
+        <input
+          type="number"
+          value={editData.progress?.target || ''}
+          onChange={(e) =>
+            setEditData({
+              ...editData,
+              progress: {
+                ...editData.progress,
+                target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+              },
+            })
+          }
+          style={{
+            flex: 1,
+            minWidth: 0,  // 允许输入框收缩
+            height: 36,
+            padding: '0 6px',
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            fontSize: 13,
+            textAlign: 'left',
+            backgroundColor: '#fff',
+            boxSizing: 'border-box',
+          }}
+        />
       </div>
-      <input
-        type="number"
-        value={editData.progress?.target || ''}  // ← 改成 editData
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            progress: {
-              ...editData.progress,
-              target: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-            },
-          })
-        }
-        style={{
-          width: '100%',
-          height: 36,
-          padding: '0 6px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          fontSize: 14,
-          textAlign: 'center',
-          backgroundColor: '#fff',
-          boxSizing: 'border-box',
-        }}
-      />
     </div>
   </div>
 </div>
@@ -10973,7 +10991,6 @@ const handleProgressAdjust = (increment) => {
 
 
 {/* 进度条区域 - 点击进度条出现 +/- 按钮 */}
-{/* 进度条区域 - 点击进度条出现 +/- 按钮 */}
 {task.progress && task.progress.target > 0 && (
   <div style={{ marginTop: 4, marginLeft: 20 }}>
     {/* 进度条 - 点击后显示/隐藏 +/- 按钮 */}
@@ -10995,8 +11012,7 @@ const handleProgressAdjust = (increment) => {
       <div style={{
         width: `${(task.progress.current / task.progress.target) * 100}%`,
         height: '100%',
-        // ✅ 关键修改：进度条颜色 - 完成时变灰色
-        backgroundColor: task.progress.current >= task.progress.target ? '#d0d0d0' : '#4caf50'
+        backgroundColor: '#4caf50'
       }} />
     </div>
     
@@ -11013,8 +11029,7 @@ const handleProgressAdjust = (increment) => {
         alignItems: 'center',
         gap: 4,
         fontSize: 11,
-        // ✅ 完成时文字也变灰色
-        color: task.progress.current >= task.progress.target ? '#bbb' : '#666',
+        color: '#666',
         minWidth: '70px'
       }}>
         <span>{Math.round((task.progress.current / task.progress.target) * 100)}%</span>
@@ -11037,17 +11052,14 @@ const handleProgressAdjust = (increment) => {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                // ✅ 完成时不允许再减（可选）
-                if (task.progress.current >= task.progress.target) return;
                 const newValue = Math.max(0, (task.progress.current || 0) - 1);
                 if (onUpdateProgress) onUpdateProgress(task, newValue);
               }}
               style={{
-                cursor: task.progress.current >= task.progress.target ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 fontSize: 16,
-                color: task.progress.current >= task.progress.target ? '#ccc' : '#666',
-                padding: '0 4px',
-                opacity: task.progress.current >= task.progress.target ? 0.5 : 1
+                color: '#666',
+                padding: '0 4px'
               }}
             >
               −
@@ -11055,17 +11067,14 @@ const handleProgressAdjust = (increment) => {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                // ✅ 完成时不允许再加
-                if (task.progress.current >= task.progress.target) return;
                 const newValue = Math.min(task.progress.target, (task.progress.current || 0) + 1);
                 if (onUpdateProgress) onUpdateProgress(task, newValue);
               }}
               style={{
-                cursor: task.progress.current >= task.progress.target ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 fontSize: 16,
-                color: task.progress.current >= task.progress.target ? '#ccc' : '#666',
-                padding: '0 4px',
-                opacity: task.progress.current >= task.progress.target ? 0.5 : 1
+                color: '#666',
+                padding: '0 4px'
               }}
             >
               +
@@ -14045,7 +14054,7 @@ function App() {
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
 const [enableProgress, setEnableProgress] = useState(false);
-const [forceUpdate, setForceUpdate] = useState(Date.now());
+
 // 编辑关注任务的进度
 
 
@@ -14405,7 +14414,7 @@ const updateAbandonInfo = (task, newAbandonInfo) => {
   });
 };
 const [chartView, setChartView] = useState('month');
-
+const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 
 
   const [tasksByDate, setTasksByDate] = useState({});
@@ -14616,7 +14625,7 @@ useEffect(() => {
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(null);
   
- 
+  
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(null);
   const [showMoveModal, setShowMoveModal] = useState(null);
@@ -14833,14 +14842,14 @@ const restoreFromGitHub = useCallback(async () => {
       
       // 立即保存到 localStorage
       await saveMainData('tasks', backupData.tasksByDate || {});
-      await saveMainData('templates', backupData.templates || []);
+  
     
       
       console.log('数据已保存到 localStorage');
       
       // 然后设置状态
       setTasksByDate(backupData.tasksByDate || {});
-      setTemplates(backupData.templates || []);
+     
   
       
       // 保存 Gist ID
@@ -14882,7 +14891,7 @@ const [syncConfig, setSyncConfig] = useState({
 
 const getCurrentDailyRating = useCallback(() => {
   const rating = dailyRatings[selectedDate] || 0;
-  console.log('📖 读取评分:', selectedDate, rating);
+  
   return rating;
 }, [dailyRatings, selectedDate]);
 
@@ -15012,7 +15021,7 @@ if (backupData.focusTaskStatus) {
       await saveMainData('tasks', backupData.tasksByDate);
     }
     
-   
+  
     
     // 恢复本月任务
     if (backupData.monthTasks) {
@@ -15151,7 +15160,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
     // 收集所有需要同步的数据
     const syncData = {
       tasksByDate,
-    
+      
       dailyRatings,
       dailyReflections,
       focusTaskTemplates: focusTaskTemplates,
@@ -15171,7 +15180,14 @@ const syncToGitHub = useCallback(async (silent = false) => {
       lastCurrentMonday: currentMonday.toISOString()
     };
 
-   
+    console.log('📤 准备同步数据:', {
+      任务天数: Object.keys(tasksByDate).length,
+     
+      有复盘的日期: Object.keys(dailyReflections).length,
+      本月任务: monthTasks.length,
+      每日提醒: reminderText ? '有' : '无'
+    });
+
     // 获取或创建 Gist
     let gistId = localStorage.getItem('github_gist_id');
     let method = 'POST';
@@ -15224,7 +15240,7 @@ const taskCount = Object.values(tasksByDate).filter(dailyTasks =>
     
     // 根据是否静默模式决定是否弹窗
     if (!silent) {
-      alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 模板数量：${templates.length} 个\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
+      alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
     } else {
       // 静默模式：显示短暂的成功提示（2秒后消失）
       console.log(`✅ 自动同步成功 - ${syncTime}`);
@@ -15345,7 +15361,7 @@ const autoRestoreLatestData = useCallback(async () => {
       `云端数据：\n` +
       `• 备份时间：${new Date(backupData.syncTime || gist.updated_at).toLocaleString()}\n` +
       `• 任务天数：${cloudDataCount}\n` +
-      `• 模板数量：${(backupData.templates || []).length}\n` +
+     
       `• 每日提醒：${backupData.reminderText ? '有' : '无'}\n\n` +
       `本地数据：\n` +
       `• 任务天数：${localDataCount}\n\n` +
@@ -15441,7 +15457,7 @@ useEffect(() => {
         console.log(`${index + 1}. ${key}`);
         console.log(`   备份时间: ${data?.backupTime ? new Date(data.backupTime).toLocaleString() : '未知'}`);
         console.log(`   任务天数: ${Object.keys(data?.tasks || {}).length}`);
-        console.log(`   模板数量: ${data?.templates?.length || 0}`);
+    
         console.log(`   复盘天数: ${Object.keys(data?.dailyReflections || {}).length}`);
       } catch (e) {
         console.log(`   ${key}: ❌ 损坏的备份`);
@@ -16633,8 +16649,6 @@ useEffect(() => {
 
   
 
-  
-
 
 
  
@@ -16703,6 +16717,7 @@ const handleUpdateProgress = (task, newCurrent) => {
           if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
             hasChanges = true;
             const target = t.progress?.target || 100;
+            // ✅ 修复：直接使用 newCurrent，不需要加减初始值
             return {
               ...t,
               progress: {
@@ -16732,48 +16747,12 @@ const handleUpdateProgress = (task, newCurrent) => {
             ...t,
             progress: {
               ...t.progress,
+              // ✅ 修复：直接使用 newCurrent
               current: Math.min(Math.max(0, newCurrent), target)
             }
           } : t
         )
       };
-      
-      // ✅ 新增：如果是关注任务生成的任务，同步进度回关注任务模板
-      const updatedTask = newTasksByDate[selectedDate]?.find(t => t.id === task.id);
-      if (updatedTask && updatedTask.focusTaskId) {
-        const focusTaskId = updatedTask.focusTaskId;
-        const newProgressValue = Math.min(Math.max(0, newCurrent), target);
-        
-        // 更新关注任务模板中的进度
-        setFocusTaskTemplates(prevTemplates => 
-          prevTemplates.map(template => {
-            if (template.id === focusTaskId) {
-              return {
-                ...template,
-                progress: {
-                  ...template.progress,
-                  current: newProgressValue,
-                  target: target
-                }
-              };
-            }
-            return template;
-          })
-        );
-        
-        // 同时更新该关注任务在今日完成列表中的进度显示
-        setFocusTaskStatus(prevStatus => {
-          const todayStatus = prevStatus[selectedDate] || {};
-          if (todayStatus[focusTaskId]) {
-            // 状态不变，但我们需要重新渲染关注任务区域
-            // 通过更新一个额外的状态来触发重新渲染
-            setForceUpdate(Date.now());
-          }
-          return prevStatus;
-        });
-        
-        console.log(`✅ 同步进度到关注任务 ${focusTaskId}: ${newProgressValue}/${target}`);
-      }
       
       setTimeout(() => {
         saveMainData('tasks', newTasksByDate);
@@ -16783,12 +16762,13 @@ const handleUpdateProgress = (task, newCurrent) => {
     });
   }
   
-  // 同步进度到对应的模板
   
 };
   
   
-
+// 更新任务时间（用于时间记录弹窗）
+// 更新任务时间（用于时间记录弹窗）
+// 更新任务时间（用于时间记录弹窗）
 // 更新任务时间记录
 const handleUpdateTaskTime = useCallback((task, newTimeSpent, date, timeRecord) => {
   setTasksByDate(prev => {
@@ -17051,7 +17031,7 @@ useEffect(() => {
 }, [tasksByDate]); // 保留依赖，但通过防抖和标志位避免循环
 
 // 修复其他数据的保存
-// ✅ 修复后
+
 
 
 
@@ -17162,11 +17142,7 @@ else {
   setTasksByDate({});
 }
 
-// 加载模板数据
-const savedTemplates = await loadDataWithFallback('templates', []);
-if (savedTemplates) {
-  setTemplates(savedTemplates);
-}
+
 
 const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
 if (savedMonthTasks) {
@@ -17364,6 +17340,7 @@ useEffect(() => {
 
 
 
+
 // 自动保存本月任务数据
 // ✅ 修复后
 const isSavingMonthTasksRef = useRef(false);
@@ -17408,6 +17385,7 @@ useEffect(() => {
   // ========== 主要关注任务相关函数 ==========
 
 
+
 const toggleFocusTask = (taskId) => {
   const task = focusTaskTemplates.find(t => t.id === taskId);
   const isCurrentlyChecked = focusTaskStatus[selectedDate]?.[taskId] || false;
@@ -17435,23 +17413,16 @@ const toggleFocusTask = (taskId) => {
           pinned: false,
           tags: [],
           createdAt: new Date().toISOString(),
-          isFromFocusTask: true,
-          // ✅ 关键：保存关注任务的ID，用于同步进度
-          focusTaskId: taskId,
-          // ✅ 保存当前进度值
-          focusTaskProgress: {
-            current: progress.current || 0,
-            target: progress.target || 0
-          }
+          isFromFocusTask: true
         };
         
-        // 只有设置了进度才添加 progress 字段
+        // ✅ 只有设置了进度才添加 progress 字段
         if (hasProgress) {
           newTask.progress = {
             initial: progress.initial || 0,
-            current: progress.current || progress.initial || 0,
+            current: progress.current || progress.initial || 0,  // 保持当前进度，不改成目标值
             target: progress.target,
-            unit: progress.unit || '%'
+            unit: progress.unit || ''
           };
         }
         
@@ -17468,7 +17439,7 @@ const toggleFocusTask = (taskId) => {
           }
         }));
         
-        // 更新模板时也不改变当前值
+        // ✅ 更新模板时也不改变当前值
         if (hasProgress) {
           setFocusTaskTemplates(prev => prev.map(t =>
             t.id === taskId 
@@ -18170,8 +18141,6 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
 
 
 
-
-
 // 添加任务函数
 const handleAddTask = () => {
   if (!newTaskText.trim()) {
@@ -18383,7 +18352,8 @@ const handleUseTemplate = (template, templateIndex) => {
     reminderTime: null,
     createdAt: new Date().toISOString(),
     // ✅ 关键：添加模板ID标记，用于自动同步进度
-    
+    templateId: template.id || `template_${templateIndex}`,
+    templateText: template.text  // 保存模板文字用于匹配
   };
 
   setTasksByDate(prev => ({
@@ -19588,7 +19558,7 @@ const saveTaskEdit = (task, editData) => {
             progress: editData.progress || t.progress,
             reminderTime: reminderTime,
               // 保留模板ID
-            templateText: editData.templateText || t.templateText
+            
           } : t
         );
       });
@@ -19642,7 +19612,7 @@ const saveTaskEdit = (task, editData) => {
         subTasks: editData.subTasks || [],
         reminderTime: reminderTime,
         progress: editData.progress || t.progress
-     
+        
       } : t
     );
     
@@ -20319,11 +20289,6 @@ if (isInitialized && todayTasks.length === 0) {
     onClose={() => setShowRepeatModal(false)}
   />
 )}
-
-
-
-
-
 
 
 
