@@ -21596,16 +21596,17 @@ if (isInitialized && todayTasks.length === 0) {
 
 
       
-      <div style={{
+ <div style={{
   display: "flex",
-  justifyContent: "space-between",
+  justifyContent: "center",     // ← 改成 center
   alignItems: "center",
   fontSize: 12,
-  marginTop: "-5px",
+  marginTop: "-12px",
   marginBottom: 10,
-  padding: "0 4px"
+  padding: "0 4px",
+  position: "relative"          // ← 添加相对定位
 }}>
-  {/* 左侧：打卡统计 */}
+  {/* 左侧：打卡统计 - 现在居中 */}
   <div style={{ color: "#666" }}>
     已打卡 {
       Object.values(tasksByDate).filter(dailyTasks => 
@@ -21618,75 +21619,23 @@ if (isInitialized && todayTasks.length === 0) {
   
 {/* 右侧：本学期倒计时 - 可点击编辑 */}
 {/* 右侧：本学期倒计时 - 可点击编辑 */}
-<div 
-  onClick={() => {
-    const newDate = window.prompt('设置本学期结束日期\n\n格式: YYYY-MM-DD\n例如: 2026-06-26', semesterEndDate);
-    if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      setSemesterEndDate(newDate);
-      localStorage.setItem('semester_end_date', newDate);
-    } else if (newDate) {
-      alert('请输入正确格式，例如：2026-06-26');
-    }
-  }}
-  style={{ 
-    color: "#61A2Da", 
-    fontWeight: "500",
-    cursor: "pointer",
-    padding: "4px 10px",
-    borderRadius: "16px",
-    backgroundColor: "#e8f0fe",
-    fontSize: "12px",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  }}
-  title="点击修改学期结束日期"
->
-  <span>本学期剩余</span>
-  <span style={{ 
-    
-    color: "#FF0000", 
-    fontWeight: "bold",
-    padding: "2px 2px",
-    borderRadius: "16px",
-    fontSize: "13px"
-  }}>
-    {
-      (() => {
-        const endDate = new Date(semesterEndDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diffTime = endDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays > 0 ? diffDays : 0;
-      })()
-    }
-  </span>
-  <span>天</span>
-</div>
+
 
 </div>
 
 
-{/* 第一行：周次居中 + 右侧按钮 */}
+
+  {/* 第一行：周次靠左显示 */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 4,
-  position: "relative"
+  marginBottom: 4
 }}>
-  {/* 左侧占位 - 保持平衡 */}
-  <div style={{ width: "70px" }}></div>
-  
-  {/* 中间：周次显示 - 居中 */}
+  {/* 左侧：周次显示 - 靠左 */}
   <div style={{ 
     display: "flex", 
-    alignItems: "center", 
-    justifyContent: "center",
-    position: "absolute",
-    left: "50%",
-    transform: "translateX(-50%)"
+    alignItems: "center"
   }}>
     <button
       className="week-nav-btn"
@@ -21724,15 +21673,12 @@ if (isInitialized && todayTasks.length === 0) {
         cursor: "pointer",
         padding: "4px 8px",
         borderRadius: "6px",
-        transition: "background-color 0.2s",
         display: "inline-block",
         lineHeight: "16px",
         verticalAlign: "middle",
         color: "#61A2Da",
         whiteSpace: "nowrap"
       }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e8f0fe"}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
       title="点击选择日期"
     >
       {currentMonday.getFullYear()}年 第{getWeekNumber(currentMonday)}周
@@ -21766,40 +21712,59 @@ if (isInitialized && todayTasks.length === 0) {
     </button>
   </div>
   
-  {/* 右侧：按钮组 */}
-  <div style={{ display: "flex", gap: "6px" }}>
-    {/* 添加按钮 */}
-    <div
-      onClick={() => setShowAddTaskModal(true)}
-      style={{
-        padding: "4px 8px",
-        backgroundColor: "#61A2Da",
-        color: "#fff",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "11px",
-        textAlign: "center"
-      }}
-    >
-      添加
-    </div>
-    
-    {/* 批量按钮 */}
-    <div
-      onClick={() => setShowBulkImportModal(true)}
-      style={{
-        padding: "4px 8px",
-        backgroundColor: "#FF9800",
-        color: "#fff",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "11px",
-        textAlign: "center"
-      }}
-    >
-      批量
-    </div>
+
+
+{/* 本学期剩余 - 靠右显示 */}
+<div style={{ display: "flex", justifyContent: "flex-end" }}>
+  <div 
+    onClick={() => {
+      const newDate = window.prompt('设置本学期结束日期\n\n格式: YYYY-MM-DD\n例如: 2026-06-26', semesterEndDate);
+      if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        setSemesterEndDate(newDate);
+        localStorage.setItem('semester_end_date', newDate);
+      } else if (newDate) {
+        alert('请输入正确格式，例如：2026-06-26');
+      }
+    }}
+    style={{ 
+      color: "#61A2Da", 
+      fontWeight: "500",
+      cursor: "pointer",
+      padding: "4px 10px",
+      borderRadius: "16px",
+      backgroundColor: "#e8f0fe",
+      fontSize: "12px",
+      display: "flex",
+      alignItems: "center",
+      gap: "4px"
+    }}
+    title="点击修改学期结束日期"
+  >
+    <span>本学期剩余</span>
+    <span style={{ 
+      color: "#FF0000", 
+      fontWeight: "bold",
+      padding: "2px 2px",
+      borderRadius: "16px",
+      fontSize: "13px"
+    }}>
+      {
+        (() => {
+          const endDate = new Date(semesterEndDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const diffTime = endDate - today;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays > 0 ? diffDays : 0;
+        })()
+      }
+    </span>
+    <span>天</span>
   </div>
+</div>
+
+
+  
 </div>
 
 
@@ -22161,11 +22126,11 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-
-{/* 跑马灯提醒 + 两个小按钮 */}
+{/* 跑马灯提醒 + 两个小按钮 - 同一行，按钮靠右 */}
 <div style={{
   display: "flex",
   alignItems: "center",
+  justifyContent: "space-between",
   gap: "8px",
   marginBottom: 10
 }}>
@@ -22326,7 +22291,43 @@ if (isInitialized && todayTasks.length === 0) {
       )}
     </div>
   </div>
+  
+  {/* 右侧：按钮组 - 靠右显示 */}
+  <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+    {/* 添加按钮 */}
+    <div
+      onClick={() => setShowAddTaskModal(true)}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      添加
+    </div>
+    
+    {/* 批量按钮 */}
+    <div
+      onClick={() => setShowBulkImportModal(true)}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#FF9800",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      批量
+    </div>
+  </div>
 </div>
+
 
 
 {/* 主要关注任务 - 一行显示 */}
