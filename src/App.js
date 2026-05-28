@@ -8109,38 +8109,47 @@ const handleEditTemplate = (index, template) => {
     const colorInput = contentDiv.querySelector('#new-tag-color');
     
 const confirmBtn = contentDiv.querySelector('#edit-confirm-btn');
-confirmBtn.onclick = () => {
-  const newText = contentDiv.querySelector('#edit-task-text').value.trim();
-  const newCategory = categorySelect.value;
-  const newSubCategory = subSelect ? subSelect.value : '';
-  
-  if (!newText) {
-    alert('任务内容不能为空');
-    return;
-  }
-  
-  
-  const current = parseInt(currentInput.value) || 0;
-  const target = parseInt(targetInput.value) || 0;
-  
-  // ✅ 修改：即使 target 为 0 也保存用户输入的值
-  const newProgress = { 
-    initial: initial,
-    current: current,
-    target: target
-  };
-  
-  console.log('保存的进度:', newProgress);
-  
-  setFocusTaskTemplates(prev => prev.map(t =>
-    t.id === currentTask.id 
-      ? { ...t, text: newText, targetCategory: newCategory, targetSubCategory: newSubCategory, progress: newProgress }
-      : t
-  ));
-  
-  document.body.removeChild(modalDiv);
-};
+if (confirmBtn) {
+  confirmBtn.onclick = () => {
+    const newText = contentDiv.querySelector('#edit-task-text')?.value.trim();
+    const newCategory = categorySelect?.value;
+    const newSubCategory = subSelect?.value || '';
     
+    if (!newText) {
+      alert('任务内容不能为空');
+      return;
+    }
+    
+    // 获取输入框的值
+    const currentInputEl = contentDiv.querySelector('#edit-progress-current');
+    const targetInputEl = contentDiv.querySelector('#edit-progress-target');
+    
+    const current = currentInputEl ? (parseInt(currentInputEl.value) || 0) : 0;
+    const target = targetInputEl ? (parseInt(targetInputEl.value) || 0) : 0;
+    
+    // ✅ 只保存 current 和 target，不保存 initial
+    const newProgress = { 
+      current: current,
+      target: target
+    };
+    
+    // 更新任务
+    setFocusTaskTemplates(prev => prev.map(t =>
+      t.id === task.id 
+        ? { 
+            ...t, 
+            text: newText, 
+            targetCategory: newCategory, 
+            targetSubCategory: newSubCategory, 
+            progress: newProgress 
+          }
+        : t
+    ));
+    
+    // 关闭弹窗
+    document.body.removeChild(modalDiv);
+  };
+}
     const cancelBtn = contentDiv.querySelector('#cancel-btn');
     cancelBtn.onclick = () => {
       document.body.removeChild(modalDiv);
@@ -18553,12 +18562,210 @@ const toggleFocusTask = (taskId) => {
 
 
 
-// 编辑关注任务（支持修改类别）
-const editFocusTask = (taskId, newText) => {
-  if (!newText.trim()) return;
-  setFocusTaskTemplates(prev => prev.map(task =>
-    task.id === taskId ? { ...task, text: newText.trim() } : task
-  ));
+// 编辑关注任务函数 - 完整修复版本
+const editFocusTask = (taskId) => {
+  const task = focusTaskTemplates.find(t => t.id === taskId);
+  if (!task) return;
+  
+  // 直接从 task 中读取 progress
+  const progressData = task.progress || { current: 0, target: 0 };
+  
+  const modalDiv = document.createElement('div');
+  modalDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+  
+  const contentDiv = document.createElement('div');
+  contentDiv.style.cssText = `
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    width: 380px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow: auto;
+  `;
+  
+  const schoolCategory = categories.find(c => c.name === '校内');
+  const schoolSubCategories = schoolCategory?.subCategories || ['数学', '语文', '英语', '运动'];
+  
+  // 直接使用读取到的值
+  const currentValue = progressData.current || 0;
+  const targetValue = progressData.target || 0;
+  
+  contentDiv.innerHTML = `
+  <h3 style="margin: 0 0 16px 0; color: #61A2Da; font-size: 16px; text-align: center;">编辑关注任务</h3>
+  
+  <div style="margin-bottom: 15px;">
+    <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #333;">任务内容</label>
+    <input id="edit-task-text" type="text" value="${currentTask.text.replace(/"/g, '&quot;')}" style="
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    ">
+  </div>
+  
+  <div style="margin-bottom: 15px;">
+    <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #333;">完成后移动到</label>
+    <select id="edit-task-category" style="
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background-color: #fff;
+    ">
+      ${categories.filter(c => c.name !== "常规任务" && c.name !== "本周任务").map(c => `
+        <option value="${c.name}" ${c.name === currentTask.targetCategory ? 'selected' : ''}>${c.name}</option>
+      `).join('')}
+    </select>
+  </div>
+  
+  <div id="edit-subcategory-container" style="margin-bottom: 15px; ${currentTask.targetCategory !== '校内' ? 'display: none;' : ''}">
+    <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #333;">子分类</label>
+    <select id="edit-task-subcategory" style="
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background-color: #fff;
+    ">
+      <option value="">无</option>
+      ${schoolSubCategories.map(sub => `
+        <option value="${sub}" ${sub === (currentTask.targetSubCategory || '') ? 'selected' : ''}>${sub}</option>
+      `).join('')}
+    </select>
+  </div>
+  
+  <div style="margin-bottom: 15px;">
+    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">目标进度：</div>
+    
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; color: #999; margin-bottom: 4px;">当前值</div>
+        <input id="edit-progress-current" type="number" value="${currentValue}" style="
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 14px;
+          box-sizing: border-box;
+        ">
+      </div>
+      <div style="flex: 1;">
+        <div style="font-size: 11px; color: #999; margin-bottom: 4px;">目标值</div>
+        <input id="edit-progress-target" type="number" value="${targetValue}" style="
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 14px;
+          box-sizing: border-box;
+        ">
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: flex; gap: 12px; margin-top: 10px;">
+    <button id="edit-cancel-btn" style="
+      flex: 1;
+      padding: 12px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: none;
+    ">取消</button>
+    <button id="edit-confirm-btn" style="
+      flex: 1;
+      padding: 12px;
+      background: #61A2Da;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: none;
+    ">保存</button>
+  </div>
+`;
+  
+  modalDiv.appendChild(contentDiv);
+  document.body.appendChild(modalDiv);
+  
+  const categorySelect = contentDiv.querySelector('#edit-task-category');
+  const subContainer = contentDiv.querySelector('#edit-subcategory-container');
+  const subSelect = contentDiv.querySelector('#edit-task-subcategory');
+  const currentInput = contentDiv.querySelector('#edit-progress-current');
+  const targetInput = contentDiv.querySelector('#edit-progress-target');
+  
+  categorySelect.addEventListener('change', (e) => {
+    if (e.target.value === '校内') {
+      subContainer.style.display = 'block';
+    } else {
+      subContainer.style.display = 'none';
+    }
+  });
+  
+  const confirmBtn = contentDiv.querySelector('#edit-confirm-btn');
+  confirmBtn.onclick = () => {
+    const newText = contentDiv.querySelector('#edit-task-text').value.trim();
+    const newCategory = categorySelect.value;
+    const newSubCategory = subSelect ? subSelect.value : '';
+    
+    if (!newText) {
+      alert('任务内容不能为空');
+      return;
+    }
+    
+    const current = parseInt(currentInput.value) || 0;
+    const target = parseInt(targetInput.value) || 0;
+    
+    // ✅ 修复：只保存 current 和 target
+    let newProgress;
+    if (target <= 0) {
+      newProgress = { current: 0, target: 0 };
+    } else {
+      const validCurrent = Math.min(current, target);
+      newProgress = { current: validCurrent, target: target };
+    }
+    
+    setFocusTaskTemplates(prev => prev.map(t =>
+      t.id === task.id 
+        ? { ...t, text: newText, targetCategory: newCategory, targetSubCategory: newSubCategory, progress: newProgress }
+        : t
+    ));
+    
+    document.body.removeChild(modalDiv);
+  };
+  
+  const cancelBtn = contentDiv.querySelector('#edit-cancel-btn');
+  cancelBtn.onclick = () => {
+    document.body.removeChild(modalDiv);
+  };
+  
+  modalDiv.onclick = (e) => {
+    if (e.target === modalDiv) {
+      document.body.removeChild(modalDiv);
+    }
+  };
 };
 
 // 添加编辑类别的函数
@@ -22823,16 +23030,18 @@ if (isInitialized && todayTasks.length === 0) {
           font-size: 14px;
         ">取消</button>
         <button id="edit-confirm-btn" style="
-          flex: 1;
-          padding: 12px;
-          background: #61A2Da;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: bold;
-        ">保存</button>
+  flex: 1;
+  padding: 12px;
+  background: #61A2Da;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: none;
+  color: white !important;
+">保存</button>
       </div>
     `;
     
@@ -22854,41 +23063,51 @@ if (isInitialized && todayTasks.length === 0) {
       }
     });
     
-    const confirmBtn = contentDiv.querySelector('#edit-confirm-btn');
-    confirmBtn.onclick = () => {
-      const newText = contentDiv.querySelector('#edit-task-text').value.trim();
-      const newCategory = categorySelect.value;
-      const newSubCategory = subSelect ? subSelect.value : '';
-      
-      if (!newText) {
-        alert('任务内容不能为空');
-        return;
-      }
-      
-      
-      const current = parseInt(currentInput.value) || 0;
-      const target = parseInt(targetInput.value) || 0;
-      
-      let newProgress;
-      if (target <= 0) {
-        newProgress = { initial: 0, current: 0, target: 0 };
-      } else {
-        const validCurrent = Math.min(Math.max(current, initial), target);
-        newProgress = { 
-          initial: initial,
-          current: validCurrent,
-          target: target
-        };
-      }
-      
-      setFocusTaskTemplates(prev => prev.map(t =>
-        t.id === currentTask.id 
-          ? { ...t, text: newText, targetCategory: newCategory, targetSubCategory: newSubCategory, progress: newProgress }
-          : t
-      ));
-      
-      document.body.removeChild(modalDiv);
+
+const confirmBtn = contentDiv.querySelector('#edit-confirm-btn');
+if (confirmBtn) {
+  confirmBtn.onclick = () => {
+    const newText = contentDiv.querySelector('#edit-task-text')?.value.trim();
+    const newCategory = categorySelect?.value;
+    const newSubCategory = subSelect?.value || '';
+    
+    if (!newText) {
+      alert('任务内容不能为空');
+      return;
+    }
+    
+    // 获取输入框的值
+    const currentInputEl = contentDiv.querySelector('#edit-progress-current');
+    const targetInputEl = contentDiv.querySelector('#edit-progress-target');
+    
+    const current = currentInputEl ? (parseInt(currentInputEl.value) || 0) : 0;
+    const target = targetInputEl ? (parseInt(targetInputEl.value) || 0) : 0;
+    
+    // ✅ 只保存 current 和 target，不保存 initial
+    const newProgress = { 
+      current: current,
+      target: target
     };
+    
+    // 更新任务
+    setFocusTaskTemplates(prev => prev.map(t =>
+      t.id === task.id 
+        ? { 
+            ...t, 
+            text: newText, 
+            targetCategory: newCategory, 
+            targetSubCategory: newSubCategory, 
+            progress: newProgress 
+          }
+        : t
+    ));
+    
+    // 关闭弹窗
+    document.body.removeChild(modalDiv);
+  };
+}
+
+
     
     const cancelBtn = contentDiv.querySelector('#edit-cancel-btn');
     cancelBtn.onclick = () => {
