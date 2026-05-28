@@ -2019,6 +2019,7 @@ const SubjectTodoModal = ({ onClose, isVisible, tasksByDate = {} }) => {
     return saved ? JSON.parse(saved) : {};
   });
 
+  
   const tabs = ['数学', '语文', '英语', '其他'];
 
   // 在 useEffect 中添加
@@ -2218,7 +2219,7 @@ const findRelatedTasks = useCallback((keyword) => {
             color: '#61A2Da',
             fontSize: '20px'
           }}>
-            科目待办
+            待办
           </h2>
           
           <div style={{
@@ -2631,14 +2632,8 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
     return saved ? JSON.parse(saved) : {};
   });
 
-  const [customTags, setCustomTags] = useState(() => {
-    const saved = localStorage.getItem('subject_guide_custom_tags');
-    return saved ? JSON.parse(saved) : [];
-  });
 
-  useEffect(() => {
-    localStorage.setItem('subject_guide_custom_tags', JSON.stringify(customTags));
-  }, [customTags]);
+
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -3402,139 +3397,121 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
                   />
                 </div>
                 
-                {/* 标签区域 */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: 8,
-                    fontWeight: '600',
-                    color: '#333',
-                    fontSize: 14
-                  }}>
-                    标签
-                  </label>
-                  
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    alignItems: 'center'
-                  }}>
-                    {/* 预设标签 */}
-                    {commonTags.map((tag, idx) => {
-                      const isSelected = formData.tags.includes(tag);
-                      return (
-                        <span
-                          key={idx}
-                          onClick={() => {
-                            if (isSelected) {
-                              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
-                            } else {
-                              setFormData({ ...formData, tags: [...formData.tags, tag] });
-                            }
-                          }}
-                          style={{
-                            fontSize: '12px',
-                            padding: '4px 10px',
-                            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
-                            color: isSelected ? '#fff' : '#999',
-                            borderRadius: '16px',
-                            cursor: 'pointer',
-                            border: `1px solid ${isSelected ? '#61A2Da' : '#e0e0e0'}`
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      );
-                    })}
-                    
-                    {/* 自定义标签 */}
-                    {customTags.map((tag, idx) => {
-                      const isSelected = formData.tags.includes(tag.name);
-                      return (
-                        <span
-                          key={`custom_${idx}`}
-                          onClick={() => {
-                            if (isSelected) {
-                              setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag.name) });
-                            } else {
-                              setFormData({ ...formData, tags: [...formData.tags, tag.name] });
-                            }
-                          }}
-                          style={{
-                            fontSize: '12px',
-                            padding: '4px 10px',
-                            backgroundColor: isSelected ? tag.color : '#f0f0f0',
-                            color: isSelected ? '#fff' : '#999',
-                            borderRadius: '16px',
-                            cursor: 'pointer',
-                            border: `1px solid ${isSelected ? tag.color : '#e0e0e0'}`
-                          }}
-                        >
-                          {tag.name}
-                        </span>
-                      );
-                    })}
-                    
-                    {/* 添加自定义标签按钮 */}
-                    <span
-                      onClick={() => {
-                        const newTagName = window.prompt('输入新标签名称:');
-                        if (newTagName && newTagName.trim()) {
-                          if (!customTags.some(t => t.name === newTagName.trim())) {
-                            setCustomTags(prev => [...prev, { name: newTagName.trim(), color: '#61A2Da', textColor: '#fff' }]);
-                          } else {
-                            alert('标签已存在');
-                          }
-                        }
-                      }}
-                      style={{
-                        height: '28px',
-                        padding: '0 10px',
-                        borderRadius: '16px',
-                        color: '#999',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        lineHeight: 1
-                      }}
-                      title="添加自定义标签"
-                    >
-                      +
-                    </span>
-                  </div>
-                  
-                  {/* 显示当前选中的标签 */}
-                  {formData.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                      {formData.tags.map((tag, idx) => (
-                        <span key={idx} style={{
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          backgroundColor: customTags.find(t => t.name === tag)?.color || '#61A2Da',
-                          color: '#fff',
-                          borderRadius: '12px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          {tag}
-                          <span
-                            onClick={() => {
-                              setFormData({ ...formData, tags: formData.tags.filter((_, i) => i !== idx) });
-                            }}
-                            style={{ cursor: 'pointer', fontSize: '12px' }}
-                          >
-                            ×
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+{/* 标签区域 */}
+<div>
+  <label style={{
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 14
+  }}>
+    标签
+  </label>
+  
+  <div style={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    alignItems: 'center'
+  }}>
+    {/* 预设标签 */}
+    {commonTags.map((tag, idx) => {
+      const isSelected = formData.tags?.includes(tag.name);
+      return (
+        <span
+          key={idx}
+          onClick={() => {
+            if (isSelected) {
+              setFormData({
+                ...formData,
+                tags: formData.tags.filter(t => t !== tag.name)
+              });
+            } else {
+              setFormData({
+                ...formData,
+                tags: [...(formData.tags || []), tag.name]
+              });
+            }
+          }}
+          style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            backgroundColor: isSelected ? '#61A2Da' : '#f0f0f0',
+            color: isSelected ? '#fff' : '#999',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            border: `1px solid ${isSelected ? '#61A2Da' : '#e0e0e0'}`
+          }}
+        >
+          {tag.name}
+        </span>
+      );
+    })}
+    
+    {/* 添加自定义标签按钮 */}
+    <span
+      onClick={() => {
+        const newTagName = window.prompt('输入新标签名称:');
+        if (newTagName && newTagName.trim()) {
+          if (!customTags.some(t => t.name === newTagName.trim())) {
+            setCustomTags(prev => [...prev, { name: newTagName.trim(), color: '#61A2Da', textColor: '#fff' }]);
+          } else {
+            alert('标签已存在');
+          }
+        }
+      }}
+      style={{
+        height: '28px',
+        padding: '0 10px',
+        borderRadius: '16px',
+        color: '#999',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        lineHeight: 1
+      }}
+      title="添加自定义标签"
+    >
+      +
+    </span>
+  </div>
+  
+  {/* 显示当前选中的标签 */}
+  {formData.tags && formData.tags.length > 0 && (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+      {formData.tags.map((tag, idx) => {
+        const tagColor = customTags.find(t => t.name === tag)?.color || '#61A2Da';
+        return (
+          <span key={idx} style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            backgroundColor: tagColor,
+            color: '#fff',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            {tag}
+            <span
+              onClick={() => {
+                const newTags = formData.tags.filter((_, i) => i !== idx);
+                setFormData({ ...formData, tags: newTags });
+              }}
+              style={{ cursor: 'pointer', fontSize: '12px' }}
+            >
+              ×
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  )}
+</div>
                 
                 {/* 重要标记 */}
                 <div>
@@ -8275,66 +8252,7 @@ confirmBtn.onclick = () => {
             </div>
         
 
-          {/* 现有模板列表 */}
-          <div style={{ marginTop: 20 }}>
-            <h4 style={{ margin: '0 0 16px 0', color: '#333', fontSize: '14px', fontWeight: '600' }}>
-              现有模板 ({templates.length})
-            </h4>
-
-            {templates.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#666', fontSize: '13px', padding: '32px 16px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                暂无模板
-              </div>
-            ) : (
-              <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-                {templates.map((template, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleEditTemplate(index, template)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px',
-                      border: editingTemplateIndex === index ? '2px solid #1a73e8' : '1px solid #e0e0e0',
-                      borderRadius: '8px',
-                      marginBottom: '8px',
-                      backgroundColor: editingTemplateIndex === index ? '#e8f0fe' : '#f8f9fa',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
- <span style={{
-  fontWeight: '600',
-  fontSize: '12px',
-  padding: '0 3px',      // 减小左右内边距
-  margin: '0',
-  color: '#333',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis'
-}}>
-  {template.name || template.text?.slice(0, 15) || `模板${index + 1}`}
-</span>
-  <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#1a73e8', color: '#fff', borderRadius: '4px', whiteSpace: 'nowrap' }}>
-    {template.category}
-  </span>
-</div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(index);
-                      }}
-                      style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '16px', padding: '4px 8px' }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-          </div>
+  
         </div>
 
         <input
@@ -21079,8 +20997,8 @@ if (isInitialized && todayTasks.length === 0) {
   <SubjectGuideModal
     onClose={() => setShowSubjectGuideModal(false)}
     isVisible={showSubjectGuideModal}
-    customTags={globalCustomTags}
-    setCustomTags={setGlobalCustomTags}
+    customTags={globalCustomTags}        // ← 如果需要从外部传入
+    setCustomTags={setGlobalCustomTags}  // ← 如果需要从外部修改
   />
 )}
 
@@ -21451,6 +21369,7 @@ if (isInitialized && todayTasks.length === 0) {
     justifyContent: "center",
     alignItems: "center",
     gap: "8px",
+    marginTop: -15,
     marginBottom: 12,
     padding: "8px 0",
     backgroundColor: "#f0f4f8",
@@ -21462,19 +21381,19 @@ if (isInitialized && todayTasks.length === 0) {
     <div
       onClick={() => {
         setShowStats(true);
-        setShowMoreMenu(false);
+        
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",           // ← 改成和添加按钮一样
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",          // ← 改成 4px
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",             // ← 改成 11px
         textAlign: "center"
       }}
     >
-      统计汇总
+      汇总
     </div>
     
     {/* 科目指导按钮 */}
@@ -21484,16 +21403,16 @@ if (isInitialized && todayTasks.length === 0) {
         setShowMoreMenu(false);
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",
         textAlign: "center"
       }}
     >
-      科目指导
+      指导
     </div>
     
     {/* 科目待办按钮 */}
@@ -21503,16 +21422,16 @@ if (isInitialized && todayTasks.length === 0) {
         setShowMoreMenu(false);
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",
         textAlign: "center"
       }}
     >
-      科目待办
+      待办
     </div>
     
     {/* 成绩记录按钮 */}
@@ -21522,16 +21441,16 @@ if (isInitialized && todayTasks.length === 0) {
         setShowMoreMenu(false);
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",
         textAlign: "center"
       }}
     >
-      成绩记录
+      成绩
     </div>
     
     {/* 本周按钮 */}
@@ -21541,12 +21460,12 @@ if (isInitialized && todayTasks.length === 0) {
         setShowMoreMenu(false);
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",
         textAlign: "center"
       }}
     >
@@ -21560,36 +21479,19 @@ if (isInitialized && todayTasks.length === 0) {
         setShowMoreMenu(false);
       }}
       style={{
-        padding: "5px 12px",
+        padding: "4px 8px",
         backgroundColor: "#61A2Da",
         color: "#fff",
-        borderRadius: "20px",
+        borderRadius: "4px",
         cursor: "pointer",
-        fontSize: "12px",
+        fontSize: "11px",
         textAlign: "center"
       }}
     >
       本月
     </div>
     
-    {/* 模板按钮 */}
-    <div
-      onClick={() => {
-        setShowTemplateList(!showTemplateList);
-        setShowMoreMenu(false);
-      }}
-      style={{
-        padding: "5px 12px",
-        backgroundColor: "#61A2Da",
-        color: "#fff",
-        borderRadius: "20px",
-        cursor: "pointer",
-        fontSize: "12px",
-        textAlign: "center"
-      }}
-    >
-      模板
-    </div>
+   
   </div>
 )}
 
@@ -21601,7 +21503,7 @@ if (isInitialized && todayTasks.length === 0) {
   justifyContent: "center",     // ← 改成 center
   alignItems: "center",
   fontSize: 12,
-  marginTop: "-12px",
+  marginTop: "-8px",
   marginBottom: 10,
   padding: "0 4px",
   position: "relative"          // ← 添加相对定位
@@ -21769,119 +21671,7 @@ if (isInitialized && todayTasks.length === 0) {
 
 
 
-{/* 👇 模板列表 - 在这里展开（日期行上方） */}
-{showTemplateList && (
-  <div style={{
-    marginBottom: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    flexWrap: 'wrap',
-    gap: '4px',
-    padding: '6px 0'
-  }}>
-    {/* 左侧：现有模板（靠右，所以放在右边区域） */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-      {templates.length === 0 ? (
-        <span style={{ fontSize: '10px', color: '#999' }}>暂无模板</span>
-      ) : (
-        templates.map((template, index) => (
-          <span
-            key={template.id || index}
-            onClick={() => {
-              // 使用模板添加任务 - 带模板ID标记，支持进度自动同步
-              const newTask = {
-                id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                text: template.text || '',
-                category: template.category || '校内',
-                subCategory: template.subCategory || '',
-                done: false,
-                timeSpent: 0,timeRecords: [],  // 👈 添加
-                subTasks: template.subTasks || [],
-                note: template.note || "",
-                reflection: "",
-                image: template.image || null,
-                scheduledTime: template.scheduledTime || "",
-                pinned: false,
-                tags: template.tags || [],
-                progress: template.progress || {
-                  initial: 0,
-                  current: 0,
-                  target: 0,
-                  unit: "%"
-                },
-                reminderTime: null,
-                createdAt: new Date().toISOString(),
-                // ✅ 关键：添加模板ID标记，用于自动同步进度
-                templateId: template.id,
-                templateText: template.text
-              };
-              
-              setTasksByDate(prev => ({
-                ...prev,
-                [selectedDate]: [...(prev[selectedDate] || []), newTask]
-              }));
-              
-              // 显示短暂提示（2秒后消失）
-              const toast = document.createElement('div');
-              toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
-              toast.style.cssText = `
-                position: fixed;
-                bottom: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #28a745;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-size: 14px;
-                z-index: 2000;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-              `;
-              document.body.appendChild(toast);
-              setTimeout(() => toast.remove(), 2000);
-            }}
-            style={{
-              cursor: 'pointer',
-              fontSize: '10px',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              backgroundColor: '#f0f0f0',
-              color: '#333'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-            title={template.progress?.current > 0 ? `当前进度: ${template.progress.current}/${template.progress.target} ${template.progress.unit}` : ''}
-          >
-            {template.name || template.text?.slice(0, 15) || `模板${index + 1}`}
-          </span>
-        ))
-      )}
-    </div>
-    
-    {/* 右侧：灰色的 + 按钮 */}
-   {/* 右侧：灰色的 + 按钮 */}
-<span
-  onClick={() => setShowTemplateModal(true)}  // ✅ 检查这个
-  style={{
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "normal",
-    color: "#999",
-    background: "transparent",
-    padding: "0",
-    width: "18px",
-    height: "18px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}
-  title="添加新模板"
->
-  +
-</span>
-  </div>
-)}
+
 
 
 
