@@ -2633,7 +2633,10 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
   });
 
 
-
+  const [customTags, setCustomTags] = useState(() => {
+    const saved = localStorage.getItem('subject_guide_custom_tags');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -8236,7 +8239,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -16706,6 +16709,7 @@ useEffect(() => {
 
 // 进度更新函数 - 同时更新对应模板的进度
 // 进度更新函数
+// 进度更新函数 - 同时更新对应模板的进度
 const handleUpdateProgress = (task, newCurrent) => {
   console.log('更新进度:', task.text, '新进度:', newCurrent);
   
@@ -16720,7 +16724,6 @@ const handleUpdateProgress = (task, newCurrent) => {
           if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
             hasChanges = true;
             const target = t.progress?.target || 100;
-            // ✅ 修复：直接使用 newCurrent，不需要加减初始值
             return {
               ...t,
               progress: {
@@ -16750,7 +16753,6 @@ const handleUpdateProgress = (task, newCurrent) => {
             ...t,
             progress: {
               ...t.progress,
-              // ✅ 修复：直接使用 newCurrent
               current: Math.min(Math.max(0, newCurrent), target)
             }
           } : t
@@ -16765,13 +16767,40 @@ const handleUpdateProgress = (task, newCurrent) => {
     });
   }
   
+  // ========== 新增：同步更新关注任务模板的进度 ==========
+  // 检查这个任务是否来自关注任务（通过 templateId 或文本匹配）
+  const templateId = task.templateId;
+  let matchedTemplate = null;
   
+  if (templateId) {
+    // 如果有 templateId，直接匹配
+    matchedTemplate = focusTaskTemplates.find(t => t.id === templateId);
+  } else {
+    // 否则通过任务文本匹配关注任务模板
+    matchedTemplate = focusTaskTemplates.find(t => t.text === task.text);
+  }
+  
+  if (matchedTemplate && matchedTemplate.progress && matchedTemplate.progress.target > 0) {
+    // 同步更新模板的当前进度
+    setFocusTaskTemplates(prev => prev.map(t => {
+      if ((templateId && t.id === templateId) || (!templateId && t.text === task.text)) {
+        const target = t.progress?.target || 100;
+        return {
+          ...t,
+          progress: {
+            ...t.progress,
+            current: Math.min(Math.max(0, newCurrent), target)
+          }
+        };
+      }
+      return t;
+    }));
+    console.log('✅ 同步更新关注任务模板进度:', task.text, newCurrent);
+  }
 };
   
   
-// 更新任务时间（用于时间记录弹窗）
-// 更新任务时间（用于时间记录弹窗）
-// 更新任务时间（用于时间记录弹窗）
+
 // 更新任务时间记录
 const handleUpdateTaskTime = useCallback((task, newTimeSpent, date, timeRecord) => {
   setTasksByDate(prev => {
@@ -17416,14 +17445,16 @@ const toggleFocusTask = (taskId) => {
           pinned: false,
           tags: [],
           createdAt: new Date().toISOString(),
-          isFromFocusTask: true
+          isFromFocusTask: true,
+          // ✅ 关键修改：添加这一行，保存模板ID
+          templateId: task.id,   // <--- 添加这行！
         };
         
-        // ✅ 只有设置了进度才添加 progress 字段
+        // 只有设置了进度才添加 progress 字段
         if (hasProgress) {
           newTask.progress = {
             initial: progress.initial || 0,
-            current: progress.current || progress.initial || 0,  // 保持当前进度，不改成目标值
+            current: progress.current || progress.initial || 0,
             target: progress.target,
             unit: progress.unit || ''
           };
@@ -17442,7 +17473,6 @@ const toggleFocusTask = (taskId) => {
           }
         }));
         
-        // ✅ 更新模板时也不改变当前值
         if (hasProgress) {
           setFocusTaskTemplates(prev => prev.map(t =>
             t.id === taskId 
@@ -18327,10 +18357,8 @@ const startEditTask = (task) => {
 };
 
 
-// 在 handleAddTask 函数附近添加这个函数
-// 直接使用模板添加任务
+
 // 直接使用模板添加任务（带提示）
-// 直接使用模板添加任务（带模板ID标记）
 const handleUseTemplate = (template, templateIndex) => {
   const newTask = {
     id: Date.now().toString(),
@@ -18346,7 +18374,7 @@ const handleUseTemplate = (template, templateIndex) => {
     scheduledTime: template.scheduledTime || "",
     pinned: false,
     tags: template.tags || [],
-    progress: template.progress || {
+    progress: template.progress ? { ...template.progress } : {
       initial: 0,
       current: 0,
       target: 0,
@@ -18354,33 +18382,10 @@ const handleUseTemplate = (template, templateIndex) => {
     },
     reminderTime: null,
     createdAt: new Date().toISOString(),
-    // ✅ 关键：添加模板ID标记，用于自动同步进度
-    templateId: template.id || `template_${templateIndex}`,
-    templateText: template.text  // 保存模板文字用于匹配
+    templateId: template.id || `template_${templateIndex}`,  // ✅ 保存模板ID
+    templateText: template.text
   };
-
-  setTasksByDate(prev => ({
-    ...prev,
-    [selectedDate]: [...(prev[selectedDate] || []), newTask]
-  }));
-
-  // 显示短暂提示
-  const toast = document.createElement('div');
-  toast.textContent = `✅ 已添加: ${newTask.text.slice(0, 30)}`;
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #28a745;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 2000;
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
+  // ... 其余代码
 };
 
 // 添加本周任务
@@ -18647,8 +18652,7 @@ const parseBulkTextToPreview = useCallback(() => {
     }
     
     // 清理
-    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '').trim();
-    if (!taskText) continue;
+    taskText = taskText.replace(/@(?:所有)?家长[，,、.\s]*/g, '').trim();
     
     tasks.push({
       text: taskText,
