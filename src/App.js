@@ -11227,13 +11227,16 @@ const handleProgressAdjust = (increment) => {
       onOpenEditModal(task);
     }}
     style={{
-      fontSize: 12,
-      color: "#666",
-      cursor: "pointer",
-      backgroundColor: 'transparent',
-      lineHeight: "1.3",
-      whiteSpace: "pre-wrap",
-      marginBottom: task.reflection ? "2px" : "0",
+       fontSize: 12,
+                color: "#555",
+                cursor: "pointer",
+                backgroundColor: '#f5f5f5',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                lineHeight: "1.3",
+                whiteSpace: "pre-wrap",
+                border: '1px solid #ddd',
+                marginBottom: "4px",
     }}
   >
     {task.note}
@@ -11263,7 +11266,7 @@ const handleProgressAdjust = (increment) => {
                 marginBottom: "4px",
               }}
             >
-              ❗️ {task.reflection}
+              {task.reflection}
             </div>
           )}
 
@@ -21278,64 +21281,18 @@ if (isInitialized && todayTasks.length === 0) {
     </div>
   </div>
   
-  {/* 右侧：按钮组 - 靠右显示 */}
-  <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-    {/* 添加按钮 */}
-    <div
-      onClick={() => setShowAddTaskModal(true)}
-      style={{
-        padding: "4px 8px",
-        backgroundColor: "#61A2Da",
-        color: "#fff",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "11px",
-        textAlign: "center"
-      }}
-    >
-      添加
-    </div>
-    
-    {/* 批量按钮 */}
-    <div
-      onClick={() => setShowBulkImportModal(true)}
-      style={{
-        padding: "4px 8px",
-        backgroundColor: "#FF9800",
-        color: "#fff",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "11px",
-        textAlign: "center"
-      }}
-    >
-      批量
-    </div>
-  </div>
+
 </div>
 
 
 
 {/* 主要关注任务 - 只显示任务名称和勾选状态 */}
-<div style={{
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '8px',
-  marginBottom: 10,
-  alignItems: 'center',
-  justifyContent: 'space-between'
-}}>
-  {/* 左侧：任务列表 */}
-  <div style={{
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-    alignItems: 'center',
-    flex: 1
-  }}>
+{/* 主要关注任务 + 右侧按钮组（✏️ + 添加 + 批量） */}
+<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: 10, alignItems: 'center', justifyContent: 'space-between' }}>
+  {/* 左侧：关注任务列表 */}
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', flex: 1 }}>
     {currentFocusTasks.map(task => {
       const buttonBgColor = getCategoryColor(task.targetCategory, task.targetSubCategory);
-      
       return (
         <div
           key={task.id}
@@ -21350,51 +21307,76 @@ if (isInitialized && todayTasks.length === 0) {
             cursor: 'pointer',
             fontSize: '11px'
           }}
-          title={`完成后移至: ${task.targetCategory}${task.targetSubCategory ? ` - ${task.targetSubCategory}` : ''}`}
         >
-          <span style={{
-            fontSize: '11px',
-            color: task.checked ? '#888' : '#333'
-          }}>
-            {task.text}
-          </span>
+          <span style={{ fontSize: '11px', color: task.checked ? '#888' : '#333' }}>{task.text}</span>
         </div>
       );
     })}
   </div>
   
-  {/* 右侧：管理按钮（铅笔图标） */}
-  <div
-    onClick={() => setShowFocusModal(true)}
-    style={{
-      width: '28px',
-      height: '28px',
-      borderRadius: '4px',
-      backgroundColor: 'transparent',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      flexShrink: 0
-    }}
-    title="管理关注任务"
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path 
-        d="M17 3L21 7L7 21H3L3 17L17 3Z" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path 
-        d="M15 5L19 9" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-      />
-    </svg>
+  {/* 右侧：三个按钮排成一行 */}
+  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+    {/* ✏️ 管理按钮 */}
+    <div
+      onClick={() => setShowFocusModal(true)}
+      style={{
+        width: '28px',
+        height: '28px',
+        borderRadius: '4px',
+        backgroundColor: 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer'
+      }}
+      title="管理关注任务"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 3L21 7L7 21H3L3 17L17 3Z" stroke="#999" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M15 5L19 9" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+      </svg>
+    </div>
+    
+{/* 添加按钮 */}
+<div
+  onClick={() => setShowAddTaskModal(true)}
+  style={{
+    padding: "4px 8px",
+    backgroundColor: "#61A2Da",
+    color: "#fff",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "11px",
+    textAlign: "center",
+    height: "24px",              // 只加这一行固定高度
+    lineHeight: "16px",          // 调整行高让文字垂直居中
+    display: "inline-flex",
+    alignItems: "center"
+  }}
+>
+  添加
+</div>
+
+{/* 批量按钮 */}
+<div
+  onClick={() => setShowBulkImportModal(true)}
+  style={{
+    padding: "4px 8px",
+    backgroundColor: "#FF9800",
+    color: "#fff",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "11px",
+    textAlign: "center",
+    height: "24px",
+    lineHeight: "16px",
+    display: "inline-flex",
+    alignItems: "center"
+  }}
+>
+  批量
+</div>
+
   </div>
 </div>
 
