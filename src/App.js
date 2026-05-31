@@ -2040,12 +2040,12 @@ useEffect(() => {
 
  // 根据关键词搜索主界面中已完成的关联任务
 // 根据关键词和当前科目搜索主界面中已完成的关联任务
+// 修改 findRelatedTasks 函数，获取更完整的任务信息
 const findRelatedTasks = useCallback((keyword) => {
   if (!keyword || !tasksByDate) return [];
   
   const relatedTasks = [];
   
-  // 根据当前选中的科目标签，确定搜索范围
   const getSearchCategories = (tab) => {
     switch(tab) {
       case '数学':
@@ -2055,8 +2055,7 @@ const findRelatedTasks = useCallback((keyword) => {
       case '英语':
         return ['英语', '校内-英语'];
       case '其他':
-        // 其他：排除语数英主科，只保留其他分类
-        return ['科学', '运动', '其他', '校内'];  // 校内无子分类的也算
+        return ['科学', '运动', '其他', '校内'];
       default:
         return [tab];
     }
@@ -2067,13 +2066,11 @@ const findRelatedTasks = useCallback((keyword) => {
   Object.entries(tasksByDate).forEach(([date, tasks]) => {
     tasks.forEach(task => {
       if (task.done === true && task.text && task.text.includes(keyword)) {
-        // ✅ 新增：检查科目是否匹配
         let taskCategory = task.category;
         if (task.category === '校内' && task.subCategory) {
           taskCategory = `校内-${task.subCategory}`;
         }
         
-        // 检查任务科目是否在搜索范围内
         const isCategoryMatch = searchCategories.some(cat => 
           taskCategory === cat || taskCategory.includes(cat)
         );
@@ -2087,7 +2084,9 @@ const findRelatedTasks = useCallback((keyword) => {
             timeMinutes: timeMinutes,
             timeDisplay: timeMinutes > 0 ? `${timeMinutes}分钟` : '未记录',
             category: task.category,
-            subCategory: task.subCategory
+            subCategory: task.subCategory,
+            note: task.note || '',        // ✅ 添加备注
+            reflection: task.reflection || ''  // ✅ 添加感想
           });
         }
       }
@@ -2095,7 +2094,7 @@ const findRelatedTasks = useCallback((keyword) => {
   });
   
   return relatedTasks.sort((a, b) => b.date.localeCompare(a.date));
-}, [tasksByDate, activeTab]);  // 添加 activeTab 依赖
+}, [tasksByDate, activeTab]);
 
   // 切换完成状态
   const toggleTodo = (todoId) => {
@@ -2524,73 +2523,109 @@ const findRelatedTasks = useCallback((keyword) => {
                         </div>
                         
                         {relatedTasks.length === 0 ? (
-                          <div style={{
-                            textAlign: 'center',
-                            padding: '20px',
-                            color: '#999',
-                            fontSize: '12px'
-                          }}>
-                            暂无关联练习记录
-                            <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                              在主界面完成任务后会自动统计
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px'
-                          }}>
-                            {relatedTasks.map((task, idx) => (
-                              <div
-                                key={task.id}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '8px 10px',
-                                  backgroundColor: 'white',
-                                  borderRadius: '8px',
-                                  border: '1px solid #e0e0e0'
-                                }}
-                              >
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{
-                                    fontSize: '12px',
-                                    fontWeight: '500',
-                                    color: '#333',
-                                    wordBreak: 'break-word'
-                                  }}>
-                                    {task.text}
-                                  </div>
-                                  <div style={{
-                                    display: 'flex',
-                                    gap: '12px',
-                                    marginTop: '4px',
-                                    fontSize: '10px',
-                                    color: '#999'
-                                  }}>
-                                    <span>{task.date.slice(5)}</span>
-                                    {task.category && (
-                                      <span>{task.category}{task.subCategory ? ` - ${task.subCategory}` : ''}</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div style={{
-                                  fontSize: '11px',
-                                  color: '#61A2Da',
-                                  backgroundColor: '#e8f0fe',
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  whiteSpace: 'nowrap',
-                                  marginLeft: '8px'
-                                }}>
-                                  ⏱ {task.timeDisplay}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+  <div style={{
+    textAlign: 'center',
+    padding: '20px',
+    color: '#999',
+    fontSize: '12px'
+  }}>
+    暂无关联练习记录
+    <div style={{ fontSize: '11px', marginTop: '4px' }}>
+      在主界面完成任务后会自动统计
+    </div>
+  </div>
+) : (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  }}>
+    {relatedTasks.map((task, idx) => (
+      <div
+        key={task.id}
+        style={{
+          padding: '10px 12px',
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          border: '1px solid #e0e0e0'
+        }}
+      >
+        {/* 第一行：任务内容 + 时间 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '8px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#333',
+              wordBreak: 'break-word'
+            }}>
+              {task.text}
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '4px',
+              fontSize: '10px',
+              color: '#999'
+            }}>
+              <span>{task.date.slice(5)}</span>
+              {task.category && (
+                <span>{task.category}{task.subCategory ? ` - ${task.subCategory}` : ''}</span>
+              )}
+            </div>
+          </div>
+          <div style={{
+            fontSize: '11px',
+            color: '#61A2Da',
+            backgroundColor: '#e8f0fe',
+            padding: '4px 10px',
+            borderRadius: '16px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}>
+            {task.timeDisplay}
+          </div>
+        </div>
+        
+        {/* ✅ 新增：显示备注 */}
+        {task.note && (
+          <div style={{
+            marginTop: '8px',
+            padding: '6px 10px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '6px',
+            fontSize: '11px',
+            color: '#555'
+          }}>
+            <span style={{ fontWeight: 'bold', marginRight: '4px' }}></span>
+            {task.note}
+          </div>
+        )}
+        
+        {/* ✅ 新增：显示感想 */}
+        {task.reflection && (
+          <div style={{
+            marginTop: '6px',
+            padding: '6px 10px',
+            backgroundColor: '#fff9c4',
+            borderRadius: '6px',
+            fontSize: '11px',
+            color: '#333'
+          }}>
+            <span style={{ fontWeight: 'bold', marginRight: '4px' }}></span>
+            {task.reflection}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
                         
                         {/* 总计行 */}
                         {totalCount > 0 && (
@@ -3975,25 +4010,33 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
   const [editHistoryMinutes, setEditHistoryMinutes] = useState('');
   const timeRecords = task.timeRecords || [];
 
- const handleSave = () => {
-  const minutes = parseInt(addMinutes);
-  if (isNaN(minutes) || minutes <= 0) {
-    alert('请输入有效的分钟数（大于0）');
-    return;
-  }
-  
-  // ✅ 关键修改：保存时间后，自动将任务标记为完成
-  if (onSave) {
-    onSave(task, minutes, note);
-  }
-  
-  // ✅ 新增：自动勾选任务完成（如果尚未完成）
-  if (task.done !== true && typeof toggleDone === 'function') {
-    toggleDone(task);
-  }
-  
-  onClose();
-};
+  const handleSave = () => {
+    const minutes = parseInt(addMinutes);
+    if (isNaN(minutes) || minutes <= 0) {
+      alert('请输入有效的分钟数（大于0）');
+      return;
+    }
+    
+    if (onSave) {
+      onSave(task, minutes, note);
+    }
+    
+    if (task.done !== true && typeof toggleDone === 'function') {
+      toggleDone(task);
+    }
+    
+    onClose();
+  };
+
+  // ✅ 修复删除函数 - 正确传递 recordIndex
+  const handleDeleteRecord = (recordIndex) => {
+    if (window.confirm('确定要删除这条时间记录吗？')) {
+      if (onDeleteRecord) {
+        onDeleteRecord(task, recordIndex);
+      }
+    }
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -4086,35 +4129,46 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           <span style={{ fontSize: '13px', color: '#666' }}> 分钟</span>
         </div>
         
+        {/* ✅ 历史记录列表 - 修复删除按钮 */}
         {timeRecords.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
               历史记录
             </div>
             <div style={{ 
-              maxHeight: '150px', 
+              maxHeight: '200px', 
               overflow: 'auto',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               backgroundColor: '#fafafa'
             }}>
               {timeRecords.map((record, idx) => (
-                <div key={idx} style={{ padding: '6px 0', borderBottom: idx < timeRecords.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#e8f0fe', padding: '2px 8px', borderRadius: '16px', fontSize: '11px', color: '#61A2Da' }}>
+                <div key={idx} style={{ 
+                  padding: '8px 12px', 
+                  borderBottom: idx < timeRecords.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  backgroundColor: idx % 2 === 0 ? '#fafafa' : 'white'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ 
+                        backgroundColor: '#e8f0fe', 
+                        padding: '2px 8px', 
+                        borderRadius: '16px', 
+                        fontSize: '11px', 
+                        color: '#61A2Da' 
+                      }}>
                         {record.time || '--:--'}
                       </span>
                       
-                      {editingHistoryRecord?.recordIndex === idx ? (
+                      {editingHistoryRecord === idx ? (
                         <input
                           type="number"
                           value={editHistoryMinutes}
                           onChange={(e) => setEditHistoryMinutes(e.target.value)}
                           onBlur={() => {
                             const newMinutes = parseInt(editHistoryMinutes);
-                            if (!isNaN(newMinutes) && newMinutes > 0) {
-                              onEditRecord?.(task, idx, newMinutes);
+                            if (!isNaN(newMinutes) && newMinutes > 0 && onEditRecord) {
+                              onEditRecord(task, idx, newMinutes);
                             }
                             setEditingHistoryRecord(null);
                             setEditHistoryMinutes('');
@@ -4122,8 +4176,8 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               const newMinutes = parseInt(editHistoryMinutes);
-                              if (!isNaN(newMinutes) && newMinutes > 0) {
-                                onEditRecord?.(task, idx, newMinutes);
+                              if (!isNaN(newMinutes) && newMinutes > 0 && onEditRecord) {
+                                onEditRecord(task, idx, newMinutes);
                               }
                               setEditingHistoryRecord(null);
                               setEditHistoryMinutes('');
@@ -4134,11 +4188,11 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                           }}
                           autoFocus
                           style={{
-                            width: '60px',
-                            padding: '2px 4px',
+                            width: '70px',
+                            padding: '4px 6px',
                             borderRadius: '4px',
                             border: '1px solid #61A2Da',
-                            fontSize: '11px',
+                            fontSize: '12px',
                             fontWeight: 'bold',
                             textAlign: 'center'
                           }}
@@ -4146,16 +4200,16 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                       ) : (
                         <span 
                           onClick={() => {
-                            setEditingHistoryRecord({ recordIndex: idx });
+                            setEditingHistoryRecord(idx);
                             setEditHistoryMinutes(record.change.toString());
                           }}
                           style={{ 
                             fontWeight: 'bold', 
                             color: '#4caf50',
                             cursor: 'pointer',
-                            padding: '2px 4px',
+                            padding: '2px 6px',
                             borderRadius: '4px',
-                            fontSize: '11px'
+                            fontSize: '12px'
                           }}
                           title="点击修改时长"
                         >
@@ -4163,22 +4217,20 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                         </span>
                       )}
                     </div>
+                    
+                    {/* ✅ 修复：删除按钮 - 传递正确的索引 */}
                     <button
-                      onClick={() => {
-    if (window.confirm('确定要删除这条时间记录吗？')) {
-      onDeleteRecord?.(task, idx);
-    }
-  }}
+                      onClick={() => handleDeleteRecord(idx)}
                       style={{
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        padding: 0,
-                        width: '20px',
-                        height: '20px',
+                        padding: '4px 8px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        borderRadius: '4px',
+                        color: '#999'
                       }}
                       title="删除记录"
                     >
@@ -4189,7 +4241,14 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                     </button>
                   </div>
                   {record.note && (
-                    <div style={{ fontSize: '11px', color: '#666', marginLeft: '8px', paddingLeft: '8px', borderLeft: '2px solid #61A2Da', marginTop: '4px' }}>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      color: '#666', 
+                      marginLeft: '8px', 
+                      paddingLeft: '8px', 
+                      borderLeft: '2px solid #61A2Da', 
+                      marginTop: '6px' 
+                    }}>
                       📝 {record.note}
                     </div>
                   )}
@@ -15778,7 +15837,7 @@ const handleCrossDateTask = (task, targetDates) => {
 
 
 const toggleDone = (task, currentDateFromTask = null) => {
-   // ✅ 如果任务已放弃，不允许操作
+  // ✅ 如果任务已放弃，不允许操作
   if (task.abandoned) {
     console.log('⚠️ 任务已放弃，无法勾选');
     return;
@@ -15787,14 +15846,122 @@ const toggleDone = (task, currentDateFromTask = null) => {
   const currentDate = currentDateFromTask || selectedDate;
   const newDoneState = !task.done;
   
-  // 如果是跨日期任务
+  // ========== 1. 处理本周任务 - 完成后移动到目标分类 ==========
+  if (task.isWeekTask && newDoneState === true) {
+    console.log('📌 本周任务完成，准备移动到目标分类:', task.targetCategory);
+    
+    // 获取目标分类和子分类
+    const targetCat = task.targetCategory || '校内';
+    const targetSubCat = task.targetSubCategory || '';
+    
+    // 创建新任务（复制到目标分类）
+    const newTask = {
+      id: `moved_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+      text: task.text,
+      category: targetCat,
+      subCategory: targetSubCat,
+      done: true,  // 直接标记为已完成
+      timeSpent: task.timeSpent || 0,
+      timeRecords: task.timeRecords || [],
+      subTasks: task.subTasks || [],
+      note: task.note || "",
+      reflection: task.reflection || "",
+      image: task.image || null,
+      scheduledTime: task.scheduledTime || "",
+      pinned: false,
+      tags: task.tags || [],
+      progress: task.progress || { initial: 0, current: 0, target: 0, unit: "%" },
+      reminderTime: task.reminderTime || null,
+      createdAt: new Date().toISOString(),
+      movedFromWeekTask: true,
+      originalWeekText: task.text
+    };
+    
+    // 删除所有日期的本周任务，并添加新任务到当前日期
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      
+      // 1. 从所有日期中删除这个本周任务
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].filter(t => 
+          !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
+        );
+        // 清理空数组
+        if (newTasksByDate[date] && newTasksByDate[date].length === 0) {
+          delete newTasksByDate[date];
+        }
+      });
+      
+      // 2. 在当前日期添加新任务（目标分类下）
+      if (!newTasksByDate[currentDate]) {
+        newTasksByDate[currentDate] = [];
+      }
+      newTasksByDate[currentDate].push(newTask);
+      
+      // 3. 触发撒花检测
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[currentDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      
+      return newTasksByDate;
+    });
+    
+    // 显示成功提示
+    setTimeout(() => {
+      const toast = document.createElement('div');
+      toast.textContent = `✅ "${task.text}" 已完成，已移动到 ${targetCat}${targetSubCat ? ` / ${targetSubCat}` : ''}`;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4caf50;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        z-index: 2000;
+        white-space: nowrap;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    }, 50);
+    
+    return;
+  }
+  
+  // ========== 2. 处理本周任务取消完成 ==========
+  if (task.isWeekTask && newDoneState === false) {
+    // 直接切换完成状态（不移动）
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = (newTasksByDate[date] || []).map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? { ...t, done: false }
+            : t
+        );
+      });
+      
+      setTimeout(() => {
+        const updatedTasks = newTasksByDate[selectedDate] || [];
+        checkConfettiWithTasks(updatedTasks);
+      }, 50);
+      
+      return newTasksByDate;
+    });
+    return;
+  }
+  
+  // ========== 3. 处理跨日期任务 ==========
   if (task.crossDateId) {
     const crossDateId = task.crossDateId;
     
     // 获取这个跨日期任务的所有关联日期
     let allDates = task.crossDates || [];
     if (allDates.length === 0) {
-      // 如果 crossDates 为空，从 tasksByDate 中查找
       allDates = [];
       Object.keys(tasksByDate).forEach(date => {
         const hasTask = tasksByDate[date]?.some(t => t.crossDateId === crossDateId);
@@ -15804,115 +15971,117 @@ const toggleDone = (task, currentDateFromTask = null) => {
       });
     }
     
-    // 排序日期
     allDates.sort();
     
-    // 获取当前任务是否已完成（当天）
     const isCurrentDone = tasksByDate[currentDate]?.some(t => 
       t.crossDateId === crossDateId && t.done === true
     ) || false;
     
-    // 如果是勾选完成（从未完成到完成）
     if (newDoneState === true && isCurrentDone === false) {
-      const confirmMessage = `是否确认完成该任务？\n\n📝 任务：${task.text}\n\n📅 关联日期：\n${allDates.map(d => `  • ${d}${d === currentDate ? ' (今天)' : ''}`).join('\n')}\n\n选择"确定"：所有日期都完成 ✅\n选择"取消"：只完成今天 (${currentDate})`;
-      
-// 显示自定义确认弹窗
-setShowCustomConfirm({
-  message: `完成"${task.text}"？`,
-  onConfirm: () => {
-    // 全部完成 - 保留已有的 actualCompletedDate，只补充今天的
-    console.log(`✅ 用户选择：完成所有日期，共 ${allDates.length} 天`);
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      allDates.forEach(date => {
-        newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
-          if (t.crossDateId === crossDateId) {
-            // ✅ 关键修复：保留已有的 actualCompletedDate，如果没有才设置今天的
-            const existingCompletedDate = t.actualCompletedDate;
-            return { 
-              ...t, 
-              done: true,
-              // 如果已经有 actualCompletedDate 就保留，否则如果是今天才设置
-              actualCompletedDate: existingCompletedDate || (date === currentDate ? currentDate : null)
-            };
-          }
-          return t;
-        });
-      });
-      setTimeout(() => {
-        const updatedTasks = newTasksByDate[selectedDate] || [];
-        checkConfettiWithTasks(updatedTasks);
-      }, 50);
-      return newTasksByDate;
-    });
-  },
-  onCancel: () => {
-    // 只完成今天
-    console.log(`✅ 用户选择：只完成今天 ${currentDate}`);
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
-        if (t.crossDateId === crossDateId) {
-          return { ...t, done: true, actualCompletedDate: currentDate };
-        }
-        return t;
-      });
-      setTimeout(() => {
-        const updatedTasks = newTasksByDate[selectedDate] || [];
-        checkConfettiWithTasks(updatedTasks);
-      }, 50);
-      return newTasksByDate;
-    });
-  }
-});
-return;
-     } 
-    // 如果是取消完成（从完成到未完成）
-    // 取消完成（从完成到未完成）
-if (newDoneState === false && isCurrentDone === true) {
-  // 检查是否有其他日期已经完成了
-  let otherDatesCompleted = false;
-  let completedDates = [];
-  
-  allDates.forEach(date => {
-    if (date !== currentDate) {
-      const isCompleted = tasksByDate[date]?.some(t => 
-        t.crossDateId === crossDateId && t.done === true
-      ) || false;
-      if (isCompleted) {
-        otherDatesCompleted = true;
-        completedDates.push(date);
-      }
-    }
-  });
-  
-  if (otherDatesCompleted) {
-    // ✅ 使用自定义弹窗
-    setShowCustomConfirm({
-      message: `取消完成"${task.text}"？`,
-      onConfirm: () => {
-        // 取消所有日期的完成状态
-        console.log(`✅ 用户选择：取消所有日期`);
-        setTasksByDate(prev => {
-          const newTasksByDate = { ...prev };
-          allDates.forEach(date => {
-            newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
+      setShowCustomConfirm({
+        message: `完成"${task.text}"？`,
+        onConfirm: () => {
+          console.log(`✅ 用户选择：完成所有日期`);
+          setTasksByDate(prev => {
+            const newTasksByDate = { ...prev };
+            allDates.forEach(date => {
+              newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
+                if (t.crossDateId === crossDateId) {
+                  const existingCompletedDate = t.actualCompletedDate;
+                  return { 
+                    ...t, 
+                    done: true,
+                    actualCompletedDate: existingCompletedDate || (date === currentDate ? currentDate : null)
+                  };
+                }
+                return t;
+              });
+            });
+            setTimeout(() => {
+              const updatedTasks = newTasksByDate[selectedDate] || [];
+              checkConfettiWithTasks(updatedTasks);
+            }, 50);
+            return newTasksByDate;
+          });
+        },
+        onCancel: () => {
+          console.log(`✅ 用户选择：只完成今天`);
+          setTasksByDate(prev => {
+            const newTasksByDate = { ...prev };
+            newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
               if (t.crossDateId === crossDateId) {
-                return { ...t, done: false, actualCompletedDate: null };
+                return { ...t, done: true, actualCompletedDate: currentDate };
               }
               return t;
             });
+            setTimeout(() => {
+              const updatedTasks = newTasksByDate[selectedDate] || [];
+              checkConfettiWithTasks(updatedTasks);
+            }, 50);
+            return newTasksByDate;
           });
-          setTimeout(() => {
-            const updatedTasks = newTasksByDate[selectedDate] || [];
-            checkConfettiWithTasks(updatedTasks);
-          }, 50);
-          return newTasksByDate;
+        }
+      });
+      return;
+    }
+    
+    if (newDoneState === false && isCurrentDone === true) {
+      let otherDatesCompleted = false;
+      let completedDates = [];
+      
+      allDates.forEach(date => {
+        if (date !== currentDate) {
+          const isCompleted = tasksByDate[date]?.some(t => 
+            t.crossDateId === crossDateId && t.done === true
+          ) || false;
+          if (isCompleted) {
+            otherDatesCompleted = true;
+            completedDates.push(date);
+          }
+        }
+      });
+      
+      if (otherDatesCompleted) {
+        setShowCustomConfirm({
+          message: `取消完成"${task.text}"？`,
+          onConfirm: () => {
+            console.log(`✅ 用户选择：取消所有日期`);
+            setTasksByDate(prev => {
+              const newTasksByDate = { ...prev };
+              allDates.forEach(date => {
+                newTasksByDate[date] = (newTasksByDate[date] || []).map(t => {
+                  if (t.crossDateId === crossDateId) {
+                    return { ...t, done: false, actualCompletedDate: null };
+                  }
+                  return t;
+                });
+              });
+              setTimeout(() => {
+                const updatedTasks = newTasksByDate[selectedDate] || [];
+                checkConfettiWithTasks(updatedTasks);
+              }, 50);
+              return newTasksByDate;
+            });
+          },
+          onCancel: () => {
+            console.log(`✅ 用户选择：只取消今天`);
+            setTasksByDate(prev => {
+              const newTasksByDate = { ...prev };
+              newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
+                if (t.crossDateId === crossDateId) {
+                  return { ...t, done: false, actualCompletedDate: null };
+                }
+                return t;
+              });
+              setTimeout(() => {
+                const updatedTasks = newTasksByDate[selectedDate] || [];
+                checkConfettiWithTasks(updatedTasks);
+              }, 50);
+              return newTasksByDate;
+            });
+          }
         });
-      },
-      onCancel: () => {
-        // 只取消今天
-        console.log(`✅ 用户选择：只取消今天 ${currentDate}`);
+      } else {
         setTasksByDate(prev => {
           const newTasksByDate = { ...prev };
           newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
@@ -15928,55 +16097,12 @@ if (newDoneState === false && isCurrentDone === true) {
           return newTasksByDate;
         });
       }
-    });
-  } else {
-    // 没有其他日期完成，直接取消今天（无需弹窗）
-    console.log(`✅ 直接取消今天 ${currentDate}`);
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      newTasksByDate[currentDate] = (newTasksByDate[currentDate] || []).map(t => {
-        if (t.crossDateId === crossDateId) {
-          return { ...t, done: false, actualCompletedDate: null };
-        }
-        return t;
-      });
-      setTimeout(() => {
-        const updatedTasks = newTasksByDate[selectedDate] || [];
-        checkConfettiWithTasks(updatedTasks);
-      }, 50);
-      return newTasksByDate;
-    });
-  }
-  return;
-}
-    
+      return;
+    }
     return;
   }
   
-  // 如果是本周任务
-  if (task.isWeekTask) {
-    setTasksByDate(prev => {
-      const newTasksByDate = { ...prev };
-      
-      Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = (newTasksByDate[date] || []).map(t =>
-          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
-            ? { ...t, done: newDoneState }
-            : t
-        );
-      });
-      
-      setTimeout(() => {
-        const updatedTasks = newTasksByDate[selectedDate] || [];
-        checkConfettiWithTasks(updatedTasks);
-      }, 50);
-      
-      return newTasksByDate;
-    });
-    return;
-  }
-  
-  // 普通任务
+  // ========== 4. 普通任务 ==========
   setTasksByDate(prev => {
     const newTasksByDate = {
       ...prev,
@@ -18896,7 +19022,7 @@ const handleImportTasksWithDuration = (currentSelectedDate) => {
   }
   // 判断是否为每天任务的函数
 const isDailyTask = (taskText) => {
-  const dailyKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语'];
+  const dailyKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '口算','阅读', '听英语'];
   const excludePatterns = ['订正', '改正', '修改', '纠正', '更正', '改错'];
   
   // 先检查排除词
@@ -19315,7 +19441,6 @@ const handleEditTimeRecord = (task, recordOrIndex, newMinutesOrNote, optionalNot
   });
 };
 
-// 删除时间记录
 const handleDeleteTimeRecord = (task, recordIndex) => {
   setTasksByDate(prev => {
     const newTasksByDate = { ...prev };
