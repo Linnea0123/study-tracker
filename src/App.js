@@ -2411,92 +2411,101 @@ const performSearch = useCallback(() => {
 };
 
 // 科目待办模态框 - 在 SubjectGuideModal 组件后面添加
-// 科目待办模态框 - 增强版（自动关联任务统计）
 const SubjectTodoModal = ({ onClose, isVisible, tasksByDate = {} }) => {
   const [forceUpdate, setForceUpdate] = useState(Date.now());
   const [activeTab, setActiveTab] = useState('数学');
-  const [expandedTodoId, setExpandedTodoId] = useState(null); // 展开的待办ID
+  const [expandedTodoId, setExpandedTodoId] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('regular');
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('subject_todo_entries');
+    const saved = localStorage.getItem('subject_todo_entries_v2');
     return saved ? JSON.parse(saved) : {};
   });
 
-  
   const tabs = ['数学', '语文', '英语', '其他'];
 
-  // 在 useEffect 中添加
-useEffect(() => {
-  // 每 5 秒自动刷新一次（可选）
-  const interval = setInterval(() => {
-    setForceUpdate(Date.now());
-  }, 5000);
-  return () => clearInterval(interval);
-}, []);
-
-  // 保存到 localStorage
   useEffect(() => {
-    localStorage.setItem('subject_todo_entries', JSON.stringify(todos));
+    const interval = setInterval(() => {
+      setForceUpdate(Date.now());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('subject_todo_entries_v2', JSON.stringify(todos));
   }, [todos]);
 
-  const currentTodos = todos[activeTab] || [];
+ // 在 SubjectTodoModal 组件中，修改 currentTodos 的处理逻辑
+const currentTodos = todos[activeTab] || [];
 
- // 根据关键词搜索主界面中已完成的关联任务
-// 根据关键词和当前科目搜索主界面中已完成的关联任务
-// 修改 findRelatedTasks 函数，获取更完整的任务信息
-const findRelatedTasks = useCallback((keyword) => {
-  if (!keyword || !tasksByDate) return [];
-  
-  const relatedTasks = [];
-  
-  const getSearchCategories = (tab) => {
-    switch(tab) {
-      case '数学':
-        return ['数学', '校内-数学'];
-      case '语文':
-        return ['语文', '校内-语文'];
-      case '英语':
-        return ['英语', '校内-英语'];
-      case '其他':
-        return ['科学', '运动', '其他', '校内'];
-      default:
-        return [tab];
-    }
-  };
-  
-  const searchCategories = getSearchCategories(activeTab);
-  
-  Object.entries(tasksByDate).forEach(([date, tasks]) => {
-    tasks.forEach(task => {
-      if (task.done === true && task.text && task.text.includes(keyword)) {
-        let taskCategory = task.category;
-        if (task.category === '校内' && task.subCategory) {
-          taskCategory = `校内-${task.subCategory}`;
-        }
-        
-        const isCategoryMatch = searchCategories.some(cat => 
-          taskCategory === cat || taskCategory.includes(cat)
-        );
-        
-        if (isCategoryMatch) {
-          const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
-          relatedTasks.push({
-            id: task.id,
-            text: task.text,
-            date: date,
-            timeMinutes: timeMinutes,
-            timeDisplay: timeMinutes > 0 ? `${timeMinutes}分钟` : '未记录',
-            category: task.category,
-            subCategory: task.subCategory,
-            note: task.note || '',        // ✅ 添加备注
-            reflection: task.reflection || ''  // ✅ 添加感想
-          });
-        }
+// 分离重点和常规任务，并分别排序（未完成在上，已完成在下）
+const getSortedTodos = (todos, isImportant) => {
+  const filtered = todos.filter(todo => 
+    isImportant ? todo.priority === 'important' : todo.priority !== 'important'
+  );
+  // 未完成的排前面，已完成的排后面
+  return [...filtered.filter(t => !t.done), ...filtered.filter(t => t.done)];
+};
+
+const importantTodos = getSortedTodos(currentTodos, true);
+const regularTodos = getSortedTodos(currentTodos, false);
+
+  // 查找关联任务
+  const findRelatedTasks = useCallback((keyword) => {
+    if (!keyword || !tasksByDate) return [];
+    
+    const relatedTasks = [];
+    
+    const getSearchCategories = (tab) => {
+      switch(tab) {
+        case '数学':
+          return ['数学', '校内-数学'];
+        case '语文':
+          return ['语文', '校内-语文'];
+        case '英语':
+          return ['英语', '校内-英语'];
+        case '其他':
+          return ['科学', '运动', '其他', '校内'];
+        default:
+          return [tab];
       }
+    };
+    
+    const searchCategories = getSearchCategories(activeTab);
+    
+    Object.entries(tasksByDate).forEach(([date, tasks]) => {
+      tasks.forEach(task => {
+        if (task.done === true && task.text && task.text.includes(keyword)) {
+          let taskCategory = task.category;
+          if (task.category === '校内' && task.subCategory) {
+            taskCategory = `校内-${task.subCategory}`;
+          }
+          
+          const isCategoryMatch = searchCategories.some(cat => 
+            taskCategory === cat || taskCategory.includes(cat)
+          );
+          
+          if (isCategoryMatch) {
+            const timeMinutes = Math.floor((task.timeSpent || 0) / 60);
+            relatedTasks.push({
+              id: task.id,
+              text: task.text,
+              date: date,
+              timeMinutes: timeMinutes,
+              timeDisplay: timeMinutes > 0 ? `${timeMinutes}分钟` : '未记录',
+              category: task.category,
+              subCategory: task.subCategory,
+              note: task.note || '',
+              reflection: task.reflection || ''
+            });
+          }
+        }
+      });
     });
-  });
-  
-  return relatedTasks.sort((a, b) => b.date.localeCompare(a.date));
-}, [tasksByDate, activeTab]);
+    
+    return relatedTasks.sort((a, b) => b.date.localeCompare(a.date));
+  }, [tasksByDate, activeTab]);
 
   // 切换完成状态
   const toggleTodo = (todoId) => {
@@ -2508,23 +2517,34 @@ const findRelatedTasks = useCallback((keyword) => {
     }));
   };
 
-  // 添加待办
+  // 打开添加弹窗
   const handleAddTodo = () => {
-    const title = window.prompt('请输入待办内容（将自动关联包含此关键词的任务）：');
-    if (title && title.trim()) {
-      const keyword = title.trim();
-      const newTodo = {
-        id: Date.now().toString(),
-        title: keyword,
-        keyword: keyword, // 用于搜索的关键词
-        createdAt: new Date().toISOString(),
-        done: false
-      };
-      setTodos(prev => ({
-        ...prev,
-        [activeTab]: [...(prev[activeTab] || []), newTodo]
-      }));
+    setNewTodoTitle('');
+    setSelectedPriority('regular');
+    setShowAddModal(true);
+  };
+
+  // 保存待办
+  const saveTodo = () => {
+    if (!newTodoTitle.trim()) {
+      alert('请输入待办内容');
+      return;
     }
+    
+    const newTodo = {
+      id: Date.now().toString(),
+      title: newTodoTitle.trim(),
+      keyword: newTodoTitle.trim(),
+      createdAt: new Date().toISOString(),
+      done: false,
+      priority: selectedPriority
+    };
+    setTodos(prev => ({
+      ...prev,
+      [activeTab]: [...(prev[activeTab] || []), newTodo]
+    }));
+    setShowAddModal(false);
+    setNewTodoTitle('');
   };
 
   // 编辑待办
@@ -2572,6 +2592,283 @@ const findRelatedTasks = useCallback((keyword) => {
     completed: currentTodos.filter(t => t.done).length,
     incomplete: currentTodos.filter(t => !t.done).length
   };
+
+  // 渲染单个待办项
+  // 渲染单个待办项
+const renderTodoItem = (todo) => {
+  const { relatedTasks, totalCount, totalMinutes, totalHours } = getTodoStats(todo);
+  const isExpanded = expandedTodoId === todo.id;
+  const isImportant = todo.priority === 'important';
+  const isDone = todo.done;  // 👈 获取完成状态
+  
+  return (
+    <div
+      key={todo.id}
+      style={{
+        backgroundColor: isDone ? '#f5f5f5' : 'white',  // 👈 完成后变灰
+        borderRadius: '12px',
+        border: isImportant 
+          ? (isDone ? '1px solid #ddd' : '1px solid #FF6B6B')  // 👈 完成后边框变灰
+          : '1px solid #e5e7eb',
+        overflow: 'hidden',
+        flexShrink: 0,
+        marginBottom: '5px',
+        opacity: isDone ? 0.7 : 1  // 👈 完成后降低透明度
+      }}
+    >
+      {/* 主要内容行 */}
+      <div
+        style={{
+          padding: '12px 15px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          cursor: 'pointer',
+          backgroundColor: isImportant && !isDone ? '#FFF5F5' : (isDone ? '#f5f5f5' : 'white')  // 👈 完成后背景变灰
+        }}
+        onClick={() => setExpandedTodoId(isExpanded ? null : todo.id)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+          <input
+            type="checkbox"
+            checked={todo.done}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleTodo(todo.id);
+            }}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: 'pointer',
+              margin: 0,
+              flexShrink: 0
+            }}
+          />
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditTodo(todo);
+            }}
+            style={{
+              fontSize: '14px',
+              color: isDone ? '#bbb' : (isImportant ? '#FF6B6B' : '#333'),  // 👈 完成后文字变浅灰
+              textDecoration: isDone ? 'line-through' : 'none',  // 👈 完成后添加删除线
+              cursor: 'pointer',
+              flex: 1,
+              wordBreak: 'break-word',
+              fontWeight: isImportant && !isDone ? 'bold' : 'normal'
+            }}
+          >
+            {isImportant && !isDone && <span style={{ marginRight: '6px' }}>⭐</span>}
+            {isImportant && isDone && <span style={{ marginRight: '6px', color: '#bbb' }}>⭐</span>}
+            {todo.title}
+          </span>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          {totalCount > 0 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: isDone ? '#bbb' : '#4caf50',  // 👈 完成后变灰
+              backgroundColor: isDone ? '#e8e8e8' : '#e8f5e9',  // 👈 完成后背景变灰
+              padding: '2px 8px',
+              borderRadius: '16px'
+            }}>
+              <span>{totalCount}次</span>
+              {totalMinutes > 0 && <span>({totalHours}h)</span>}
+            </div>
+          )}
+          
+          <div style={{
+            width: '22px',
+            height: '22px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: isDone ? '#bbb' : '#999'  // 👈 完成后箭头变灰
+          }}>
+            {isExpanded ? '▲' : '▼'}
+          </div>
+          
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteTodo(todo.id);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: isDone ? '#bbb' : '#999',  // 👈 完成后叉号变灰
+              flexShrink: 0
+            }}
+          >
+            ×
+          </div>
+        </div>
+      </div>
+      
+      {/* 展开区域 - 完成后保持原样，不加额外修改 */}
+      {isExpanded && (
+        // ... 展开区域代码保持不变
+        <div style={{
+          padding: '12px 15px',
+          backgroundColor: '#f8f9fa',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          {/* 内容保持不变 */}
+          <div style={{
+            fontSize: '12px',
+            fontWeight: 'bold',
+            color: '#666',
+            marginBottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>关联练习记录</span>
+            {totalCount > 0 && (
+              <span style={{
+                fontSize: '11px',
+                color: isDone ? '#bbb' : '#4caf50',
+                backgroundColor: isDone ? '#e8e8e8' : '#e8f5e9',
+                padding: '2px 8px',
+                borderRadius: '12px'
+              }}>
+                共 {totalCount} 次
+              </span>
+            )}
+          </div>
+          
+          {relatedTasks.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '20px',
+              color: '#999',
+              fontSize: '12px'
+            }}>
+              暂无关联练习记录
+              <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                在主界面完成任务后会自动统计
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {relatedTasks.map((task, idx) => (
+                <div
+                  key={task.id}
+                  style={{
+                    padding: '10px 12px',
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0'
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: '#333',
+                        wordBreak: 'break-word'
+                      }}>
+                        {task.text}
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        gap: '12px',
+                        marginTop: '4px',
+                        fontSize: '10px',
+                        color: '#999'
+                      }}>
+                        <span>{task.date.slice(5)}</span>
+                        {task.category && (
+                          <span>{task.category}{task.subCategory ? ` - ${task.subCategory}` : ''}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#61A2Da',
+                      backgroundColor: '#e8f0fe',
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}>
+                      {task.timeDisplay}
+                    </div>
+                  </div>
+                  
+                  {task.note && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '6px 10px',
+                      backgroundColor: '#f5f5f5',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      color: '#555'
+                    }}>
+                      {task.note}
+                    </div>
+                  )}
+                  
+                  {task.reflection && (
+                    <div style={{
+                      marginTop: '6px',
+                      padding: '6px 10px',
+                      backgroundColor: '#fff9c4',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      color: '#333'
+                    }}>
+                      {task.reflection}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {totalCount > 0 && (
+            <div style={{
+              marginTop: '10px',
+              padding: '8px 10px',
+              backgroundColor: '#e8f0fe',
+              borderRadius: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '12px'
+            }}>
+              <span style={{ fontWeight: 'bold', color: '#61A2Da' }}>总计</span>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <span>练习次数: {totalCount}</span>
+                {totalMinutes > 0 && <span>总时长: {totalHours}小时</span>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
   if (!isVisible) return null;
 
@@ -2748,7 +3045,143 @@ const findRelatedTasks = useCallback((keyword) => {
           </div>
         </div>
 
-        {/* 待办列表 */}
+        {/* 添加待办弹窗 - 一次性输入内容+选择优先级 */}
+        {showAddModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1100,
+            padding: '10px'
+          }} onClick={() => setShowAddModal(false)}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              width: '90%',
+              maxWidth: '320px',
+              overflow: 'hidden',
+              textAlign: 'center'
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{
+                padding: '16px',
+                borderBottom: '1px solid #f0f0f0',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                color: '#333'
+              }}>
+                添加待办
+              </div>
+              
+              <div style={{ padding: '16px' }}>
+                <input
+                  type="text"
+                  value={newTodoTitle}
+                  onChange={(e) => setNewTodoTitle(e.target.value)}
+                  placeholder="输入待办内容..."
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    marginBottom: '16px'
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveTodo();
+                    }
+                  }}
+                />
+                
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', textAlign: 'left' }}>
+                    选择优先级：
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div
+                      onClick={() => setSelectedPriority('important')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: selectedPriority === 'important' ? '#FF6B6B' : '#f5f5f5',
+                        color: selectedPriority === 'important' ? 'white' : '#333',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        border: selectedPriority === 'important' ? 'none' : '1px solid #ddd'
+                      }}
+                    >
+                      ⭐ 重点
+                    </div>
+                    <div
+                      onClick={() => setSelectedPriority('regular')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        backgroundColor: selectedPriority === 'regular' ? '#61A2Da' : '#f5f5f5',
+                        color: selectedPriority === 'regular' ? 'white' : '#333',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        border: selectedPriority === 'regular' ? 'none' : '1px solid #ddd'
+                      }}
+                    >
+                      📋 常规
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div
+                    onClick={() => setShowAddModal(false)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: '#f0f0f0',
+                      color: '#333',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}
+                  >
+                    取消
+                  </div>
+                  <div
+                    onClick={saveTodo}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      backgroundColor: '#61A2Da',
+                      color: 'white',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      textAlign: 'center'
+                    }}
+                  >
+                    添加
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 待办列表 - 重点在上，常规在下 */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
@@ -2771,288 +3204,52 @@ const findRelatedTasks = useCallback((keyword) => {
               </div>
             </div>
           ) : (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '12px',
-              paddingBottom: '10px'
-            }}>
-              {currentTodos.map(todo => {
-                const { relatedTasks, totalCount, totalMinutes, totalHours } = getTodoStats(todo);
-                const isExpanded = expandedTodoId === todo.id;
-                
-                return (
-                  <div
-                    key={todo.id}
-                    style={{
-                      backgroundColor: 'white',
-                      borderRadius: '12px',
-                      border: '1px solid #e5e7eb',
-                      overflow: 'hidden',
-                      flexShrink: 0
-                    }}
-                  >
-                    {/* 主要内容行 */}
-                    <div
-                      style={{
-                        padding: '12px 15px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '12px',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setExpandedTodoId(isExpanded ? null : todo.id)}
-                    >
-                      {/* 左侧：复选框 + 内容 */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                        <input
-                          type="checkbox"
-                          checked={todo.done}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleTodo(todo.id);
-                          }}
-                          style={{
-                            width: '18px',
-                            height: '18px',
-                            cursor: 'pointer',
-                            margin: 0,
-                            flexShrink: 0
-                          }}
-                        />
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditTodo(todo);
-                          }}
-                          style={{
-                            fontSize: '14px',
-                            color: todo.done ? '#999' : '#333',
-                            textDecoration: todo.done ? 'line-through' : 'none',
-                            cursor: 'pointer',
-                            flex: 1,
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          {todo.title}
-                        </span>
-                      </div>
-                      
-                      {/* 右侧：统计信息和展开箭头 */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                        {totalCount > 0 && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                            color: '#4caf50',
-                            backgroundColor: '#e8f5e9',
-                            padding: '2px 8px',
-                            borderRadius: '16px'
-                          }}>
-                            <span></span>
-                            <span>{totalCount}次</span>
-                            {totalMinutes > 0 && <span>({totalHours}h)</span>}
-                          </div>
-                        )}
-                        
-                        {/* 展开/收起箭头 */}
-                        <div style={{
-                          width: '22px',
-                          height: '22px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#999'
-                        }}>
-                          {isExpanded ? '▲' : '▼'}
-                        </div>
-                        
-  <div
-  onClick={(e) => {
-    e.stopPropagation();
-    handleDeleteTodo(todo.id);
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    width: '24px',
-    height: '24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#999',
-    flexShrink: 0
-  }}
->
-  ×
-</div>
-                      </div>
-                    </div>
-                    
-                    {/* 展开区域：显示关联的任务列表 */}
-                    {isExpanded && (
-                      <div style={{
-                        padding: '12px 15px',
-                        backgroundColor: '#f8f9fa',
-                        borderTop: '1px solid #e5e7eb'
-                      }}>
-                        <div style={{
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          color: '#666',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <span>关联练习记录</span>
-                          {totalCount > 0 && (
-                            <span style={{
-                              fontSize: '11px',
-                              color: '#4caf50',
-                              backgroundColor: '#e8f5e9',
-                              padding: '2px 8px',
-                              borderRadius: '12px'
-                            }}>
-                              共 {totalCount} 次
-                            </span>
-                          )}
-                        </div>
-                        
-                        {relatedTasks.length === 0 ? (
-  <div style={{
-    textAlign: 'center',
-    padding: '20px',
-    color: '#999',
-    fontSize: '12px'
-  }}>
-    暂无关联练习记录
-    <div style={{ fontSize: '11px', marginTop: '4px' }}>
-      在主界面完成任务后会自动统计
-    </div>
-  </div>
-) : (
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  }}>
-    {relatedTasks.map((task, idx) => (
-      <div
-        key={task.id}
-        style={{
-          padding: '10px 12px',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          border: '1px solid #e0e0e0'
-        }}
-      >
-        {/* 第一行：任务内容 + 时间 */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '8px',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: '13px',
-              fontWeight: '500',
-              color: '#333',
-              wordBreak: 'break-word'
-            }}>
-              {task.text}
-            </div>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              marginTop: '4px',
-              fontSize: '10px',
-              color: '#999'
-            }}>
-              <span>{task.date.slice(5)}</span>
-              {task.category && (
-                <span>{task.category}{task.subCategory ? ` - ${task.subCategory}` : ''}</span>
-              )}
-            </div>
-          </div>
-          <div style={{
-            fontSize: '11px',
-            color: '#61A2Da',
-            backgroundColor: '#e8f0fe',
-            padding: '4px 10px',
-            borderRadius: '16px',
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}>
-            {task.timeDisplay}
-          </div>
-        </div>
-        
-        {/* ✅ 新增：显示备注 */}
-        {task.note && (
-          <div style={{
-            marginTop: '8px',
-            padding: '6px 10px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '6px',
-            fontSize: '11px',
-            color: '#555'
-          }}>
-            <span style={{ fontWeight: 'bold', marginRight: '4px' }}></span>
-            {task.note}
-          </div>
-        )}
-        
-        {/* ✅ 新增：显示感想 */}
-        {task.reflection && (
-          <div style={{
-            marginTop: '6px',
-            padding: '6px 10px',
-            backgroundColor: '#fff9c4',
-            borderRadius: '6px',
-            fontSize: '11px',
-            color: '#333'
-          }}>
-            <span style={{ fontWeight: 'bold', marginRight: '4px' }}></span>
-            {task.reflection}
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-)}
-                        
-                        {/* 总计行 */}
-                        {totalCount > 0 && (
-                          <div style={{
-                            marginTop: '10px',
-                            padding: '8px 10px',
-                            backgroundColor: '#e8f0fe',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ fontWeight: 'bold', color: '#61A2Da' }}>总计</span>
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                              <span>练习次数: {totalCount}</span>
-                              {totalMinutes > 0 && <span>总时长: {totalHours}小时</span>}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '10px' }}>
+              
+              {/* 重点任务区域 */}
+              {importantTodos.length > 0 && (
+                <div>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#FF6B6B',
+                    marginBottom: '8px',
+                    paddingLeft: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span>⭐ 重点任务</span>
+                    <span style={{ fontSize: '11px', color: '#999', fontWeight: 'normal' }}>
+                      ({importantTodos.length})
+                    </span>
                   </div>
-                );
-              })}
+                  {importantTodos.map(todo => renderTodoItem(todo))}
+                </div>
+              )}
+              
+              {/* 常规任务区域 */}
+              {regularTodos.length > 0 && (
+                <div>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#61A2Da',
+                    marginBottom: '8px',
+                    paddingLeft: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span>📋 常规任务</span>
+                    <span style={{ fontSize: '11px', color: '#999', fontWeight: 'normal' }}>
+                      ({regularTodos.length})
+                    </span>
+                  </div>
+                  {regularTodos.map(todo => renderTodoItem(todo))}
+                </div>
+              )}
+              
             </div>
           )}
         </div>
@@ -3060,7 +3257,6 @@ const findRelatedTasks = useCallback((keyword) => {
     </div>
   );
 };
-
 
 const SubjectGuideModal = ({ onClose, isVisible }) => {
   const [activeTab, setActiveTab] = useState('数学');
