@@ -3475,45 +3475,23 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
   };
   
   const handleSave = () => {
-    if (editorRef.current) {
-      const latestContent = editorRef.current.innerHTML;
-      if (latestContent !== formData.content) {
-        setFormData(prev => ({ ...prev, content: latestContent }));
-      }
+  const minutes = parseInt(addMinutes);
+  // 移除 alert 验证，如果无效则不添加
+  if (!isNaN(minutes) && minutes > 0) {
+    if (onSave) {
+      onSave(task, minutes, note);
     }
     
-    const title = formData.title.trim();
-    const content = editorRef.current ? editorRef.current.innerHTML : formData.content;
-    
-    if (!title || !content || content === '<br>') {
-      alert('请填写标题和内容');
-      return;
+    if (task.done !== true && typeof toggleDone === 'function') {
+      toggleDone(task);
     }
     
-    const newEntry = {
-      id: editingEntry ? editingEntry.id : Date.now().toString(),
-      title: title,
-      content: content,
-      date: formData.date,
-      tags: formData.tags,
-      important: formData.important,
-      updatedAt: new Date().toISOString()
-    };
-    
-    setEntries(prev => {
-      const subjectEntries = [...(prev[activeTab] || [])];
-      if (editingEntry) {
-        const index = subjectEntries.findIndex(e => e.id === editingEntry.id);
-        if (index !== -1) subjectEntries[index] = newEntry;
-      } else {
-        subjectEntries.unshift(newEntry);
-      }
-      return { ...prev, [activeTab]: subjectEntries };
-    });
-    
-    resetForm();
-    setShowAddForm(false);
-  };
+    onClose();
+  } else {
+    // 如果输入无效，直接关闭弹窗，不添加时间
+    onClose();
+  }
+};
   
   const handleDelete = (entryId) => {
     if (window.confirm('确定要删除这条记录吗？')) {
@@ -4601,38 +4579,55 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
   );
 };
 
-const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, toggleDone }) => {
+const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, toggleDone, onSavePlannedTime }) => {
   const [addMinutes, setAddMinutes] = useState('');
   const [note, setNote] = useState('');
+  const [plannedMinutes, setPlannedMinutes] = useState(() => {
+    return task.plannedTime || '';
+  });
   const [editingHistoryRecord, setEditingHistoryRecord] = useState(null);
   const [editHistoryMinutes, setEditHistoryMinutes] = useState('');
   const timeRecords = task.timeRecords || [];
 
+  // 保存计划时间
+  const handleSavePlannedTime = () => {
+    const minutes = parseInt(plannedMinutes);
+    if (!isNaN(minutes) && minutes > 0) {
+      if (onSavePlannedTime) {
+        onSavePlannedTime(task, minutes);
+      }
+    } else if (plannedMinutes === '' || plannedMinutes === '0') {
+      if (onSavePlannedTime) {
+        onSavePlannedTime(task, null);
+      }
+    }
+  };
+
+  // 保存实际时间
   const handleSave = () => {
     const minutes = parseInt(addMinutes);
-    if (isNaN(minutes) || minutes <= 0) {
-      alert('请输入有效的分钟数（大于0）');
-      return;
+    if (!isNaN(minutes) && minutes > 0) {
+      if (onSave) {
+        onSave(task, minutes, note);
+      }
+      
+      if (task.done !== true && typeof toggleDone === 'function') {
+        toggleDone(task);
+      }
     }
-    
-    if (onSave) {
-      onSave(task, minutes, note);
-    }
-    
-    if (task.done !== true && typeof toggleDone === 'function') {
-      toggleDone(task);
-    }
-    
     onClose();
   };
 
-  // ✅ 修复删除函数 - 正确传递 recordIndex
   const handleDeleteRecord = (recordIndex) => {
     if (window.confirm('确定要删除这条时间记录吗？')) {
       if (onDeleteRecord) {
         onDeleteRecord(task, recordIndex);
       }
     }
+  };
+
+  const getActualTotalMinutes = () => {
+    return Math.floor((task.timeSpent || 0) / 60);
   };
 
   return (
@@ -4656,16 +4651,72 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
         width: '90%',
         maxWidth: '400px',
         maxHeight: '80vh',
-        overflow: 'auto'
+        overflow: 'auto',
+        position: 'relative'
       }} onClick={e => e.stopPropagation()}>
         
-        <h3 style={{ textAlign: 'center', marginBottom: '15px', color: '#61A2Da' }}>
-          增加学习时间
-        </h3>
+        {/* 标题栏 + 确认增加按钮在右上角 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ margin: 0, color: '#61A2Da', fontSize: '16px' }}>
+            时间记录
+          </h3>
+          
+          {/* 确认增加按钮 - 右上角 */}
+          <div
+            onClick={handleSave}
+            style={{
+              padding: '6px 16px',
+              backgroundColor: '#61A2Da',
+              color: '#fff',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            确认增加
+          </div>
+        </div>
         
+        {/* 计划时间输入框 */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
-            本次学习时长（分钟）
+            📅 计划时间（分钟）
+          </label>
+          <input
+            type="number"
+            placeholder=""
+            value={plannedMinutes}
+            onChange={(e) => {
+              setPlannedMinutes(e.target.value);
+            }}
+            onBlur={handleSavePlannedTime}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '16px',
+              border: '2px solid #e0e0e0',
+              borderRadius: '8px',
+              textAlign: 'center',
+              boxSizing: 'border-box'
+            }}
+          />
+          
+        </div>
+
+        {/* 分隔线 */}
+        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #eee' }} />
+
+        {/* 本次学习时长 */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
+            ⏱️ 本次学习时长（分钟）
           </label>
           <input
             type="number"
@@ -4685,6 +4736,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           />
         </div>
         
+        {/* 备注 */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
             备注
@@ -4713,6 +4765,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           />
         </div>
         
+        {/* 时间统计卡片 */}
         <div style={{ 
           textAlign: 'center', 
           padding: '10px', 
@@ -4720,14 +4773,24 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           borderRadius: '8px',
           marginBottom: '16px'
         }}>
-          <span style={{ fontSize: '13px', color: '#666' }}>当前总时间：</span>
+          <span style={{ fontSize: '13px', color: '#666' }}>实际总时间：</span>
           <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#61A2Da' }}>
-            {Math.floor((task.timeSpent || 0) / 60)}
+            {getActualTotalMinutes()}
           </span>
           <span style={{ fontSize: '13px', color: '#666' }}> 分钟</span>
+          
+          {task.plannedTime && parseInt(task.plannedTime) > 0 && (
+            <>
+              <span style={{ fontSize: '13px', color: '#666', marginLeft: '12px' }}>计划时间：</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>
+                {task.plannedTime}
+              </span>
+              <span style={{ fontSize: '13px', color: '#666' }}> 分钟</span>
+            </>
+          )}
         </div>
         
-        {/* ✅ 历史记录列表 - 修复删除按钮 */}
+        {/* 历史记录列表 */}
         {timeRecords.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
@@ -4816,7 +4879,6 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                       )}
                     </div>
                     
-                    {/* ✅ 修复：删除按钮 - 传递正确的索引 */}
                     <button
                       onClick={() => handleDeleteRecord(idx)}
                       style={{
@@ -4856,45 +4918,29 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           </div>
         )}
         
-        <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+        {/* 取消按钮 - 底部居中 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
           <div
             onClick={onClose}
             style={{
-              flex: 1,
-              padding: '12px',
+              padding: '10px 24px',
               backgroundColor: '#f0f0f0',
               color: '#333',
               borderRadius: '8px',
               fontSize: '14px',
               fontWeight: 'bold',
               textAlign: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              minWidth: '100px'
             }}
           >
             取消
-          </div>
-          <div
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '12px',
-              backgroundColor: '#61A2Da',
-              color: '#fff',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              cursor: 'pointer'
-            }}
-          >
-            确认增加
           </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 
 const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour, studyEndMinute, onSave, onClose }) => {
@@ -11627,25 +11673,40 @@ const handleProgressAdjust = (increment) => {
 
 
 
-  {/* 时间显示 */}
-  <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!isSortingMode) onEditTime(task);
-      }}
-      style={{
-        fontSize: "11px",
-        color: isSortingMode ? "transparent" : "#666",
-        cursor: isSortingMode ? "default" : "pointer",
-        minWidth: "30px",
-        textAlign: "right",
-        lineHeight: "28px"
-      }}
-    >
-      {Math.floor((task.timeSpent || 0) / 60)}m
-    </span>
-  </div>
+{/* 时间显示 */}
+<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+  <span
+    onClick={(e) => {
+      e.stopPropagation();
+      if (!isSortingMode) onEditTime(task);
+    }}
+    style={{
+      fontSize: "11px",
+      color: isSortingMode ? "transparent" : 
+             ((task.timeSpent && task.timeSpent > 0) ? "#666" : 
+              (task.plannedTime && task.plannedTime > 0) ? "#f44336" : "#666"),
+      cursor: isSortingMode ? "default" : "pointer",
+      minWidth: "30px",
+      textAlign: "right",
+      lineHeight: "28px",
+      fontWeight: (task.plannedTime && task.plannedTime > 0 && (!task.timeSpent || task.timeSpent === 0)) ? "bold" : "normal"
+    }}
+  >
+    {(() => {
+      const actualMinutes = Math.floor((task.timeSpent || 0) / 60);
+      // 如果有实际时间，显示实际时间（灰色）
+      if (actualMinutes > 0) {
+        return `${actualMinutes}m`;
+      }
+      // 如果没有实际时间，但有计划时间，显示计划时间（红色）
+      if (task.plannedTime && task.plannedTime > 0) {
+        return `${task.plannedTime}m`;
+      }
+      // 都没有显示 0m
+      return `0m`;
+    })()}
+  </span>
+</div>
 </div>
 
 
@@ -19969,6 +20030,50 @@ const handleTimeEditSave = (task, addedMinutes, note) => {
   setShowTimeEditModal(null);
 };
 
+
+// 保存计划时间
+const handleSavePlannedTime = (task, plannedMinutes) => {
+  const updateTask = (t) => {
+    if (plannedMinutes === null || plannedMinutes === 0) {
+      // 清空计划时间
+      const { plannedTime, ...rest } = t;
+      return rest;
+    }
+    return { ...t, plannedTime: plannedMinutes };
+  };
+
+  if (task.isWeekTask) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? updateTask(t)
+            : t
+        );
+      });
+      return newTasksByDate;
+    });
+  } else if (task.crossDateId) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.crossDateId === task.crossDateId ? updateTask(t) : t
+        );
+      });
+      return newTasksByDate;
+    });
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: (prev[selectedDate] || []).map(t =>
+        t.id === task.id ? updateTask(t) : t
+      )
+    }));
+  }
+};
+
 // 编辑时间记录
 // 编辑时间记录 - 支持两种调用方式
 const handleEditTimeRecord = (task, recordOrIndex, newMinutesOrNote, optionalNote) => {
@@ -21202,7 +21307,8 @@ if (isInitialized && todayTasks.length === 0) {
     onSave={handleTimeEditSave}
     onEditRecord={handleEditTimeRecord}
     onDeleteRecord={handleDeleteTimeRecord}
-    toggleDone={toggleDone}        // ✅ 新增这一行
+    toggleDone={toggleDone}
+    onSavePlannedTime={handleSavePlannedTime}  // ← 添加这一行
   />
 )}
 
