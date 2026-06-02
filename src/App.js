@@ -2008,6 +2008,408 @@ button:focus-visible {
   );
 };
 
+
+// 搜索任务模态框组件
+const SearchTaskModal = ({ tasksByDate, onClose }) => {
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  
+  // 获取所有任务
+  const getAllTasks = useCallback(() => {
+    const allTasks = [];
+    Object.entries(tasksByDate).forEach(([date, tasks]) => {
+      tasks.forEach(task => {
+        allTasks.push({
+          ...task,
+          date: date
+        });
+      });
+    });
+    return allTasks;
+  }, [tasksByDate]);
+  
+  // 执行搜索
+ // 执行搜索
+const performSearch = useCallback(() => {
+  // ✅ 关键修复：没有关键词时，清空结果，不显示任何任务
+  if (!searchKeyword.trim()) {
+    setSearchResults([]);
+    return;
+  }
+  
+  let allTasks = getAllTasks();
+  
+  // 关键词过滤
+  const keyword = searchKeyword.trim().toLowerCase();
+  allTasks = allTasks.filter(task => 
+    task.text.toLowerCase().includes(keyword) ||
+    (task.note && task.note.toLowerCase().includes(keyword)) ||
+    (task.reflection && task.reflection.toLowerCase().includes(keyword))
+  );
+  
+  // 分类过滤
+  if (selectedCategory !== 'all') {
+    allTasks = allTasks.filter(task => task.category === selectedCategory);
+  }
+  
+  // 状态过滤
+  if (selectedStatus === 'completed') {
+    allTasks = allTasks.filter(task => task.done === true && task.abandoned !== true);
+  } else if (selectedStatus === 'incomplete') {
+    allTasks = allTasks.filter(task => task.done !== true && task.abandoned !== true);
+  } else if (selectedStatus === 'abandoned') {
+    allTasks = allTasks.filter(task => task.abandoned === true);
+  }
+  
+  // 按日期倒序排序
+  allTasks.sort((a, b) => b.date.localeCompare(a.date));
+  
+  setSearchResults(allTasks);
+}, [searchKeyword, selectedCategory, selectedStatus, getAllTasks]);
+  // 监听搜索条件变化
+  useEffect(() => {
+    performSearch();
+  }, [searchKeyword, selectedCategory, selectedStatus, performSearch]);
+  
+  // 获取所有分类（用于筛选）
+  const categories = useMemo(() => {
+    const cats = new Set();
+    getAllTasks().forEach(task => {
+      cats.add(task.category);
+    });
+    return ['all', ...Array.from(cats)];
+  }, [getAllTasks]);
+  
+  // 统计信息
+  const stats = {
+    total: searchResults.length,
+    completed: searchResults.filter(t => t.done === true && t.abandoned !== true).length,
+    incomplete: searchResults.filter(t => t.done !== true && t.abandoned !== true).length,
+    abandoned: searchResults.filter(t => t.abandoned === true).length
+  };
+  
+  // 获取任务状态样式
+  const getTaskStatusIcon = (task) => {
+    if (task.abandoned) {
+      return <span style={{ color: '#999', fontSize: '12px' }}>❌</span>;
+    }
+    if (task.done) {
+      return <span style={{ color: '#4caf50', fontSize: '12px' }}>✅</span>;
+    }
+    return <span style={{ color: '#f44336', fontSize: '12px' }}>⬜</span>;
+  };
+  
+  // 获取分类颜色
+  const getCategoryColor = (category) => {
+    const colors = {
+      '语文': '#FFFCE8',
+      '数学': '#E8F5E9',
+      '英语': '#FCE4EC',
+      '科学': '#E1F5FE',
+      '运动': '#E3F2FD',
+      '校内': '#61A2Da'
+    };
+    return colors[category] || '#f0f0f0';
+  };
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      padding: '10px'
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '16px',
+        borderRadius: '16px',
+        width: '100%',
+        maxWidth: '500px',
+        maxHeight: '85vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }} onClick={e => e.stopPropagation()}>
+        
+        {/* 标题栏 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
+          flexShrink: 0
+        }}>
+          <h3 style={{ margin: 0, color: '#61A2Da', fontSize: '16px' }}>
+            🔍 搜索任务
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer',
+              color: '#999',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%'
+            }}
+          >
+            ×
+          </button>
+        </div>
+        
+        {/* 搜索输入框 */}
+        <div style={{ marginBottom: '12px', flexShrink: 0 }}>
+          <input
+            type="text"
+            placeholder="输入关键词搜索任务、备注或感想..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        
+        {/* 筛选栏 */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          marginBottom: '12px', 
+          flexWrap: 'wrap',
+          flexShrink: 0
+        }}>
+          {/* 分类筛选 */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '16px',
+              border: '1px solid #ddd',
+              fontSize: '12px',
+              backgroundColor: '#fff'
+            }}
+          >
+            <option value="all">全部分类</option>
+            {categories.filter(c => c !== 'all').map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          
+          {/* 状态筛选 */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '16px',
+              border: '1px solid #ddd',
+              fontSize: '12px',
+              backgroundColor: '#fff'
+            }}
+          >
+            <option value="all">全部状态</option>
+            <option value="completed">✅ 已完成</option>
+            <option value="incomplete">⬜ 未完成</option>
+            <option value="abandoned">❌ 已放弃</option>
+          </select>
+        </div>
+        
+        {/* 统计信息 */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '12px',
+          padding: '8px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          flexShrink: 0
+        }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', color: '#666' }}>找到</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a73e8' }}>{stats.total}</div>
+          </div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', color: '#666' }}>已完成</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>{stats.completed}</div>
+          </div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', color: '#666' }}>未完成</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>{stats.incomplete}</div>
+          </div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', color: '#666' }}>已放弃</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#999' }}>{stats.abandoned}</div>
+          </div>
+        </div>
+        
+      
+{/* 搜索结果列表 */}
+<div style={{
+  flex: 1,
+  overflowY: 'auto',
+  minHeight: 0
+}}>
+  {!searchKeyword.trim() ? (
+    // 没有输入关键词时，显示提示
+    <div style={{
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#999',
+      fontSize: '13px'
+    }}>
+      🔍 输入关键词开始搜索
+    </div>
+  ) : searchResults.length === 0 ? (
+    // 有关键词但没有结果
+    <div style={{
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#999',
+      fontSize: '13px'
+    }}>
+      没有找到匹配的任务
+    </div>
+  ) : (
+    // 显示搜索结果
+    searchResults.map((task, idx) => (
+      <div
+        key={`${task.id}_${idx}`}
+        style={{
+          padding: '12px',
+          borderBottom: '1px solid #f0f0f0',
+          backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa',
+          borderRadius: '8px',
+          marginBottom: '8px'
+        }}
+      >
+
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  {/* 状态图标 */}
+                  <div style={{ flexShrink: 0, marginTop: '2px' }}>
+                    {getTaskStatusIcon(task)}
+                  </div>
+                  
+                  {/* 主要内容 */}
+                  <div style={{ flex: 1 }}>
+                    {/* 任务文本 */}
+                    <div style={{
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                      color: task.done ? '#999' : '#333',
+                      textDecoration: task.done ? 'line-through' : 'none',
+                      marginBottom: '4px'
+                    }}>
+                      {task.text}
+                    </div>
+                    
+                    {/* 元信息 */}
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      fontSize: '10px',
+                      color: '#999',
+                      marginBottom: '4px'
+                    }}>
+                      <span>📅 {task.date.slice(5)}</span>
+                      <span style={{
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        backgroundColor: getCategoryColor(task.category),
+                        color: task.category === '校内' ? '#fff' : '#333'
+                      }}>
+                        {task.category}{task.subCategory ? ` / ${task.subCategory}` : ''}
+                      </span>
+                      {task.timeSpent > 0 && (
+                        <span>⏱ {Math.floor(task.timeSpent / 60)}分钟</span>
+                      )}
+                    </div>
+                    
+                    {/* 备注预览 */}
+                    {task.note && (
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#666',
+                        backgroundColor: '#f5f5f5',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        marginTop: '4px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        📝 {task.note}
+                      </div>
+                    )}
+                    
+                    {/* 感想预览 */}
+                    {task.reflection && (
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#8B4513',
+                        backgroundColor: '#fff9c4',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        marginTop: '4px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        💡 {task.reflection}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        
+        {/* 关闭按钮 */}
+        <div
+          onClick={onClose}
+          style={{
+            marginTop: '12px',
+            padding: '10px',
+            backgroundColor: '#61A2Da',
+            color: '#fff',
+            borderRadius: '8px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            flexShrink: 0
+          }}
+        >
+          关闭
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 科目待办模态框 - 在 SubjectGuideModal 组件后面添加
 // 科目待办模态框 - 增强版（自动关联任务统计）
 const SubjectTodoModal = ({ onClose, isVisible, tasksByDate = {} }) => {
@@ -14119,7 +14521,8 @@ function App() {
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
 const [enableProgress, setEnableProgress] = useState(false);
-
+// 在 App 组件中，其他 useState 附近添加
+const [showSearchModal, setShowSearchModal] = useState(false);
 // 编辑关注任务的进度
 
 
@@ -20392,7 +20795,13 @@ if (isInitialized && todayTasks.length === 0) {
 )}
 
       
-  
+  {/* 👇 在这里添加搜索任务弹窗 👇 */}
+{showSearchModal && (
+  <SearchTaskModal
+    tasksByDate={tasksByDate}
+    onClose={() => setShowSearchModal(false)}
+  />
+)}
 
 
 
@@ -20818,7 +21227,23 @@ if (isInitialized && todayTasks.length === 0) {
     >
       本月
     </div>
-    
+      <div
+      onClick={() => {
+        setShowSearchModal(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#61A2Da",
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      搜索
+    </div>
    
   </div>
 )}
