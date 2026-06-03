@@ -3474,23 +3474,36 @@ const SubjectGuideModal = ({ onClose, isVisible }) => {
     }
   };
   
-  const handleSave = () => {
-  const minutes = parseInt(addMinutes);
-  // 移除 alert 验证，如果无效则不添加
-  if (!isNaN(minutes) && minutes > 0) {
-    if (onSave) {
-      onSave(task, minutes, note);
-    }
-    
-    if (task.done !== true && typeof toggleDone === 'function') {
-      toggleDone(task);
-    }
-    
-    onClose();
-  } else {
-    // 如果输入无效，直接关闭弹窗，不添加时间
-    onClose();
+// 找到 SubjectGuideModal 组件中的 handleSave 函数（大约在第 434 行附近）
+// 将其替换为：
+
+const handleSave = () => {
+  if (!formData.title.trim()) {
+    alert('请填写标题');
+    return;
   }
+  
+  const entry = {
+    id: editingEntry ? editingEntry.id : Date.now().toString(),
+    title: formData.title.trim(),
+    content: formData.content,
+    date: formData.date,
+    tags: formData.tags,
+    important: formData.important,
+    createdAt: editingEntry ? editingEntry.createdAt : new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  setEntries(prev => ({
+    ...prev,
+    [activeTab]: editingEntry 
+      ? (prev[activeTab] || []).map(e => e.id === entry.id ? entry : e)
+      : [...(prev[activeTab] || []), entry]
+  }));
+  
+  resetForm();
+  setShowAddForm(false);
+  setEditingEntry(null);
 };
   
   const handleDelete = (entryId) => {
