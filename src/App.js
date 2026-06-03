@@ -4579,6 +4579,7 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
   );
 };
 
+
 const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, toggleDone, onSavePlannedTime }) => {
   const [addMinutes, setAddMinutes] = useState('');
   const [note, setNote] = useState('');
@@ -4588,6 +4589,10 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
   const [editingHistoryRecord, setEditingHistoryRecord] = useState(null);
   const [editHistoryMinutes, setEditHistoryMinutes] = useState('');
   const timeRecords = task.timeRecords || [];
+  
+  // 创建 refs 用于控制焦点
+  const plannedInputRef = useRef(null);
+  const actualInputRef = useRef(null);
 
   // 保存计划时间
   const handleSavePlannedTime = () => {
@@ -4629,6 +4634,26 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
   const getActualTotalMinutes = () => {
     return Math.floor((task.timeSpent || 0) / 60);
   };
+
+  // 自动聚焦逻辑
+  useEffect(() => {
+    // 延迟一下确保 DOM 已渲染
+    setTimeout(() => {
+      const hasPlannedTime = plannedMinutes && parseInt(plannedMinutes) > 0;
+      
+      if (!hasPlannedTime) {
+        // 计划时间为空，聚焦到计划时间输入框
+        if (plannedInputRef.current) {
+          plannedInputRef.current.focus();
+        }
+      } else {
+        // 计划时间已有值，聚焦到实际时间输入框
+        if (actualInputRef.current) {
+          actualInputRef.current.focus();
+        }
+      }
+    }, 100);
+  }, [plannedMinutes]);
 
   return (
     <div style={{
@@ -4687,9 +4712,10 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
         {/* 计划时间输入框 */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
-            📅 计划时间（分钟）
+            计划时间
           </label>
           <input
+            ref={plannedInputRef}
             type="number"
             placeholder=""
             value={plannedMinutes}
@@ -4707,7 +4733,6 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
               boxSizing: 'border-box'
             }}
           />
-          
         </div>
 
         {/* 分隔线 */}
@@ -4716,9 +4741,10 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
         {/* 本次学习时长 */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
-            ⏱️ 本次学习时长（分钟）
+            本次学习时长
           </label>
           <input
+            ref={actualInputRef}
             type="number"
             placeholder=""
             value={addMinutes}
@@ -4732,7 +4758,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
               textAlign: 'center',
               boxSizing: 'border-box'
             }}
-            autoFocus
+            autoFocus={false}
           />
         </div>
         
@@ -11674,6 +11700,7 @@ const handleProgressAdjust = (increment) => {
 
 
 {/* 时间显示 */}
+{/* 时间显示 */}
 <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
   <span
     onClick={(e) => {
@@ -11683,18 +11710,18 @@ const handleProgressAdjust = (increment) => {
     style={{
       fontSize: "11px",
       color: isSortingMode ? "transparent" : 
-             ((task.timeSpent && task.timeSpent > 0) ? "#666" : 
+             ((task.timeSpent && task.timeSpent > 0) ? "#4caf50" : 
               (task.plannedTime && task.plannedTime > 0) ? "#f44336" : "#666"),
       cursor: isSortingMode ? "default" : "pointer",
       minWidth: "30px",
       textAlign: "right",
       lineHeight: "28px",
-      fontWeight: (task.plannedTime && task.plannedTime > 0 && (!task.timeSpent || task.timeSpent === 0)) ? "bold" : "normal"
+      fontWeight: "normal"
     }}
   >
     {(() => {
       const actualMinutes = Math.floor((task.timeSpent || 0) / 60);
-      // 如果有实际时间，显示实际时间（灰色）
+      // 如果有实际时间，显示实际时间（绿色）
       if (actualMinutes > 0) {
         return `${actualMinutes}m`;
       }
@@ -14782,7 +14809,7 @@ const [enableProgress, setEnableProgress] = useState(false);
 const [showSearchModal, setShowSearchModal] = useState(false);
 // 编辑关注任务的进度
 
-
+const [showCategoryDetailModal, setShowCategoryDetailModal] = useState(null); 
 const editFocusTaskProgress = (task) => {
   const template = focusTaskTemplates.find(t => t.id === task.id);
   if (!template) return;
@@ -15423,7 +15450,8 @@ const isAddingTask = useRef(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [dailyRatings, setDailyRatings] = useState(() => {
-  const saved = localStorage.getItem(`${STORAGE_KEY}_dailyRatings`);
+  
+    const saved = localStorage.getItem(`${STORAGE_KEY}_dailyRatings`);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
@@ -15972,7 +16000,7 @@ const taskCount = Object.values(tasksByDate).filter(dailyTasks =>
       setLastSyncStatus({
         success: true,
         time: new Date(),
-        message: `✅ 同步成功 (${new Date().toLocaleTimeString()})`
+        message: `同步成功 (${new Date().toLocaleTimeString()})`
       });
       setTimeout(() => {
         setLastSyncStatus(prev => ({ ...prev, message: '' }));
@@ -20673,13 +20701,6 @@ const getCategoryTasks = useCallback((catName) => {
   const totalTime = (catName) =>
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
-// 不需要修改 toggleDone，用更简单的方式
-
-
-
-// 替换原来的撒花检测 useEffect
-
-
 
 // 切换到上一周
 const prevWeek = () => {
@@ -23738,37 +23759,49 @@ const getCategoryBorderColor = () => {
       </div>
     )}
 
-    {/* 时间显示 */}
-    <span
-      onClick={(e) => {
-        e.stopPropagation();
-        editCategoryTime(c.name);
-      }}
-      style={{
-        fontSize: '11px',
-        color: c.name === '校内' 
-          ? (isComplete ? '#333' : '#fff')
-          : '#333',
-        fontFamily: 'Calibri, "微软雅黑", sans-serif',
-        cursor: "pointer",
-        minWidth: "32px",
-        width: "32px",
-        textAlign: "right",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        flexShrink: 0,
-        background: "transparent",
-        border: "none",
-        marginRight: "5px"  ,
-        marginLeft: "-18px"  , 
-        fontWeight: "normal",
-        display: "inline-block"
-      }}
-      title="点击修改总时间"
-    >
-      {formatCategoryTime(totalTime(c.name))}
-    </span>
+  {/* 时间显示 - 点击显示详情 */}
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    const catName = c.name;
+    const catTasks = getCategoryTasks(catName);
+    
+    if (catTasks.length === 0) {
+      alert(`${catName} 类别暂无任务`);
+      return;
+    }
+    
+    setShowCategoryDetailModal({
+      category: catName,
+      tasks: catTasks,
+      totalTime: totalTime(catName)
+    });
+  }}
+  style={{
+    fontSize: '11px',
+    color: c.name === '校内' 
+      ? (isComplete ? '#333' : '#fff')
+      : '#333',
+    fontFamily: 'Calibri, "微软雅黑", sans-serif',
+    cursor: "pointer",
+    minWidth: "32px",
+    width: "32px",
+    textAlign: "right",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    flexShrink: 0,
+    background: "transparent",
+    border: "none",
+    marginRight: "5px",
+    marginLeft: "-18px", 
+    fontWeight: "normal",
+    display: "inline-block"
+  }}
+  title="点击查看详细时间"
+>
+  {formatCategoryTime(totalTime(c.name))}
+</span>
   </div>
 </div>
 
@@ -24522,6 +24555,245 @@ const getCategoryBorderColor = () => {
   </div>
 )}
 
+
+{/* 类别时间详情模态框 */}
+{showCategoryDetailModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowCategoryDetailModal(null)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '90%',
+      maxWidth: '350px',
+      maxHeight: '70vh',
+      overflow: 'auto',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      {/* 头部 */}
+      <div style={{
+        padding: '16px 20px',
+        backgroundColor: '#61A2Da',
+        color: 'white',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+           {showCategoryDetailModal.category}
+        </span>
+        <div
+          onClick={() => setShowCategoryDetailModal(null)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px'
+          }}
+        >
+          ×
+        </div>
+      </div>
+      
+      {/* 统计卡片 */}
+      <div style={{
+        padding: '16px',
+        display: 'flex',
+        gap: '12px',
+        borderBottom: '1px solid #f0f0f0'
+      }}>
+        <div style={{
+          flex: 1,
+          textAlign: 'center',
+          padding: '8px',
+          backgroundColor: '#e8f0fe',
+          borderRadius: '10px'
+        }}>
+          <div style={{ fontSize: '11px', color: '#666' }}>总时长</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#61A2Da' }}>
+            {Math.floor(showCategoryDetailModal.totalTime / 60)}分钟
+          </div>
+        </div>
+        <div style={{
+          flex: 1,
+          textAlign: 'center',
+          padding: '8px',
+          backgroundColor: '#e8f5e9',
+          borderRadius: '10px'
+        }}>
+          <div style={{ fontSize: '11px', color: '#666' }}>任务进度</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#4caf50' }}>
+            {showCategoryDetailModal.tasks.filter(t => t.done === true && t.abandoned !== true).length}/{showCategoryDetailModal.tasks.length}
+          </div>
+        </div>
+      </div>
+      
+      {/* 任务列表 - 按子分类分组 */}
+      <div style={{ padding: '12px' }}>
+        {(() => {
+          // 渲染单个任务项的函数
+          const renderTaskItem = (task, idx, totalLength) => {
+            const minutes = Math.floor((task.timeSpent || 0) / 60);
+            const isCompleted = task.done === true && task.abandoned !== true;
+            
+            return (
+              <div
+                key={task.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: idx < totalLength - 1 ? '1px solid #f0f0f0' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  {/* 勾选框样式 - 和主界面一致 */}
+                  <span style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: '16px',
+                    height: '16px',
+                    flexShrink: 0
+                  }}>
+                    {isCompleted ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6L9 17L4 12" stroke="#61A2Da" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                      </svg>
+                    ) : task.abandoned ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="4" y1="4" x2="20" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                        <line x1="20" y1="4" x2="4" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="16" height="16" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
+                      </svg>
+                    )}
+                  </span>
+                  
+                  {/* 任务文字 - 完成的任务灰色 */}
+                  <span style={{
+                    fontSize: '13px',
+                    color: isCompleted ? '#999' : (task.abandoned ? '#ccc' : '#333'),
+                    flex: 1,
+                    wordBreak: 'break-word'
+                  }}>
+                    {task.text}
+                  </span>
+                </div>
+                
+                {/* 时长 - 灰色 */}
+                <span style={{
+                  fontSize: '12px',
+                  color: '#999',
+                  minWidth: '45px',
+                  textAlign: 'right'
+                }}>
+                  {minutes > 0 ? `${minutes}分钟` : '0分钟'}
+                </span>
+              </div>
+            );
+          };
+          
+          // 按子分类分组
+          const tasks = showCategoryDetailModal.tasks;
+          const tasksWithSubCategory = tasks.filter(t => t.subCategory);
+          const tasksWithoutSubCategory = tasks.filter(t => !t.subCategory);
+          
+          // 分组
+          const groupedBySubCategory = {};
+          tasksWithSubCategory.forEach(task => {
+            const subCat = task.subCategory;
+            if (!groupedBySubCategory[subCat]) {
+              groupedBySubCategory[subCat] = [];
+            }
+            groupedBySubCategory[subCat].push(task);
+          });
+          
+          return (
+            <div>
+              {/* 无子分类的任务 */}
+              {tasksWithoutSubCategory.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#61A2Da',
+                    marginBottom: '8px',
+                    paddingBottom: '4px',
+                    borderBottom: '1px solid #e0e0e0'
+                  }}>
+                    📋 全部
+                  </div>
+                  {tasksWithoutSubCategory.map((task, idx) => renderTaskItem(task, idx, tasksWithoutSubCategory.length))}
+                </div>
+              )}
+              
+              {/* 按子分类分组显示 */}
+              {Object.entries(groupedBySubCategory).map(([subCategory, subTasks]) => (
+                <div key={subCategory} style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#61A2Da',
+                    marginBottom: '8px',
+                    paddingBottom: '4px',
+                    borderBottom: '1px solid #e0e0e0'
+                  }}>
+                    {subCategory}
+                  </div>
+                  {subTasks.map((task, idx) => renderTaskItem(task, idx, subTasks.length))}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+      
+      {/* 底部关闭按钮 */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid #f0f0f0' }}>
+        <div
+          onClick={() => setShowCategoryDetailModal(null)}
+          style={{
+            padding: '10px',
+            backgroundColor: '#61A2Da',
+            color: 'white',
+            borderRadius: '10px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}
+        >
+          关闭
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
 {/* 其他设置弹窗模态框 */}
 {showSettingsMenu && (
   <div style={{
@@ -24726,6 +24998,7 @@ const getCategoryBorderColor = () => {
 
 
 
+
 <input
   id="import-file"
   type="file"
@@ -24813,6 +25086,8 @@ const getCategoryBorderColor = () => {
     </div>
   );
 }
+
+
 
 
   
