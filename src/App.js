@@ -20847,122 +20847,82 @@ const generateDailyLog = () => {
 
 
 
+
 const handleExportData = async () => {
   try {
-    // 直接读取原始字符串，不解析
-    const tasksRaw = localStorage.getItem('study-tracker-PAGE_A-v2_tasks');
+    // 获取所有数据
+    const tasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks') || '{}');
+    const dailyRatings = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings') || '{}');
+    const monthTasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks') || '[]');
+    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '[]');
     
-    if (!tasksRaw) {
-      alert('没有找到任务数据');
-      return;
-    }
+    // 获取所有日期并排序
+    const dates = Object.keys(tasks).sort();
+    const totalDays = dates.length;
     
-    console.log(`原始数据大小: ${(tasksRaw.length / 1024).toFixed(2)} KB`);
+    console.log(`总天数: ${totalDays}`);
     
-    // 如果数据较小，直接导出
-    if (tasksRaw.length < 300 * 1024) { // 小于300KB直接导出
-      const blob = new Blob([tasksRaw], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `tasks_full_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      alert('导出成功！');
-      return;
-    }
+    // 分成2份
+    const midPoint = Math.ceil(totalDays / 2);
+    const firstHalfDates = dates.slice(0, midPoint);
+    const secondHalfDates = dates.slice(midPoint);
     
-    // 数据较大，按字符串位置分成2份（不解析JSON）
-    const totalLen = tasksRaw.length;
-    const midPoint = Math.floor(totalLen / 2);
+    // 第一份数据
+    const firstHalf = {};
+    firstHalfDates.forEach(date => {
+      firstHalf[date] = tasks[date];
+    });
     
-    // 找到合适的分割点（在逗号处分割）
-    let splitPos = midPoint;
-    for (let i = midPoint; i < Math.min(midPoint + 1000, totalLen); i++) {
-      if (tasksRaw[i] === ',' && tasksRaw[i-1] === '}') {
-        splitPos = i + 1;
-        break;
-      }
-    }
-    
-    const firstPart = tasksRaw.substring(0, splitPos);
-    const secondPart = '{' + tasksRaw.substring(splitPos);
-    
-    // 验证第一份
-    try {
-      JSON.parse(firstPart);
-      console.log('第一份有效');
-    } catch(e) {
-      console.log('第一份需要调整');
-    }
+    // 第二份数据
+    const secondHalf = {};
+    secondHalfDates.forEach(date => {
+      secondHalf[date] = tasks[date];
+    });
     
     // 导出第一份
-    const firstBlob = new Blob([firstPart], { type: 'application/json' });
+    const firstJson = JSON.stringify(firstHalf, null, 2);
+    const firstBlob = new Blob([firstJson], { type: 'application/json' });
     const firstUrl = URL.createObjectURL(firstBlob);
     const firstLink = document.createElement('a');
     firstLink.href = firstUrl;
-    firstLink.download = `tasks_part1_${new Date().toISOString().slice(0, 10)}.json`;
+    firstLink.download = `study-tracker-part1_${firstHalfDates[0]}_to_${firstHalfDates[firstHalfDates.length-1]}.json`;
     firstLink.click();
     URL.revokeObjectURL(firstUrl);
     
+    // 等待一下
     await new Promise(r => setTimeout(r, 500));
     
     // 导出第二份
-    const secondBlob = new Blob([secondPart], { type: 'application/json' });
+    const secondJson = JSON.stringify(secondHalf, null, 2);
+    const secondBlob = new Blob([secondJson], { type: 'application/json' });
     const secondUrl = URL.createObjectURL(secondBlob);
     const secondLink = document.createElement('a');
     secondLink.href = secondUrl;
-    secondLink.download = `tasks_part2_${new Date().toISOString().slice(0, 10)}.json`;
+    secondLink.download = `study-tracker-part2_${secondHalfDates[0]}_to_${secondHalfDates[secondHalfDates.length-1]}.json`;
     secondLink.click();
     URL.revokeObjectURL(secondUrl);
     
-    alert(`导出完成！\n数据已分成2份\n请在电脑上合并后导入`);
+    // 导出成绩（单独文件）
+    if (grades.length > 0) {
+      setTimeout(() => {
+        const gradesJson = JSON.stringify(grades, null, 2);
+        const gradesBlob = new Blob([gradesJson], { type: 'application/json' });
+        const gradesUrl = URL.createObjectURL(gradesBlob);
+        const gradesLink = document.createElement('a');
+        gradesLink.href = gradesUrl;
+        gradesLink.download = `study-tracker-grades_${new Date().toISOString().slice(0, 10)}.json`;
+        gradesLink.click();
+        URL.revokeObjectURL(gradesUrl);
+      }, 500);
+    }
+    
+    alert(`导出完成！\n\n第1份: ${firstHalfDates.length} 天\n第2份: ${secondHalfDates.length} 天\n\n成绩: ${grades.length} 条`);
     
   } catch (error) {
     console.error('导出失败:', error);
     alert('导出失败: ' + error.message);
   }
 };
-
-// 导出所有备份到电脑 + 成绩数据
-function exportBackups() {
-  const allKeys = Object.keys(localStorage);
-  const backups = allKeys.filter(k => k.includes('auto_backup'));
-  
-  backups.forEach((key, index) => {
-    const data = localStorage.getItem(key);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${key}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    // 延迟一下，避免浏览器卡顿
-    setTimeout(() => {}, 500);
-  });
-  
-  // 加上成绩数据
-  const gradesRaw = localStorage.getItem('study-tracker-PAGE_A-v2_grades');
-  if (gradesRaw && gradesRaw !== '[]') {
-    setTimeout(() => {
-      const blob = new Blob([gradesRaw], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `grades_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }, 1000);
-  }
-  
-  alert(`导出了 ${backups.length} 个备份文件 + 成绩数据`);
-}
-
-exportBackups();
-
-
 
 
 // 辅助函数：清理问题数据
@@ -24506,9 +24466,6 @@ const getCategoryBorderColor = () => {
   >
     {isSyncing ? "同步中..." : "立即同步"}
   </div>
-
-
-  <div onClick={exportBackups}>导出备份</div> 
 
   {/* 恢复云端按钮 */}
   <div
