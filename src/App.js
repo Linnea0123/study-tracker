@@ -20923,6 +20923,33 @@ const handleExportData = async () => {
     alert('导出失败: ' + error.message);
   }
 };
+
+// 导出所有备份到电脑
+function exportBackups() {
+  const allKeys = Object.keys(localStorage);
+  const backups = allKeys.filter(k => k.includes('auto_backup'));
+  
+  backups.forEach((key, index) => {
+    const data = localStorage.getItem(key);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${key}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // 延迟一下，避免浏览器卡顿
+    setTimeout(() => {}, 500);
+  });
+  
+  alert(`导出了 ${backups.length} 个备份文件`);
+}
+
+exportBackups();
+
+
+
 // 辅助函数：清理问题数据
 function cleanProblematicData(data) {
   try {
@@ -24464,6 +24491,9 @@ const getCategoryBorderColor = () => {
   >
     {isSyncing ? "同步中..." : "立即同步"}
   </div>
+
+
+  <div onClick={exportBackups}>导出备份</div> 
 
   {/* 恢复云端按钮 */}
   <div
