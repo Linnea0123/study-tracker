@@ -20924,17 +20924,11 @@ const handleExportData = async () => {
   }
 };
 
-// 导出所有备份到电脑
-const exportBackups = () => {
+// 导出所有备份到电脑 + 成绩数据
+function exportBackups() {
   const allKeys = Object.keys(localStorage);
   const backups = allKeys.filter(k => k.includes('auto_backup'));
   
-  if (backups.length === 0) {
-    alert('没有找到备份文件');
-    return;
-  }
-  
-  // 导出任务备份
   backups.forEach((key, index) => {
     const data = localStorage.getItem(key);
     const blob = new Blob([data], { type: 'application/json' });
@@ -20944,9 +20938,12 @@ const exportBackups = () => {
     a.download = `${key}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    // 延迟一下，避免浏览器卡顿
+    setTimeout(() => {}, 500);
   });
   
-  // 导出成绩数据
+  // 加上成绩数据
   const gradesRaw = localStorage.getItem('study-tracker-PAGE_A-v2_grades');
   if (gradesRaw && gradesRaw !== '[]') {
     setTimeout(() => {
@@ -20957,57 +20954,16 @@ const exportBackups = () => {
       a.download = `grades_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    }, 500);
-  }
-  
-  // 导出评分数据
-  const ratingsRaw = localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings');
-  if (ratingsRaw && ratingsRaw !== '{}') {
-    setTimeout(() => {
-      const blob = new Blob([ratingsRaw], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ratings_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
     }, 1000);
   }
   
-  alert(`导出了 ${backups.length} 个备份文件 + 成绩数据 + 评分数据`);
-};
+  alert(`导出了 ${backups.length} 个备份文件 + 成绩数据`);
+}
 
 exportBackups();
 
 
-const exportAllData = () => {
-  // 获取所有数据
-  const tasksRaw = localStorage.getItem('study-tracker-PAGE_A-v2_tasks');
-  const gradesRaw = localStorage.getItem('study-tracker-PAGE_A-v2_grades');
-  const ratingsRaw = localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings');
-  const monthRaw = localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks');
-  
-  // 合并成一个对象
-  const allData = {
-    tasksByDate: tasksRaw ? JSON.parse(tasksRaw) : {},
-    grades: gradesRaw ? JSON.parse(gradesRaw) : [],
-    dailyRatings: ratingsRaw ? JSON.parse(ratingsRaw) : {},
-    monthTasks: monthRaw ? JSON.parse(monthRaw) : [],
-    exportDate: new Date().toISOString(),
-    version: '2.3'
-  };
-  
-  const jsonStr = JSON.stringify(allData);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `all_data_${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  alert(`导出完成！\n大小: ${(jsonStr.length/1024).toFixed(2)} KB`);
-};
+
 
 // 辅助函数：清理问题数据
 function cleanProblematicData(data) {
@@ -24552,8 +24508,7 @@ const getCategoryBorderColor = () => {
   </div>
 
 
-  <div onClick={exportBackups}>导出备份</div>
-  <div onClick={exportAllData}>导出全部</div> 
+  <div onClick={exportBackups}>导出备份</div> 
 
   {/* 恢复云端按钮 */}
   <div
