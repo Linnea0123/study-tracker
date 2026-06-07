@@ -15865,9 +15865,7 @@ if (backupData.studyEndTimes) {
 // eslint-disable-next-line no-unused-vars
 
 
-
-
-
+// 替换整个 syncToGitHub 函数
 const syncToGitHub = useCallback(async (silent = false) => {
   const token = localStorage.getItem('github_token');
   if (!token) {
@@ -15889,70 +15887,109 @@ const syncToGitHub = useCallback(async (silent = false) => {
   }
 
   setIsSyncing(true);
-  
-   // 静默模式也显示同步中状态（但不弹窗）
-  
-  
   await new Promise(resolve => setTimeout(resolve, 500));
 
   try {
     // 先保存当前日期的数据
     await saveDailyData(selectedDate);
     
+    // ========== 关键修复：正确收集每日数据 ==========
+    // 从所有 daily_日期 文件中收集数据
+    const allDailyRatings = {};
+    const allDailyReflections = {};
+    const allKeys = Object.keys(localStorage);
+    const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
+    
+    console.log(`📊 找到 ${dailyKeys.length} 个每日数据文件`);
+    
+    dailyKeys.forEach(key => {
+      try {
+        const dataStr = localStorage.getItem(key);
+        if (dataStr) {
+          const data = JSON.parse(dataStr);
+          if (data && data.date) {
+            allDailyRatings[data.date] = data.rating || 0;
+            allDailyReflections[data.date] = data.reflection || '';
+          }
+        }
+      } catch (e) {
+        console.error('解析每日数据失败:', key, e);
+      }
+    });
+    
+    // 也从状态中读取（兼容性）
+    Object.assign(allDailyRatings, dailyRatings);
+    Object.assign(allDailyReflections, dailyReflections);
+    
     // 收集排序数据
     const allTaskOrders = {};
     const allSubCategoryOrders = {};
-    const allKeys = Object.keys(localStorage);
-
+    
     allKeys.forEach(key => {
       if (key.startsWith('tasks_order_')) {
         try {
           allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {
-          console.error('解析任务排序失败:', key, e);
-        }
+        } catch (e) {}
       }
       if (key.startsWith('subcategory_order_')) {
         try {
           allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {
-          console.error('解析子分类排序失败:', key, e);
-        }
+        } catch (e) {}
       }
     });
 
-     const subjectGuideEntries = localStorage.getItem('subject_guide_entries');
-
-    // 收集所有需要同步的数据
+    // 获取成绩数据
+    const grades = await loadMainData('grades') || [];
+    
+    // 获取学习结束时间
+    let studyEndTimes = {};
+    const endTimesStr = localStorage.getItem('daily_study_end_times');
+    if (endTimesStr) {
+      studyEndTimes = JSON.parse(endTimesStr);
+    }
+    
+    // 获取科目指导数据
+    const subjectGuideEntriesRaw = localStorage.getItem('subject_guide_entries');
+    const subjectGuideEntries = subjectGuideEntriesRaw ? JSON.parse(subjectGuideEntriesRaw) : {};
+    
+    // ========== 关键修复：组装数据前进行验证 ==========
     const syncData = {
       tasksByDate,
-      
-      dailyRatings,
-      dailyReflections,
-      focusTaskTemplates: focusTaskTemplates,
-  focusTaskStatus: focusTaskStatus,
-      studyEndTimes: studyEndTimes, 
+      dailyRatings: allDailyRatings,
+      dailyReflections: allDailyReflections,
+      studyEndTimes,
+      focusTaskTemplates,
+      focusTaskStatus,
       monthTasks,
       categories,
-      grades: await loadMainData('grades') || [],
-      reminderText: reminderText,
+      grades,
+      reminderText,
+      semesterEndDate,
       taskOrders: allTaskOrders,
       subCategoryOrders: allSubCategoryOrders,
+      subjectGuideEntries,
       subjectGuideCustomTags: globalCustomTags,
-       subjectGuideEntries: subjectGuideEntries ? JSON.parse(subjectGuideEntries) : {},
       syncTime: new Date().toISOString(),
       version: '2.3',
       lastSelectedDate: selectedDate,
       lastCurrentMonday: currentMonday.toISOString()
     };
 
-    console.log('📤 准备同步数据:', {
-      任务天数: Object.keys(tasksByDate).length,
-     
-      有复盘的日期: Object.keys(dailyReflections).length,
-      本月任务: monthTasks.length,
-      每日提醒: reminderText ? '有' : '无'
-    });
+    // ========== 关键修复：验证数据可以正确序列化 ==========
+    let jsonString;
+    try {
+      jsonString = JSON.stringify(syncData);
+      // 验证可以解析回来
+      JSON.parse(jsonString);
+      console.log('✅ 数据验证通过，大小:', (jsonString.length / 1024).toFixed(2), 'KB');
+    } catch (e) {
+      console.error('❌ 数据序列化失败:', e.message);
+      if (!silent) {
+        alert('数据格式错误，无法同步: ' + e.message);
+      }
+      setIsSyncing(false);
+      return;
+    }
 
     // 获取或创建 Gist
     let gistId = localStorage.getItem('github_gist_id');
@@ -15969,7 +16006,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       public: false,
       files: {
         'study-tracker-data.json': {
-          content: JSON.stringify(syncData, null, 2)
+          content: jsonString
         }
       }
     };
@@ -15995,21 +16032,50 @@ const syncToGitHub = useCallback(async (silent = false) => {
       console.log('✅ 新 Gist ID 已保存:', result.id);
     }
 
+    // ========== 关键修复：上传后验证数据完整性 ==========
+    const verifyResponse = await fetch(`https://api.github.com/gists/${result.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (verifyResponse.ok) {
+      const verifyGist = await verifyResponse.json();
+      const uploadedContent = verifyGist.files['study-tracker-data.json']?.content;
+      
+      if (uploadedContent) {
+        try {
+          JSON.parse(uploadedContent);
+          console.log('✅ 上传验证通过，数据完整');
+        } catch (e) {
+          console.error('❌ 上传验证失败，数据损坏，尝试重新上传...');
+          // 如果验证失败，重试一次
+          const retryResponse = await fetch(url, {
+            method: method,
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gistData)
+          });
+          if (retryResponse.ok) {
+            console.log('✅ 重试成功');
+          } else {
+            throw new Error('重试后仍然失败');
+          }
+        }
+      }
+    }
+
     localStorage.setItem('github_last_sync', new Date().toISOString());
     
     const syncTime = new Date().toLocaleString();
-    // 计算有完成任务的天数（打卡天数）
-const taskCount = Object.values(tasksByDate).filter(dailyTasks => 
-  dailyTasks.some(task => task.done === true)
-).length;
-    const reflectionCount = Object.keys(dailyReflections).length;
+    const taskCount = Object.values(tasksByDate).filter(dailyTasks => 
+      dailyTasks.some(task => task.done === true)
+    ).length;
+    const reflectionCount = Object.keys(allDailyReflections).filter(d => allDailyReflections[d]?.trim()).length;
     
-    // 根据是否静默模式决定是否弹窗
     if (!silent) {
-      alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个\n• 每日提醒：${reminderText ? '已同步' : '无'}`);
+      alert(`✅ 同步成功！\n\n同步时间：${syncTime}\n同步内容：\n• 任务天数：${taskCount} 天\n• 复盘记录：${reflectionCount} 天\n• 本月任务：${monthTasks.length} 个`);
     } else {
-      // 静默模式：显示短暂的成功提示（2秒后消失）
-      console.log(`✅ 自动同步成功 - ${syncTime}`);
       setLastSyncStatus({
         success: true,
         time: new Date(),
@@ -16037,23 +16103,10 @@ const taskCount = Object.values(tasksByDate).filter(dailyTasks =>
       }
       alert(errorMessage);
     } else {
-      // 静默模式：显示失败提示
-      let friendlyMessage = '同步失败';
-      if (error.message.includes('401')) {
-        friendlyMessage = 'Token 已过期，请重新设置';
-      } else if (error.message.includes('403')) {
-        friendlyMessage = '权限不足，请检查 Token';
-      } else if (error.message.includes('404')) {
-        friendlyMessage = 'Gist 不存在，将自动创建';
-        localStorage.removeItem('github_gist_id');
-      } else {
-        friendlyMessage = error.message.slice(0, 30);
-      }
-      
       setLastSyncStatus({
         success: false,
         time: new Date(),
-        message: `❌ ${friendlyMessage}`
+        message: `❌ 同步失败`
       });
       setTimeout(() => {
         setLastSyncStatus(prev => ({ ...prev, message: '' }));
@@ -16062,7 +16115,10 @@ const taskCount = Object.values(tasksByDate).filter(dailyTasks =>
   } finally {
     setIsSyncing(false);
   }
-}, [tasksByDate,  dailyRatings, dailyReflections, categories, selectedDate, currentMonday, saveDailyData, monthTasks, reminderText]);
+}, [tasksByDate, dailyRatings, dailyReflections, focusTaskTemplates, focusTaskStatus, monthTasks, categories, reminderText, semesterEndDate, selectedDate, currentMonday, saveDailyData, globalCustomTags]);
+
+
+
 
 
 // 找到 autoRestoreLatestData 函数，确保恢复每日提醒
