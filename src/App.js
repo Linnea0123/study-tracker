@@ -20848,133 +20848,82 @@ const generateDailyLog = () => {
 
 
 
-
-
 const handleExportData = async () => {
   try {
-    // 安全获取数据，避免循环引用
-    const getSafeData = (data, defaultValue = {}) => {
-      if (!data) return defaultValue;
-      try {
-        // 尝试解析，如果是字符串则返回，否则直接返回
-        if (typeof data === 'string') {
-          return JSON.parse(data);
-        }
-        return data;
-      } catch (e) {
-        console.warn('解析数据失败，使用默认值');
-        return defaultValue;
-      }
-    };
+    // 获取所有数据
+    const tasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks') || '{}');
+    const dailyRatings = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings') || '{}');
+    const monthTasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks') || '[]');
+    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '[]');
     
-    // 安全获取所有数据
-    let tasks = {};
-    let dailyRatings = {};
-    let dailyReflections = {};
-    let monthTasks = [];
-    let categories = baseCategories;
-    let grades = [];
+    // 获取所有日期并排序
+    const dates = Object.keys(tasks).sort();
+    const totalDays = dates.length;
     
-    try {
-      const tasksRaw = localStorage.getItem('study-tracker-PAGE_A-v2_tasks');
-      if (tasksRaw) tasks = JSON.parse(tasksRaw);
-    } catch (e) {
-      console.error('读取任务数据失败:', e);
-    }
+    console.log(`总天数: ${totalDays}`);
     
-    try {
-      const ratingsRaw = localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings');
-      if (ratingsRaw) dailyRatings = JSON.parse(ratingsRaw);
-    } catch (e) {
-      console.error('读取评分数据失败:', e);
-    }
+    // 分成2份
+    const midPoint = Math.ceil(totalDays / 2);
+    const firstHalfDates = dates.slice(0, midPoint);
+    const secondHalfDates = dates.slice(midPoint);
     
-    try {
-      const monthRaw = localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks');
-      if (monthRaw) monthTasks = JSON.parse(monthRaw);
-    } catch (e) {
-      console.error('读取本月任务失败:', e);
-    }
-    
-    try {
-      const categoriesRaw = localStorage.getItem('study-tracker-PAGE_A-v2_categories');
-      if (categoriesRaw) categories = JSON.parse(categoriesRaw);
-    } catch (e) {
-      console.error('读取分类数据失败:', e);
-    }
-    
-    try {
-      const gradesRaw = localStorage.getItem('study-tracker-PAGE_A-v2_grades');
-      if (gradesRaw) grades = JSON.parse(gradesRaw);
-    } catch (e) {
-      console.error('读取成绩数据失败:', e);
-    }
-    
-    // 收集每日复盘
-    const allKeys = Object.keys(localStorage);
-    const dailyKeys = allKeys.filter(k => k.startsWith('study-tracker-PAGE_A-v2_daily_'));
-    dailyKeys.forEach(key => {
-      try {
-        const data = JSON.parse(localStorage.getItem(key));
-        if (data && data.date && data.reflection) {
-          dailyReflections[data.date] = data.reflection;
-        }
-      } catch (e) {
-        console.warn('读取每日数据失败:', key);
-      }
+    // 第一份数据
+    const firstHalf = {};
+    firstHalfDates.forEach(date => {
+      firstHalf[date] = tasks[date];
     });
     
-    // 构建导出数据（确保没有循环引用）
-    const exportData = {
-      tasksByDate: tasks,
-      dailyRatings: dailyRatings,
-      dailyReflections: dailyReflections,
-      monthTasks: monthTasks,
-      categories: categories,
-      grades: grades,
-      exportDate: new Date().toISOString(),
-      version: '2.3'
-    };
+    // 第二份数据
+    const secondHalf = {};
+    secondHalfDates.forEach(date => {
+      secondHalf[date] = tasks[date];
+    });
     
-    // 验证是否可以序列化
-    let jsonString;
-    try {
-      jsonString = JSON.stringify(exportData);
-    } catch (e) {
-      console.error('JSON序列化失败:', e);
-      // 尝试清理数据中的问题字段
-      const cleanedData = cleanProblematicData(exportData);
-      jsonString = JSON.stringify(cleanedData);
+    // 导出第一份
+    const firstJson = JSON.stringify(firstHalf, null, 2);
+    const firstBlob = new Blob([firstJson], { type: 'application/json' });
+    const firstUrl = URL.createObjectURL(firstBlob);
+    const firstLink = document.createElement('a');
+    firstLink.href = firstUrl;
+    firstLink.download = `study-tracker-part1_${firstHalfDates[0]}_to_${firstHalfDates[firstHalfDates.length-1]}.json`;
+    firstLink.click();
+    URL.revokeObjectURL(firstUrl);
+    
+    // 等待一下
+    await new Promise(r => setTimeout(r, 500));
+    
+    // 导出第二份
+    const secondJson = JSON.stringify(secondHalf, null, 2);
+    const secondBlob = new Blob([secondJson], { type: 'application/json' });
+    const secondUrl = URL.createObjectURL(secondBlob);
+    const secondLink = document.createElement('a');
+    secondLink.href = secondUrl;
+    secondLink.download = `study-tracker-part2_${secondHalfDates[0]}_to_${secondHalfDates[secondHalfDates.length-1]}.json`;
+    secondLink.click();
+    URL.revokeObjectURL(secondUrl);
+    
+    // 导出成绩（单独文件）
+    if (grades.length > 0) {
+      setTimeout(() => {
+        const gradesJson = JSON.stringify(grades, null, 2);
+        const gradesBlob = new Blob([gradesJson], { type: 'application/json' });
+        const gradesUrl = URL.createObjectURL(gradesBlob);
+        const gradesLink = document.createElement('a');
+        gradesLink.href = gradesUrl;
+        gradesLink.download = `study-tracker-grades_${new Date().toISOString().slice(0, 10)}.json`;
+        gradesLink.click();
+        URL.revokeObjectURL(gradesUrl);
+      }, 500);
     }
     
-    const dataStats = {
-      任务天数: Object.keys(tasks).length,
-      任务总数: Object.values(tasks).reduce((sum, t) => sum + t.length, 0),
-      评分天数: Object.keys(dailyRatings).length,
-      复盘天数: Object.keys(dailyReflections).length,
-      本月任务: monthTasks.length,
-      成绩记录: grades.length,
-      数据大小: (jsonString.length / 1024).toFixed(2) + ' KB'
-    };
-    
-    console.log('📊 导出数据统计:', dataStats);
-    
-    // 创建下载
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
-    const exportFileDefaultName = `study-tracker-backup_${new Date().toISOString().slice(0, 10)}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    alert(`✅ 导出成功！\n\n导出内容：\n• 任务天数: ${dataStats.任务天数}\n• 任务总数: ${dataStats.任务总数}\n• 复盘天数: ${dataStats.复盘天数}\n• 数据大小: ${dataStats.数据大小}`);
+    alert(`导出完成！\n\n第1份: ${firstHalfDates.length} 天\n第2份: ${secondHalfDates.length} 天\n\n成绩: ${grades.length} 条`);
     
   } catch (error) {
     console.error('导出失败:', error);
-    alert(`导出失败: ${error.message}\n\n请检查控制台查看详细错误`);
+    alert('导出失败: ' + error.message);
   }
 };
+
 
 // 辅助函数：清理问题数据
 function cleanProblematicData(data) {
@@ -24996,6 +24945,7 @@ const getCategoryBorderColor = () => {
           <span style={{ fontSize: '18px' }}>📥</span>
           导入数据
         </div>
+        
 
         {/* 备份管理 */}
         <div
