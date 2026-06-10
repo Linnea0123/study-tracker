@@ -21110,16 +21110,20 @@ if (isInitialized && todayTasks.length === 0) {
 
 
   return (
-    <div style={{
+  <div style={{
     maxWidth: 600,
     margin: "0 auto",
-    padding: 15,
+    padding: "15px",
+    paddingTop: "calc(env(safe-area-inset-top) + 15px)",
+    paddingBottom: "calc(env(safe-area-inset-bottom) + 15px)",
+    paddingLeft: "calc(env(safe-area-inset-left) + 15px)",
+    paddingRight: "calc(env(safe-area-inset-right) + 15px)",
     fontFamily: "sans-serif",
     backgroundColor: "#fcfdff",
     overflowX: "hidden",
     width: "100%",
     boxSizing: "border-box",
-    // 👇 添加这行：为滚动条预留空间
+    minHeight: "100vh",
     scrollbarGutter: 'stable'
   }}>
 
