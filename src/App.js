@@ -21114,7 +21114,7 @@ if (isInitialized && todayTasks.length === 0) {
     maxWidth: 600,
     margin: "0 auto",
     padding: "15px",
-    paddingTop: "calc(env(safe-area-inset-top) + 7px)",
+    paddingTop: "calc(env(safe-area-inset-top) + 2px)",
     paddingBottom: "calc(env(safe-area-inset-bottom) + 15px)",
     paddingLeft: "calc(env(safe-area-inset-left) + 15px)",
     paddingRight: "calc(env(safe-area-inset-right) + 15px)",
