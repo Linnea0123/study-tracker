@@ -5632,47 +5632,14 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true);
   const [gistId, setGistId] = useState(config.gistId || '46c9f5bb3a6a62057759293b0399a15c');
 
+  // 获取 Token 后四位
   const getTokenSuffix = (tokenValue) => {
     if (!tokenValue || tokenValue.length < 4) return '';
     return tokenValue.slice(-4);
   };
 
+  // ✅ 修改这里：期望的后四位改为 ocb0
   const expectedSuffix = 'ocb0';
-  
-  // 自动保存标记，避免重复保存
-  const hasAutoSavedRef = useRef(false);
-
-  // ✅ 监听 token 变化，如果后四位正确且来自浏览器自动填入，自动保存
-  useEffect(() => {
-    if (!token) return;
-    
-    const suffix = getTokenSuffix(token);
-    
-    // 如果后四位正确，且还没有自动保存过
-    if (suffix === expectedSuffix && !hasAutoSavedRef.current) {
-      console.log('✅ Token 验证通过，自动保存...');
-      hasAutoSavedRef.current = true;
-      
-      // 延迟一点保存，确保是浏览器自动填入完成
-      setTimeout(() => {
-        onSave({ token, autoSync, gistId });
-        // 自动关闭弹窗（可选）
-        // onClose();
-      }, 500);
-    }
-  }, [token, autoSync, gistId, onSave, onClose]);
-
-  // 组件挂载时，检查 localStorage 中是否有已保存的 token
-  useEffect(() => {
-    const savedToken = localStorage.getItem('github_token');
-    if (savedToken && !token) {
-      setToken(savedToken);
-      // 如果已经有保存的 token 且后四位正确，标记已自动保存
-      if (getTokenSuffix(savedToken) === expectedSuffix) {
-        hasAutoSavedRef.current = true;
-      }
-    }
-  }, []);
 
   const handleSave = () => {
     if (!token.trim()) {
@@ -5689,6 +5656,8 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
     onSave({ token, autoSync, gistId });
     onClose();
   };
+
+
 
   return (
     <div style={{
