@@ -5626,16 +5626,66 @@ const handleManualBackup = async () => {
 
 
 
+
 const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [token, setToken] = useState(config.token || '');
-  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true); // 确保默认为 true
-  const [gistId, setGistId] = useState(config.gistId || '');
+  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true);
+  const [gistId, setGistId] = useState(config.gistId || '46c9f5bb3a6a62057759293b0399a15c');
+
+  const getTokenSuffix = (tokenValue) => {
+    if (!tokenValue || tokenValue.length < 4) return '';
+    return tokenValue.slice(-4);
+  };
+
+  const expectedSuffix = 'ocb0';
+  
+  // 自动保存标记，避免重复保存
+  const hasAutoSavedRef = useRef(false);
+
+  // ✅ 监听 token 变化，如果后四位正确且来自浏览器自动填入，自动保存
+  useEffect(() => {
+    if (!token) return;
+    
+    const suffix = getTokenSuffix(token);
+    
+    // 如果后四位正确，且还没有自动保存过
+    if (suffix === expectedSuffix && !hasAutoSavedRef.current) {
+      console.log('✅ Token 验证通过，自动保存...');
+      hasAutoSavedRef.current = true;
+      
+      // 延迟一点保存，确保是浏览器自动填入完成
+      setTimeout(() => {
+        onSave({ token, autoSync, gistId });
+        // 自动关闭弹窗（可选）
+        // onClose();
+      }, 500);
+    }
+  }, [token, autoSync, gistId, onSave, onClose]);
+
+  // 组件挂载时，检查 localStorage 中是否有已保存的 token
+  useEffect(() => {
+    const savedToken = localStorage.getItem('github_token');
+    if (savedToken && !token) {
+      setToken(savedToken);
+      // 如果已经有保存的 token 且后四位正确，标记已自动保存
+      if (getTokenSuffix(savedToken) === expectedSuffix) {
+        hasAutoSavedRef.current = true;
+      }
+    }
+  }, []);
 
   const handleSave = () => {
     if (!token.trim()) {
       alert('请输入 GitHub Token');
       return;
     }
+    
+    const suffix = getTokenSuffix(token);
+    if (suffix !== expectedSuffix) {
+      alert(`Token 后四位是 "${suffix}"，不是 "${expectedSuffix}"！\n请检查 Token 是否正确。`);
+      return;
+    }
+    
     onSave({ token, autoSync, gistId });
     onClose();
   };
@@ -5669,19 +5719,43 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
             GitHub Personal Access Token:
           </label>
           <input
-            type="password"
+            type="text"
             value={token}
-            onChange={(e) => setToken(e.target.value)}
+            onChange={(e) => {
+              setToken(e.target.value);
+              // 用户手动修改时，重置自动保存标记
+              hasAutoSavedRef.current = false;
+            }}
             placeholder="输入 GitHub Token"
             style={{
               width: '100%',
               padding: 8,
               border: '1px solid #ccc',
               borderRadius: 6,
-              fontSize: 14
+              fontSize: 14,
+              boxSizing: 'border-box'
             }}
           />
-          <div style={{ fontSize: 12, color: '#666', marginTop: 5 }}>
+          
+          {/* 显示后四位验证状态 */}
+          {token.length >= 4 && (
+            <div style={{ 
+              fontSize: 12, 
+              marginTop: 5,
+              color: getTokenSuffix(token) === expectedSuffix ? '#4caf50' : '#f44336'
+            }}>
+              Token 后四位: <strong>{getTokenSuffix(token)}</strong>
+              {getTokenSuffix(token) === expectedSuffix ? ' ✓ 正确' : ' ✗ 不正确（应为 a15c）'}
+            </div>
+          )}
+          
+          {token.length > 0 && token.length < 4 && (
+            <div style={{ fontSize: 12, marginTop: 5, color: '#ff9800' }}>
+              Token 至少需要4位（当前{token.length}位）
+            </div>
+          )}
+          
+          <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
             需要 gist 权限。获取地址：<br/>
             https://github.com/settings/tokens
           </div>
@@ -5689,7 +5763,7 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
 
         <div style={{ marginBottom: 15 }}>
           <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
-            Gist ID (可选):
+            Gist ID:
           </label>
           <input
             type="text"
@@ -5701,11 +5775,12 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
               padding: 8,
               border: '1px solid #ccc',
               borderRadius: 6,
-              fontSize: 14
+              fontSize: 14,
+              boxSizing: 'border-box'
             }}
           />
           <div style={{ fontSize: 12, color: '#666', marginTop: 5 }}>
-            如果已有备份，输入 Gist ID 继续使用
+            💡 默认 Gist ID: 46c9f5bb3a6a62057759293b0399a15c
           </div>
         </div>
 
@@ -5716,7 +5791,7 @@ const GitHubSyncModal = ({ config, onSave, onClose }) => {
               checked={autoSync}
               onChange={(e) => setAutoSync(e.target.checked)}
             />
-            <span>自动同步（每30分钟）</span>
+            <span>自动同步（数据变化后5秒自动同步）</span>
           </label>
         </div>
 
@@ -5931,28 +6006,30 @@ const testGistAccess = async () => {
 
 
   // 确认恢复
-  const confirmRestore = () => {
-    if (!fileContent) {
-      alert('请先选择数据源');
-      return;
+// 原来的 confirmRestore 函数，替换为：
+const confirmRestore = () => {
+  if (!fileContent) {
+    alert('请先选择数据源');
+    return;
+  }
+
+  try {
+    const data = JSON.parse(fileContent);
+    
+    // 验证数据格式
+    if (!data.tasks && !data.tasksByDate) {
+      throw new Error('无效的数据格式');
     }
 
-    try {
-      const data = JSON.parse(fileContent);
-      
-      // 验证数据格式
-      if (!data.tasks && !data.tasksByDate) {
-        throw new Error('无效的数据格式');
-      }
-
-      if (window.confirm('确定要恢复这个备份吗？当前数据将被覆盖！')) {
-        onRestore(data);
-        onClose();
-      }
-    } catch (error) {
-      alert('数据格式错误: ' + error.message);
+    // ✅ 静默合并，不询问用户
+    if (onRestore) {
+      onRestore(data, 'merge');  // 直接使用合并模式
     }
-  };
+    onClose();
+  } catch (error) {
+    alert('数据格式错误: ' + error.message);
+  }
+};
 
   return (
     <div style={{
@@ -8934,7 +9011,8 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     category: editFormData.category,
     subCategory: editFormData.subCategory,
     initial: editFormData.initial,  // 新增
-    target: editFormData.target
+    target: editFormData.target,
+    updatedAt: new Date().toISOString()  
   };
 
   if (onEditTask) {
@@ -14815,12 +14893,24 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
+  // 防抖定时器
+  // 在 App 组件中，其他 useState 附近添加
+
+const syncDebounceTimerRef = useRef(null);
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
 const [enableProgress, setEnableProgress] = useState(false);
 // 在 App 组件中，其他 useState 附近添加
 const [showSearchModal, setShowSearchModal] = useState(false);
 // 编辑关注任务的进度
+
+// ========== 成绩记录相关状态 ==========
+const [grades, setGrades] = useState(() => {
+  const saved = localStorage.getItem(`${STORAGE_KEY}_grades`);
+  return saved ? JSON.parse(saved) : [];
+});
+
+
 
 const [showCategoryDetailModal, setShowCategoryDetailModal] = useState(null); 
 const editFocusTaskProgress = (task) => {
@@ -15434,6 +15524,17 @@ const [isInitialized, setIsInitialized] = useState(false);
 const [editingCategory, setEditingCategory] = useState(null); // 新增：正在编辑的类别
 const [collapsedSubCategories, setCollapsedSubCategories] = useState({});
 
+
+
+// 自动保存成绩 - 放在 isInitialized 定义之后 ✅
+useEffect(() => {
+  if (isInitialized) {
+    localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(grades));
+    saveMainData('grades', grades);  // 同时保存到 main data
+  }
+}, [grades, isInitialized]);
+
+// 然后才是其他 useEffect...
 const [categories, setCategories] = useState(baseCategories.map(cat => ({
   ...cat,
   subCategories: []
@@ -15563,7 +15664,7 @@ const restoreFromGitHub = useCallback(async () => {
   console.log('🔍 开始恢复流程');
   
   const token = localStorage.getItem('github_token');
-  let gistId = localStorage.getItem('github_gist_id');
+  let gistId = localStorage.getItem(PAGE_ID + '_github_gist_id');
   
   console.log('Token:', token ? '已设置' : '未设置');
   console.log('Gist ID:', gistId || '未设置');
@@ -15638,15 +15739,12 @@ const restoreFromGitHub = useCallback(async () => {
 
 
 
-// 在 App 组件的状态中找到 useState 部分，添加：
 const [syncConfig, setSyncConfig] = useState({
-  token: localStorage.getItem('github_token') || '',
-  gistId: localStorage.getItem('github_gist_id') || '',
-  autoSync: localStorage.getItem('github_auto_sync') === 'true',
-  lastSync: localStorage.getItem('github_last_sync') || ''
+  token: localStorage.getItem(PAGE_ID + '_github_token') || '',
+  gistId: localStorage.getItem(PAGE_ID + '_github_gist_id') || '46c9f5bb3a6a62057759293b0399a15c',  // ✅ 修改这里
+  autoSync: localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true',
+  lastSync: localStorage.getItem(PAGE_ID + '_github_last_sync') || ''
 });
-
-
 
 
 
@@ -15711,7 +15809,8 @@ const getCurrentDailyReflection = () => {
 const setCurrentDailyReflection = (reflection) => {
   setDailyReflections(prev => ({
     ...prev,
-    [selectedDate]: reflection
+    [selectedDate]: reflection,
+      updatedAt: new Date().toISOString()   // ✅ 存储为对象
   }));
 };
 
@@ -15733,136 +15832,241 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-// 找到 handleRestoreData 函数，添加 reminderText 的恢复
-const handleRestoreData = useCallback(async (backupData) => {
+// 智能合并恢复函数（静默执行，不覆盖本地最新数据）
+const handleRestoreData = useCallback(async (backupData, mode = 'merge') => {
   try {
-    console.log('🔄 开始恢复数据...', backupData);
+    console.log('🔄 开始智能合并恢复数据...', mode);
 
-
-// 恢复关注任务模板
-if (backupData.focusTaskTemplates) {
-  setFocusTaskTemplates(backupData.focusTaskTemplates);
-  localStorage.setItem('focus_task_templates', JSON.stringify(backupData.focusTaskTemplates));
-}
-
-    // ✅ 新增：恢复科目指导数据
-    if (backupData.subjectGuideEntries) {
-      setSubjectGuideEntries(backupData.subjectGuideEntries);
-      localStorage.setItem('subject_guide_entries', JSON.stringify(backupData.subjectGuideEntries));
-      console.log('📚 恢复科目指导数据:', Object.keys(backupData.subjectGuideEntries).length, '个科目');
-    }
-
-    // 👇 在这下面添加
-if (backupData.subjectGuideCustomTags) {
-  setGlobalCustomTags(backupData.subjectGuideCustomTags);
-  localStorage.setItem('subject_guide_custom_tags', JSON.stringify(backupData.subjectGuideCustomTags));
-}
-// 恢复关注任务完成状态
-if (backupData.focusTaskStatus) {
-  setFocusTaskStatus(backupData.focusTaskStatus);
-  localStorage.setItem('focus_task_status', JSON.stringify(backupData.focusTaskStatus));
-}
-
-
-     // ✅ 新增：恢复排序数据
-    if (backupData.taskOrders) {
-      Object.entries(backupData.taskOrders).forEach(([key, order]) => {
-        localStorage.setItem(key, JSON.stringify(order));
-      });
-      console.log('✅ 恢复任务排序:', Object.keys(backupData.taskOrders).length);
-    }
-    
-    if (backupData.subCategoryOrders) {
-      Object.entries(backupData.subCategoryOrders).forEach(([key, order]) => {
-        localStorage.setItem(key, JSON.stringify(order));
-      });
-      console.log('✅ 恢复子分类排序:', Object.keys(backupData.subCategoryOrders).length);
-    }
-    
-  
-
-    // 恢复核心数据
-    if (backupData.tasksByDate) {
-      setTasksByDate(backupData.tasksByDate);
-      await saveMainData('tasks', backupData.tasksByDate);
-    }
-    
-  
-    
-    // 恢复本月任务
-    if (backupData.monthTasks) {
-      setMonthTasks(backupData.monthTasks);
-      await saveMainData('monthTasks', backupData.monthTasks);
-    }
-    
-    // 恢复每日数据
-    if (backupData.dailyRatings) {
-      setDailyRatings(backupData.dailyRatings);
-    }
-    
-    if (backupData.dailyReflections) {
-      console.log('📝 恢复复盘数据:', {
-        天数: Object.keys(backupData.dailyReflections).length,
-        示例: Object.entries(backupData.dailyReflections).slice(0, 2)
-      });
-      
-      setDailyReflections(backupData.dailyReflections);
-      
-      // 保存每个日期的复盘到 localStorage
-      Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
-        const dailyData = {
-          rating: backupData.dailyRatings?.[date] || 0,
-          reflection: reflection,
-          date: date
-        };
-        saveMainData(`daily_${date}`, dailyData);
-      });
-    }
-    
-    // 恢复每日提醒文本 - 新增
-    if (backupData.reminderText !== undefined) {
-      setReminderText(backupData.reminderText);
-      localStorage.setItem('daily_reminder', backupData.reminderText);
-      console.log('📢 恢复每日提醒:', backupData.reminderText || '无');
-    }
-    
-    // 恢复学习结束时间（按日期）
-if (backupData.studyEndTimes) {
-  setStudyEndTimes(backupData.studyEndTimes);
-  localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
-  console.log('⏰ 恢复学习结束时间:', Object.keys(backupData.studyEndTimes).length, '天');
-}
-    // 恢复类别配置
-    if (backupData.categories) {
-      setCategories(backupData.categories);
-      await saveMainData('categories', backupData.categories);
-    }
-    
-    // 恢复成绩记录
-    if (backupData.grades) {
-      await saveMainData('grades', backupData.grades);
-    }
-    
-    // 恢复最后选中的日期
-    if (backupData.lastSelectedDate) {
-      setSelectedDate(backupData.lastSelectedDate);
-    }
-    
-    if (backupData.lastCurrentMonday) {
-      setCurrentMonday(new Date(backupData.lastCurrentMonday));
+    // 如果是覆盖模式（非合并），执行原有逻辑
+    if (mode === 'overwrite') {
+      // 原有的覆盖逻辑保持不变
+      if (backupData.tasksByDate) {
+        setTasksByDate(backupData.tasksByDate);
+        await saveMainData('tasks', backupData.tasksByDate);
+      }
+      if (backupData.dailyRatings) setDailyRatings(backupData.dailyRatings);
+      if (backupData.dailyReflections) setDailyReflections(backupData.dailyReflections);
+      // ... 其他覆盖逻辑
+      alert('数据已完全覆盖恢复！');
+      return;
     }
 
-    console.log('✅ 数据恢复完成，复盘天数:', Object.keys(backupData.dailyReflections || {}).length);
+    // ========== 智能合并模式（默认） ==========
     
-    alert(`✅ 数据恢复成功！\n恢复了 ${Object.keys(backupData.dailyReflections || {}).length} 天的复盘数据\n本月任务: ${(backupData.monthTasks || []).length} 个\n每日提醒: ${backupData.reminderText ? '已恢复' : '无'}`);
-
+    // 1. 合并任务数据（tasksByDate）- 按任务ID和更新时间
+    const localTasks = tasksByDate;
+    const cloudTasks = backupData.tasksByDate || {};
+    const mergedTasks = { ...localTasks }; // 先复制本地
+    
+    // 辅助函数：获取任务的更新时间戳
+    const getTaskUpdateTime = (task) => {
+      return task.updatedAt || task.lastModified || task.createdAt || '1970-01-01';
+    };
+    
+    // 遍历云端的所有日期
+    Object.keys(cloudTasks).forEach(date => {
+      if (!mergedTasks[date]) {
+        // 本地没有这个日期，直接添加云端数据
+        mergedTasks[date] = [...cloudTasks[date]];
+        console.log(`📅 添加云端日期: ${date}`);
+      } else {
+        // 两边都有，需要合并任务
+        const localTaskMap = new Map();
+        mergedTasks[date].forEach(task => {
+          localTaskMap.set(task.id, task);
+        });
+        
+        cloudTasks[date].forEach(cloudTask => {
+          const localTask = localTaskMap.get(cloudTask.id);
+          if (!localTask) {
+            // 云端有新任务，添加
+            mergedTasks[date].push(cloudTask);
+            console.log(`📝 添加云端新任务: ${cloudTask.text}`);
+          } else {
+            // 两边都有，比较更新时间，保留最新的
+            const localTime = getTaskUpdateTime(localTask);
+            const cloudTime = getTaskUpdateTime(cloudTask);
+            if (cloudTime > localTime) {
+              // 云端版本更新，替换
+              const index = mergedTasks[date].findIndex(t => t.id === cloudTask.id);
+              mergedTasks[date][index] = { ...cloudTask };
+              console.log(`🔄 更新任务: ${cloudTask.text} (云端更新)`);
+            } else {
+              console.log(`✅ 保留本地任务: ${localTask.text} (本地更新)`);
+            }
+          }
+        });
+      }
+    });
+    
+    // 2. 合并每日评分和复盘（按日期，保留本地最新）
+    const mergedRatings = { ...backupData.dailyRatings, ...dailyRatings };
+    const mergedReflections = { ...backupData.dailyReflections, ...dailyReflections };
+    
+    // 对于复盘内容，如果有 updatedAt 字段则比较，否则本地优先
+    Object.keys(mergedReflections).forEach(date => {
+      const localRef = dailyReflections[date];
+      const cloudRef = backupData.dailyReflections?.[date];
+      if (localRef && cloudRef) {
+        const localTime = localRef.updatedAt || localRef.timestamp || '';
+        const cloudTime = cloudRef.updatedAt || cloudRef.timestamp || '';
+        if (localTime >= cloudTime) {
+          mergedReflections[date] = localRef;
+        } else {
+          mergedReflections[date] = cloudRef;
+        }
+      } else if (localRef) {
+        mergedReflections[date] = localRef;
+      }
+    });
+    
+    // 3. 合并学习结束时间（本地优先）
+    const mergedEndTimes = { ...backupData.studyEndTimes, ...studyEndTimes };
+    
+    // 4. 合并关注任务模板
+    const localTemplates = focusTaskTemplates || [];
+    const cloudTemplates = backupData.focusTaskTemplates || [];
+    const templateMap = new Map();
+    localTemplates.forEach(t => templateMap.set(t.id, t));
+    cloudTemplates.forEach(cloudT => {
+      const localT = templateMap.get(cloudT.id);
+      if (!localT) {
+        templateMap.set(cloudT.id, cloudT);
+      } else {
+        const localTime = localT.updatedAt || localT.createdAt || '';
+        const cloudTime = cloudT.updatedAt || cloudT.createdAt || '';
+        if (cloudTime > localTime) {
+          templateMap.set(cloudT.id, cloudT);
+        }
+      }
+    });
+    const mergedTemplates = Array.from(templateMap.values());
+    
+    // 5. 合并本月任务
+    const localMonth = monthTasks || [];
+    const cloudMonth = backupData.monthTasks || [];
+    const monthMap = new Map();
+    localMonth.forEach(t => monthMap.set(t.id, t));
+    cloudMonth.forEach(cloudT => {
+      const localT = monthMap.get(cloudT.id);
+      if (!localT) {
+        monthMap.set(cloudT.id, cloudT);
+      } else {
+        const localTime = localT.updatedAt || localT.createdAt || '';
+        const cloudTime = cloudT.updatedAt || cloudT.createdAt || '';
+        if (cloudTime > localTime) {
+          monthMap.set(cloudT.id, cloudT);
+        }
+      }
+    });
+    const mergedMonthTasks = Array.from(monthMap.values());
+    
+    // 6. 合并成绩记录
+    const localGrades = grades || [];
+    const cloudGrades = backupData.grades || [];
+    const gradeMap = new Map();
+    localGrades.forEach(g => gradeMap.set(g.id, g));
+    cloudGrades.forEach(cloudG => {
+      const localG = gradeMap.get(cloudG.id);
+      if (!localG) {
+        gradeMap.set(cloudG.id, cloudG);
+      } else {
+        const localTime = localG.updatedAt || localG.createdAt || '';
+        const cloudTime = cloudG.updatedAt || cloudG.createdAt || '';
+        if (cloudTime > localTime) {
+          gradeMap.set(cloudG.id, cloudG);
+        }
+      }
+    });
+    const mergedGrades = Array.from(gradeMap.values());
+    
+    // 7. 合并科目指导数据
+    const localGuide = subjectGuideEntries || {};
+    const cloudGuide = backupData.subjectGuideEntries || {};
+    const mergedGuide = { ...localGuide };
+    Object.keys(cloudGuide).forEach(cat => {
+      if (!mergedGuide[cat]) {
+        mergedGuide[cat] = cloudGuide[cat];
+      } else {
+        const localEntries = mergedGuide[cat] || [];
+        const cloudEntries = cloudGuide[cat] || [];
+        const entryMap = new Map();
+        localEntries.forEach(e => entryMap.set(e.id, e));
+        cloudEntries.forEach(cloudE => {
+          const localE = entryMap.get(cloudE.id);
+          if (!localE) {
+            entryMap.set(cloudE.id, cloudE);
+          } else {
+            const localTime = localE.updatedAt || localE.createdAt || '';
+            const cloudTime = cloudE.updatedAt || cloudE.createdAt || '';
+            if (cloudTime > localTime) {
+              entryMap.set(cloudE.id, cloudE);
+            }
+          }
+        });
+        mergedGuide[cat] = Array.from(entryMap.values());
+      }
+    });
+    
+    // 8. 合并每日提醒（保留较长的或最新的）
+    let mergedReminder = reminderText;
+    if (backupData.reminderText && (!reminderText || backupData.reminderText.length > reminderText.length)) {
+      mergedReminder = backupData.reminderText;
+    }
+    
+    // 9. 应用合并后的数据
+    setTasksByDate(mergedTasks);
+    setDailyRatings(mergedRatings);
+    setDailyReflections(mergedReflections);
+    setStudyEndTimes(mergedEndTimes);
+    setFocusTaskTemplates(mergedTemplates);
+    setMonthTasks(mergedMonthTasks);
+    if (mergedGrades.length > 0) await saveMainData('grades', mergedGrades);
+    setSubjectGuideEntries(mergedGuide);
+    if (mergedReminder) {
+      setReminderText(mergedReminder);
+      localStorage.setItem('daily_reminder', mergedReminder);
+    }
+    
+    // 保存到 localStorage
+    await saveMainData('tasks', mergedTasks);
+    await saveMainData('focusTaskTemplates', mergedTemplates);
+    await saveMainData('monthTasks', mergedMonthTasks);
+    if (mergedGrades.length > 0) await saveMainData('grades', mergedGrades);
+    
+    // 保存每日数据
+    Object.keys(mergedReflections).forEach(date => {
+      const reflectionContent = typeof mergedReflections[date] === 'string' 
+        ? mergedReflections[date] 
+        : mergedReflections[date]?.content || '';
+      const dailyData = {
+        rating: mergedRatings[date] || 0,
+        reflection: reflectionContent,
+        date: date,
+        updatedAt: new Date().toISOString()
+      };
+      saveMainData(`daily_${date}`, dailyData);
+    });
+    
+    const stats = {
+      任务天数: Object.keys(mergedTasks).length,
+      复盘天数: Object.keys(mergedReflections).length,
+      关注任务: mergedTemplates.length,
+      本月任务: mergedMonthTasks.length,
+      成绩记录: mergedGrades.length
+    };
+    
+    console.log('✅ 静默智能合并完成:', stats);
+    
+    // 可选：显示一个不打断用户的轻提示
+    showToast?.(`已合并云端数据：${stats.任务天数}天任务，${stats.复盘天数}天复盘`);
+    
   } catch (error) {
-    console.error('恢复失败:', error);
-    alert('恢复失败: ' + error.message);
+    console.error('合并恢复失败:', error);
+    // 静默失败，不弹alert，只console
   }
-}, []);
-// 将 syncToGitHub 的 useCallback 定义移到所有 useEffect 之前
-// eslint-disable-next-line no-unused-vars
+}, [tasksByDate, dailyRatings, dailyReflections, studyEndTimes, focusTaskTemplates, monthTasks, grades, subjectGuideEntries, reminderText, saveMainData]);
+
 
 
 // 替换整个 syncToGitHub 函数
@@ -16028,7 +16232,8 @@ const syncToGitHub = useCallback(async (silent = false) => {
     const result = await response.json();
     
     if (!gistId && result.id) {
-      localStorage.setItem('github_gist_id', result.id);
+      // 同步成功后
+localStorage.setItem(PAGE_ID + '_github_last_sync', new Date().toISOString());
       console.log('✅ 新 Gist ID 已保存:', result.id);
     }
 
@@ -16065,7 +16270,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       }
     }
 
-    localStorage.setItem('github_last_sync', new Date().toISOString());
+    localStorage.setItem(PAGE_ID + '_github_last_sync', new Date().toISOString());
     
     const syncTime = new Date().toLocaleString();
     const taskCount = Object.values(tasksByDate).filter(dailyTasks => 
@@ -16118,12 +16323,31 @@ const syncToGitHub = useCallback(async (silent = false) => {
 }, [tasksByDate, dailyRatings, dailyReflections, focusTaskTemplates, focusTaskStatus, monthTasks, categories, reminderText, semesterEndDate, selectedDate, currentMonday, saveDailyData, globalCustomTags]);
 
 
-
+// 防抖静默同步函数（5秒防抖）
+const debouncedSync = useCallback(() => {
+  const token = localStorage.getItem(PAGE_ID + '_github_token');
+  const autoSyncEnabled = localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true';
+  
+  if (!token || !autoSyncEnabled) return;
+  if (isSyncing) return;
+  
+  // 清除之前的定时器
+  if (syncDebounceTimerRef.current) {
+    clearTimeout(syncDebounceTimerRef.current);
+  }
+  
+  // 5秒后执行同步
+  syncDebounceTimerRef.current = setTimeout(() => {
+    console.log('🔄 防抖触发，静默同步...');
+    syncToGitHub(true);
+    syncDebounceTimerRef.current = null;
+  }, 5000);
+}, [syncToGitHub, isSyncing]);
 
 
 // 找到 autoRestoreLatestData 函数，确保恢复每日提醒
 const autoRestoreLatestData = useCallback(async () => {
-  const token = localStorage.getItem('github_token');
+ const token = localStorage.getItem(PAGE_ID + '_github_token');
   
   if (!token) {
     console.log('❌ 没有GitHub Token，跳过自动恢复');
@@ -16134,7 +16358,7 @@ const autoRestoreLatestData = useCallback(async () => {
   
   try {
     // 1. 先尝试使用保存的gistId
-    const savedGistId = localStorage.getItem('github_gist_id');
+    const savedGistId = localStorage.getItem(PAGE_ID + '_github_gist_id');
     let targetGistId = savedGistId;
     
     if (!savedGistId) {
@@ -16196,7 +16420,7 @@ const autoRestoreLatestData = useCallback(async () => {
         localStorage.setItem('github_gist_id', targetGistId);
       }
       
-      await handleRestoreData(backupData);
+      await handleRestoreData(backupData, 'merge');  // 静默合并模式
     } else {
       console.log('用户取消恢复');
     }
@@ -16630,6 +16854,7 @@ const toggleDone = (task, currentDateFromTask = null) => {
       progress: task.progress || { initial: 0, current: 0, target: 0, unit: "%" },
       reminderTime: task.reminderTime || null,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(), 
       movedFromWeekTask: true,
       originalWeekText: task.text
     };
@@ -18189,45 +18414,10 @@ useEffect(() => {
 }, [dailyRatings, isInitialized]);
 
 
-// 每天第一次打开页面自动同步到云端
-// 每天第一次打开页面自动同步到云端
-// 每天第一次打开页面自动同步到云端
-useEffect(() => {
-  console.log('🔍 自动同步检查 - isInitialized:', isInitialized);
-  
-  if (!isInitialized) {
-    console.log('🔍 等待初始化完成...');
-    return;
-  }
-  
-  const lastAutoSyncDate = localStorage.getItem('last_auto_sync_date');
-  const today = new Date().toISOString().split('T')[0];
-  
-  console.log('🔍 同步检查:', { lastAutoSyncDate, today });
-  
-  if (lastAutoSyncDate !== today) {
-    const token = localStorage.getItem('github_token');
-    const autoSyncEnabled = localStorage.getItem('github_auto_sync') === 'true';
-    
-    console.log('🔍 同步条件:', { token: !!token, autoSyncEnabled });
-    
-    if (token && autoSyncEnabled) {
-      console.log('☁️ 每天首次打开页面，自动同步到云端...', new Date().toLocaleString());
-      
-      const timer = setTimeout(() => {
-        console.log('🚀 执行 syncToGitHub(true)');
-        syncToGitHub(true);
-        localStorage.setItem('last_auto_sync_date', today);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      console.log('⚠️ 条件不满足，跳过同步');
-    }
-  } else {
-    console.log('✅ 今天已经同步过，跳过自动同步');
-  }
-}, [isInitialized]); // 依赖 isInitialized，当它变为 true 时会重新执行
+
+
+
+
 // 👇 在这里添加清理空日期的 useEffect
 useEffect(() => {
   if (isInitialized) {
@@ -18296,7 +18486,27 @@ useEffect(() => {
   }
 }, [selectedDate, isInitialized, saveDailyData]);
 
-
+// 监听数据变化，触发防抖同步
+useEffect(() => {
+  if (!isInitialized) return;
+  
+  // 只在有数据时触发
+  const hasData = Object.keys(tasksByDate).length > 0 || 
+                  Object.keys(dailyRatings).length > 0 ||
+                  monthTasks.length > 0 ||
+                  focusTaskTemplates.length > 0;
+  
+  if (hasData) {
+    debouncedSync();
+  }
+  
+  // 组件卸载时清除定时器
+  return () => {
+    if (syncDebounceTimerRef.current) {
+      clearTimeout(syncDebounceTimerRef.current);
+    }
+  };
+}, [tasksByDate, dailyRatings, dailyReflections, monthTasks, focusTaskTemplates, focusTaskStatus, studyEndTimes, reminderText, isInitialized, debouncedSync]);
   // ========== 主要关注任务相关函数 ==========
 
 
@@ -19106,6 +19316,8 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
       unit: "%"
     },
     reminderTime: reminderTime,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString() ,
     repeatFrequency: repeatConfig.frequency || '',
     repeatDays: repeatConfig.days || [false, false, false, false, false, false, false],
     isRepeating: !!(repeatConfig.frequency)
@@ -21281,12 +21493,12 @@ if (isInitialized && todayTasks.length === 0) {
   <GitHubSyncModal
     config={syncConfig}
     onSave={(newConfig) => {
-      localStorage.setItem('github_token', newConfig.token);
-      localStorage.setItem('github_auto_sync', newConfig.autoSync.toString());
-      localStorage.setItem('github_gist_id', newConfig.gistId);
-      setSyncConfig({ ...syncConfig, ...newConfig });
-      setShowGitHubSyncModal(false);
-    }}
+  localStorage.setItem(PAGE_ID + '_github_token', newConfig.token);
+  localStorage.setItem(PAGE_ID + '_github_auto_sync', newConfig.autoSync.toString());
+  localStorage.setItem(PAGE_ID + '_github_gist_id', newConfig.gistId);
+  setSyncConfig({ ...syncConfig, ...newConfig });
+  setShowGitHubSyncModal(false);
+}}
     onClose={() => setShowGitHubSyncModal(false)}
   />
 )}
@@ -24531,7 +24743,7 @@ const getCategoryBorderColor = () => {
   <div
     onClick={(e) => {
       e.preventDefault();
-      const token = localStorage.getItem('github_token');
+      const token = localStorage.getItem(PAGE_ID + '_github_token');
       if (!token) {
         alert('请先设置 GitHub Token');
         setShowGitHubSyncModal(true);
@@ -24949,7 +25161,7 @@ const getCategoryBorderColor = () => {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
        
-        {/* 👇 在这里添加最后同步时间的显示 */}
+        {/* ✅ 修改这里：显示最近一次同步时间 */}
         <div style={{
           padding: '8px 12px',
           fontSize: '12px',
@@ -24957,12 +25169,44 @@ const getCategoryBorderColor = () => {
           borderBottom: '1px solid #eee',
           backgroundColor: '#f8f9fa',
           borderRadius: '6px',
-          marginBottom: '4px'
+          marginBottom: '4px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          📅 最后同步: {localStorage.getItem('github_last_sync') 
-            ? new Date(localStorage.getItem('github_last_sync')).toLocaleString() 
-            : '从未同步'}
+          <span>📅 最近同步:</span>
+          <span style={{ 
+            fontWeight: 'bold',
+            color: lastSyncStatus?.success === false ? '#f44336' : '#4caf50'
+          }}>
+            {(() => {
+              // 获取最后一次同步时间（从 localStorage）
+              const lastSyncTime = localStorage.getItem('github_last_sync');
+              if (lastSyncTime) {
+                return new Date(lastSyncTime).toLocaleString();
+              }
+              // 如果有实时状态的时间
+              if (lastSyncStatus?.time) {
+                return new Date(lastSyncStatus.time).toLocaleString();
+              }
+              return '从未同步';
+            })()}
+          </span>
         </div>
+
+        {/* 同步状态提示（如果最近一次失败） */}
+        {lastSyncStatus?.success === false && lastSyncStatus?.message && (
+          <div style={{
+            padding: '6px 10px',
+            fontSize: '11px',
+            color: '#f44336',
+            backgroundColor: '#ffebee',
+            borderRadius: '6px',
+            marginBottom: '4px'
+          }}>
+            ⚠️ {lastSyncStatus.message}
+          </div>
+        )}
        
         {/* 导出数据 */}
         <div
@@ -25094,7 +25338,6 @@ const getCategoryBorderColor = () => {
           清空数据
         </div>
 
-       
       </div>
 
       {/* 关闭按钮 */}
@@ -25116,7 +25359,6 @@ const getCategoryBorderColor = () => {
     </div>
   </div>
 )}
-
 
 
 
