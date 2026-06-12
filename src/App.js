@@ -16307,9 +16307,19 @@ const debouncedSync = useCallback(() => {
 
 
 
-console.log('🔥 正在定义 autoRestoreLatestData');
+// 找到 autoRestoreLatestData 函数（大约在 10100 行附近），替换为以下代码：
+
 const autoRestoreLatestData = useCallback(async () => {
   console.log('🔍 autoRestoreLatestData 开始执行...');
+  
+  // ✅ 添加：检查今天是否已经恢复过
+  const today = new Date().toISOString().split('T')[0];
+  const lastRestoreDate = localStorage.getItem('last_cloud_restore_date');
+  
+  if (lastRestoreDate === today) {
+    console.log('📅 今天已经恢复过云端数据，跳过自动恢复');
+    return;
+  }
   
   // ✅ 添加：检查 token
   const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
@@ -16365,7 +16375,16 @@ const autoRestoreLatestData = useCallback(async () => {
     
     console.log('📌 准备调用 handleRestoreData...');
     await handleRestoreData(backupData, 'merge');
-    console.log('✅ 自动恢复完成');
+    // 在 await handleRestoreData(backupData, 'merge'); 后面添加
+localStorage.setItem('github_last_sync', new Date().toISOString());
+setLastSyncStatus({
+  success: true,
+  time: new Date(),
+  message: `云端合并 (${new Date().toLocaleTimeString()})`
+});
+    // ✅ 添加：记录今天已经恢复过
+    localStorage.setItem('last_cloud_restore_date', today);
+    console.log('✅ 自动恢复完成，已记录恢复日期:', today);
     
   } catch (error) {
     console.error('❌ 自动恢复失败:', error);
