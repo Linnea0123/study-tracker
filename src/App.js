@@ -1528,7 +1528,7 @@ button:focus-visible {
 
           <div>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
-              📝 复盘
+              复盘
             </label>
             <textarea
               value={newGrade.analysis}
@@ -2360,7 +2360,7 @@ const performSearch = useCallback(() => {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
-                        📝 {task.note}
+                         {task.note}
                       </div>
                     )}
                     
@@ -3198,7 +3198,7 @@ const renderTodoItem = (todo) => {
               textAlign: 'center',
               color: '#666'
             }}>
-              📝 暂无待办
+              暂无待办
               <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
                 点击右上角 + 添加 {activeTab} 待办
               </div>
@@ -3812,7 +3812,7 @@ const handleSave = () => {
               textAlign: 'center',
               color: '#666'
             }}>
-              📝 暂无指导记录
+              暂无指导记录
               <div style={{ fontSize: '12px', marginTop: '8px', color: '#999' }}>
                 点击右上角 + 添加 {activeTab} 学习方法
               </div>
@@ -4574,7 +4574,7 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
                         </div>
                         {record.note && (
                           <div style={{ fontSize: '11px', color: '#666', marginLeft: '8px', paddingLeft: '8px', borderLeft: '2px solid #61A2Da', marginTop: '4px' }}>
-                            📝 {record.note}
+                             {record.note}
                           </div>
                         )}
                       </div>
@@ -4602,10 +4602,6 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
   const [editingHistoryRecord, setEditingHistoryRecord] = useState(null);
   const [editHistoryMinutes, setEditHistoryMinutes] = useState('');
   const timeRecords = task.timeRecords || [];
-  
-  // 创建 refs 用于控制焦点
-  const plannedInputRef = useRef(null);
-  const actualInputRef = useRef(null);
 
   // 保存计划时间
   const handleSavePlannedTime = () => {
@@ -4647,26 +4643,6 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
   const getActualTotalMinutes = () => {
     return Math.floor((task.timeSpent || 0) / 60);
   };
-
-  // 自动聚焦逻辑
-  useEffect(() => {
-    // 延迟一下确保 DOM 已渲染
-    setTimeout(() => {
-      const hasPlannedTime = plannedMinutes && parseInt(plannedMinutes) > 0;
-      
-      if (!hasPlannedTime) {
-        // 计划时间为空，聚焦到计划时间输入框
-        if (plannedInputRef.current) {
-          plannedInputRef.current.focus();
-        }
-      } else {
-        // 计划时间已有值，聚焦到实际时间输入框
-        if (actualInputRef.current) {
-          actualInputRef.current.focus();
-        }
-      }
-    }, 100);
-  }, [plannedMinutes]);
 
   return (
     <div style={{
@@ -4722,66 +4698,68 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
           </div>
         </div>
         
-        {/* 计划时间输入框 */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
-            计划时间
-          </label>
-          <input
-            ref={plannedInputRef}
-            type="number"
-            placeholder=""
-            value={plannedMinutes}
-            onChange={(e) => {
-              setPlannedMinutes(e.target.value);
-            }}
-            onBlur={handleSavePlannedTime}
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              border: '2px solid #e0e0e0',
-              borderRadius: '8px',
-              textAlign: 'center',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
+        {/* 计划时间和本次学习时长 - 同一行 */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '12px',
+          marginBottom: '16px'
+        }}>
+          {/* 计划时间输入框 */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px', color: '#333' }}>
+              计划时间
+            </label>
+            <input
+              type="number"
+              placeholder="分钟"
+              value={plannedMinutes}
+              onChange={(e) => {
+                setPlannedMinutes(e.target.value);
+              }}
+              onBlur={handleSavePlannedTime}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '14px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                textAlign: 'center',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
 
-        {/* 分隔线 */}
-        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #eee' }} />
-
-        {/* 本次学习时长 */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
-            本次学习时长
-          </label>
-          <input
-            ref={actualInputRef}
-            type="number"
-            placeholder=""
-            value={addMinutes}
-            onChange={(e) => setAddMinutes(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              border: '2px solid #e0e0e0',
-              borderRadius: '8px',
-              textAlign: 'center',
-              boxSizing: 'border-box'
-            }}
-            autoFocus={false}
-          />
+          {/* 本次学习时长输入框 */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px', color: '#333' }}>
+              本次学习时长
+            </label>
+            <input
+              type="number"
+              placeholder="分钟"
+              value={addMinutes}
+              onChange={(e) => setAddMinutes(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '14px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                textAlign: 'center',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
         </div>
         
         {/* 备注 */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: '#333' }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px', color: '#333' }}>
             备注
           </label>
           <textarea
-            placeholder=""
+            placeholder="可选"
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
@@ -4792,8 +4770,8 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
             style={{
               width: '100%',
               padding: '10px',
-              fontSize: '14px',
-              border: '2px solid #e0e0e0',
+              fontSize: '13px',
+              border: '1px solid #ddd',
               borderRadius: '8px',
               boxSizing: 'border-box',
               resize: 'none',
@@ -4807,24 +4785,24 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
         {/* 时间统计卡片 */}
         <div style={{ 
           textAlign: 'center', 
-          padding: '10px', 
+          padding: '8px', 
           backgroundColor: '#e8f0fe', 
           borderRadius: '8px',
           marginBottom: '16px'
         }}>
-          <span style={{ fontSize: '13px', color: '#666' }}>实际总时间：</span>
-          <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#61A2Da' }}>
+          <span style={{ fontSize: '12px', color: '#666' }}>实际总时间：</span>
+          <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#61A2Da' }}>
             {getActualTotalMinutes()}
           </span>
-          <span style={{ fontSize: '13px', color: '#666' }}> 分钟</span>
+          <span style={{ fontSize: '12px', color: '#666' }}> 分钟</span>
           
           {task.plannedTime && parseInt(task.plannedTime) > 0 && (
             <>
-              <span style={{ fontSize: '13px', color: '#666', marginLeft: '12px' }}>计划时间：</span>
-              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>
+              <span style={{ fontSize: '12px', color: '#666', marginLeft: '12px' }}>计划时间：</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#f44336' }}>
                 {task.plannedTime}
               </span>
-              <span style={{ fontSize: '13px', color: '#666' }}> 分钟</span>
+              <span style={{ fontSize: '12px', color: '#666' }}> 分钟</span>
             </>
           )}
         </div>
@@ -4832,7 +4810,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
         {/* 历史记录列表 */}
         {timeRecords.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
               历史记录
             </div>
             <div style={{ 
@@ -4948,7 +4926,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
                       borderLeft: '2px solid #61A2Da', 
                       marginTop: '6px' 
                     }}>
-                      📝 {record.note}
+                       {record.note}
                     </div>
                   )}
                 </div>
@@ -4980,6 +4958,7 @@ const TimeEditModal = ({ task, onClose, onSave, onEditRecord, onDeleteRecord, to
     </div>
   );
 };
+
 
 
 const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour, studyEndMinute, onSave, onClose }) => {
@@ -10351,14 +10330,12 @@ const [abandonReason, setAbandonReason] = useState('');
 const [abandonNote, setAbandonNote] = useState('');
 
 const abandonReasons = [
-  { value: '太难了', label: '😰 太难了', color: '#f44336' },
-  { value: '没时间', label: '⏰ 没时间', color: '#ff9800' },
-  { value: '不重要', label: '📌 不重要', color: '#9e9e9e' },
-  { value: '重复了', label: '🔄 重复了', color: '#2196f3' },
-  { value: '已完成', label: '✅ 已完成（忘记打勾）', color: '#4caf50' },
-  { value: '等待资料', label: '📚 等待资料', color: '#ffc107' },
-  { value: '身体不适', label: '🤒 身体不适', color: '#e91e63' },
-  { value: '其他', label: '📝 其他', color: '#607d8b' }
+  { value: '太难了', label: '太难了', color: '#f44336' },
+  { value: '没时间', label: '没时间', color: '#ff9800' },
+  { value: '不重要', label: '不重要', color: '#9e9e9e' },
+  { value: '等待资料', label: '等待资料', color: '#ffc107' },
+  { value: '身体不适', label: '身体不适', color: '#e91e63' },
+  { value: '其他', label: '其他', color: '#607d8b' }
 ];
 
   const [showMoreConfig, setShowMoreConfig] = useState(false);
@@ -13990,7 +13967,7 @@ const getSubjectColor = (subject) => {
                     {item.reason}
                     {item.note && (
                       <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                        📝 {item.note}
+                        {item.note}
                       </div>
                     )}
                   </div>
