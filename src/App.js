@@ -6482,11 +6482,16 @@ window.debugStudyTracker = {
 
 
 
-// 获取周数
 const getWeekNumber = (date) => {
+  // 使用北京时间
   const d = new Date(date);
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  const days = Math.floor((d - jan1) / (24 * 60 * 60 * 1000));
+  const beijingDate = new Date(d.getTime() + (8 * 60 * 60 * 1000));
+  const year = beijingDate.getUTCFullYear();
+  const month = beijingDate.getUTCMonth();
+  const day = beijingDate.getUTCDate();
+  
+  const jan1 = new Date(year, 0, 1);
+  const days = Math.floor((new Date(year, month, day) - jan1) / (24 * 60 * 60 * 1000));
   return Math.ceil((days + jan1.getDay() + 1) / 7);
 };
 
@@ -6536,17 +6541,21 @@ const migrateLegacyData = async () => {
 
 
 const getMonday = (date) => {
-  // 修复：使用本地日期而不是UTC
+  // 使用北京时间
   const d = new Date(date);
-  const localDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // 转换为北京时间（UTC+8）
+  const beijingTime = new Date(d.getTime() + (8 * 60 * 60 * 1000));
   
-  const day = localDate.getDay();
+  const year = beijingTime.getUTCFullYear();
+  const month = beijingTime.getUTCMonth();
+  const day = beijingTime.getUTCDate();
   
-  // 计算到本周一的差值
-  const diff = day === 0 ? -6 : 1 - day;
+  const localDate = new Date(year, month, day);
   
-  const monday = new Date(localDate);
-  monday.setDate(localDate.getDate() + diff);
+  const weekDay = localDate.getDay();
+  const diff = weekDay === 0 ? -6 : 1 - weekDay;
+  
+  const monday = new Date(year, month, day + diff);
   monday.setHours(0, 0, 0, 0);
   
   return monday;
@@ -6560,27 +6569,29 @@ const getMonday = (date) => {
 
 // 修复：生成周一到周日的日期
 const getWeekDates = (monday) => {
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      
-      const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
-      
-      weekDates.push({
-        date: `${year}-${month}-${day}`,
-        label: `周${weekDays[i]}`,
-        fullLabel: `周${weekDays[i]} (${month}/${day})`
-      });
-    }
+  const weekDates = [];
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     
+    // 使用北京时间
+    const beijingDate = new Date(d.getTime() + (8 * 60 * 60 * 1000));
+    const year = beijingDate.getUTCFullYear();
+    const month = String(beijingDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(beijingDate.getUTCDate()).padStart(2, '0');
     
-    return weekDates;
-  };
+    const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+    
+    weekDates.push({
+      date: `${year}-${month}-${day}`,
+      label: `周${weekDays[i]}`,
+      fullLabel: `周${weekDays[i]} (${month}/${day})`
+    });
+  }
+  
+  return weekDates;
+};
   
 
 
@@ -14840,7 +14851,7 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 function App() {
   // 防抖定时器
   // 在 App 组件中，其他 useState 附近添加
-
+const [silentSyncEnabled, setSilentSyncEnabled] = useState(false);
 const syncDebounceTimerRef = useRef(null);
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
@@ -15783,7 +15794,7 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-console.log('🔥 正在定义 handleRestoreData');
+
 
 // 智能合并恢复函数（静默执行，不覆盖本地最新数据）
 const handleRestoreData = useCallback(async (backupData, mode = 'merge') => {
@@ -16307,41 +16318,216 @@ const debouncedSync = useCallback(() => {
 
 
 
-// 找到 autoRestoreLatestData 函数（大约在 10100 行附近），替换为以下代码：
 
-const autoRestoreLatestData = useCallback(async () => {
-  console.log('🔍 autoRestoreLatestData 开始执行...');
+
+// 显示选择弹窗的自动恢复函数 - 不检查 token，直接显示弹窗
+const showRestoreChoiceModal = useCallback(() => {
+  const today = new Date().toISOString().split('T')[0];
+  const lastRestoreDate = localStorage.getItem('last_cloud_restore_date');
   
-  // ✅ 添加：检查今天是否已经恢复过
+  // 如果今天已经处理过，不再提示
+  if (lastRestoreDate === today) {
+    console.log('📅 今天已经处理过，跳过提示');
+    return;
+  }
+  
+  // ❌ 删除 token 检查，直接显示弹窗
+  
+  // 创建选择弹窗
+  const modalDiv = document.createElement('div');
+  modalDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+    padding: 20px;
+  `;
+  
+  const contentDiv = document.createElement('div');
+  contentDiv.style.cssText = `
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 320px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  `;
+  
+  contentDiv.innerHTML = `
+    <div style="padding: 20px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 12px;">☁️</div>
+      <h3 style="margin: 0 0 8px 0; color: #61A2Da; font-size: 18px;">云端数据同步</h3>
+      <p style="margin: 0 0 20px 0; color: #666; font-size: 13px; line-height: 1.4;">
+        是否同步云端数据？
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <button id="restore-btn" style="
+          width: 100%;
+          padding: 12px;
+          background: #61A2Da;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: bold;
+          cursor: pointer;
+        ">
+          📥 恢复云端数据
+        </button>
+        
+        <button id="upload-btn" style="
+          width: 100%;
+          padding: 12px;
+          background: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: bold;
+          cursor: pointer;
+        ">
+          📤 上传本地数据到云端
+        </button>
+        
+        <button id="skip-btn" style="
+          width: 100%;
+          padding: 10px;
+          background: transparent;
+          color: #999;
+          border: none;
+          border-radius: 12px;
+          font-size: 13px;
+          cursor: pointer;
+        ">
+          🔘 今天不再提醒
+        </button>
+      </div>
+      
+      <div style="font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 12px;">
+        提示：选择后今天不会再次提示
+      </div>
+    </div>
+  `;
+  
+  modalDiv.appendChild(contentDiv);
+  document.body.appendChild(modalDiv);
+  
+  // ========== 恢复云端数据 ==========
+  const restoreBtn = contentDiv.querySelector('#restore-btn');
+  restoreBtn.onclick = async () => {
+    document.body.removeChild(modalDiv);
+    localStorage.setItem('last_cloud_restore_date', today);
+    setSilentSyncEnabled(true);
+    
+    // 检查是否有 token
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      // 没有 token，先弹出设置弹窗
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+    
+    // 有 token，执行恢复
+    await performCloudRestore();
+  };
+  
+  // ========== 上传本地数据到云端 ==========
+  const uploadBtn = contentDiv.querySelector('#upload-btn');
+  uploadBtn.onclick = async () => {
+    document.body.removeChild(modalDiv);
+    localStorage.setItem('last_cloud_restore_date', today);
+    setSilentSyncEnabled(true);
+    
+    // 检查是否有 token
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      // 没有 token，先弹出设置弹窗
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+    
+    // 有 token，执行上传
+    const loadingToast = document.createElement('div');
+    loadingToast.textContent = '⏳ 正在上传到云端...';
+    loadingToast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #61A2Da;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 20000;
+    `;
+    document.body.appendChild(loadingToast);
+    
+    try {
+      await syncToGitHub(false);
+      loadingToast.textContent = '✅ 上传成功！';
+      setTimeout(() => loadingToast.remove(), 2000);
+    } catch (error) {
+      loadingToast.textContent = '❌ 上传失败';
+      setTimeout(() => loadingToast.remove(), 2000);
+    }
+  };
+  
+  // ========== 今天不再提醒 ==========
+  const skipBtn = contentDiv.querySelector('#skip-btn');
+  skipBtn.onclick = () => {
+    document.body.removeChild(modalDiv);
+    localStorage.setItem('last_cloud_restore_date', today);
+    setSilentSyncEnabled(true);
+    console.log('🔕 用户选择今天不再提醒');
+  };
+  
+  modalDiv.onclick = (e) => {
+    if (e.target === modalDiv) {
+      document.body.removeChild(modalDiv);
+    }
+  };
+}, [syncToGitHub]);
+
+// ✅ 在这里添加初始化检查的 useEffect
+useEffect(() => {
   const today = new Date().toISOString().split('T')[0];
   const lastRestoreDate = localStorage.getItem('last_cloud_restore_date');
   
   if (lastRestoreDate === today) {
-    console.log('📅 今天已经恢复过云端数据，跳过自动恢复');
-    return;
+    setSilentSyncEnabled(true);
   }
-  
-  // ✅ 添加：检查 token
-  const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-  console.log('📌 token 是否存在:', !!token);
-  
-  if (!token) {
-    console.log('❌ 没有GitHub Token，跳过自动恢复');
-    return;
-  }
+}, []);
 
+// 调试函数
+window.showRestoreChoice = showRestoreChoiceModal;
+window.manualSync = () => syncToGitHub(false);
+
+// 执行云端恢复的函数
+const performCloudRestore = useCallback(async () => {
   try {
-    // ✅ 添加：检查 Gist ID
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+    
     let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
-    console.log('📌 Gist ID:', targetGistId || '未设置');
     
     if (!targetGistId) {
       targetGistId = '46c9f5bb3a6a62057759293b0399a15c';
-      localStorage.setItem('github_gist_id', targetGistId);
-      localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
-      console.log('✅ 使用默认 Gist ID:', targetGistId);
     }
-
+    
     console.log('📁 开始获取 Gist 数据:', targetGistId);
     
     const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
@@ -16351,48 +16537,29 @@ const autoRestoreLatestData = useCallback(async () => {
       }
     });
     
-    console.log('📌 fetch 响应状态:', response.status);
-    
     if (!response.ok) {
-      console.log('❌ 获取 Gist 失败:', response.status);
-      return;
+      throw new Error(`获取失败: ${response.status}`);
     }
-
-    const gist = await response.json();
-    console.log('📌 Gist 获取成功，文件数:', Object.keys(gist.files).length);
     
+    const gist = await response.json();
     const content = gist.files['study-tracker-data.json']?.content;
-    console.log('📌 数据文件存在:', !!content);
     
     if (!content) {
-      console.log('❌ 未找到数据文件');
-      return;
+      throw new Error('未找到数据文件');
     }
-
-    const backupData = JSON.parse(content);
-    console.log('✅ 获取到备份数据，更新时间:', backupData.syncTime);
-    console.log('📊 云端任务天数:', Object.keys(backupData.tasksByDate || {}).length);
     
-    console.log('📌 准备调用 handleRestoreData...');
+    const backupData = JSON.parse(content);
     await handleRestoreData(backupData, 'merge');
-    // 在 await handleRestoreData(backupData, 'merge'); 后面添加
-localStorage.setItem('github_last_sync', new Date().toISOString());
-setLastSyncStatus({
-  success: true,
-  time: new Date(),
-  message: `云端合并 (${new Date().toLocaleTimeString()})`
-});
-    // ✅ 添加：记录今天已经恢复过
-    localStorage.setItem('last_cloud_restore_date', today);
-    console.log('✅ 自动恢复完成，已记录恢复日期:', today);
+    
+    alert('✅ 云端数据恢复成功！');
     
   } catch (error) {
-    console.error('❌ 自动恢复失败:', error);
+    console.error('恢复失败:', error);
+    alert('恢复失败: ' + error.message);
   }
-}, [handleRestoreData]);
+}, [handleRestoreData, setShowGitHubSyncModal]);
 
-window.autoRestoreLatestData = autoRestoreLatestData;
-window.testAutoRestore = autoRestoreLatestData;
+
 
 // 调试函数验证星期对应关系
 window.testWeekDays = () => {
@@ -16487,25 +16654,16 @@ useEffect(() => {
 
 
 
+
 useEffect(() => {
-  console.log('🔥 useEffect 执行, isInitialized=', isInitialized, 'hasAttemptedRestore=', hasAttemptedRestore.current);
+  console.log('🔥 检查是否显示云端选择弹窗');
   
-  // ✅ 临时取消条件判断，强制执行
-  // if (isInitialized && !hasAttemptedRestore.current) {
-    console.log('🔄 强制执行自动恢复');
-    // hasAttemptedRestore.current = true;
-    
-    const timer = setTimeout(() => {
-      console.log('⏰ setTimeout 回调执行');
-      autoRestoreLatestData();
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  // }
-}, []); // ✅ 依赖项改为空数组
-
-
-
+  const timer = setTimeout(() => {
+    showRestoreChoiceModal();
+  }, 2000);
+  
+  return () => clearTimeout(timer);
+}, []);
 
 // 👇 在这里添加新的 useEffect
 useEffect(() => {
@@ -18435,7 +18593,7 @@ useEffect(() => {
 // 监听数据变化，触发防抖同步
 useEffect(() => {
   if (!isInitialized) return;
-  
+  if (!silentSyncEnabled) return;  // ✅ 添加这一行：只有启用后才同步
   // 只在有数据时触发
   const hasData = Object.keys(tasksByDate).length > 0 || 
                   Object.keys(dailyRatings).length > 0 ||
@@ -20929,28 +21087,20 @@ const getCategoryTasks = useCallback((catName) => {
     getCategoryTasks(catName).reduce((sum, t) => sum + (t.timeSpent || 0), 0);
 
 
-// 切换到上一周
 const prevWeek = () => {
   const monday = new Date(currentMonday);
   monday.setDate(monday.getDate() - 7);
   
   setCurrentMonday(monday);
   
-  const year = monday.getFullYear();
-  const month = String(monday.getMonth() + 1).padStart(2, '0');
-  const day = String(monday.getDate()).padStart(2, '0');
+  // 使用北京时间获取日期字符串
+  const beijingTime = new Date(monday.getTime() + (8 * 60 * 60 * 1000));
+  const year = beijingTime.getUTCFullYear();
+  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(beijingTime.getUTCDate()).padStart(2, '0');
   const newSelectedDate = `${year}-${month}-${day}`;
   
   setSelectedDate(newSelectedDate);
-  
-  // 重置完成状态记录
-  setTimeout(() => {
-    categories.forEach(cat => {
-      const catTasks = getCategoryTasks(cat.name);
-      if (catTasks.length === 0) return;
-      lastCompletionStatus.current[cat.name] = catTasks.every(task => task.done === true);
-    });
-  }, 100);
 };
 
 const nextWeek = () => {
@@ -20960,45 +21110,34 @@ const nextWeek = () => {
     
     setCurrentMonday(newMonday);
     
-    const year = newMonday.getFullYear();
-    const month = String(newMonday.getMonth() + 1).padStart(2, '0');
-    const day = String(newMonday.getDate()).padStart(2, '0');
+    // 使用北京时间获取日期字符串
+    const beijingTime = new Date(newMonday.getTime() + (8 * 60 * 60 * 1000));
+    const year = beijingTime.getUTCFullYear();
+    const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(beijingTime.getUTCDate()).padStart(2, '0');
     const newSelectedDate = `${year}-${month}-${day}`;
     
     setSelectedDate(newSelectedDate);
-    
-    // 重置完成状态记录
-    setTimeout(() => {
-      categories.forEach(cat => {
-        const catTasks = getCategoryTasks(cat.name);
-        if (catTasks.length === 0) return;
-        lastCompletionStatus.current[cat.name] = catTasks.every(task => task.done === true);
-      });
-    }, 100);
   } catch (error) {
     console.error('切换下一周时出错:', error);
   }
 };
 
 const handleDateSelect = (selectedDate) => {
-  const localSelectedDate = new Date(
-    selectedDate.getFullYear(), 
-    selectedDate.getMonth(), 
-    selectedDate.getDate()
-  );
+  // 使用北京时间
+  const beijingDate = new Date(selectedDate.getTime() + (8 * 60 * 60 * 1000));
+  const year = beijingDate.getUTCFullYear();
+  const month = beijingDate.getUTCMonth();
+  const day = beijingDate.getUTCDate();
+  
+  const localSelectedDate = new Date(year, month, day);
   const selectedMonday = getMonday(localSelectedDate);
   
-  const year = localSelectedDate.getFullYear();
-  const month = String(localSelectedDate.getMonth() + 1).padStart(2, '0');
-  const day = String(localSelectedDate.getDate()).padStart(2, '0');
-  const newSelectedDate = `${year}-${month}-${day}`;
+  const newSelectedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   
   setCurrentMonday(selectedMonday);
   setSelectedDate(newSelectedDate);
   setShowDatePickerModal(false);
-  
-  // 🔑 切换日期时不清除任何状态，让新日期独立检测
-  // 不需要调用 checkAndTriggerConfetti
 };
 
 
@@ -21261,9 +21400,6 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
   console.warn('⚠️ 警告: 已初始化但任务数据为空');
 }
 
-if (isInitialized && todayTasks.length === 0) {
-  console.warn('⚠️ 警告: 已初始化但今日任务为空');
-}
 
 
 
