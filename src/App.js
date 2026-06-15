@@ -16032,18 +16032,44 @@ const handleRestoreData = useCallback(async (backupData, mode = 'merge') => {
 }, [tasksByDate, dailyRatings, dailyReflections, studyEndTimes, focusTaskTemplates, monthTasks, grades, subjectGuideEntries, reminderText, saveMainData]);
 
 // 生成关键数据的哈希值（用于判断是否有变化）
+// 生成关键数据的哈希值（用于判断是否有变化）
 const getDataHash = useCallback(() => {
+  // 收集所有任务的关键字段（内容、完成状态、时间等）
+  const allTasksHash = [];
+  
+  Object.entries(tasksByDate).forEach(([date, tasks]) => {
+    tasks.forEach(task => {
+      allTasksHash.push({
+        id: task.id,
+        text: task.text,
+        done: task.done,
+        timeSpent: task.timeSpent,
+        updatedAt: task.updatedAt || task.createdAt,
+        abandoned: task.abandoned,
+        note: task.note,
+        reflection: task.reflection
+      });
+    });
+  });
+  
+  // 收集所有评分和复盘
+  const reflectionsHash = Object.entries(dailyReflections).map(([date, content]) => ({
+    date,
+    content: typeof content === 'string' ? content : content?.content || '',
+    updatedAt: typeof content === 'object' ? content?.updatedAt : ''
+  }));
+  
   const keyData = {
-    tasksCount: Object.keys(tasksByDate).length,
-    tasksLastModified: Object.values(tasksByDate).flat().map(t => t.updatedAt || t.createdAt).sort().slice(-10),
-    reflectionsCount: Object.keys(dailyReflections).length,
+    tasksHash: allTasksHash,
+    reflectionsHash: reflectionsHash,
     monthTasksCount: monthTasks.length,
     focusTasksCount: focusTaskTemplates.length,
-    gradesCount: grades.length
+    gradesCount: grades.length,
+    lastModified: Date.now()
   };
+  
   return JSON.stringify(keyData);
 }, [tasksByDate, dailyReflections, monthTasks, focusTaskTemplates, grades]);
-
 // 替换整个 syncToGitHub 函数
 const syncToGitHub = useCallback(async (silent = false) => {
   const token = localStorage.getItem('github_token');
@@ -16055,15 +16081,15 @@ const syncToGitHub = useCallback(async (silent = false) => {
     return;
   }
 
-  // ✅ 检查是否有数据变化
+ // ✅ 检查是否有数据变化（手动同步时强制同步）
+if (!silent) {
   const currentHash = getDataHash();
-  if (currentHash === lastSyncHash && !silent) {
+  if (currentHash === lastSyncHash) {
     console.log('⏭️ 数据无变化，跳过同步');
-    if (!silent) {
-      alert('数据无变化，无需同步');
-    }
+    alert('数据无变化，无需同步');
     return;
   }
+}
 
   setIsSyncing(true);
   
