@@ -16081,15 +16081,16 @@ const syncToGitHub = useCallback(async (silent = false) => {
     return;
   }
 
- // ✅ 检查是否有数据变化（手动同步时强制同步）
-if (!silent) {
+// ✅ 检查是否有数据变化（静默同步时才检查，手动同步强制执行）
+if (silent) {
+  // 静默同步时才检查哈希
   const currentHash = getDataHash();
   if (currentHash === lastSyncHash) {
-    console.log('⏭️ 数据无变化，跳过同步');
-    alert('数据无变化，无需同步');
+    console.log('⏭️ 数据无变化，跳过静默同步');
     return;
   }
 }
+// 手动同步时直接继续执行，不检查
 
   setIsSyncing(true);
   
