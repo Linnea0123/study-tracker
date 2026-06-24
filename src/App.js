@@ -215,12 +215,15 @@ const [filteredHistory, setFilteredHistory] = useState([]);
     }
   }, [isVisible]);
 
-  // 保存成绩数据
   const saveGrades = (updatedGrades) => {
     setGrades(updatedGrades);
     try {
       const storageKey = `${STORAGE_KEY}_grades`;
       localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
+      // 如果有 App 传递的更新函数，调用它
+      if (onGradeUpdate) {
+        onGradeUpdate(updatedGrades);
+      }
     } catch (error) {
       console.error('保存成绩数据失败:', error);
     }
@@ -7171,6 +7174,8 @@ const DailyLogModal = ({ onClose, onCopy, dailyRating, dailyReflection, tasksByD
 
 // 在 DailyLogModal 组件中，找到 generateRealTimeContent 函数并替换：
 
+
+
 const generateRealTimeContent = useCallback(() => {
   const dayTasks = (tasksByDate && tasksByDate[selectedDate]) || [];
   
@@ -7179,7 +7184,7 @@ const generateRealTimeContent = useCallback(() => {
     return task.isRegularTask === true;
   };
   
-  // ✅ 辅助函数：获取任务的完成状态（跨日期任务只显示今天完成的）
+  // ✅ 辅助函数：获取任务的完成状态
   const getTaskCompletedStatus = (task, currentDate) => {
     if (task.abandoned) return false;
     
@@ -7213,12 +7218,60 @@ const generateRealTimeContent = useCallback(() => {
     return true;
   });
   
+  // ========== ✅ 构建层级任务列表：母任务 + 子任务缩进 ==========
+  const hierarchicalTasks = [];
+  
+  filteredTasks.forEach(task => {
+    const hasSubTasks = task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0;
+    const isCompleted = getTaskCompletedStatus(task, selectedDate);
+    
+    if (hasSubTasks) {
+      // 1. 先添加母任务（不勾选）
+      hierarchicalTasks.push({
+        ...task,
+        isCompleted: false,  // 母任务不显示勾选
+        isParentTask: true,
+        level: 0,
+        displayText: task.text,
+        subTaskCount: task.subTasks.length,
+        completedSubCount: task.subTasks.filter(st => st.done).length,
+      });
+      
+      // 2. 再添加子任务（缩进）
+      task.subTasks.forEach(subTask => {
+        hierarchicalTasks.push({
+          ...task,
+          id: `${task.id}_sub_${subTask.id || Math.random()}`,
+          text: subTask.text || task.text,
+          isCompleted: subTask.done || false,
+          isSubTask: true,
+          isParentTask: false,
+          level: 1,
+          parentTaskId: task.id,
+          parentTaskText: task.text,
+          displayText: subTask.text || task.text,
+          timeSpent: 0,
+          note: subTask.note || '',
+          originalTask: task,
+        });
+      });
+    } else {
+      // 没有子任务：正常显示
+      hierarchicalTasks.push({
+        ...task,
+        isCompleted: isCompleted,
+        isParentTask: false,
+        isSubTask: false,
+        level: 0,
+        displayText: task.text,
+      });
+    }
+  });
+  
   // 按分类和子分类组织任务
   const tasksByCategory = {};
   
-  filteredTasks.forEach(task => {
-    const isCompleted = getTaskCompletedStatus(task, selectedDate);
-    
+  hierarchicalTasks.forEach(task => {
     if (!tasksByCategory[task.category]) {
       tasksByCategory[task.category] = {
         withSubCategories: {},
@@ -7226,31 +7279,46 @@ const generateRealTimeContent = useCallback(() => {
       };
     }
     
-    const taskWithStatus = { ...task, isCompleted };
+    // 确定显示的分组
+    const groupKey = task.isSubTask ? task.subCategory || '子任务' : (task.subCategory || '');
     
     if (task.subCategory) {
       if (!tasksByCategory[task.category].withSubCategories[task.subCategory]) {
         tasksByCategory[task.category].withSubCategories[task.subCategory] = [];
       }
-      tasksByCategory[task.category].withSubCategories[task.subCategory].push(taskWithStatus);
+      tasksByCategory[task.category].withSubCategories[task.subCategory].push(task);
     } else {
-      tasksByCategory[task.category].withoutSubCategories.push(taskWithStatus);
+      tasksByCategory[task.category].withoutSubCategories.push(task);
     }
   });
   
-  // 统计
-  const totalTasksCount = filteredTasks.length;
-  const completedCount = filteredTasks.filter(t => getTaskCompletedStatus(t, selectedDate)).length;
+  // 统计（使用母任务和子任务的完成状态）
+  let totalCount = 0;
+  let completedCount = 0;
+  let abandonedCount = 0;
+  
+  hierarchicalTasks.forEach(task => {
+    // 如果是母任务，不统计（因为子任务已经统计了）
+    if (task.isParentTask) return;
+    
+    totalCount++;
+    if (task.isCompleted) {
+      completedCount++;
+    }
+    if (task.abandoned) {
+      abandonedCount++;
+    }
+  });
   
   const totalTime = filteredTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
   const totalMinutes = Math.floor(totalTime / 60);
   
   const newStats = {
     completedTasks: completedCount,
-    incompleteTasks: totalTasksCount - completedCount,
-    abandonedTasks: filteredTasks.filter(t => t.abandoned).length,
-    totalTasks: totalTasksCount,
-    completionRate: totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0,
+    incompleteTasks: totalCount - completedCount - abandonedCount,
+    abandonedTasks: abandonedCount,
+    totalTasks: totalCount,
+    completionRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
     totalMinutes: totalMinutes,
     averagePerTask: completedCount > 0 ? Math.round(totalMinutes / completedCount) : 0,
     categories: Object.keys(tasksByCategory).length
@@ -7482,102 +7550,165 @@ const { tasksByCategory, newStats } = currentContent || { tasksByCategory: {}, n
         </div>
         
         {/* 任务列表 */}
-        <div style={{
-          backgroundColor: '#f8f9fa',
-          padding: 15,
-          borderRadius: 8,
-          marginBottom: 15,
-          fontSize: 12,
-          lineHeight: 1.4,
-          textAlign: 'left',
-          flex: 1,
-          minHeight: 'auto'
-        }}>
-          {Object.entries(tasksByCategory).map(([category, categoryData]) => (
-            <div key={category} style={{ marginBottom: '12px' }}>
-              <div style={{ fontWeight: 'bold', color: '#1a73e8', marginBottom: '6px' }}>{category}</div>
-              
-              {/* 无子分类的任务 */}
-              {categoryData.withoutSubCategories.map((task, idx) => {
-  const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-  const timeText = minutes > 0 ? `【${minutes}m】` : "";
-  
-  return task.isCompleted ? (
-    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '12px' }}>
-      {/* 复选框容器 - 固定宽度，与第一行对齐 */}
-      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-        </svg>
-      </div>
-      {/* 文字容器 - 允许换行 */}
-      <div style={{ flex: 1, fontSize: '12px', color: '#333', lineHeight: '1.4' }}>
-        {task.text}
-        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
-      </div>
-    </div>
-  ) : (
-    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '12px' }}>
-      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-          <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-        </svg>
-      </div>
-      <div style={{ flex: 1, fontSize: '12px', color: '#999', lineHeight: '1.4' }}>
-        {task.text}
-        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
-      </div>
-    </div>
-  );
-})}
-              
-              {/* 有子分类的任务 */}
-              {Object.entries(categoryData.withSubCategories).map(([subCategory, subTasks]) => (
-                <div key={subCategory} style={{ marginLeft: '12px', marginTop: '4px' }}>
-                  <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>- {subCategory}</div>
-                  {subTasks.map((task, idx) => {
-  const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
-  const timeText = minutes > 0 ? `【${minutes}m】` : "";
-  
-  return task.isCompleted ? (
-    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
-      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-        </svg>
-      </div>
-      <div style={{ flex: 1, fontSize: '12px', color: '#333', lineHeight: '1.4' }}>
-        {task.text}
-        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
-      </div>
-    </div>
-  ) : (
-    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '2px', marginLeft: '16px' }}>
-      <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-          <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
-        </svg>
-      </div>
-      <div style={{ flex: 1, fontSize: '12px', color: '#999', lineHeight: '1.4' }}>
-        {task.text}
-        {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
-      </div>
-    </div>
-  );
-})}
+        
+{/* 任务列表 */}
+<div style={{
+  backgroundColor: '#f8f9fa',
+  padding: 15,
+  borderRadius: 8,
+  marginBottom: 15,
+  fontSize: 12,
+  lineHeight: 1.4,
+  textAlign: 'left',
+  flex: 1,
+  minHeight: 'auto'
+}}>
+  {Object.entries(tasksByCategory).map(([category, categoryData]) => (
+    <div key={category} style={{ marginBottom: '12px' }}>
+      <div style={{ fontWeight: 'bold', color: '#1a73e8', marginBottom: '6px' }}>{category}</div>
+      
+      {/* 无子分类的任务 */}
+      {categoryData.withoutSubCategories.map((task, idx) => {
+        const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+        const timeText = minutes > 0 ? `【${minutes}m】` : "";
+        
+        // 判断是否是子任务（缩进显示）
+        if (task.isSubTask) {
+          return (
+            <div key={task.id} style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '6px', 
+              marginBottom: '2px', 
+              marginLeft: '32px',  // 缩进
+              paddingLeft: '8px',
+              borderLeft: '2px solid #e0e0e0'
+            }}>
+              <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+                {task.isCompleted ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                    <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                  </svg>
+                )}
+              </div>
+              <div style={{ flex: 1, fontSize: '12px', color: task.isCompleted ? '#333' : '#999', lineHeight: '1.4' }}>
+                {task.displayText || task.text}
+                {task.note && <span style={{ fontSize: '10px', color: '#666', marginLeft: '4px' }}>（{task.note}）</span>}
+              </div>
+            </div>
+          );
+        }
+        
+        // 母任务和普通任务一样显示 ✅ 或 ❌
+        return (
+          <div key={task.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '12px' }}>
+            <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+              {task.isCompleted ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                  <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                </svg>
+              )}
+            </div>
+            <div style={{ flex: 1, fontSize: '12px', color: task.isCompleted ? '#333' : '#999', lineHeight: '1.4' }}>
+              {task.displayText || task.text}
+              {task.isParentTask && (
+                <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>
+                  ({task.completedSubCount || 0}/{task.subTaskCount || 0})
+                </span>
+              )}
+              {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+            </div>
+          </div>
+        );
+      })}
+      
+      {/* 有子分类的任务 */}
+      {Object.entries(categoryData.withSubCategories).map(([subCategory, subTasks]) => (
+        <div key={subCategory} style={{ marginLeft: '12px', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>- {subCategory}</div>
+          {subTasks.map((task) => {
+            const minutes = task.timeSpent ? Math.floor(task.timeSpent / 60) : 0;
+            const timeText = minutes > 0 ? `【${minutes}m】` : "";
+            
+            if (task.isSubTask) {
+              return (
+                <div key={task.id} style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-start', 
+                  gap: '6px', 
+                  marginBottom: '2px', 
+                  marginLeft: '36px',  // 子任务缩进
+                  paddingLeft: '8px',
+                  borderLeft: '2px solid #e0e0e0'
+                }}>
+                  <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+                    {task.isCompleted ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                        <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                      </svg>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, fontSize: '12px', color: task.isCompleted ? '#333' : '#999', lineHeight: '1.4' }}>
+                    {task.displayText || task.text}
+                  </div>
                 </div>
-              ))}
-            </div>
-          ))}
-          
-          {Object.keys(tasksByCategory).length === 0 && (
-            <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
-              暂无学习任务
-            </div>
-          )}
+              );
+            }
+            
+            // 母任务和普通任务一样显示 ✅ 或 ❌
+            return (
+              <div key={task.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px', marginLeft: '16px' }}>
+                <div style={{ flexShrink: 0, width: '14px', height: '14px', marginTop: '2px' }}>
+                  {task.isCompleted ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 12 L10 18 L20 6" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <line x1="4" y1="4" x2="20" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                      <line x1="20" y1="4" x2="4" y2="20" stroke="#f44336" strokeWidth="3" strokeLinecap="square"/>
+                    </svg>
+                  )}
+                </div>
+                <div style={{ flex: 1, fontSize: '12px', color: task.isCompleted ? '#333' : '#999', lineHeight: '1.4' }}>
+                  {task.displayText || task.text}
+                  {task.isParentTask && (
+                    <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>
+                      ({task.completedSubCount || 0}/{task.subTaskCount || 0})
+                    </span>
+                  )}
+                  {timeText && <span style={{ fontSize: '10px', color: '#999', marginLeft: '6px' }}>{timeText}</span>}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      ))}
+    </div>
+  ))}
+  
+  {Object.keys(tasksByCategory).length === 0 && (
+    <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+      暂无学习任务
+    </div>
+  )}
+</div>
+
         
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           <button
@@ -10723,37 +10854,40 @@ const abandonReasons = [
               任务
             </label>
             <textarea
-              value={editData.text}
-              onChange={(e) => {
-                setEditData({ ...editData, text: e.target.value });
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-              placeholder="请输入任务内容..."
-              style={{
-                width: '100%',
-                padding: '6px 10px',  // 从 8px 12px 减小到 6px 10px
-                border: '1px solid #e0e0e0',  // 从 2px 减小到 1px
-                borderRadius: 8,
-                fontSize: 13,  // 从 14px 减小到 13px
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                resize: 'none',
-                outline: 'none',
-                lineHeight: '1.4',
-                overflow: 'hidden'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#1a73e8';
-                e.target.style.backgroundColor = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e0e0e0';
-                e.target.style.backgroundColor = '#fafafa';
-              }}
-              rows="1"
-            />
+  value={editData.text}
+  onChange={(e) => {
+    setEditData({ ...editData, text: e.target.value });
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  }}
+  // 👇 添加这个 onFocus 来实现点击自动展开
+  onFocus={(e) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+    e.target.style.borderColor = '#1a73e8';
+    e.target.style.backgroundColor = '#fff';
+  }}
+  onBlur={(e) => {
+    e.target.style.borderColor = '#e0e0e0';
+    e.target.style.backgroundColor = '#fafafa';
+  }}
+  placeholder="请输入任务内容..."
+  style={{
+    width: '100%',
+    padding: '6px 10px',
+    border: '1px solid #e0e0e0',
+    borderRadius: 8,
+    fontSize: 13,
+    backgroundColor: '#fafafa',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    resize: 'none',
+    outline: 'none',
+    lineHeight: '1.4',
+    overflow: 'hidden'
+  }}
+  rows="1"
+/>
           </div>
 
           {/* 备注 */}
@@ -10768,29 +10902,40 @@ const abandonReasons = [
               备注
             </label>
             <textarea
-              value={editData.note}
-              onChange={(e) => {
-                setEditData({ ...editData, note: e.target.value });
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-              placeholder=""
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                border: '1px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 13,
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                resize: 'none',
-                outline: 'none',
-                lineHeight: '1.4',
-                overflow: 'hidden'
-              }}
-              rows="1"
-            />
+  value={editData.note}
+  onChange={(e) => {
+    setEditData({ ...editData, note: e.target.value });
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  }}
+  // 👇 添加这个 onFocus
+  onFocus={(e) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+    e.target.style.borderColor = '#1a73e8';
+    e.target.style.backgroundColor = '#fff';
+  }}
+  onBlur={(e) => {
+    e.target.style.borderColor = '#e0e0e0';
+    e.target.style.backgroundColor = '#fafafa';
+  }}
+  placeholder=""
+  style={{
+    width: '100%',
+    padding: '6px 10px',
+    border: '1px solid #e0e0e0',
+    borderRadius: 8,
+    fontSize: 13,
+    backgroundColor: '#fafafa',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    resize: 'none',
+    outline: 'none',
+    lineHeight: '1.4',
+    overflow: 'hidden'
+  }}
+  rows="1"
+/>
           </div>
 
           {/* 感想 */}
@@ -10805,29 +10950,40 @@ const abandonReasons = [
               感想
             </label>
             <textarea
-              value={editData.reflection}
-              onChange={(e) => {
-                setEditData({ ...editData, reflection: e.target.value });
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-              placeholder=""
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                border: '1px solid #e0e0e0',
-                borderRadius: 8,
-                fontSize: 13,
-                backgroundColor: '#fafafa',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                resize: 'none',
-                outline: 'none',
-                lineHeight: '1.4',
-                overflow: 'hidden'
-              }}
-              rows="1"
-            />
+  value={editData.reflection}
+  onChange={(e) => {
+    setEditData({ ...editData, reflection: e.target.value });
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  }}
+  // 👇 添加这个 onFocus
+  onFocus={(e) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+    e.target.style.borderColor = '#1a73e8';
+    e.target.style.backgroundColor = '#fff';
+  }}
+  onBlur={(e) => {
+    e.target.style.borderColor = '#e0e0e0';
+    e.target.style.backgroundColor = '#fafafa';
+  }}
+  placeholder=""
+  style={{
+    width: '100%',
+    padding: '6px 10px',
+    border: '1px solid #e0e0e0',
+    borderRadius: 8,
+    fontSize: 13,
+    backgroundColor: '#fafafa',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    resize: 'none',
+    outline: 'none',
+    lineHeight: '1.4',
+    overflow: 'hidden'
+  }}
+  rows="1"
+/>
           </div>
 
           {/* 类别和子类别在同一行 - 紧凑版 */}
@@ -14866,6 +15022,11 @@ const [grades, setGrades] = useState(() => {
   return saved ? JSON.parse(saved) : [];
 });
 
+// 添加这个函数来更新成绩
+const handleGradeUpdate = useCallback((newGrades) => {
+  setGrades(newGrades);
+  localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(newGrades));
+}, []);
 
   const [lastSyncHash, setLastSyncHash] = useState(() => {
     return localStorage.getItem('last_sync_hash') || '';
@@ -19060,16 +19221,51 @@ const generateStatsData = () => {
   weekDates.forEach(day => {
     const dayTasks = tasksByDate[day.date] || [];
     
-    // 排除本周任务和未完成的常规任务
-   // 筛选有效任务（排除本周任务和未完成的常规任务）
+
+
+
+// 筛选有效任务（排除本周任务和未完成的常规任务）
 const learningTasks = dayTasks.filter(task => {
   if (task.category === "本周任务") return false;
   if (task.isRegularTask && !task.done) return false;
-  return true;  // ✅ 放弃的任务保留，计入总数
+  return true;
 });
 
-let totalCount = learningTasks.length;  // ✅ 放弃的任务计入总数
-let completedCount = learningTasks.filter(task => task.done === true && task.abandoned !== true).length;  // ✅ 放弃的不算完成
+// ✅ 调试日志
+console.log('筛选后任务数量:', learningTasks.length);
+learningTasks.forEach(task => {
+  console.log('任务:', task.text, '有子任务?', task.subTasks && task.subTasks.length > 0, '子任务列表:', task.subTasks);
+});
+
+// ✅ 新的统计逻辑：有子任务的统计子任务，没子任务的统计母任务
+let totalCount = 0;
+let completedCount = 0;
+let abandonedCount = 0;
+
+learningTasks.forEach(task => {
+  const hasSubTasks = task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0;
+  
+  if (hasSubTasks) {
+    // 有子任务：统计子任务（母任务本身不计入）
+    task.subTasks.forEach(subTask => {
+      totalCount++;
+      if (subTask.done) {
+        completedCount++;
+      }
+    });
+  } else {
+    // 没有子任务：统计母任务本身
+    totalCount++;
+    if (task.done === true && task.abandoned !== true) {
+      completedCount++;
+    }
+    if (task.abandoned) {
+      abandonedCount++;
+    }
+  }
+});
+
+console.log('统计结果: 总=' + totalCount + ', 已完成=' + completedCount);
 
 // 根据完成情况设置颜色
 let numberColor = "#666";
@@ -19085,9 +19281,10 @@ if (totalCount === 0) {
   numberColor = "#ff9800";  // 橙色 - 部分完成
   dotColor = "#ff9800";
 } else {
-  numberColor = "#f44336";  // 红色 - 未完成（包括只有放弃任务的情况）
+  numberColor = "#f44336";  // 红色 - 未完成
   dotColor = "#f44336";
 }
+
     
     let dayTotalTime = 0;
     let dayCompletedTasks = 0;
@@ -21331,6 +21528,7 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
       key={Date.now()}  // 👈 添加这行，每次打开都重新创建组件
         onClose={() => setShowGradeModal(false)} 
         isVisible={showGradeModal}
+        onGradeUpdate={handleGradeUpdate}
       />
     )}
 
@@ -22014,6 +22212,10 @@ onSave={(newConfig) => {
   const isSelected = dateStr === selectedDate;
   const dayTasks = tasksByDate[dateStr] || [];
   
+
+  // ✅ 添加调试：查看原始数据
+  console.log('=== 调试日期:', dateStr, '===');
+  console.log('原始任务数量:', dayTasks.length);
   // 检查是否有跨日期任务（用于显示"休"字）
   const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
   
@@ -22032,91 +22234,75 @@ onSave={(newConfig) => {
     }
   };
   
+ 
   // 筛选有效任务（排除本周任务和未完成的常规任务）
-  const learningTasks = dayTasks.filter(task => {
-    if (task.category === "本周任务") return false;
-    if (task.isRegularTask && !task.done) return false;
-    return true;
-  });
+const learningTasks = dayTasks.filter(task => {
+  if (task.category === "本周任务") return false;
+  if (task.isRegularTask && !task.done) return false;
+  return true;
+});
+
+// ✅ 调试：查看筛选后的任务
+console.log('筛选后任务数量:', learningTasks.length);
+learningTasks.forEach(task => {
+  console.log('任务:', task.text, '有子任务?', task.subTasks && task.subTasks.length > 0, '子任务列表:', task.subTasks);
+});
+
+console.log('日期:', dateStr);
+
+// ✅ 新的统计逻辑：有子任务的统计子任务，没子任务的统计母任务
+let totalCount = 0;
+let completedCount = 0;
+let abandonedCount = 0;
+
+learningTasks.forEach(task => {
+  const hasSubTasks = task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0;
   
-  // 统计完成数量（跨日期任务：任意一天完成就算完成）
-  let totalCount = 0;
-  let completedCount = 0;
-  let abandonedCount = 0;
-  
-  // 记录已经统计过的跨日期任务ID（避免重复统计）
-  const countedCrossDateIds = new Set();
-  
-  learningTasks.forEach(task => {
-    // 放弃的任务
-    if (task.abandoned) {
-      abandonedCount++;
+  if (hasSubTasks) {
+    // 有子任务：统计子任务（母任务本身不计入）
+    task.subTasks.forEach(subTask => {
       totalCount++;
-      return;
-    }
-    
-    // 跨日期任务：检查是否有任意一天完成
-    if (task.crossDateId) {
-      totalCount++;
-      
-      // 如果这个跨日期任务ID还没统计过
-      if (!countedCrossDateIds.has(task.crossDateId)) {
-        countedCrossDateIds.add(task.crossDateId);
-        
-        // 查找这个跨日期任务的所有实例，看是否有任何一天完成了
-        let isAnyDateCompleted = false;
-        
-        // 遍历所有日期，查找相同 crossDateId 的任务
-        Object.keys(tasksByDate).forEach(date => {
-          const tasksOnDate = tasksByDate[date] || [];
-          const hasCompleted = tasksOnDate.some(t => 
-            t.crossDateId === task.crossDateId && 
-            t.done === true &&
-            t.abandoned !== true
-          );
-          if (hasCompleted) {
-            isAnyDateCompleted = true;
-          }
-        });
-        
-        if (isAnyDateCompleted) {
-          completedCount++;
-        }
+      if (subTask.done) {
+        completedCount++;
       }
-      return;
-    }
-    
-    // 普通任务
+    });
+  } else {
+    // 没有子任务：统计母任务本身
     totalCount++;
-    if (task.done === true) {
+    if (task.done === true && task.abandoned !== true) {
       completedCount++;
     }
-  });
-  
-  // 计算未完成数量（包括未完成的跨日期任务）
-  const incompleteCount = totalCount - completedCount - abandonedCount;
-  
-  // 设置颜色
-  let numberColor = "#666";
-  let dotColor = "#666";
-  
-  if (totalCount === 0) {
-    numberColor = "transparent";
-    dotColor = "transparent";
-  } else if (incompleteCount > 0) {
-    // 有未完成的任务 → 红色
-    numberColor = "#f44336";
-    dotColor = "#f44336";
-  } else if (completedCount === totalCount) {
-    // 全部完成 → 绿色
-    numberColor = "#4caf50";
-    dotColor = "#4caf50";
-  } else {
-    // 没有未完成，但有放弃 → 灰色
-    numberColor = "#999";
-    dotColor = "#999";
+    if (task.abandoned) {
+      abandonedCount++;
+    }
   }
-  
+});
+
+console.log('统计结果: 总=' + totalCount + ', 已完成=' + completedCount + ', 放弃=' + abandonedCount);
+
+// 计算未完成数量
+const incompleteCount = totalCount - completedCount - abandonedCount;
+
+// 设置颜色
+let numberColor = "#666";
+let dotColor = "#666";
+
+if (totalCount === 0) {
+  numberColor = "transparent";
+  dotColor = "transparent";
+} else if (incompleteCount > 0) {
+  // 有未完成的任务 → 红色
+  numberColor = "#f44336";
+  dotColor = "#f44336";
+} else if (completedCount === totalCount) {
+  // 全部完成 → 绿色
+  numberColor = "#4caf50";
+  dotColor = "#4caf50";
+} else {
+  // 没有未完成，但有放弃 → 灰色
+  numberColor = "#999";
+  dotColor = "#999";
+}
   // 显示数字（有任务时才显示）
   const showNumber = totalCount > 0;
   
