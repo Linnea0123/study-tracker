@@ -11230,30 +11230,52 @@ const abandonReasons = [
           当前值
         </span>
         <input
-          type="number"
-          value={editData.progress?.current || ''}
-          onChange={(e) =>
-            setEditData({
-              ...editData,
-              progress: {
-                ...editData.progress,
-                current: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-              },
-            })
-          }
-          style={{
-            flex: 1,
-            minWidth: 0,  // 允许输入框收缩
-            height: 32,
-            padding: '0 6px',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            fontSize: 13,
-            textAlign: 'left',
-            backgroundColor: '#fff',
-            boxSizing: 'border-box',
-          }}
-        />
+  type="number"
+  value={editData.progress?.current ?? ''}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (value === '') {
+      setEditData({
+        ...editData,
+        progress: {
+          ...editData.progress,
+          current: 0,
+        },
+      });
+      return;
+    }
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      const target = editData.progress?.target || 0;
+      const finalValue = target > 0 ? Math.min(numValue, target) : numValue;
+      setEditData({
+        ...editData,
+        progress: {
+          ...editData.progress,
+          current: finalValue,
+        },
+      });
+    }
+  }}
+  onFocus={(e) => {
+    e.target.select();
+  }}
+  min="0"
+  step="1"
+  style={{
+    flex: 1,
+    minWidth: 0,
+    height: 32,
+    padding: '0 6px',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    fontSize: 13,
+    textAlign: 'left',
+    backgroundColor: '#fff',
+    boxSizing: 'border-box',
+    outline: 'none',
+  }}
+/>
       </div>
     </div>
 
@@ -15015,6 +15037,17 @@ const [enableProgress, setEnableProgress] = useState(false);
 // 在 App 组件中，其他 useState 附近添加
 const [showSearchModal, setShowSearchModal] = useState(false);
 // 编辑关注任务的进度
+// 模式切换：'semester' 或 'summer'
+const [appMode, setAppMode] = useState(() => {
+  const saved = localStorage.getItem('app_mode');
+  return saved || 'semester';
+});
+
+useEffect(() => {
+  localStorage.setItem('app_mode', appMode);
+}, [appMode]);
+
+
 
 // ========== 成绩记录相关状态 ==========
 const [grades, setGrades] = useState(() => {
@@ -19134,30 +19167,64 @@ useEffect(() => {
 
   // 获取本周任务
   // 获取本周任务
+// 获取本周任务
 const getWeekTasks = () => {
-  const allTasks = Object.values(tasksByDate).flat();
-  const currentWeekStart = currentMonday.toISOString();
+  const monday = new Date(currentMonday);
+  monday.setHours(0, 0, 0, 0);
   
-  // 只获取属于当前周的任务
-  const weekTasks = allTasks.filter(task => 
-    task.category === "本周任务" && 
-    task.weekStart === currentWeekStart // 只显示当前周的任务
-  );
-
-  // 去重（同一个任务可能出现在多天）
-  const uniqueTasks = [];
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    weekDates.push(dateStr);
+  }
+  
+  // ✅ 修正：同时支持纯日期和 ISO 格式
+  const currentWeekStart = monday.toISOString().split('T')[0];
+  
+  console.log('📅 getWeekTasks - 本周日期:', weekDates);
+  console.log('📅 getWeekTasks - 当前周标识:', currentWeekStart);
+  
+  const allWeekTasks = [];
   const seenTexts = new Set();
-
-  weekTasks.forEach(task => {
-    if (!seenTexts.has(task.text)) {
-      seenTexts.add(task.text);
-      uniqueTasks.push(task);
-    }
+  
+  Object.entries(tasksByDate).forEach(([date, tasks]) => {
+    tasks.forEach(task => {
+      if (task.isWeekTask === true) {
+        // ✅ 关键修复：同时匹配两种格式
+        let shouldInclude = false;
+        
+        // 如果 task.weekStart 存在
+        if (task.weekStart) {
+          // 提取纯日期部分（去掉时间）
+          const taskWeekStart = task.weekStart.split('T')[0];
+          // 比较纯日期
+          if (taskWeekStart === currentWeekStart) {
+            shouldInclude = true;
+          }
+        }
+        
+        // 如果任务在当前周的日期中，也包含（兼容没有 weekStart 的情况）
+        if (!shouldInclude && weekDates.includes(date)) {
+          shouldInclude = true;
+        }
+        
+        if (shouldInclude) {
+          const key = `${task.text}`;
+          if (!seenTexts.has(key)) {
+            seenTexts.add(key);
+            allWeekTasks.push(task);
+            console.log(`✅ 找到本周任务: ${task.text}, weekStart: ${task.weekStart}, 日期: ${date}`);
+          }
+        }
+      }
+    });
   });
-
-  return uniqueTasks;
+  
+  console.log(`📊 getWeekTasks - 找到 ${allWeekTasks.length} 个本周任务`);
+  return allWeekTasks;
 };
-
   const weekTasks = getWeekTasks();
   const isWeekComplete = weekTasks.length > 0 && weekTasks.every(task => task.done);  
   const pinnedTasks = useMemo(() => {
@@ -19223,11 +19290,11 @@ const generateStatsData = () => {
     
 
 
-
-// 筛选有效任务（排除本周任务和未完成的常规任务）
 const learningTasks = dayTasks.filter(task => {
   if (task.category === "本周任务") return false;
   if (task.isRegularTask && !task.done) return false;
+  // 暑假模式隐藏校内
+  if (appMode === 'summer' && task.category === '校内') return false;
   return true;
 });
 
@@ -19589,37 +19656,409 @@ const startEditTask = (task) => {
 
 
 
-// 直接使用模板添加任务（带提示）
-const handleUseTemplate = (template, templateIndex) => {
-  const newTask = {
-    id: Date.now().toString(),
-    text: template.text || template.content || '',
-    category: template.category || '校内',
-    subCategory: template.subCategory || '',
-    done: false,
-    timeSpent: 0,
-    subTasks: template.subTasks || [],
-    note: template.note || "",
-    reflection: "",
-    image: template.image || null,
-    scheduledTime: template.scheduledTime || "",
-    pinned: false,
-    tags: template.tags || [],
-    progress: template.progress ? { ...template.progress } : {
-      initial: 0,
-      current: 0,
-      target: 0,
-      unit: "%"
-    },
-    reminderTime: null,
-    createdAt: new Date().toISOString(),
-    templateId: template.id || `template_${templateIndex}`,  // ✅ 保存模板ID
-    templateText: template.text
+const applySummerTemplate = () => {
+  const modalDiv = document.createElement('div');
+  modalDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+    padding: 10px;
+  `;
+
+  const contentDiv = document.createElement('div');
+  contentDiv.style.cssText = `
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 450px;
+    max-height: 80vh;
+    overflow: auto;
+  `;
+
+  contentDiv.innerHTML = `
+    <h3 style="text-align: center; margin: 0 0 16px 0; color: #61A2Da; font-size: 16px;">
+      ☀️ 生成暑假任务
+    </h3>
+    <p style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.6;">
+      <b>格式说明：</b><br/>
+      • 分类名单独一行（语文、数学、英语、运动）<br/>
+      • 有缩进（空格或Tab开头）的是子任务<br/>
+      • 没有缩进的是母任务<br/>
+      • <b>本周任务</b> 单独一行，任务后加 #目标分类<br/>
+      • 示例：古诗2首 #语文
+    </p>
+    <textarea id="summer-tasks-input" style="
+      width: 100%;
+      min-height: 300px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      white-space: pre;
+    ">本周任务
+古诗2首 #语文
+练字3张 #语文
+看图写话1篇 #语文
+
+语文
+《小蝌蚪找妈妈》
+    预习
+    生字书写
+古诗复习
+古诗新学
+
+数学
+一 分类与整理
+    洋葱学园
+    实验班
+计算练习
+
+英语
+RAZ 朗读 2篇
+Bluey 2集
+单词 5个
+
+运动
+长高运动
+跳绳3组</textarea>
+    <div style="display: flex; gap: 10px;">
+      <button id="cancel-btn" style="
+        flex: 1;
+        padding: 10px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+      ">取消</button>
+      <button id="confirm-btn" style="
+        flex: 1;
+        padding: 10px;
+        background: #FF9800;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+      ">生成任务</button>
+    </div>
+  `;
+
+  modalDiv.appendChild(contentDiv);
+  document.body.appendChild(modalDiv);
+
+  contentDiv.querySelector('#cancel-btn').onclick = () => {
+    document.body.removeChild(modalDiv);
   };
-  // ... 其余代码
+
+  modalDiv.onclick = (e) => {
+    if (e.target === modalDiv) {
+      document.body.removeChild(modalDiv);
+    }
+  };
+
+  contentDiv.querySelector('#confirm-btn').onclick = () => {
+    const input = contentDiv.querySelector('#summer-tasks-input');
+    const lines = input.value.split('\n');
+    
+    const validCategories = ['语文', '数学', '英语', '运动', '科学'];
+    let currentCategory = null;
+    let isWeekTaskSection = false;
+    const taskGroups = [];
+    const weekTasks = [];
+    let currentParent = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      
+      if (!trimmed) continue;
+      
+      // 检查是否是"本周任务"区域
+      if (trimmed === '本周任务' || trimmed.includes('本周任务')) {
+        isWeekTaskSection = true;
+        currentCategory = null;
+        currentParent = null;
+        console.log('📂 进入本周任务区域');
+        continue;
+      }
+      
+      // 如果是分类行，退出本周任务区域
+      if (validCategories.includes(trimmed)) {
+        isWeekTaskSection = false;
+        currentCategory = trimmed;
+        currentParent = null;
+        console.log(`📂 切换到分类: ${currentCategory}（退出本周任务区域）`);
+        continue;
+      }
+
+      // 如果在本周任务区域
+      if (isWeekTaskSection) {
+        const hashIndex = trimmed.indexOf('#');
+        let taskText = trimmed;
+        let targetCategory = '校内';
+        if (hashIndex !== -1) {
+          taskText = trimmed.substring(0, hashIndex).trim();
+          targetCategory = trimmed.substring(hashIndex + 1).trim();
+          if (!validCategories.includes(targetCategory)) {
+            targetCategory = '校内';
+          }
+        }
+        if (taskText) {
+          weekTasks.push({
+            text: taskText,
+            targetCategory: targetCategory
+          });
+          console.log(`  📌 本周任务: ${taskText} -> ${targetCategory}`);
+        }
+        continue;
+      }
+
+      // 非本周任务区域
+      if (!currentCategory) {
+        console.log(`⚠️ 跳过无分类的行: ${trimmed}`);
+        continue;
+      }
+
+      const indentMatch = line.match(/^[\s\t]+/);
+      const hasIndent = indentMatch !== null;
+
+      if (hasIndent) {
+        if (currentParent) {
+          currentParent.subTasks.push(trimmed);
+          console.log(`  📌 子任务: ${trimmed} -> ${currentParent.text}`);
+        } else {
+          const defaultParent = {
+            text: trimmed,
+            category: currentCategory,
+            subTasks: []
+          };
+          taskGroups.push(defaultParent);
+          currentParent = defaultParent;
+          console.log(`  📌 默认母任务: ${trimmed}`);
+        }
+      } else {
+        const newTask = {
+          text: trimmed,
+          category: currentCategory,
+          subTasks: []
+        };
+        taskGroups.push(newTask);
+        currentParent = newTask;
+        console.log(`  📌 母任务: ${trimmed} (${currentCategory})`);
+      }
+    }
+
+    console.log('📝 本周任务列表:', weekTasks);
+    console.log('📝 分类任务列表:', taskGroups);
+
+    if (taskGroups.length === 0 && weekTasks.length === 0) {
+      alert('没有有效的任务，请检查格式');
+      return;
+    }
+
+    const today = selectedDate;
+    const currentTasks = tasksByDate[today] || [];
+    const existingTexts = new Set(currentTasks.map(t => t.text));
+
+    const newTasksToAdd = [];
+    let totalSubTasks = 0;
+
+    // 处理分类任务
+    taskGroups.forEach(task => {
+      if (existingTexts.has(task.text)) {
+        console.log(`⏭️ 跳过已存在: ${task.text}`);
+        return;
+      }
+
+      totalSubTasks += task.subTasks.length;
+
+      const newTask = {
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+        text: task.text,
+        category: task.category,
+        subCategory: '',
+        done: false,
+        timeSpent: 0,
+        timeRecords: [],
+        subTasks: task.subTasks.map(st => ({
+          text: st,
+          done: false
+        })),
+        note: '',
+        reflection: '',
+        image: null,
+        scheduledTime: '',
+        pinned: false,
+        tags: [],
+        progress: {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      newTasksToAdd.push(newTask);
+      existingTexts.add(task.text);
+    });
+
+    // ========== ✅ 关键修复：使用与 handleAddWeekTask 完全一致的方式 ==========
+    // 1. 获取当前周的周一（使用 currentMonday）
+    const monday = new Date(currentMonday);
+    monday.setHours(0, 0, 0, 0);
+    const weekStart = monday.toISOString().split('T')[0];
+    
+    // 2. 生成本周7天的日期列表
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      weekDates.push(dateStr);
+    }
+    
+    console.log('📅 本周一（使用 currentMonday）:', monday.toLocaleString());
+    console.log('📅 weekStart:', weekStart);
+    console.log('📅 本周日期列表:', weekDates);
+
+    // ========== ✅ 处理本周任务：使用与 handleAddWeekTask 完全相同的方式 ==========
+    weekTasks.forEach(task => {
+      // 使用与 handleAddWeekTask 相同的去重逻辑
+      // 检查是否在所有日期中已存在
+      let alreadyExists = false;
+      for (const dateStr of weekDates) {
+        const dayTasks = tasksByDate[dateStr] || [];
+        const exists = dayTasks.some(t => 
+          t.isWeekTask && 
+          t.text === task.text && 
+          t.weekStart === weekStart
+        );
+        if (exists) {
+          alreadyExists = true;
+          break;
+        }
+      }
+      
+      if (alreadyExists) {
+        console.log(`⏭️ 本周任务已存在，跳过: ${task.text}`);
+        return;
+      }
+
+      // ✅ 为每一天创建本周任务（与 handleAddWeekTask 完全一致）
+      const taskId = Date.now().toString();
+      weekDates.forEach(dateStr => {
+        const newTask = {
+          id: `${taskId}_${dateStr}`,
+          text: task.text,
+          category: "本周任务",
+          subCategory: '',
+          done: false,
+          timeSpent: 0,
+          timeRecords: [],
+          subTasks: [],
+          note: "",
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          reminderTime: null,
+          isWeekTask: true,
+          weekStart: weekStart,
+          targetCategory: task.targetCategory || '校内',
+          targetSubCategory: ''
+        };
+        
+        newTasksToAdd.push(newTask);
+        console.log(`✅ 添加本周任务: ${task.text} -> ${dateStr} (weekStart: ${weekStart})`);
+      });
+    });
+
+    if (newTasksToAdd.length === 0) {
+      alert('今天的任务已经全部生成了！');
+      document.body.removeChild(modalDiv);
+      return;
+    }
+
+    // ✅ 按日期分组添加任务
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      
+      newTasksToAdd.forEach(task => {
+        let targetDate = today;
+        
+        // 如果是本周任务，从ID中提取日期
+        if (task.isWeekTask && task.id) {
+          const parts = task.id.split('_');
+          for (const part of parts) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(part)) {
+              targetDate = part;
+              break;
+            }
+          }
+        }
+        
+        if (!newTasksByDate[targetDate]) {
+          newTasksByDate[targetDate] = [];
+        }
+        newTasksByDate[targetDate].push(task);
+      });
+      
+      console.log('📦 更新后的数据:', Object.keys(newTasksByDate));
+      return newTasksByDate;
+    });
+
+    // 强制刷新
+    setTimeout(() => {
+      setTasksByDate(prev => ({ ...prev }));
+    }, 100);
+
+    const toast = document.createElement('div');
+    toast.textContent = `✅ 已生成 ${newTasksToAdd.length} 个任务（含 ${totalSubTasks} 个子任务）！`;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 2000;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+
+    document.body.removeChild(modalDiv);
+  };
 };
 
-// 添加本周任务
+
+
+
+
 // 在 handleAddWeekTask 函数中（约第 4070 行）
 const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = '') => {
   if (!text.trim()) return;
@@ -21831,6 +22270,48 @@ onSave={(newConfig) => {
     </svg>
   </button>
 
+
+{/* 右上角模式切换按钮 */}
+<div style={{
+  position: "absolute",
+  top: 0,
+  right: 30,
+  bottom: 4,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  zIndex: 10
+}}>
+  <div
+    onClick={() => setAppMode('semester')}
+    style={{
+      padding: '2px 8px',
+      borderRadius: '10px',
+      backgroundColor: appMode === 'semester' ? '#61A2Da' : '#e8e8e8',
+      color: appMode === 'semester' ? '#fff' : '#999',
+      fontSize: '10px',
+      cursor: 'pointer',
+      fontWeight: appMode === 'semester' ? 'bold' : 'normal'
+    }}
+  >
+    学期
+  </div>
+  <div
+    onClick={() => setAppMode('summer')}
+    style={{
+      padding: '2px 8px',
+      borderRadius: '10px',
+      backgroundColor: appMode === 'summer' ? '#FF9800' : '#e8e8e8',
+      color: appMode === 'summer' ? '#fff' : '#999',
+      fontSize: '10px',
+      cursor: 'pointer',
+      fontWeight: appMode === 'summer' ? 'bold' : 'normal'
+    }}
+  >
+    暑假
+  </div>
+</div>
+
   {/* 右上角更多按钮 */}
   <button
     onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -22016,7 +22497,10 @@ onSave={(newConfig) => {
     >
       搜索
     </div>
-   
+
+
+
+
   </div>
 )}
 
@@ -22235,13 +22719,13 @@ onSave={(newConfig) => {
   };
   
  
-  // 筛选有效任务（排除本周任务和未完成的常规任务）
 const learningTasks = dayTasks.filter(task => {
   if (task.category === "本周任务") return false;
   if (task.isRegularTask && !task.done) return false;
+  // 暑假模式隐藏校内
+  if (appMode === 'summer' && task.category === '校内') return false;
   return true;
 });
-
 // ✅ 调试：查看筛选后的任务
 console.log('筛选后任务数量:', learningTasks.length);
 learningTasks.forEach(task => {
@@ -22671,25 +23155,50 @@ if (totalCount === 0) {
   添加
 </div>
 
-{/* 批量按钮 */}
-<div
-  onClick={() => setShowBulkImportModal(true)}
-  style={{
-    padding: "4px 8px",
-    backgroundColor: "#FF9800",
-    color: "#fff",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "11px",
-    textAlign: "center",
-    height: "24px",
-    lineHeight: "16px",
-    display: "inline-flex",
-    alignItems: "center"
-  }}
->
-  批量
-</div>
+
+{/* 批量/假期按钮 */}
+{appMode === 'summer' ? (
+  <div
+    onClick={() => {
+      setShowMoreMenu(false);
+      applySummerTemplate();
+    }}
+    style={{
+      padding: "4px 8px",
+      backgroundColor: "#FF9800",
+      color: "#fff",
+      borderRadius: "4px",
+      cursor: "pointer",
+      fontSize: "11px",
+      textAlign: "center",
+      height: "24px",
+      lineHeight: "16px",
+      display: "inline-flex",
+      alignItems: "center"
+    }}
+  >
+    假期
+  </div>
+) : (
+  <div
+    onClick={() => setShowBulkImportModal(true)}
+    style={{
+      padding: "4px 8px",
+      backgroundColor: "#FF9800",
+      color: "#fff",
+      borderRadius: "4px",
+      cursor: "pointer",
+      fontSize: "11px",
+      textAlign: "center",
+      height: "24px",
+      lineHeight: "16px",
+      display: "inline-flex",
+      alignItems: "center"
+    }}
+  >
+    批量
+  </div>
+  )}
 
   </div>
 </div>
@@ -24071,7 +24580,7 @@ if (confirmBtn) {
 
 
 
-{categories.map((c) => {
+{(appMode === 'summer' ? categories.filter(c => c.name !== '校内') : categories).map((c) => {
   const catTasks = getCategoryTasks(c.name);
   if (catTasks.length === 0) return null;
   const isComplete = isCategoryComplete(c.name);
