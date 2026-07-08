@@ -5611,7 +5611,7 @@ const handleManualBackup = async () => {
 
 const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [token, setToken] = useState(config.token || '');
-  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : true);
+const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : false); // ✅ 改成 false
   const [gistId, setGistId] = useState(config.gistId || '46c9f5bb3a6a62057759293b0399a15c');
 
   // 获取 Token 后四位
@@ -10406,7 +10406,7 @@ const TaskEditModal = ({ task, categories, setShowCrossDateModal, setShowMoveTas
     reflection: task.reflection || '',
     tags: task.tags || [],
     scheduledTime: task.scheduledTime || '',
-    
+    expValue: task.expValue || 2, 
     reminderYear: task.reminderTime?.year?.toString() || new Date().getFullYear().toString(),
     reminderMonth: task.reminderTime?.month?.toString() || '',
     reminderDay: task.reminderTime?.day?.toString() || '',
@@ -10585,17 +10585,19 @@ const abandonReasons = [
       
       {/* 紧凑版模态框 - 减小内边距，缩小间距 */}
       <div style={{
-        backgroundColor: 'white',
-        padding: '12px 12px',  // 从 20px 15px 减小到 12px
-        borderRadius: 16,
-        width: '98%',
-        maxWidth: 450,
-        
-        overflow: 'auto',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        border: '1px solid #e0e0e0',
-        position: 'relative'
-      }}>
+  backgroundColor: 'white',
+  padding: '12px 12px',
+  borderRadius: 16,
+  width: '98%',
+  maxWidth: 450,
+  maxHeight: '90vh',           // ✅ 添加最大高度
+  overflow: 'auto',            // ✅ 允许滚动
+  overflowY: 'auto',           // ✅ 垂直滚动
+  WebkitOverflowScrolling: 'touch',  // ✅ iOS 平滑滚动
+  boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+  border: '1px solid #e0e0e0',
+  position: 'relative'
+}}>
 
         {/* 标题栏 - 紧凑版，靠近横线 */}
 <div style={{
@@ -11327,6 +11329,8 @@ const abandonReasons = [
   </div>
 </div>
 
+
+
           <div>
             {/* 标签 - 紧凑版 */}
             <div>
@@ -11671,6 +11675,8 @@ const TaskItem = ({
   onDeleteTask, 
   onDeleteImage,
   onUpdateAbandonInfo,
+  onUpdateExpValue, 
+  
   onEditSubTask = () => {},
   isSortingMode = false
 }) => {
@@ -11957,6 +11963,37 @@ const handleProgressAdjust = (increment) => {
       // 都没有显示 0m
       return `0m`;
     })()}
+  </span>
+   {/* ⭐ 经验值小方块 - 添加在这里 */}
+  <span
+    onClick={(e) => {
+      e.stopPropagation();
+      const currentExp = task.expValue || 2;
+      const newExp = window.prompt(`设置"${task.text}"的经验值（0-100）：`, currentExp);
+      if (newExp !== null) {
+        const expNum = parseInt(newExp) || 0;
+        const finalExp = Math.min(Math.max(0, expNum), 100);
+        // 更新任务的经验值
+        onUpdateExpValue?.(task, finalExp);
+      }
+    }}
+    style={{
+      fontSize: "10px",
+      color: "#FF9800",
+      cursor: "pointer",
+      backgroundColor: "#fff3e0",
+      padding: "0 6px",
+      borderRadius: "10px",
+      minWidth: "20px",
+      textAlign: "center",
+      lineHeight: "18px",
+      fontWeight: "bold",
+      border: "1px solid #FFE0B2",
+      flexShrink: 0
+    }}
+    title="点击设置经验值"
+  >
+    {task.expValue || 2}
   </span>
 </div>
 </div>
@@ -12467,6 +12504,7 @@ const SortableTaskList = ({
   formatTimeWithSeconds,
   onMoveTask,
   categories,
+   onUpdateExpValue,  
   setShowMoveModal,
   onUpdateProgress,
   onEditSubTask,
@@ -12769,6 +12807,7 @@ const SortableTaskList = ({
             onEditTime={onEditTime}
             onDeleteImage={onDeleteImage}
             onEditNote={onEditNote}
+            onUpdateExpValue={onUpdateExpValue} 
             onEditReflection={onEditReflection}
             onOpenEditModal={onOpenEditModal} 
             onShowImageModal={onShowImageModal}
@@ -12779,6 +12818,7 @@ const SortableTaskList = ({
             onMoveTask={onMoveTask}
             categories={categories}
             onUpdateAbandonInfo={onUpdateAbandonInfo}
+            
             setShowMoveModal={setShowMoveModal}
             onUpdateProgress={onUpdateProgress}
             onEditSubTask={onEditSubTask}
@@ -15426,6 +15466,368 @@ const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 
 
   const [tasksByDate, setTasksByDate] = useState({});
+  // ============================================================
+// 在 tasksByDate 定义之后，添加以下所有代码
+// ============================================================
+
+// ===== 1. getTodayStats（依赖 tasksByDate） =====
+const getTodayStats = useCallback((date) => {
+  const tasks = tasksByDate[date] || [];
+  let done = 0;
+  let total = 0;
+  
+  tasks.forEach(task => {
+    if (CATEGORY_TO_DIM[task.category]) {
+      total++;
+      if (task.done && !task.abandoned) done++;
+    }
+  });
+  
+  return { done, total };
+}, [tasksByDate]);
+
+// ============================================================
+// ===== 2. 经验系统完整定义 =====
+// ============================================================
+
+// 2.1 维度定义
+const DIMENSIONS = {
+  yuwen: { name: "语文", emoji: "📚", color: "#FF6B6B" },
+  shuxue: { name: "数学", emoji: "🔢", color: "#4ECDC4" },
+  yingyu: { name: "英语", emoji: "🔤", color: "#FF9F43" },
+  tongshi: { name: "通识", emoji: "🌍", color: "#6C5CE7" },
+  chuangzao: { name: "创造", emoji: "🎨", color: "#FDCB6E" },
+  shenghuo: { name: "生活", emoji: "🏠", color: "#00CEC9" }
+};
+
+// 2.2 任务分类 → 维度映射
+const CATEGORY_TO_DIM = {
+  "语文": "yuwen",
+  "数学": "shuxue",
+  "英语": "yingyu",
+  "通识": "tongshi",
+  "创造": "chuangzao",
+  "生活": "shenghuo"
+};
+
+// 2.3 每个任务的基础经验值
+const BASE_EXP = {
+  "语文": 5,
+  "数学": 8,
+  "英语": 4,
+  "通识": 6,
+  "创造": 7,
+  "生活": 3
+};
+
+// 2.4 经验等级配置
+const EXP_PER_LEVEL = 50;
+const MAX_EXP = 1000;
+
+// 2.5 经验数据状态
+const [expData, setExpData] = useState(() => {
+  const saved = localStorage.getItem('exp_data_v2');
+  return saved ? JSON.parse(saved) : { daily: {}, total: {} };
+});
+
+// 2.6 获取任务奖励
+const getTaskRewards = useCallback((task) => {
+  const rewards = {};
+  const category = task.category;
+  const dimKey = CATEGORY_TO_DIM[category];
+  if (!dimKey) return rewards;
+  
+  // ✅ 使用任务自定义经验值，如果没有则使用基础值2
+  const exp = task.expValue || 2;
+  
+  rewards[dimKey] = exp;
+  return rewards;
+}, []);
+
+// 2.7 添加经验
+const addExp = useCallback((date, rewards) => {
+  setExpData(prev => {
+    const newDaily = { ...prev.daily };
+    const newTotal = { ...prev.total };
+    
+    if (!newDaily[date]) newDaily[date] = {};
+    
+    Object.entries(rewards).forEach(([dim, value]) => {
+      if (value !== 0) {  // ✅ 允许正数和负数
+        newDaily[date][dim] = (newDaily[date][dim] || 0) + value;
+        newTotal[dim] = (newTotal[dim] || 0) + value;
+      }
+    });
+    
+    const newData = { daily: newDaily, total: newTotal };
+    localStorage.setItem('exp_data_v2', JSON.stringify(newData));
+    return newData;
+  });
+}, []);
+
+// 2.8 任务完成时加分
+const handleTaskComplete = useCallback((task, date) => {
+  const rewards = getTaskRewards(task);
+  if (Object.keys(rewards).length > 0) {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    addExp(targetDate, rewards);
+    const dimKey = Object.keys(rewards)[0];
+    return { 
+      dimName: DIMENSIONS[dimKey]?.name || '', 
+      expValue: Object.values(rewards)[0] 
+    };
+  }
+  return null;
+}, [getTaskRewards, addExp]);
+
+// 2.9 获取今日经验
+const getTodayExp = useCallback((date) => {
+  return expData.daily[date] || {};
+}, [expData]);
+
+// 2.10 获取总经验
+const getTotalExp = useCallback(() => {
+  return expData.total || {};
+}, [expData]);
+
+// 2.11 获取总经验值
+const getGrandTotal = useCallback(() => {
+  return Object.values(expData.total).reduce((sum, val) => sum + val, 0);
+}, [expData]);
+
+// 2.12 获取今日总经验
+const getTodayTotal = useCallback((date) => {
+  const today = expData.daily[date] || {};
+  return Object.values(today).reduce((sum, val) => sum + val, 0);
+}, [expData]);
+
+// 2.13 计算等级
+const calculateLevel = useCallback((exp) => {
+  return Math.floor(exp / EXP_PER_LEVEL) + 1;
+}, []);
+
+// ============================================================
+// ===== 3. ExpPanel 组件（使用上面的所有函数） =====
+// ============================================================
+const ExpPanel = ({ selectedDate }) => {
+  const [showDetail, setShowDetail] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setShowDetail(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // 从 App 中获取数据
+  const todayExp = getTodayExp(selectedDate);
+  const totalExp = getTotalExp();
+  const grandTotal = getGrandTotal();
+  const todayTotal = getTodayTotal(selectedDate);
+  const level = calculateLevel(grandTotal);
+  const { done, total } = getTodayStats(selectedDate);
+
+  // 辅助函数
+  const getExpColor = (exp) => {
+    if (exp === 0) return '#e5e7eb';
+    if (exp < 10) return '#fbbf24';
+    if (exp < 25) return '#f59e0b';
+    if (exp < 50) return '#34c759';
+    return '#10b981';
+  };
+
+  const getProgress = (exp) => {
+    return Math.min((exp / MAX_EXP) * 100, 100);
+  };
+
+  const getExpInLevel = (exp) => {
+    return exp % EXP_PER_LEVEL;
+  };
+
+  const getStatusEmoji = () => {
+    if (done === 0 && total === 0) return '🙂';
+    const ratio = done / total;
+    if (ratio === 1) return '🤩';
+    if (ratio >= 0.8) return '😊';
+    if (ratio >= 0.5) return '🙂';
+    if (ratio >= 0.3) return '😕';
+    return '😫';
+  };
+
+  return (
+    <div ref={panelRef} style={{ position: 'relative', display: 'inline-block' }}>
+      {/* 主按钮 */}
+      <div
+        onClick={() => setShowDetail(!showDetail)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2px',
+          padding: '1px 6px',
+          height: '22px',
+          backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
+          borderRadius: '10px',
+          cursor: 'pointer',
+          fontSize: '9px',
+          whiteSpace: 'nowrap',
+          border: '1px solid #e0e0e0',
+          flexShrink: 0
+        }}
+        title={`今日经验: +${todayTotal} | 总经验: ${grandTotal} | Lv.${level}`}
+      >
+        <span style={{ fontSize: '10px' }}>{getStatusEmoji()}</span>
+        <span style={{ fontWeight: 'bold', color: todayTotal > 0 ? '#2e7d32' : '#999', fontSize: '9px' }}>
+          +{todayTotal}
+        </span>
+        <span style={{ fontSize: '7px', color: '#999' }}>Lv.{level}</span>
+        <span style={{ fontSize: '6px', color: '#ccc' }}>▼</span>
+      </div>
+
+      {/* 下拉详情面板 */}
+    {/* 下拉详情面板 - 放大版本 */}
+{showDetail && (
+  <div style={{
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    right: 0,
+    width: isMobile ? '360px' : '420px',     // ← 加宽（原来是260/300）
+    backgroundColor: '#fff',
+    borderRadius: '16px',                    // ← 增大圆角
+    boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+    border: '1px solid #e0e0e0',
+    padding: '20px 24px',                   // ← 增大内边距
+    zIndex: 1000,
+    maxHeight: '500px',                     // ← 增高（原来是320）
+    overflowY: 'auto'
+  }}
+>
+  {/* 顶部统计 - 放大 */}
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+    paddingBottom: '12px',
+    borderBottom: '1px solid #f0f0f0'
+  }}>
+    <div>
+      <div style={{ fontSize: '13px', color: '#999' }}>今日</div>
+      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#34c759' }}>
+        +{todayTotal}{' '}
+        <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>
+          ({done}/{total})
+        </span>
+      </div>
+    </div>
+    <div style={{ textAlign: 'right' }}>
+      <div style={{ fontSize: '13px', color: '#999' }}>总经验</div>
+      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1a73e8' }}>
+        {grandTotal}{' '}
+        <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>
+          Lv.{level}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {/* 维度列表 - 放大 */}
+  <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '10px'                             // ← 增大间距
+  }}>
+    {Object.entries(DIMENSIONS).map(([key, dim]) => {
+      const today = todayExp[key] || 0;
+      const total = totalExp[key] || 0;
+      const hasExp = today > 0 || total > 0;
+      const progress = getProgress(total);
+      const expInLevel = getExpInLevel(total);
+      const dimLevel = calculateLevel(total);
+      const color = getExpColor(total);
+
+      return (
+        <div key={key} style={{
+          padding: '10px 14px',              // ← 增大内边距
+          borderRadius: '10px',              // ← 增大圆角
+          backgroundColor: hasExp ? '#f8f9fa' : '#fafafa',
+          border: '1px solid #f0f0f0',
+          fontSize: '13px'                   // ← 增大字号
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>{dim.emoji}</span>
+              <span style={{ color: '#333', fontSize: '14px', fontWeight: '500' }}>{dim.name}</span>
+            </span>
+            <span style={{
+              fontSize: '13px',
+              fontWeight: 'bold',
+              color: today > 0 ? '#34c759' : '#999'
+            }}>
+              {today > 0 ? `+${today}` : ''}
+            </span>
+          </div>
+          
+          <div style={{
+            height: '6px',                   // ← 加高进度条
+            backgroundColor: '#eee',
+            borderRadius: '3px',
+            marginTop: '6px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${progress}%`,
+              backgroundColor: color,
+              borderRadius: '3px'
+            }} />
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '11px',                // ← 增大字号
+            color: '#999',
+            marginTop: '4px'
+          }}>
+            <span>{expInLevel}/{EXP_PER_LEVEL}</span>
+            <span>Lv.{dimLevel}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {/* 底部提示 - 放大 */}
+  <div style={{
+    marginTop: '14px',
+    paddingTop: '12px',
+    borderTop: '1px solid #f0f0f0',
+    fontSize: '12px',                      // ← 增大字号
+    color: '#999',
+    textAlign: 'center'
+  }}>
+    💡 完成任务获得经验 · 升级解锁新能力
+  </div>
+</div>
+)}
+    </div>
+  );
+};
   // 获取跨日期任务在指定日期的完成类型
 const getTaskCompletionType = useCallback((task, date) => {
   // 检查这个任务是否在该日期被实际完成过
@@ -15629,6 +16031,7 @@ useEffect(() => {
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTaskSubCategory, setNewTaskSubCategory] = useState('');
   const [showStats, setShowStats] = useState(false);
+  const [newTaskExpValue, setNewTaskExpValue] = useState(2); 
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(null);
@@ -15899,7 +16302,7 @@ const restoreFromGitHub = useCallback(async () => {
 const [syncConfig, setSyncConfig] = useState({
   token: localStorage.getItem(PAGE_ID + '_github_token') || '',
   gistId: localStorage.getItem(PAGE_ID + '_github_gist_id') || '46c9f5bb3a6a62057759293b0399a15c',  // ✅ 修改这里
-  autoSync: localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true',
+ autoSync: false,  // ✅ 改成 false，关闭自动同步
   lastSync: localStorage.getItem(PAGE_ID + '_github_last_sync') || ''
 });
 
@@ -15988,46 +16391,288 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-
-// 智能合并恢复函数 - 改为覆盖模式
+// 智能合并恢复函数 - 覆盖模式
 const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => {
   try {
     console.log('🔄 开始恢复数据...', mode);
 
     // 覆盖模式：直接用云端数据替换本地
     if (mode === 'overwrite') {
+      // 1. 恢复任务数据
       if (backupData.tasksByDate) {
         setTasksByDate(backupData.tasksByDate);
         await saveMainData('tasks', backupData.tasksByDate);
+        console.log('✅ 恢复任务数据:', Object.keys(backupData.tasksByDate).length, '天');
       }
-      if (backupData.dailyRatings) setDailyRatings(backupData.dailyRatings);
-      if (backupData.dailyReflections) setDailyReflections(backupData.dailyReflections);
-      if (backupData.studyEndTimes) setStudyEndTimes(backupData.studyEndTimes);
-      if (backupData.focusTaskTemplates) setFocusTaskTemplates(backupData.focusTaskTemplates);
-      if (backupData.monthTasks) setMonthTasks(backupData.monthTasks);
+      
+      // 2. 恢复每日评分
+      if (backupData.dailyRatings) {
+        setDailyRatings(backupData.dailyRatings);
+        localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(backupData.dailyRatings));
+        console.log('✅ 恢复每日评分:', Object.keys(backupData.dailyRatings).length, '天');
+      }
+      
+      // 3. 恢复每日复盘
+      if (backupData.dailyReflections) {
+        setDailyReflections(backupData.dailyReflections);
+        console.log('✅ 恢复每日复盘:', Object.keys(backupData.dailyReflections).length, '天');
+      }
+      
+      // 4. 恢复学习结束时间
+      if (backupData.studyEndTimes) {
+        setStudyEndTimes(backupData.studyEndTimes);
+        localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
+        console.log('✅ 恢复学习结束时间');
+      }
+      
+      // 5. 恢复关注任务模板
+      if (backupData.focusTaskTemplates) {
+        setFocusTaskTemplates(backupData.focusTaskTemplates);
+        localStorage.setItem('focus_task_templates', JSON.stringify(backupData.focusTaskTemplates));
+        console.log('✅ 恢复关注任务模板:', backupData.focusTaskTemplates.length, '个');
+      }
+      
+      // 6. 恢复关注任务状态
+      if (backupData.focusTaskStatus) {
+        setFocusTaskStatus(backupData.focusTaskStatus);
+        localStorage.setItem('focus_task_status', JSON.stringify(backupData.focusTaskStatus));
+        console.log('✅ 恢复关注任务状态');
+      }
+      
+      // 7. 恢复本月任务
+      if (backupData.monthTasks) {
+        setMonthTasks(backupData.monthTasks);
+        await saveMainData('monthTasks', backupData.monthTasks);
+        console.log('✅ 恢复本月任务:', backupData.monthTasks.length, '个');
+      }
+      
+      // 8. 恢复分类数据
+      if (backupData.categories) {
+        setCategories(backupData.categories);
+        await saveMainData('categories', backupData.categories);
+        console.log('✅ 恢复分类数据');
+      }
+      
+      // 9. 恢复成绩记录
       if (backupData.grades) {
         setGrades(backupData.grades);
         await saveMainData('grades', backupData.grades);
+        console.log('✅ 恢复成绩记录:', backupData.grades.length, '条');
       }
+      
+      // 10. 恢复每日提醒
       if (backupData.reminderText) {
         setReminderText(backupData.reminderText);
         localStorage.setItem('daily_reminder', backupData.reminderText);
+        console.log('✅ 恢复每日提醒');
       }
       
-      console.log('✅ 覆盖恢复完成');
+      // 11. 恢复学期结束日期
+      if (backupData.semesterEndDate) {
+        setSemesterEndDate(backupData.semesterEndDate);
+        localStorage.setItem('semester_end_date', backupData.semesterEndDate);
+        console.log('✅ 恢复学期结束日期:', backupData.semesterEndDate);
+      }
+      
+      // 12. 恢复科目指导数据
+      if (backupData.subjectGuideEntries) {
+        setSubjectGuideEntries(backupData.subjectGuideEntries);
+        localStorage.setItem('subject_guide_entries', JSON.stringify(backupData.subjectGuideEntries));
+        console.log('✅ 恢复科目指导数据');
+      }
+      
+      // 13. 恢复科目指导自定义标签
+      if (backupData.subjectGuideCustomTags) {
+        setGlobalCustomTags(backupData.subjectGuideCustomTags);
+        localStorage.setItem('subject_guide_custom_tags', JSON.stringify(backupData.subjectGuideCustomTags));
+        console.log('✅ 恢复科目指导自定义标签');
+      }
+      
+      // 14. ⭐ 恢复经验数据（新增）
+      if (backupData.expData) {
+        setExpData(backupData.expData);
+        localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+        console.log('✅ 恢复经验数据:', backupData.expData);
+      }
+      
+      // 15. 恢复任务排序顺序
+      if (backupData.taskOrders) {
+        Object.entries(backupData.taskOrders).forEach(([key, value]) => {
+          localStorage.setItem(key, JSON.stringify(value));
+        });
+        console.log('✅ 恢复任务排序顺序');
+      }
+      
+      // 16. 恢复子分类排序顺序
+      if (backupData.subCategoryOrders) {
+        Object.entries(backupData.subCategoryOrders).forEach(([key, value]) => {
+          localStorage.setItem(key, JSON.stringify(value));
+        });
+        console.log('✅ 恢复子分类排序顺序');
+      }
+      
+      console.log('✅ 覆盖恢复完成！');
       alert('数据已覆盖恢复！页面将重新加载。');
       setTimeout(() => window.location.reload(), 1000);
       return;
     }
     
-    // 合并模式（原逻辑保持不变）
-    // ... 原有合并代码 ...
+    // ========== 合并模式（备用） ==========
+    if (mode === 'merge') {
+      console.log('🔄 开始智能合并恢复...');
+      
+      // 1. 合并任务数据
+      if (backupData.tasksByDate) {
+        const mergedTasks = { ...tasksByDate };
+        Object.entries(backupData.tasksByDate).forEach(([date, tasks]) => {
+          if (!mergedTasks[date]) {
+            mergedTasks[date] = [];
+          }
+          tasks.forEach(cloudTask => {
+            const exists = mergedTasks[date].some(localTask => localTask.id === cloudTask.id);
+            if (!exists) {
+              mergedTasks[date].push(cloudTask);
+            }
+          });
+        });
+        setTasksByDate(mergedTasks);
+        await saveMainData('tasks', mergedTasks);
+        console.log('✅ 合并任务数据完成');
+      }
+      
+      // 2. 合并每日评分（本地优先）
+      if (backupData.dailyRatings) {
+        const mergedRatings = { ...backupData.dailyRatings, ...dailyRatings };
+        setDailyRatings(mergedRatings);
+        localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(mergedRatings));
+        console.log('✅ 合并每日评分完成');
+      }
+      
+      // 3. 合并每日复盘（本地优先）
+      if (backupData.dailyReflections) {
+        const mergedReflections = { ...backupData.dailyReflections, ...dailyReflections };
+        setDailyReflections(mergedReflections);
+        console.log('✅ 合并每日复盘完成');
+      }
+      
+      // 4. 合并学习结束时间（本地优先）
+      if (backupData.studyEndTimes) {
+        const mergedEndTimes = { ...backupData.studyEndTimes, ...studyEndTimes };
+        setStudyEndTimes(mergedEndTimes);
+        localStorage.setItem('daily_study_end_times', JSON.stringify(mergedEndTimes));
+        console.log('✅ 合并学习结束时间完成');
+      }
+      
+      // 5. ⭐ 合并经验数据（本地优先）
+      if (backupData.expData) {
+        const mergedExpData = {
+          daily: { ...backupData.expData.daily, ...expData.daily },
+          total: { ...backupData.expData.total, ...expData.total }
+        };
+        setExpData(mergedExpData);
+        localStorage.setItem('exp_data_v2', JSON.stringify(mergedExpData));
+        console.log('✅ 合并经验数据完成');
+      }
+      
+      // 6. 合并关注任务模板
+      if (backupData.focusTaskTemplates) {
+        const templateMap = new Map();
+        focusTaskTemplates.forEach(t => templateMap.set(t.id, t));
+        backupData.focusTaskTemplates.forEach(t => {
+          if (!templateMap.has(t.id)) {
+            templateMap.set(t.id, t);
+          }
+        });
+        const mergedTemplates = Array.from(templateMap.values());
+        setFocusTaskTemplates(mergedTemplates);
+        localStorage.setItem('focus_task_templates', JSON.stringify(mergedTemplates));
+        console.log('✅ 合并关注任务模板完成');
+      }
+      
+      // 7. 合并本月任务
+      if (backupData.monthTasks) {
+        const taskMap = new Map();
+        monthTasks.forEach(t => taskMap.set(t.id, t));
+        backupData.monthTasks.forEach(t => {
+          if (!taskMap.has(t.id)) {
+            taskMap.set(t.id, t);
+          }
+        });
+        const mergedMonthTasks = Array.from(taskMap.values());
+        setMonthTasks(mergedMonthTasks);
+        await saveMainData('monthTasks', mergedMonthTasks);
+        console.log('✅ 合并本月任务完成');
+      }
+      
+      // 8. 合并成绩记录
+      if (backupData.grades) {
+        const gradeMap = new Map();
+        grades.forEach(g => gradeMap.set(g.id, g));
+        backupData.grades.forEach(g => {
+          if (!gradeMap.has(g.id)) {
+            gradeMap.set(g.id, g);
+          }
+        });
+        const mergedGrades = Array.from(gradeMap.values());
+        setGrades(mergedGrades);
+        await saveMainData('grades', mergedGrades);
+        console.log('✅ 合并成绩记录完成');
+      }
+      
+      // 9. 合并科目指导数据
+      if (backupData.subjectGuideEntries) {
+        const mergedGuide = { ...subjectGuideEntries };
+        Object.entries(backupData.subjectGuideEntries).forEach(([category, entries]) => {
+          if (!mergedGuide[category]) {
+            mergedGuide[category] = [];
+          }
+          entries.forEach(cloudEntry => {
+            const exists = mergedGuide[category].some(localEntry => localEntry.id === cloudEntry.id);
+            if (!exists) {
+              mergedGuide[category].push(cloudEntry);
+            }
+          });
+        });
+        setSubjectGuideEntries(mergedGuide);
+        localStorage.setItem('subject_guide_entries', JSON.stringify(mergedGuide));
+        console.log('✅ 合并科目指导数据完成');
+      }
+      
+      alert('数据合并完成！');
+    }
     
   } catch (error) {
     console.error('恢复失败:', error);
     alert('恢复失败: ' + error.message);
   }
-}, [/* 依赖项 */]);
+}, [
+  tasksByDate, 
+  dailyRatings, 
+  dailyReflections, 
+  studyEndTimes, 
+  focusTaskTemplates, 
+  focusTaskStatus, 
+  monthTasks, 
+  grades, 
+  subjectGuideEntries, 
+  expData,
+  setTasksByDate, 
+  setDailyRatings, 
+  setDailyReflections, 
+  setStudyEndTimes, 
+  setFocusTaskTemplates, 
+  setFocusTaskStatus, 
+  setMonthTasks, 
+  setGrades, 
+  setSubjectGuideEntries,
+  setExpData,
+  setCategories,
+  setSemesterEndDate,
+  setGlobalCustomTags,
+  setReminderText,
+  saveMainData
+]);
+
 // getDataHash 函数定义
 const getDataHash = useCallback(() => {
   const taskHash = [];
@@ -16197,6 +16842,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       grades: grades.slice(-100),
       reminderText,
       semesterEndDate,
+      expData: expData,  // ✅ 添加这一行：同步经验数据
       taskOrders: allTaskOrders,
       subCategoryOrders: allSubCategoryOrders,
       subjectGuideEntries,
@@ -16319,28 +16965,16 @@ return true;
 
 
 
-// 防抖静默同步函数（5秒防抖）
 const debouncedSync = useCallback(() => {
-  const token = localStorage.getItem(PAGE_ID + '_github_token');
-  const autoSyncEnabled = localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true';
+  // ✅ 完全禁用自动同步
+  console.log('⏭️ 自动同步已禁用');
+  return;
   
-  if (!token || !autoSyncEnabled) return;
-  if (isSyncing) return;
-  
-  // 清除之前的定时器
-  if (syncDebounceTimerRef.current) {
-    clearTimeout(syncDebounceTimerRef.current);
-  }
-  
-  // 5秒后执行同步
-  syncDebounceTimerRef.current = setTimeout(() => {
-    console.log('🔄 防抖触发，静默同步...');
-    syncToGitHub(true);
-    syncDebounceTimerRef.current = null;
-  }, 5000);
-}, [syncToGitHub, isSyncing]);
-
-
+  // 下面的代码不再执行
+  // const token = localStorage.getItem(PAGE_ID + '_github_token');
+  // const autoSyncEnabled = localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true';
+  // ...
+}, []);
 
 
 
@@ -16955,6 +17589,50 @@ const handleCrossDateTask = (task, targetDates) => {
 
 
 
+const updateTaskExpValue = useCallback((task, newExpValue) => {
+  console.log('📝 更新经验值:', task.text, '→', newExpValue);
+  
+  // 限制范围 0-100
+  const finalValue = Math.min(Math.max(0, newExpValue), 100);
+  
+  const updateTask = (t) => ({
+    ...t,
+    expValue: finalValue
+  });
+  
+  if (task.isWeekTask) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+            ? updateTask(t)
+            : t
+        );
+      });
+      return newTasksByDate;
+    });
+  } else if (task.crossDateId) {
+    setTasksByDate(prev => {
+      const newTasksByDate = { ...prev };
+      Object.keys(newTasksByDate).forEach(date => {
+        newTasksByDate[date] = newTasksByDate[date].map(t =>
+          t.crossDateId === task.crossDateId ? updateTask(t) : t
+        );
+      });
+      return newTasksByDate;
+    });
+  } else {
+    setTasksByDate(prev => ({
+      ...prev,
+      [selectedDate]: (prev[selectedDate] || []).map(t =>
+        t.id === task.id ? updateTask(t) : t
+      )
+    }));
+  }
+}, [selectedDate]);
+
+
 const toggleDone = (task, currentDateFromTask = null) => {
   // ✅ 如果任务已放弃，不允许操作
   if (task.abandoned) {
@@ -16964,7 +17642,31 @@ const toggleDone = (task, currentDateFromTask = null) => {
   // 使用传入的日期，如果没有则使用 selectedDate
   const currentDate = currentDateFromTask || selectedDate;
   const newDoneState = !task.done;
-  
+
+  // ========== 🎯 新增：任务完成时加经验 ==========
+  if (newDoneState === true) {
+    const rewards = getTaskRewards(task);
+    if (Object.keys(rewards).length > 0) {
+      addExp(currentDate, rewards);
+      console.log('🎯 获得经验:', rewards);
+    }
+  }
+
+
+// 👇 在后面添加扣除逻辑
+if (newDoneState === false) {
+  const rewards = getTaskRewards(task);
+  if (Object.keys(rewards).length > 0) {
+    const negativeRewards = {};
+    Object.entries(rewards).forEach(([dim, value]) => {
+      negativeRewards[dim] = -value;
+    });
+    addExp(currentDate, negativeRewards);
+    console.log('🔄 扣除经验:', negativeRewards);
+  }
+}
+
+
   // ========== 1. 处理本周任务 - 完成后移动到目标分类 ==========
   if (task.isWeekTask && newDoneState === true) {
     console.log('📌 本周任务完成，准备移动到目标分类:', task.targetCategory);
@@ -17240,6 +17942,7 @@ const toggleDone = (task, currentDateFromTask = null) => {
   });
 };
 
+// ===== 更新任务经验值 =====
 
 
 
@@ -18619,28 +19322,7 @@ useEffect(() => {
   }
 }, [selectedDate, isInitialized, saveDailyData]);
 
-// 监听数据变化，触发防抖同步
-useEffect(() => {
-  if (!isInitialized) return;
-  if (!silentSyncEnabled) return;  // ✅ 添加这一行：只有启用后才同步
-  // 只在有数据时触发
-  const hasData = Object.keys(tasksByDate).length > 0 || 
-                  Object.keys(dailyRatings).length > 0 ||
-                  monthTasks.length > 0 ||
-                  focusTaskTemplates.length > 0;
-  
-  if (hasData) {
-    debouncedSync();
-  }
-  
-  // 组件卸载时清除定时器
-  return () => {
-    if (syncDebounceTimerRef.current) {
-      clearTimeout(syncDebounceTimerRef.current);
-    }
-  };
-}, [tasksByDate, dailyRatings, dailyReflections, monthTasks, focusTaskTemplates, focusTaskStatus, studyEndTimes, reminderText, isInitialized, debouncedSync]);
-  // ========== 主要关注任务相关函数 ==========
+
 
 
 
@@ -19509,6 +20191,7 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     note: "",
     reflection: "",
     image: null,
+    expValue: newTaskExpValue, 
     scheduledTime: scheduledTime,
     pinned: false,
     tags: bulkTags || [],
@@ -21278,7 +21961,7 @@ const saveTaskEdit = (task, editData) => {
             progress: editData.progress || t.progress,
             reminderTime: reminderTime,
               // 保留模板ID
-            
+            expValue: editData.expValue || 2,
           } : t
         );
       });
@@ -22050,6 +22733,7 @@ onSave={(newConfig) => {
   localStorage.setItem(PAGE_ID + '_github_token', newConfig.token);
   localStorage.setItem('github_token', newConfig.token);  // ✅ 添加这一行
   localStorage.setItem(PAGE_ID + '_github_auto_sync', newConfig.autoSync.toString());
+  localStorage.setItem('github_auto_sync', newConfig.autoSync.toString()); 
   localStorage.setItem(PAGE_ID + '_github_gist_id', newConfig.gistId);
   localStorage.setItem('github_gist_id', newConfig.gistId);  // ✅ 添加这一行
   setSyncConfig({ ...syncConfig, ...newConfig });
@@ -22498,7 +23182,7 @@ onSave={(newConfig) => {
       搜索
     </div>
 
-
+<ExpPanel selectedDate={selectedDate} />
 
 
   </div>
@@ -24035,7 +24719,27 @@ if (confirmBtn) {
           </div>
         </div>
       )}
-      
+      {/* 👇 在这里添加经验值输入框 👇 */}
+<div style={{ marginBottom: 12 }}>
+  <div style={{ fontSize: 12, color: '#666', marginBottom: 5, display: 'block' }}>
+    经验值
+  </div>
+  <input
+    type="number"
+    min="0"
+    max="100"
+    value={newTaskExpValue}
+    onChange={(e) => setNewTaskExpValue(parseInt(e.target.value) || 0)}
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #ccc',
+      borderRadius: 8,
+      fontSize: 14,
+      boxSizing: 'border-box'
+    }}
+  />
+</div>
       {/* 按钮区域 - 使用 div 代替 button，彻底移除悬浮效果 */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         <div
@@ -24332,6 +25036,7 @@ if (confirmBtn) {
               onUpdateProgress={handleUpdateProgress}
               onToggleSubTask={toggleSubTask}
               onEditSubTask={editSubTask}
+              onUpdateExpValue={updateTaskExpValue} 
             />
           </div>
         ))}
@@ -24570,6 +25275,7 @@ if (confirmBtn) {
   setShowMoveModal={setShowMoveModal}
   onUpdateProgress={handleUpdateProgress}
   onEditSubTask={editSubTask}
+  onUpdateExpValue={updateTaskExpValue}
   onToggleSubTask={toggleSubTask}
   getTaskCompletionType={getTaskCompletionType}
     />
@@ -24980,6 +25686,7 @@ const getCategoryBorderColor = () => {
               categories={baseCategories}
               setShowMoveModal={setShowMoveModal}
               onUpdateProgress={handleUpdateProgress}
+              onUpdateExpValue={updateTaskExpValue} 
               onEditSubTask={editSubTask}
               onToggleSubTask={toggleSubTask}
             />
@@ -25029,6 +25736,7 @@ const getCategoryBorderColor = () => {
   onUpdateProgress={handleUpdateProgress}
   onEditSubTask={editSubTask}
   onToggleSubTask={toggleSubTask}
+  onUpdateExpValue={updateTaskExpValue} 
 />
 
 
