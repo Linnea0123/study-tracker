@@ -15609,17 +15609,20 @@ const calculateLevel = useCallback((exp) => {
 // ============================================================
 // ===== 3. ExpPanel 组件（使用上面的所有函数） =====
 // ============================================================
+
 const ExpPanel = ({ selectedDate }) => {
   const [showDetail, setShowDetail] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 480);
   const panelRef = useRef(null);
 
+  // 监听窗口大小变化
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    const handleResize = () => setIsMobile(window.innerWidth < 480);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 点击外部关闭
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
@@ -15630,13 +15633,51 @@ const ExpPanel = ({ selectedDate }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // 从 App 中获取数据
-  const todayExp = getTodayExp(selectedDate);
-  const totalExp = getTotalExp();
-  const grandTotal = getGrandTotal();
-  const todayTotal = getTodayTotal(selectedDate);
-  const level = calculateLevel(grandTotal);
-  const { done, total } = getTodayStats(selectedDate);
+  // ========== ✅ 新增：获取今日评分 ==========
+  const getTodayRating = () => {
+    // dailyRatings 来自 App 组件的状态，直接使用
+    const rating = dailyRatings[selectedDate] || 0;
+    return rating;
+  };
+
+  // ========== ✅ 新增：根据评分获取表情 ==========
+  const getRatingEmoji = () => {
+    const rating = getTodayRating();
+    if (rating === 1) return '😞';
+    if (rating === 2) return '😕';
+    if (rating === 3) return '😐';
+    if (rating === 4) return '😊';
+    if (rating === 5) return '🥳';
+    return '🙂'; // 默认表情（没有评分时显示）
+  };
+
+  // ========== ✅ 定义所有需要的变量 ==========
+  
+  // 获取今日经验
+  const todayExp = expData.daily[selectedDate] || {};
+  
+  // 获取总经验
+  const totalExp = expData.total || {};
+  
+  // 计算总经验值
+  const grandTotal = Object.values(totalExp).reduce((sum, val) => sum + val, 0);
+  
+  // 计算今日总经验
+  const todayTotal = Object.values(todayExp).reduce((sum, val) => sum + val, 0);
+  
+  // 计算等级
+  const level = Math.floor(grandTotal / EXP_PER_LEVEL) + 1;
+  
+  // 获取今日任务统计
+  const todayTasks = tasksByDate[selectedDate] || [];
+  let done = 0;
+  let total = 0;
+  todayTasks.forEach(task => {
+    if (task.category !== "本周任务") {
+      total++;
+      if (task.done && !task.abandoned) done++;
+    }
+  });
 
   // 辅助函数
   const getExpColor = (exp) => {
@@ -15655,14 +15696,45 @@ const ExpPanel = ({ selectedDate }) => {
     return exp % EXP_PER_LEVEL;
   };
 
-  const getStatusEmoji = () => {
-    if (done === 0 && total === 0) return '🙂';
-    const ratio = done / total;
-    if (ratio === 1) return '🤩';
-    if (ratio >= 0.8) return '😊';
-    if (ratio >= 0.5) return '🙂';
-    if (ratio >= 0.3) return '😕';
-    return '😫';
+  // ❌ 删除 getStatusEmoji，改用 getRatingEmoji
+
+  // 获取维度颜色（带透明度）
+  const getDimColor = (key, opacity = 0.15) => {
+    const colors = {
+      yuwen: `rgba(255, 107, 107, ${opacity})`,
+      shuxue: `rgba(78, 205, 196, ${opacity})`,
+      yingyu: `rgba(255, 159, 67, ${opacity})`,
+      tongshi: `rgba(108, 92, 231, ${opacity})`,
+      chuangzao: `rgba(253, 203, 110, ${opacity})`,
+      shenghuo: `rgba(0, 206, 201, ${opacity})`
+    };
+    return colors[key] || `rgba(200, 200, 200, ${opacity})`;
+  };
+
+  // 获取维度显示名称
+  const getDimName = (key) => {
+    const names = {
+      yuwen: '语文',
+      shuxue: '数学',
+      yingyu: '英语',
+      tongshi: '通识',
+      chuangzao: '创造',
+      shenghuo: '生活'
+    };
+    return names[key] || key;
+  };
+
+  // 获取维度表情
+  const getDimEmoji = (key) => {
+    const emojis = {
+      yuwen: '📚',
+      shuxue: '🔢',
+      yingyu: '🔤',
+      tongshi: '🌍',
+      chuangzao: '🎨',
+      shenghuo: '🏠'
+    };
+    return emojis[key] || '📌';
   };
 
   return (
@@ -15673,161 +15745,214 @@ const ExpPanel = ({ selectedDate }) => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '2px',
-          padding: '1px 6px',
-          height: '22px',
+          gap: isMobile ? '1px' : '2px',
+          padding: isMobile ? '1px 4px' : '1px 6px',
+          height: isMobile ? '20px' : '24px',
           backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
           borderRadius: '10px',
           cursor: 'pointer',
-          fontSize: '9px',
+          fontSize: isMobile ? '8px' : '9px',
           whiteSpace: 'nowrap',
           border: '1px solid #e0e0e0',
           flexShrink: 0
         }}
         title={`今日经验: +${todayTotal} | 总经验: ${grandTotal} | Lv.${level}`}
       >
-        <span style={{ fontSize: '10px' }}>{getStatusEmoji()}</span>
-        <span style={{ fontWeight: 'bold', color: todayTotal > 0 ? '#2e7d32' : '#999', fontSize: '9px' }}>
+        {/* ✅ 使用评分表情 */}
+        <span style={{ fontSize: isMobile ? '9px' : '10px' }}>{getRatingEmoji()}</span>
+        <span style={{ 
+          fontWeight: 'bold', 
+          color: todayTotal > 0 ? '#2e7d32' : '#999', 
+          fontSize: isMobile ? '8px' : '9px' 
+        }}>
           +{todayTotal}
         </span>
-        <span style={{ fontSize: '7px', color: '#999' }}>Lv.{level}</span>
-        <span style={{ fontSize: '6px', color: '#ccc' }}>▼</span>
+        <span style={{ fontSize: isMobile ? '6px' : '7px', color: '#999' }}>Lv.{level}</span>
+        <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#ccc' }}>▼</span>
       </div>
 
       {/* 下拉详情面板 */}
-    {/* 下拉详情面板 - 放大版本 */}
-{showDetail && (
-  <div style={{
-    position: 'absolute',
-    top: 'calc(100% + 8px)',
-    right: 0,
-    width: isMobile ? '360px' : '420px',     // ← 加宽（原来是260/300）
-    backgroundColor: '#fff',
-    borderRadius: '16px',                    // ← 增大圆角
-    boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-    border: '1px solid #e0e0e0',
-    padding: '20px 24px',                   // ← 增大内边距
-    zIndex: 1000,
-    maxHeight: '500px',                     // ← 增高（原来是320）
-    overflowY: 'auto'
-  }}
->
-  {/* 顶部统计 - 放大 */}
-  <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid #f0f0f0'
-  }}>
-    <div>
-      <div style={{ fontSize: '13px', color: '#999' }}>今日</div>
-      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#34c759' }}>
-        +{todayTotal}{' '}
-        <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>
-          ({done}/{total})
-        </span>
-      </div>
-    </div>
-    <div style={{ textAlign: 'right' }}>
-      <div style={{ fontSize: '13px', color: '#999' }}>总经验</div>
-      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1a73e8' }}>
-        {grandTotal}{' '}
-        <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>
-          Lv.{level}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  {/* 维度列表 - 放大 */}
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '10px'                             // ← 增大间距
-  }}>
-    {Object.entries(DIMENSIONS).map(([key, dim]) => {
-      const today = todayExp[key] || 0;
-      const total = totalExp[key] || 0;
-      const hasExp = today > 0 || total > 0;
-      const progress = getProgress(total);
-      const expInLevel = getExpInLevel(total);
-      const dimLevel = calculateLevel(total);
-      const color = getExpColor(total);
-
-      return (
-        <div key={key} style={{
-          padding: '10px 14px',              // ← 增大内边距
-          borderRadius: '10px',              // ← 增大圆角
-          backgroundColor: hasExp ? '#f8f9fa' : '#fafafa',
-          border: '1px solid #f0f0f0',
-          fontSize: '13px'                   // ← 增大字号
+      {showDetail && (
+        <div style={{
+          position: 'fixed',
+          top: isMobile ? '60px' : '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: isMobile ? 'calc(100vw - 32px)' : '380px',
+          maxWidth: isMobile ? 'calc(100vw - 32px)' : '420px',
+          minWidth: isMobile ? 'calc(100vw - 32px)' : '280px',
+          maxHeight: isMobile ? '65vh' : '500px',
+          backgroundColor: '#fff',
+          borderRadius: isMobile ? '16px' : '12px',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+          border: '1px solid #e0e0e0',
+          padding: isMobile ? '14px 16px' : '18px 22px',
+          zIndex: 9999,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain'
         }}>
+          {/* 顶部统计 */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            marginBottom: isMobile ? '12px' : '16px',
+            paddingBottom: isMobile ? '10px' : '12px',
+            borderBottom: '1px solid #f0f0f0'
           }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>{dim.emoji}</span>
-              <span style={{ color: '#333', fontSize: '14px', fontWeight: '500' }}>{dim.name}</span>
-            </span>
-            <span style={{
-              fontSize: '13px',
-              fontWeight: 'bold',
-              color: today > 0 ? '#34c759' : '#999'
-            }}>
-              {today > 0 ? `+${today}` : ''}
-            </span>
+            <div>
+              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>今日</div>
+              <div style={{ 
+                fontSize: isMobile ? '18px' : '22px', 
+                fontWeight: 'bold', 
+                color: '#34c759',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                +{todayTotal}
+                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+                  ({done}/{total})
+                </span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>总经验</div>
+              <div style={{ 
+                fontSize: isMobile ? '18px' : '22px', 
+                fontWeight: 'bold', 
+                color: '#1a73e8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                {grandTotal}
+                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+                  Lv.{level}
+                </span>
+              </div>
+            </div>
           </div>
-          
+
+          {/* 维度列表 */}
           <div style={{
-            height: '6px',                   // ← 加高进度条
-            backgroundColor: '#eee',
-            borderRadius: '3px',
-            marginTop: '6px',
-            overflow: 'hidden'
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
+            gap: isMobile ? '6px' : '10px'
           }}>
-            <div style={{
-              height: '100%',
-              width: `${progress}%`,
-              backgroundColor: color,
-              borderRadius: '3px'
-            }} />
+            {Object.keys(DIMENSIONS).map((key) => {
+              const today = todayExp[key] || 0;
+              const total = totalExp[key] || 0;
+              const hasExp = today > 0 || total > 0;
+              const progress = getProgress(total);
+              const expInLevel = getExpInLevel(total);
+              const dimLevel = Math.floor(total / EXP_PER_LEVEL) + 1;
+              const color = getExpColor(total);
+              const bgColor = getDimColor(key, 0.08);
+              const dimName = getDimName(key);
+              const dimEmoji = getDimEmoji(key);
+
+              return (
+                <div key={key} style={{
+                  padding: isMobile ? '8px 10px' : '10px 14px',
+                  borderRadius: isMobile ? '8px' : '10px',
+                  backgroundColor: hasExp ? bgColor : '#fafafa',
+                  border: '1px solid #f0f0f0',
+                  fontSize: isMobile ? '12px' : '13px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: isMobile ? '4px' : '8px',
+                      fontSize: isMobile ? '12px' : '14px'
+                    }}>
+                      <span style={{ fontSize: isMobile ? '16px' : '18px' }}>{dimEmoji}</span>
+                      <span style={{ 
+                        color: '#333', 
+                        fontSize: isMobile ? '12px' : '14px', 
+                        fontWeight: '500' 
+                      }}>
+                        {dimName}
+                      </span>
+                    </span>
+                    <span style={{
+                      fontSize: isMobile ? '11px' : '13px',
+                      fontWeight: 'bold',
+                      color: today > 0 ? '#34c759' : '#999'
+                    }}>
+                      {today > 0 ? `+${today}` : ''}
+                    </span>
+                  </div>
+                  
+                  <div style={{
+                    height: isMobile ? '4px' : '6px',
+                    backgroundColor: '#eee',
+                    borderRadius: '3px',
+                    marginTop: isMobile ? '4px' : '6px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${progress}%`,
+                      backgroundColor: color,
+                      borderRadius: '3px'
+                    }} />
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: isMobile ? '9px' : '11px',
+                    color: '#999',
+                    marginTop: isMobile ? '2px' : '4px'
+                  }}>
+                    <span>{expInLevel}/{EXP_PER_LEVEL}</span>
+                    <span>Lv.{dimLevel}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
+
+          {/* 底部提示 */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '11px',                // ← 增大字号
+            marginTop: isMobile ? '10px' : '14px',
+            paddingTop: isMobile ? '8px' : '12px',
+            borderTop: '1px solid #f0f0f0',
+            fontSize: isMobile ? '10px' : '12px',
             color: '#999',
-            marginTop: '4px'
+            textAlign: 'center'
           }}>
-            <span>{expInLevel}/{EXP_PER_LEVEL}</span>
-            <span>Lv.{dimLevel}</span>
+            💡 完成任务获得经验 · 升级解锁新能力
+          </div>
+
+          {/* 关闭按钮 - 手机端 */}
+          <div
+            onClick={() => setShowDetail(false)}
+            style={{
+              marginTop: isMobile ? '12px' : '0',
+              padding: isMobile ? '10px' : '0',
+              textAlign: 'center',
+              fontSize: isMobile ? '14px' : '0',
+              color: '#999',
+              cursor: 'pointer',
+              display: isMobile ? 'block' : 'none'
+            }}
+          >
+            ✕ 关闭
           </div>
         </div>
-      );
-    })}
-  </div>
-
-  {/* 底部提示 - 放大 */}
-  <div style={{
-    marginTop: '14px',
-    paddingTop: '12px',
-    borderTop: '1px solid #f0f0f0',
-    fontSize: '12px',                      // ← 增大字号
-    color: '#999',
-    textAlign: 'center'
-  }}>
-    💡 完成任务获得经验 · 升级解锁新能力
-  </div>
-</div>
-)}
+      )}
     </div>
   );
 };
+
+
   // 获取跨日期任务在指定日期的完成类型
 const getTaskCompletionType = useCallback((task, date) => {
   // 检查这个任务是否在该日期被实际完成过
@@ -22919,84 +23044,94 @@ onSave={(newConfig) => {
 
 
 
-
-
 <div style={{
   position: "relative",
   textAlign: "center",
   marginBottom: 15,
   padding: "0 40px"
 }}>
-  {/* 左上角奖杯按钮 - 保持不变 */}
-  <button
-    onClick={() => setShowMilestoneModal(true)}
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: 32,
-      height: 32,
-      backgroundColor: "transparent",
-      border: "none",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 10,
-      padding: 0
-    }}
-    title="里程碑"
-  >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-      <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da"/>
-      <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-    </svg>
-  </button>
+  {/* 左侧：奖杯按钮 + 属性面板 */}
+  <div style={{
+    position: "absolute",
+    top: 0,
+    left: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    zIndex: 10
+  }}>
+    {/* 奖杯按钮 - 里程碑 */}
+    <button
+      onClick={() => setShowMilestoneModal(true)}
+      style={{
+        width: 32,
+        height: 32,
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0
+      }}
+      title="里程碑"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
+        <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da"/>
+        <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+      </svg>
+    </button>
 
-
-{/* 右上角模式切换按钮 */}
-<div style={{
-  position: "absolute",
-  top: 0,
-  right: 30,
-  bottom: 4,
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-  zIndex: 10
-}}>
-  <div
-    onClick={() => setAppMode('semester')}
-    style={{
-      padding: '2px 8px',
-      borderRadius: '10px',
-      backgroundColor: appMode === 'semester' ? '#61A2Da' : '#e8e8e8',
-      color: appMode === 'semester' ? '#fff' : '#999',
-      fontSize: '10px',
-      cursor: 'pointer',
-      fontWeight: appMode === 'semester' ? 'bold' : 'normal'
-    }}
-  >
-    学期
+    {/* ✅ 属性面板（经验值）- 放在奖杯右侧 */}
+    <ExpPanel 
+  selectedDate={selectedDate}
+  dailyRatings={dailyRatings}  // ← 添加这行
+/>
   </div>
-  <div
-    onClick={() => setAppMode('summer')}
-    style={{
-      padding: '2px 8px',
-      borderRadius: '10px',
-      backgroundColor: appMode === 'summer' ? '#FF9800' : '#e8e8e8',
-      color: appMode === 'summer' ? '#fff' : '#999',
-      fontSize: '10px',
-      cursor: 'pointer',
-      fontWeight: appMode === 'summer' ? 'bold' : 'normal'
-    }}
-  >
-    暑假
-  </div>
-</div>
 
-  {/* 右上角更多按钮 */}
+  {/* 右上角模式切换按钮 - 保持不变 */}
+  <div style={{
+    position: "absolute",
+    top: 0,
+    right: 30,
+    bottom: 4,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    zIndex: 10
+  }}>
+    <div
+      onClick={() => setAppMode('semester')}
+      style={{
+        padding: '2px 8px',
+        borderRadius: '10px',
+        backgroundColor: appMode === 'semester' ? '#61A2Da' : '#e8e8e8',
+        color: appMode === 'semester' ? '#fff' : '#999',
+        fontSize: '10px',
+        cursor: 'pointer',
+        fontWeight: appMode === 'semester' ? 'bold' : 'normal'
+      }}
+    >
+      学期
+    </div>
+    <div
+      onClick={() => setAppMode('summer')}
+      style={{
+        padding: '2px 8px',
+        borderRadius: '10px',
+        backgroundColor: appMode === 'summer' ? '#FF9800' : '#e8e8e8',
+        color: appMode === 'summer' ? '#fff' : '#999',
+        fontSize: '10px',
+        cursor: 'pointer',
+        fontWeight: appMode === 'summer' ? 'bold' : 'normal'
+      }}
+    >
+      暑假
+    </div>
+  </div>
+
+  {/* 右上角更多按钮 - 保持不变 */}
   <button
     onClick={() => setShowMoreMenu(!showMoreMenu)}
     style={{
@@ -23035,6 +23170,8 @@ onSave={(newConfig) => {
     学习记录
   </h1>
 </div>
+
+
 
 {/* 更多菜单 - 展开的按钮行 */}
 {showMoreMenu && (
@@ -23181,8 +23318,6 @@ onSave={(newConfig) => {
     >
       搜索
     </div>
-
-<ExpPanel selectedDate={selectedDate} />
 
 
   </div>
@@ -24597,7 +24732,32 @@ if (confirmBtn) {
   }
 }
 
- 
+ /* 手机端适配 - 属性面板 */
+@media (max-width: 480px) {
+  /* 标题栏左侧按钮区域 */
+  .header-left-buttons {
+    gap: 2px !important;
+  }
+  
+  /* 奖杯按钮 */
+  .header-left-buttons button {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  /* 模式切换按钮 */
+  .mode-switch-btn {
+    padding: 1px 4px !important;
+    font-size: 8px !important;
+  }
+  
+  /* 更多按钮 */
+  .more-menu-btn {
+    width: 24px !important;
+    height: 24px !important;
+  }
+} 
+
 
 
  /* 👇 在这里添加周次箭头按钮的样式 */
@@ -25812,23 +25972,32 @@ const getCategoryBorderColor = () => {
 
 {/* 右侧：评分 */}
 {/* 右侧：评分 - 显示表情 */}
+{/* 右侧：评分 - 显示表情（有评分才显示） */}
 <div style={{
   display: 'flex',
   alignItems: 'center',
   gap: 12,
   flexShrink: 0
 }}>
-  <span style={{
-    fontSize: '15px',
-    whiteSpace: 'nowrap'
-  }}>
-    {getCurrentDailyRating() === 1 && '😞'}
-    {getCurrentDailyRating() === 2 && '😕'}
-    {getCurrentDailyRating() === 3 && '😐'}
-    {getCurrentDailyRating() === 4 && '😊'}
-    {getCurrentDailyRating() === 5 && '🥳'}
-    {(!getCurrentDailyRating() || getCurrentDailyRating() === 0) && '❓'}
-  </span>
+  {(() => {
+    const rating = getCurrentDailyRating();
+    let emoji = '';
+    if (rating === 1) emoji = '😞';
+    else if (rating === 2) emoji = '😕';
+    else if (rating === 3) emoji = '😐';
+    else if (rating === 4) emoji = '😊';
+    else if (rating === 5) emoji = '🥳';
+    
+    // 有评分才显示
+    return emoji ? (
+      <span style={{
+        fontSize: '15px',
+        whiteSpace: 'nowrap'
+      }}>
+        {emoji}
+      </span>
+    ) : null;
+  })()}
 </div>
 </div>
 </div>
