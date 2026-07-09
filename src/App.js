@@ -16662,6 +16662,15 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
   try {
     console.log('🔄 开始恢复数据...', mode);
 
+
+// 在 handleRestoreData 函数中添加
+if (backupData.dailyTaskTemplates) {
+  setDailyTaskTemplates(backupData.dailyTaskTemplates);
+  localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+  console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
+}
+
+
     // 覆盖模式：直接用云端数据替换本地
     if (mode === 'overwrite') {
       // 1. 恢复任务数据
@@ -17100,6 +17109,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
         text: t.text,
         category: t.category,
         subCategory: t.subCategory,
+         dailyTaskTemplates: dailyTaskTemplates,  
         progress: t.progress,
         target: t.target,
         updatedAt: t.updatedAt
@@ -20205,10 +20215,6 @@ useEffect(() => {
 }, []);
 
 
-
-  // 获取本周任务
-  // 获取本周任务
-// 获取本周任务
 const getWeekTasks = () => {
   const monday = new Date(currentMonday);
   monday.setHours(0, 0, 0, 0);
@@ -20221,40 +20227,38 @@ const getWeekTasks = () => {
     weekDates.push(dateStr);
   }
   
-  // ✅ 修正：同时支持纯日期和 ISO 格式
+  // 当前周标识
   const currentWeekStart = monday.toISOString().split('T')[0];
   
   console.log('📅 getWeekTasks - 本周日期:', weekDates);
   console.log('📅 getWeekTasks - 当前周标识:', currentWeekStart);
   
   const allWeekTasks = [];
-  const seenTexts = new Set();
+  const seenIds = new Set();  // ✅ 改用 id 去重，而不是 text
   
   Object.entries(tasksByDate).forEach(([date, tasks]) => {
     tasks.forEach(task => {
       if (task.isWeekTask === true) {
-        // ✅ 关键修复：同时匹配两种格式
+        // 检查是否应该包含
         let shouldInclude = false;
         
         // 如果 task.weekStart 存在
         if (task.weekStart) {
-          // 提取纯日期部分（去掉时间）
           const taskWeekStart = task.weekStart.split('T')[0];
-          // 比较纯日期
           if (taskWeekStart === currentWeekStart) {
             shouldInclude = true;
           }
         }
         
-        // 如果任务在当前周的日期中，也包含（兼容没有 weekStart 的情况）
+        // 如果任务在当前周的日期中（兼容没有 weekStart 的情况）
         if (!shouldInclude && weekDates.includes(date)) {
           shouldInclude = true;
         }
         
         if (shouldInclude) {
-          const key = `${task.text}`;
-          if (!seenTexts.has(key)) {
-            seenTexts.add(key);
+          const key = task.id;  // ✅ 使用 id 去重
+          if (!seenIds.has(key)) {
+            seenIds.add(key);
             allWeekTasks.push(task);
             console.log(`✅ 找到本周任务: ${task.text}, weekStart: ${task.weekStart}, 日期: ${date}`);
           }
@@ -20266,6 +20270,9 @@ const getWeekTasks = () => {
   console.log(`📊 getWeekTasks - 找到 ${allWeekTasks.length} 个本周任务`);
   return allWeekTasks;
 };
+ 
+
+
   const weekTasks = getWeekTasks();
   const isWeekComplete = weekTasks.length > 0 && weekTasks.every(task => task.done);  
   const pinnedTasks = useMemo(() => {
@@ -20980,63 +20987,58 @@ Bluey 2集
     console.log('📅 本周日期列表:', weekDates);
 
     // ========== ✅ 处理本周任务：使用与 handleAddWeekTask 完全相同的方式 ==========
-    weekTasks.forEach(task => {
-      // 使用与 handleAddWeekTask 相同的去重逻辑
-      // 检查是否在所有日期中已存在
-      let alreadyExists = false;
-      for (const dateStr of weekDates) {
-        const dayTasks = tasksByDate[dateStr] || [];
-        const exists = dayTasks.some(t => 
-          t.isWeekTask && 
-          t.text === task.text && 
-          t.weekStart === weekStart
-        );
-        if (exists) {
-          alreadyExists = true;
-          break;
-        }
-      }
-      
-      if (alreadyExists) {
-        console.log(`⏭️ 本周任务已存在，跳过: ${task.text}`);
-        return;
-      }
+    // ✅ 正确：只生成1次
+weekTasks.forEach(task => {
+  // 检查是否已存在...
+  let alreadyExists = false;
+  // 检查当前日期是否已有该任务
+  const dayTasks = tasksByDate[today] || [];
+  const exists = dayTasks.some(t => 
+    t.isWeekTask && 
+    t.text === task.text && 
+    t.weekStart === weekStart
+  );
+  if (exists) {
+    alreadyExists = true;
+  }
+  
+  if (alreadyExists) {
+    console.log(`⏭️ 本周任务已存在，跳过: ${task.text}`);
+    return;
+  }
 
-      // ✅ 为每一天创建本周任务（与 handleAddWeekTask 完全一致）
-      const taskId = Date.now().toString();
-      weekDates.forEach(dateStr => {
-        const newTask = {
-          id: `${taskId}_${dateStr}`,
-          text: task.text,
-          category: "本周任务",
-          subCategory: '',
-          done: false,
-          timeSpent: 0,
-          timeRecords: [],
-          subTasks: [],
-          note: "",
-          reflection: "",
-          image: null,
-          scheduledTime: "",
-          pinned: false,
-          tags: [],
-          progress: {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          },
-          reminderTime: null,
-          isWeekTask: true,
-          weekStart: weekStart,
-          targetCategory: task.targetCategory || '校内',
-          targetSubCategory: ''
-        };
-        
-        newTasksToAdd.push(newTask);
-        console.log(`✅ 添加本周任务: ${task.text} -> ${dateStr} (weekStart: ${weekStart})`);
-      });
-    });
+  // ✅ 只创建1个任务，添加到今天
+  const newTask = {
+    id: `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+    text: task.text,
+    category: "本周任务",
+    subCategory: '',
+    done: false,
+    timeSpent: 0,
+    timeRecords: [],
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: null,
+    scheduledTime: "",
+    pinned: false,
+    tags: [],
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    reminderTime: null,
+    isWeekTask: true,
+    weekStart: weekStart,
+    targetCategory: task.targetCategory || '校内',
+    targetSubCategory: ''
+  };
+  
+  newTasksToAdd.push(newTask);
+  console.log(`✅ 添加本周任务: ${task.text} -> ${today} (weekStart: ${weekStart})`);
+});
 
     if (newTasksToAdd.length === 0) {
       alert('今天的任务已经全部生成了！');
@@ -23966,7 +23968,7 @@ onSave={(newConfig) => {
     }}
     title="点击修改学期结束日期"
   >
-    <span>本学期剩余</span>
+    <span>暑假剩余</span>
     <span style={{ 
       color: "#FF0000", 
       fontWeight: "bold",
