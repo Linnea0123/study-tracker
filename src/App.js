@@ -19141,23 +19141,19 @@ const applySummerTemplate = () => {
       box-sizing: border-box;
       margin-bottom: 12px;
       white-space: pre;
-    ">本周任务
-古诗2首 #语文
-练字3张 #语文
-看图写话1篇 #语文
-
+    ">
 语文
-课本第3单元
-小古文
+预习
+古诗古文
 
 数学
-乘法 洋葱学园
+二 乘法
 计算练习
 
 英语
-RAZ 朗读 2篇
-Bluey 2集
-桥梁书 Fly Guy
+RAZ E 朗读 2本
+Bluey S2 2集
+Fly Guy 1本
 单词 5个
 
 运动
