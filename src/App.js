@@ -2110,7 +2110,7 @@ const performSearch = useCallback(() => {
       '语文': '#FFFCE8',
       '数学': '#E8F5E9',
       '英语': '#FCE4EC',
-      '科学': '#E1F5FE',
+      '通识': '#E1F5FE',
       '运动': '#E3F2FD',
       '校内': '#61A2Da'
     };
@@ -2469,7 +2469,7 @@ const regularTodos = getSortedTodos(currentTodos, false);
         case '英语':
           return ['英语', '校内-英语'];
         case '其他':
-          return ['科学', '运动', '其他', '校内'];
+          return ['通识', '运动', '其他', '校内'];
         default:
           return [tab];
       }
@@ -4379,7 +4379,7 @@ const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEdi
       '语文': '#FFF9C4',
       '数学': '#E8F5E9',
       '英语': '#FCE4EC',
-      '科学': '#E1F5FE',
+      '通识': '#E1F5FE',
       '运动': '#E3F2FD',
       '校内': '#61A2DA'
     };
@@ -5184,16 +5184,25 @@ const ReflectionModalContent = ({ initialRating, initialReflection, studyEndHour
 
 // 修改 baseCategories 的颜色
 const baseCategories = [
+   { 
+    name: "生活", 
+    color: "#FCE4EC", 
+    textColor: "#333",
+    isDaily: true  // ✅ 标记为每日任务
+  },
   { 
     name: "校内", 
-    color: "#61A2Da",  // 保持蓝色不变
+    color: "#61A2Da",
     subCategories: ["数学", "语文", "英语", "运动"]
   },
   { name: "语文", color: "#FFFCE8", textColor: "#333" },
   { name: "数学", color: "#E8F5E9", textColor: "#333" },
   { name: "英语", color: "#FCE4EC", textColor: "#333" },
-  { name: "科学", color: "#E1F5FE", textColor: "#333" },
-  { name: "运动", color: "#E3F2FD", textColor: "#333" }
+  { name: "通识", color: "#E1F5FE", textColor: "#333" },
+  { name: "综合", color: "#FFF3E0", textColor: "#333" },
+  { name: "运动", color: "#E3F2FD", textColor: "#333" },
+  { name: "生活", color: "#FCE4EC", textColor: "#333" },   // 新增
+  { name: "心理", color: "#EDE7F6", textColor: "#333" }    // 新增
 ];
 // 保持这样就行
 const PAGE_ID = 'PAGE_A'; 
@@ -9036,7 +9045,7 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
     target: 100
   });
 
-  const categories = ['校内', '语文', '数学', '英语', '科学', '运动', '其他'];
+  const categories = ['校内', '语文', '数学', '英语', '通识', '综合', '运动', '生活', '心理'];
   const subCategories = ['数学', '语文', '英语', '运动'];
 
   const handleAddTask = () => {
@@ -11687,7 +11696,8 @@ const TaskItem = ({
 // 在 TaskItem 组件内部，其他 useState 旁边添加（约在第 3880 行附近）
 const [showCrossDateDetail, setShowCrossDateDetail] = useState(false);
 const [localDateStatus, setLocalDateStatus] = useState({});
-
+const [showExpModal, setShowExpModal] = useState(false);
+  const [expInputValue, setExpInputValue] = useState(task.expValue || 2);
 // 初始化本地完成状态
 useEffect(() => {
   if (task.crossDateId && tasksByDate) {
@@ -11965,36 +11975,35 @@ const handleProgressAdjust = (increment) => {
     })()}
   </span>
    {/* ⭐ 经验值小方块 - 添加在这里 */}
-  <span
-    onClick={(e) => {
-      e.stopPropagation();
-      const currentExp = task.expValue || 2;
-      const newExp = window.prompt(`设置"${task.text}"的经验值（0-100）：`, currentExp);
-      if (newExp !== null) {
-        const expNum = parseInt(newExp) || 0;
-        const finalExp = Math.min(Math.max(0, expNum), 100);
-        // 更新任务的经验值
-        onUpdateExpValue?.(task, finalExp);
-      }
-    }}
-    style={{
-      fontSize: "10px",
-      color: "#FF9800",
-      cursor: "pointer",
-      backgroundColor: "#fff3e0",
-      padding: "0 6px",
-      borderRadius: "10px",
-      minWidth: "20px",
-      textAlign: "center",
-      lineHeight: "18px",
-      fontWeight: "bold",
-      border: "1px solid #FFE0B2",
-      flexShrink: 0
-    }}
-    title="点击设置经验值"
-  >
-    {task.expValue || 2}
-  </span>
+ {/* ⭐ 经验值小方块 */}
+{/* ⭐ 经验值小方块 */}
+<span
+  onClick={(e) => {
+    e.stopPropagation();
+    if (isSortingMode) return;
+    // ✅ 改为打开自定义弹窗
+    setExpInputValue(task.expValue || 2);
+    setShowExpModal(true);
+  }}
+  style={{
+    fontSize: "10px",
+    color: "#FF9800",
+    cursor: isSortingMode ? "default" : "pointer",
+    backgroundColor: "#fff3e0",
+    padding: "0 6px",
+    borderRadius: "10px",
+    minWidth: "20px",
+    textAlign: "center",
+    lineHeight: "18px",
+    fontWeight: "bold",
+    border: "1px solid #FFE0B2",
+    flexShrink: 0,
+    display: isSortingMode ? "none" : "inline-block"
+  }}
+  title={isSortingMode ? "" : "点击设置经验值"}
+>
+  {task.expValue || 2}
+</span>
 </div>
 </div>
 
@@ -12475,6 +12484,141 @@ const handleProgressAdjust = (increment) => {
           </button>
         </div>
       )}
+
+{/* 经验值设置弹窗 */}
+{showExpModal && (
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 2000,
+      padding: '10px'
+    }}
+    onClick={() => setShowExpModal(false)}
+  >
+    <div
+      style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        padding: '20px',
+        width: '90%',
+        maxWidth: '320px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h3 style={{
+        textAlign: 'center',
+        marginBottom: '12px',
+        color: '#61A2Da',
+        fontSize: '16px'
+      }}>
+        经验值
+      </h3>
+      
+      <p style={{
+        textAlign: 'center',
+        fontSize: '13px',
+        color: '#666',
+        marginBottom: '12px'
+      }}>
+        <strong>{task.text}</strong>
+      </p>
+      
+      <div style={{ marginBottom: '16px' }}>
+  <label style={{
+    display: 'block',
+    fontSize: '13px',
+    color: '#333',
+    marginBottom: '6px'
+  }}>
+    
+  </label>
+  <input
+    type="number"
+    min="0"
+    max="100"
+    value={expInputValue}
+    onChange={(e) => {
+      const val = parseInt(e.target.value) || 0;
+      setExpInputValue(Math.min(Math.max(0, val), 100));
+    }}
+    style={{
+      width: '100%',
+      padding: '10px',
+      border: '1px solid #ddd',
+      borderRadius: '8px',
+      fontSize: '16px',
+      textAlign: 'center',
+      boxSizing: 'border-box'
+    }}
+    autoFocus
+    onFocus={(e) => e.target.select()}
+  />
+  {/* ❌ 删除这两行 */}
+  {/* <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '11px',
+    color: '#999',
+    marginTop: '4px'
+  }}>
+    <span>0</span>
+    <span>100</span>
+  </div> */}
+</div>
+      
+      <div style={{
+        display: 'flex',
+        gap: '10px'
+      }}>
+        <div
+          onClick={() => setShowExpModal(false)}
+          style={{
+            flex: 1,
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            color: '#333',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            textAlign: 'center'
+          }}
+        >
+          取消
+        </div>
+        <div
+          onClick={() => {
+            const finalExp = Math.min(Math.max(0, expInputValue), 100);
+            onUpdateExpValue?.(task, finalExp);
+            setShowExpModal(false);
+          }}
+          style={{
+            flex: 1,
+            padding: '10px',
+            backgroundColor: '#61A2Da',
+            color: 'white',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}
+        >
+          确认
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </li>
   );
 };
@@ -13125,7 +13269,7 @@ const subjectTotalTime = getSubjectTotalTime();
         '语文': '#FFFCE8',
         '数学': '#E8F5E9',
         '英语': '#FCE4EC',
-        '科学': '#E1F5FE',
+        '通识': '#E1F5FE',
         '运动': '#E3F2FD',
         '校内': '#61A2Da'
       };
@@ -13363,7 +13507,7 @@ const SimplePieChart = ({ data, total, completionStatus = {} }) => {
         '语文': '#FFFCE8',
         '数学': '#E8F5E9',
         '英语': '#FCE4EC',
-        '科学': '#E1F5FE',
+        '通识': '#E1F5FE',
         '运动': '#E3F2FD',
         '校内': '#61A2Da'
       };
@@ -15067,17 +15211,12 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
-  // 防抖定时器
-  // 在 App 组件中，其他 useState 附近添加
 const [silentSyncEnabled, setSilentSyncEnabled] = useState(false);
 const syncDebounceTimerRef = useRef(null);
 const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
 const [enableProgress, setEnableProgress] = useState(false);
-// 在 App 组件中，其他 useState 附近添加
 const [showSearchModal, setShowSearchModal] = useState(false);
-// 编辑关注任务的进度
-// 模式切换：'semester' 或 'summer'
 const [appMode, setAppMode] = useState(() => {
   const saved = localStorage.getItem('app_mode');
   return saved || 'semester';
@@ -15087,7 +15226,16 @@ useEffect(() => {
   localStorage.setItem('app_mode', appMode);
 }, [appMode]);
 
+const [dailyTaskTemplates, setDailyTaskTemplates] = useState(() => {
+  const saved = localStorage.getItem('daily_task_templates');
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  return [];
+});
 
+const [showDailyTaskManager, setShowDailyTaskManager] = useState(false);
+const [newDailyTaskText, setNewDailyTaskText] = useState('');
 
 // ========== 成绩记录相关状态 ==========
 const [grades, setGrades] = useState(() => {
@@ -15490,14 +15638,15 @@ const getTodayStats = useCallback((date) => {
 // ===== 2. 经验系统完整定义 =====
 // ============================================================
 
-// 2.1 维度定义
 const DIMENSIONS = {
   yuwen: { name: "语文", emoji: "📚", color: "#FF6B6B" },
   shuxue: { name: "数学", emoji: "🔢", color: "#4ECDC4" },
   yingyu: { name: "英语", emoji: "🔤", color: "#FF9F43" },
   tongshi: { name: "通识", emoji: "🌍", color: "#6C5CE7" },
-  chuangzao: { name: "创造", emoji: "🎨", color: "#FDCB6E" },
-  shenghuo: { name: "生活", emoji: "🏠", color: "#00CEC9" }
+  chuangzao: { name: "综合", emoji: "🎯", color: "#FDCB6E" },
+  yundong: { name: "运动", emoji: "🏃", color: "#00CEC9" },      // 生活→运动
+  shenghuo: { name: "生活", emoji: "🏠", color: "#F8A5C2" },     // 新增生活
+  xinli: { name: "心理", emoji: "🧠", color: "#A29BFE" }         // 新增心理
 };
 
 // 2.2 任务分类 → 维度映射
@@ -15510,15 +15659,19 @@ const CATEGORY_TO_DIM = {
   "生活": "shenghuo"
 };
 
+
 // 2.3 每个任务的基础经验值
 const BASE_EXP = {
-  "语文": 5,
-  "数学": 8,
-  "英语": 4,
-  "通识": 6,
-  "创造": 7,
-  "生活": 3
+  "语文": 2,
+  "数学": 2,
+  "英语": 2,
+  "通识": 2,
+  "综合": 2,
+  "运动": 2,
+  "生活": 2,
+  "心理": 2
 };
+
 
 // 2.4 经验等级配置
 const EXP_PER_LEVEL = 50;
@@ -15633,14 +15786,13 @@ const ExpPanel = ({ selectedDate }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // ========== ✅ 新增：获取今日评分 ==========
+  // ========== 获取今日评分 ==========
   const getTodayRating = () => {
-    // dailyRatings 来自 App 组件的状态，直接使用
     const rating = dailyRatings[selectedDate] || 0;
     return rating;
   };
 
-  // ========== ✅ 新增：根据评分获取表情 ==========
+  // ========== 根据评分获取表情 ==========
   const getRatingEmoji = () => {
     const rating = getTodayRating();
     if (rating === 1) return '😞';
@@ -15648,32 +15800,22 @@ const ExpPanel = ({ selectedDate }) => {
     if (rating === 3) return '😐';
     if (rating === 4) return '😊';
     if (rating === 5) return '🥳';
-    return '🙂'; // 默认表情（没有评分时显示）
+    return '🙂';
   };
 
-  // ========== ✅ 定义所有需要的变量 ==========
-  
-  // 获取今日经验
+  // ========== 获取经验数据 ==========
   const todayExp = expData.daily[selectedDate] || {};
-  
-  // 获取总经验
   const totalExp = expData.total || {};
-  
-  // 计算总经验值
   const grandTotal = Object.values(totalExp).reduce((sum, val) => sum + val, 0);
-  
-  // 计算今日总经验
   const todayTotal = Object.values(todayExp).reduce((sum, val) => sum + val, 0);
-  
-  // 计算等级
   const level = Math.floor(grandTotal / EXP_PER_LEVEL) + 1;
-  
-  // 获取今日任务统计
+
+  // ========== 获取今日任务统计 ==========
   const todayTasks = tasksByDate[selectedDate] || [];
   let done = 0;
   let total = 0;
   todayTasks.forEach(task => {
-    if (task.category !== "本周任务") {
+    if (task.category !== "本周任务" && task.category !== "常规任务") {
       total++;
       if (task.done && !task.abandoned) done++;
     }
@@ -15696,46 +15838,47 @@ const ExpPanel = ({ selectedDate }) => {
     return exp % EXP_PER_LEVEL;
   };
 
-  // ❌ 删除 getStatusEmoji，改用 getRatingEmoji
-
-  // 获取维度颜色（带透明度）
   const getDimColor = (key, opacity = 0.15) => {
-    const colors = {
-      yuwen: `rgba(255, 107, 107, ${opacity})`,
-      shuxue: `rgba(78, 205, 196, ${opacity})`,
-      yingyu: `rgba(255, 159, 67, ${opacity})`,
-      tongshi: `rgba(108, 92, 231, ${opacity})`,
-      chuangzao: `rgba(253, 203, 110, ${opacity})`,
-      shenghuo: `rgba(0, 206, 201, ${opacity})`
-    };
-    return colors[key] || `rgba(200, 200, 200, ${opacity})`;
+  const colors = {
+    yuwen: `rgba(255, 107, 107, ${opacity})`,
+    shuxue: `rgba(78, 205, 196, ${opacity})`,
+    yingyu: `rgba(255, 159, 67, ${opacity})`,
+    tongshi: `rgba(108, 92, 231, ${opacity})`,
+    chuangzao: `rgba(253, 203, 110, ${opacity})`,
+    yundong: `rgba(0, 206, 201, ${opacity})`,
+    shenghuo: `rgba(248, 165, 194, ${opacity})`,   // 粉色系
+    xinli: `rgba(162, 155, 254, ${opacity})`       // 紫色系
   };
+  return colors[key] || `rgba(200, 200, 200, ${opacity})`;
+};
 
-  // 获取维度显示名称
   const getDimName = (key) => {
-    const names = {
-      yuwen: '语文',
-      shuxue: '数学',
-      yingyu: '英语',
-      tongshi: '通识',
-      chuangzao: '创造',
-      shenghuo: '生活'
-    };
-    return names[key] || key;
+  const names = {
+    yuwen: '语文',
+    shuxue: '数学',
+    yingyu: '英语',
+    tongshi: '通识',
+    chuangzao: '综合',
+    yundong: '运动',
+    shenghuo: '生活',    // 新增
+    xinli: '心理'        // 新增
   };
+  return names[key] || key;
+};
 
-  // 获取维度表情
-  const getDimEmoji = (key) => {
-    const emojis = {
-      yuwen: '📚',
-      shuxue: '🔢',
-      yingyu: '🔤',
-      tongshi: '🌍',
-      chuangzao: '🎨',
-      shenghuo: '🏠'
-    };
-    return emojis[key] || '📌';
+ const getDimEmoji = (key) => {
+  const emojis = {
+    yuwen: '📚',
+    shuxue: '🔢',
+    yingyu: '🔤',
+    tongshi: '🌍',
+    chuangzao: '🎯',
+    yundong: '🏃',
+    shenghuo: '🏠',      // 新增
+    xinli: '🧠'          // 新增
   };
+  return emojis[key] || '📌';
+};
 
   return (
     <div ref={panelRef} style={{ position: 'relative', display: 'inline-block' }}>
@@ -15758,7 +15901,6 @@ const ExpPanel = ({ selectedDate }) => {
         }}
         title={`今日经验: +${todayTotal} | 总经验: ${grandTotal} | Lv.${level}`}
       >
-        {/* ✅ 使用评分表情 */}
         <span style={{ fontSize: isMobile ? '9px' : '10px' }}>{getRatingEmoji()}</span>
         <span style={{ 
           fontWeight: 'bold', 
@@ -15919,17 +16061,7 @@ const ExpPanel = ({ selectedDate }) => {
             })}
           </div>
 
-          {/* 底部提示 */}
-          <div style={{
-            marginTop: isMobile ? '10px' : '14px',
-            paddingTop: isMobile ? '8px' : '12px',
-            borderTop: '1px solid #f0f0f0',
-            fontSize: isMobile ? '10px' : '12px',
-            color: '#999',
-            textAlign: 'center'
-          }}>
-            💡 完成任务获得经验 · 升级解锁新能力
-          </div>
+          
 
           {/* 关闭按钮 - 手机端 */}
           <div
@@ -15990,13 +16122,15 @@ const [categoryColors, setCategoryColors] = useState(() => {
   if (saved) {
     return JSON.parse(saved);
   }
-  // 默认颜色
   return {
     '语文': '#FFFCE8',
     '数学': '#E8F5E9',
     '英语': '#FCE4EC',
-    '科学': '#E1F5FE',
+    '通识': '#E1F5FE',
+    '综合': '#FFF3E0',
     '运动': '#E3F2FD',
+    '生活': '#FCE4EC',    // 新增
+    '心理': '#EDE7F6',    // 新增
     '校内': '#61A2Da'
   };
 });
@@ -16227,10 +16361,17 @@ const [collapsedCategories, setCollapsedCategories] = useState({
   "语文": false,
   "数学": false,
   "英语": false,
-  "科学": false,
+  "通识": false,
   "运动": false,
-  "校内": false
+  "校内": false,
+  "生活": true
 });
+
+
+
+
+
+
 
 
 
@@ -19054,15 +19195,14 @@ const formatTimeInHours = (seconds) => {
   return `${hours}h`;
 };
 
-// 获取类别对应的背景色
 const getCategoryColor = (category, subCategory) => {
   if (category === '校内' && subCategory) {
     const colors = {
-        '数学': '#C8E6C9',
-    '语文': '#FFF3B0',
-    '英语': '#F8BBD0',
-    '运动': '#BBDEFB'
-  };
+      '数学': '#C8E6C9',
+      '语文': '#FFF3B0',
+      '英语': '#F8BBD0',
+      '运动': '#BBDEFB'
+    };
     return colors[subCategory] || '#61A2Da';
   }
   
@@ -19070,13 +19210,15 @@ const getCategoryColor = (category, subCategory) => {
     '语文': '#FFF3B0',
     '数学': '#C8E6C9',
     '英语': '#F8BBD0',
-    '科学': '#B3E5FC',
+    '通识': '#B3E5FC',
+    '综合': '#FFE0B2',
     '运动': '#BBDEFB',
+    '生活': '#F8BBD0',    // 新增
+    '心理': '#E1BEE7',    // 新增
     '校内': '#61A2DA'
   };
   return categoryColors[category] || '#f0f0f0';
 };
-
 
 
 // 移动任务函数
@@ -19254,6 +19396,7 @@ if (savedMonthTasks) {
   setMonthTasks([]);
 }
 
+
 // 加载分类数据
 const savedCategories = await loadDataWithFallback('categories', null);
 if (savedCategories) {
@@ -19277,8 +19420,20 @@ if (savedCategories) {
     };
   });
   
+  // ✅ 检查是否有"生活"分类，如果没有则添加
+  const hasLife = updatedCategories.some(c => c.name === '生活');
+  if (!hasLife) {
+    // 从 baseCategories 中找出"生活"分类
+    const lifeCategory = baseCategories.find(c => c.name === '生活');
+    if (lifeCategory) {
+      updatedCategories.push({ ...lifeCategory });
+      console.log('✅ 自动添加"生活"分类');
+    }
+  }
+  
   setCategories(updatedCategories);
   await saveMainData('categories', updatedCategories);
+  console.log('✅ 分类加载完成:', updatedCategories.map(c => c.name));
 } else {
   // 没有保存的分类数据，使用预设值初始化
   const categoriesWithSubCategories = baseCategories.map(cat => {
@@ -19296,7 +19451,6 @@ if (savedCategories) {
   setCategories(categoriesWithSubCategories);
   await saveMainData('categories', categoriesWithSubCategories);
 }
-
 
 
       // 设置定时备份
@@ -19366,6 +19520,11 @@ useEffect(() => {
   }
 }, [tasksByDate, isInitialized]);
 
+
+ // ✅ 在这里添加：确保每天都有"生活"任务
+// ✅ 确保每天都有"生活"任务（包括过去和未来的日期）
+
+
 // 保存每日评分到 localStorage
 useEffect(() => {
   if (isInitialized) {
@@ -19374,9 +19533,82 @@ useEffect(() => {
   }
 }, [dailyRatings, isInitialized]);
 
+// 👇 放在这后面
+useEffect(() => {
+  localStorage.setItem('daily_task_templates', JSON.stringify(dailyTaskTemplates));
+}, [dailyTaskTemplates]);
 
-
-
+// ✅ 每日任务自动生成 - 添加这个 useEffect
+useEffect(() => {
+  if (!isInitialized) return;
+  if (dailyTaskTemplates.length === 0) return;
+  
+  // 获取当前周的所有日期
+  const weekDates = [];
+  const monday = new Date(currentMonday);
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    weekDates.push(dateStr);
+  }
+  
+  let hasChanges = false;
+  const newTasksByDate = { ...tasksByDate };
+  
+  weekDates.forEach(dateStr => {
+    const dayTasks = tasksByDate[dateStr] || [];
+    
+    dailyTaskTemplates.forEach(template => {
+      // 检查这个日期是否已有该模板的任务
+      const hasTask = dayTasks.some(task => 
+        task.isDailyTask && task.templateId === template.id
+      );
+      
+      if (!hasTask) {
+        const newTask = {
+          id: `daily_${template.id}_${dateStr}_${Date.now()}`,
+          text: template.text,
+          category: template.category || '生活',
+          subCategory: template.subCategory || '',
+          done: false,
+          timeSpent: 0,
+          timeRecords: [],
+          subTasks: [],
+          note: template.note || '',
+          reflection: "",
+          image: null,
+          scheduledTime: "",
+          pinned: false,
+          tags: [],
+          progress: {
+            initial: 0,
+            current: 0,
+            target: 0,
+            unit: "%"
+          },
+          createdAt: new Date().toISOString(),
+          isDailyTask: true,
+          templateId: template.id,
+          expValue: template.expValue || 2
+        };
+        
+        if (!newTasksByDate[dateStr]) {
+          newTasksByDate[dateStr] = [];
+        }
+        newTasksByDate[dateStr].push(newTask);
+        hasChanges = true;
+        console.log(`✅ 为 ${dateStr} 生成每日任务: ${template.text}`);
+      }
+    });
+  });
+  
+  if (hasChanges) {
+    setTasksByDate(newTasksByDate);
+    console.log('✅ 每日任务生成完成');
+  }
+}, [isInitialized, currentMonday, dailyTaskTemplates]); // 依赖项
 
 
 // 👇 在这里添加清理空日期的 useEffect
@@ -19402,6 +19634,8 @@ useEffect(() => {
     });
   }
 }, [isInitialized]); // 只在初始化时执行一次
+
+
 
 
 
@@ -20096,12 +20330,13 @@ const generateStatsData = () => {
     const dayTasks = tasksByDate[day.date] || [];
     
 
-
 const learningTasks = dayTasks.filter(task => {
   if (task.category === "本周任务") return false;
   if (task.isRegularTask && !task.done) return false;
   // 暑假模式隐藏校内
   if (appMode === 'summer' && task.category === '校内') return false;
+  // ✅ 新增：排除"生活"分类的任务
+  if (task.category === "生活") return false;
   return true;
 });
 
@@ -20316,7 +20551,7 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     note: "",
     reflection: "",
     image: null,
-    expValue: newTaskExpValue, 
+   expValue: newTaskExpValue || 2,
     scheduledTime: scheduledTime,
     pinned: false,
     tags: bulkTags || [],
@@ -20582,7 +20817,7 @@ Bluey 2集
     const input = contentDiv.querySelector('#summer-tasks-input');
     const lines = input.value.split('\n');
     
-    const validCategories = ['语文', '数学', '英语', '运动', '科学'];
+    const validCategories = ['语文', '数学', '英语', '运动', '通识'];
     let currentCategory = null;
     let isWeekTaskSection = false;
     const taskGroups = [];
@@ -21912,7 +22147,6 @@ const deleteTask = (task, deleteOption = 'today') => {
         newTasksByDate[date] = newTasksByDate[date].filter(t => 
           !(t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart)
         );
-        // 清理空日期
         if (newTasksByDate[date].length === 0) {
           delete newTasksByDate[date];
         }
@@ -21920,14 +22154,86 @@ const deleteTask = (task, deleteOption = 'today') => {
       return newTasksByDate;
     }
     
+    // ✅ 如果是每日任务（isDailyTask）
+    if (task.isDailyTask && task.templateId) {
+      if (deleteOption === 'today') {
+        // 仅删除今天
+        if (newTasksByDate[selectedDate]) {
+          newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => 
+            !(t.isDailyTask && t.templateId === task.templateId && t.id === task.id)
+          );
+          if (newTasksByDate[selectedDate].length === 0) {
+            delete newTasksByDate[selectedDate];
+          }
+        }
+      } else if (deleteOption === 'future') {
+        // 删除今日及以后
+        const today = new Date(selectedDate);
+        today.setHours(0, 0, 0, 0);
+        Object.keys(newTasksByDate).forEach(date => {
+          const currentDate = new Date(date);
+          currentDate.setHours(0, 0, 0, 0);
+          if (currentDate >= today) {
+            newTasksByDate[date] = newTasksByDate[date].filter(t => 
+              !(t.isDailyTask && t.templateId === task.templateId)
+            );
+            if (newTasksByDate[date].length === 0) {
+              delete newTasksByDate[date];
+            }
+          }
+        });
+      } else if (deleteOption === 'all') {
+        // ✅ 删除所有日期（过去、现在、未来）
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].filter(t => 
+            !(t.isDailyTask && t.templateId === task.templateId)
+          );
+          if (newTasksByDate[date].length === 0) {
+            delete newTasksByDate[date];
+          }
+        });
+        // ✅ 同时从模板中删除（可选）
+        setDailyTaskTemplates(prev => prev.filter(t => t.id !== task.templateId));
+      }
+      return newTasksByDate;
+    }
+    
     // ✅ 如果是跨日期任务
     if (task.crossDateId) {
-      Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].filter(t => t.crossDateId !== task.crossDateId);
-        if (newTasksByDate[date].length === 0) {
-          delete newTasksByDate[date];
+      if (deleteOption === 'today') {
+        if (newTasksByDate[selectedDate]) {
+          newTasksByDate[selectedDate] = newTasksByDate[selectedDate].filter(t => 
+            t.id !== task.id
+          );
+          if (newTasksByDate[selectedDate].length === 0) {
+            delete newTasksByDate[selectedDate];
+          }
         }
-      });
+      } else if (deleteOption === 'future') {
+        const today = new Date(selectedDate);
+        today.setHours(0, 0, 0, 0);
+        Object.keys(newTasksByDate).forEach(date => {
+          const currentDate = new Date(date);
+          currentDate.setHours(0, 0, 0, 0);
+          if (currentDate >= today) {
+            newTasksByDate[date] = newTasksByDate[date].filter(t => 
+              t.crossDateId !== task.crossDateId
+            );
+            if (newTasksByDate[date].length === 0) {
+              delete newTasksByDate[date];
+            }
+          }
+        });
+      } else if (deleteOption === 'all') {
+        Object.keys(newTasksByDate).forEach(date => {
+          newTasksByDate[date] = newTasksByDate[date].filter(t => 
+            t.crossDateId !== task.crossDateId
+          );
+          if (newTasksByDate[date].length === 0) {
+            delete newTasksByDate[date];
+          }
+        });
+      }
       return newTasksByDate;
     }
     
@@ -23318,12 +23624,202 @@ onSave={(newConfig) => {
     >
       搜索
     </div>
-
+ {/* ✅ 新增：每日固定任务模板按钮 */}
+    <div
+      onClick={() => {
+        setShowDailyTaskManager(true);
+        setShowMoreMenu(false);
+      }}
+      style={{
+        padding: "4px 8px",
+        backgroundColor: "#61A2Da", // 橙色，和"批量"按钮区分
+        color: "#fff",
+        borderRadius: "4px",
+        cursor: "pointer",
+        fontSize: "11px",
+        textAlign: "center"
+      }}
+    >
+      每日
+    </div>
+ 
 
   </div>
 )}
 
-
+{/* ✅ 每日任务管理弹窗 */}
+{showDailyTaskManager && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+    padding: '10px'
+  }} onClick={() => setShowDailyTaskManager(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      width: '90%',
+      maxWidth: '400px',
+      maxHeight: '80vh',
+      overflow: 'auto',
+      padding: '20px'
+    }} onClick={e => e.stopPropagation()}>
+      
+      <h3 style={{ textAlign: 'center', marginBottom: '16px', color: '#61A2Da' }}>
+        📋 每日固定任务
+      </h3>
+      
+      <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px', textAlign: 'center' }}>
+        这些任务每天会自动生成，完成后第二天会重新出现
+      </p>
+      
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <input
+          type="text"
+          placeholder="输入每日任务名称"
+          value={newDailyTaskText}
+          onChange={(e) => setNewDailyTaskText(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '14px'
+          }}
+        />
+       <div
+  onClick={() => {
+    if (newDailyTaskText.trim()) {
+      const newTemplate = {
+        id: `daily_${Date.now()}`,
+        text: newDailyTaskText.trim(),
+        category: '生活',
+        subCategory: '',
+        expValue: 2,
+        note: ''
+      };
+      
+      // ✅ 先更新状态
+      setDailyTaskTemplates(prev => {
+        const updated = [...prev, newTemplate];
+        // ✅ 立即保存到 localStorage
+        localStorage.setItem('daily_task_templates', JSON.stringify(updated));
+        return updated;
+      });
+      
+      // ✅ 立即为当前日期创建任务
+      const newTask = {
+        id: `daily_${newTemplate.id}_${selectedDate}_${Date.now()}`,
+        text: newTemplate.text,
+        category: '生活',
+        subCategory: '',
+        done: false,
+        timeSpent: 0,
+        timeRecords: [],
+        subTasks: [],
+        note: '',
+        reflection: "",
+        image: null,
+        scheduledTime: "",
+        pinned: false,
+        tags: [],
+        progress: {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        createdAt: new Date().toISOString(),
+        isDailyTask: true,
+        templateId: newTemplate.id,
+        expValue: 2
+      };
+      
+      setTasksByDate(prev => ({
+        ...prev,
+        [selectedDate]: [...(prev[selectedDate] || []), newTask]
+      }));
+      
+      setNewDailyTaskText('');
+      console.log(`✅ 已添加每日任务: ${newTemplate.text}`);
+    }
+  }}
+  style={{
+    padding: '8px 16px',
+    backgroundColor: '#61A2Da',
+    color: 'white',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px'
+  }}
+>
+  添加
+</div>
+      </div>
+      
+      {dailyTaskTemplates.length === 0 ? (
+        <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+          暂无每日固定任务
+        </div>
+      ) : (
+        dailyTaskTemplates.map((template, index) => (
+          <div
+            key={template.id}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px',
+              borderBottom: index < dailyTaskTemplates.length - 1 ? '1px solid #eee' : 'none'
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>{template.text}</span>
+            <div
+              onClick={() => {
+                if (window.confirm(`确定要删除"${template.text}"吗？`)) {
+                  setDailyTaskTemplates(prev => prev.filter(t => t.id !== template.id));
+                }
+              }}
+              style={{
+                padding: '4px 10px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              删除
+            </div>
+          </div>
+        ))
+      )}
+      
+      <div
+        onClick={() => setShowDailyTaskManager(false)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          marginTop: '16px',
+          backgroundColor: '#f0f0f0',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          textAlign: 'center'
+        }}
+      >
+        关闭
+      </div>
+    </div>
+  </div>
+)}
 
       
  <div style={{
@@ -23543,6 +24039,8 @@ const learningTasks = dayTasks.filter(task => {
   if (task.isRegularTask && !task.done) return false;
   // 暑假模式隐藏校内
   if (appMode === 'summer' && task.category === '校内') return false;
+  // ✅ 新增：排除"生活"分类的任务
+  if (task.category === "生活") return false;
   return true;
 });
 // ✅ 调试：查看筛选后的任务
@@ -25374,9 +25872,10 @@ if (confirmBtn) {
           onClick={(e) => {
             e.stopPropagation();
             if (sortingSubCategory?.category === "本周任务" && !sortingSubCategory?.subCategory) {
-              setSortingSubCategory(null);
+             
             } else {
               setSortingSubCategory({ category: "本周任务", subCategory: null });
+         
             }
           }}
           style={{
@@ -25462,7 +25961,7 @@ const getCategoryBorderColor = () => {
     case '语文': return '#FFFCE8';
     case '数学': return '#E8F5E9';
     case '英语': return '#FCE4EC';
-    case '科学': return '#E1F5FE';
+    case '通识': return '#E1F5FE';
     case '运动': return '#E3F2FD';
     case '校内': return '#61A2Da';
     default: return categoryColors[c.name] || '#f0f0f0';
@@ -25492,7 +25991,7 @@ const getCategoryBorderColor = () => {
           case '语文': return '#FFFCE8';
           case '数学': return '#E8F5E9';
           case '英语': return '#FCE4EC';
-          case '科学': return '#E1F5FE';
+          case '通识': return '#E1F5FE';
           case '运动': return '#E3F2FD';
           case '校内': return '#61A2Da';
           default: return '#f0f0f0';
@@ -25541,8 +26040,10 @@ const getCategoryBorderColor = () => {
           e.stopPropagation();
           if (sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory) {
             setSortingSubCategory(null);
+            
           } else {
             setSortingSubCategory({ category: c.name, subCategory: null });
+          
           }
         }}
         style={{
@@ -25708,8 +26209,10 @@ const getCategoryBorderColor = () => {
     e.stopPropagation();
     if (sortingSubCategory?.subCategory === subCat) {
       setSortingSubCategory(null);
+     
     } else {
       setSortingSubCategory({ category: c.name, subCategory: subCat });
+      
     }
   }}
   style={{
