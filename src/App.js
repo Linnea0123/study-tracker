@@ -15478,19 +15478,16 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-// 智能合并恢复函数 - 覆盖模式
 const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => {
   try {
     console.log('🔄 开始恢复数据...', mode);
 
-
-// 在 handleRestoreData 函数中添加
-if (backupData.dailyTaskTemplates) {
-  setDailyTaskTemplates(backupData.dailyTaskTemplates);
-  localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
-  console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
-}
-
+    // 恢复每日任务模板
+    if (backupData.dailyTaskTemplates) {
+      setDailyTaskTemplates(backupData.dailyTaskTemplates);
+      localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+      console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
+    }
 
     // 覆盖模式：直接用云端数据替换本地
     if (mode === 'overwrite') {
@@ -15521,55 +15518,49 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 恢复学习结束时间');
       }
       
-     
-      
-      // 7. 恢复本月任务
+      // 5. 恢复本月任务
       if (backupData.monthTasks) {
         setMonthTasks(backupData.monthTasks);
         await saveMainData('monthTasks', backupData.monthTasks);
         console.log('✅ 恢复本月任务:', backupData.monthTasks.length, '个');
       }
       
-      // 8. 恢复分类数据
+      // 6. 恢复分类数据
       if (backupData.categories) {
         setCategories(backupData.categories);
         await saveMainData('categories', backupData.categories);
         console.log('✅ 恢复分类数据');
       }
       
-      // 9. 恢复成绩记录
+      // 7. 恢复成绩记录
       if (backupData.grades) {
         setGrades(backupData.grades);
         await saveMainData('grades', backupData.grades);
         console.log('✅ 恢复成绩记录:', backupData.grades.length, '条');
       }
       
-      // 10. 恢复每日提醒
+      // 8. 恢复每日提醒
       if (backupData.reminderText) {
         setReminderText(backupData.reminderText);
         localStorage.setItem('daily_reminder', backupData.reminderText);
         console.log('✅ 恢复每日提醒');
       }
       
-      // 11. 恢复学期结束日期
+      // 9. 恢复学期结束日期
       if (backupData.semesterEndDate) {
         setSemesterEndDate(backupData.semesterEndDate);
         localStorage.setItem('semester_end_date', backupData.semesterEndDate);
         console.log('✅ 恢复学期结束日期:', backupData.semesterEndDate);
       }
       
-     
-      
-     
-      
-      // 14. ⭐ 恢复经验数据（新增）
+      // 10. 恢复经验数据
       if (backupData.expData) {
         setExpData(backupData.expData);
         localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
         console.log('✅ 恢复经验数据:', backupData.expData);
       }
       
-      // 15. 恢复任务排序顺序
+      // 11. 恢复任务排序顺序
       if (backupData.taskOrders) {
         Object.entries(backupData.taskOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -15577,7 +15568,7 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 恢复任务排序顺序');
       }
       
-      // 16. 恢复子分类排序顺序
+      // 12. 恢复子分类排序顺序
       if (backupData.subCategoryOrders) {
         Object.entries(backupData.subCategoryOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -15591,7 +15582,7 @@ if (backupData.dailyTaskTemplates) {
       return;
     }
     
-    // ========== 合并模式（备用） ==========
+    // ========== 合并模式 ==========
     if (mode === 'merge') {
       console.log('🔄 开始智能合并恢复...');
       
@@ -15637,7 +15628,7 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 合并学习结束时间完成');
       }
       
-      // 5. ⭐ 合并经验数据（本地优先）
+      // 5. 合并经验数据（本地优先）
       if (backupData.expData) {
         const mergedExpData = {
           daily: { ...backupData.expData.daily, ...expData.daily },
@@ -15648,9 +15639,7 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 合并经验数据完成');
       }
       
-     
-      
-      // 7. 合并本月任务
+      // 6. 合并本月任务
       if (backupData.monthTasks) {
         const taskMap = new Map();
         monthTasks.forEach(t => taskMap.set(t.id, t));
@@ -15665,7 +15654,7 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 合并本月任务完成');
       }
       
-      // 8. 合并成绩记录
+      // 7. 合并成绩记录
       if (backupData.grades) {
         const gradeMap = new Map();
         grades.forEach(g => gradeMap.set(g.id, g));
@@ -15680,7 +15669,6 @@ if (backupData.dailyTaskTemplates) {
         console.log('✅ 合并成绩记录完成');
       }
       
-     
       alert('数据合并完成！');
     }
     
@@ -15693,28 +15681,23 @@ if (backupData.dailyTaskTemplates) {
   dailyRatings, 
   dailyReflections, 
   studyEndTimes, 
-  
-  focusTaskStatus, 
   monthTasks, 
   grades, 
-
   expData,
   setTasksByDate, 
   setDailyRatings, 
   setDailyReflections, 
   setStudyEndTimes, 
-  
-  setFocusTaskStatus, 
   setMonthTasks, 
   setGrades, 
-  
   setExpData,
   setCategories,
   setSemesterEndDate,
-  
   setReminderText,
-  saveMainData
+  saveMainData,
+  setDailyTaskTemplates
 ]);
+
 
 const getDataHash = useCallback(() => {
   const taskHash = [];
@@ -24373,7 +24356,7 @@ if (totalCount === 0) {
     {isSyncing ? "同步中..." : "立即同步"}
   </div>
 
-  {/* 恢复云端按钮 */}
+{/* 恢复云端按钮 */}
 <div
   onClick={(e) => {
     e.preventDefault();
@@ -24384,11 +24367,11 @@ if (totalCount === 0) {
       return;
     }
     
-    if (window.confirm('确定要从云端恢复最新数据吗？这将覆盖当前所有本地数据！')) {
+    // ✅ 改成合并模式
+    if (window.confirm('确定要从云端合并数据到本地吗？\n\n✅ 云端有本地没有的数据 → 添加\n✅ 本地有云端没有的数据 → 保留\n✅ 相同数据 → 本地优先')) {
       const forceRestoreFromCloud = async () => {
         try {
           const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-          // ✅ 只声明一次，删除重复的 let
           let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
           
           if (!targetGistId) {
@@ -24414,11 +24397,12 @@ if (totalCount === 0) {
           const content = gist.files['study-tracker-data.json']?.content;
           const backupData = JSON.parse(content);
 
-          await handleRestoreData(backupData);
+          // ✅ 使用合并模式恢复
+          await handleRestoreData(backupData, 'merge');
           
         } catch (error) {
-          console.error('强制恢复失败:', error);
-          alert('恢复失败: ' + error.message);
+          console.error('合并失败:', error);
+          alert('合并失败: ' + error.message);
         }
       };
       
@@ -24442,7 +24426,7 @@ if (totalCount === 0) {
     flexShrink: 0
   }}
 >
-  恢复云端
+  合并云端
 </div>
 
   {/* 其他设置按钮 */}
