@@ -14531,6 +14531,7 @@ const calculateLevel = useCallback((exp) => {
 
 const ExpPanel = ({ selectedDate }) => {
   const [showDetail, setShowDetail] = useState(false);
+  const [showTaskDetail, setShowTaskDetail] = useState(null); // 新增：显示任务详情的维度
   const [isMobile, setIsMobile] = useState(window.innerWidth < 480);
   const panelRef = useRef(null);
 
@@ -14546,6 +14547,7 @@ const ExpPanel = ({ selectedDate }) => {
     const handleClickOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         setShowDetail(false);
+        setShowTaskDetail(null);
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -14587,7 +14589,30 @@ const ExpPanel = ({ selectedDate }) => {
     }
   });
 
-  // 辅助函数
+  // ========== 获取某个维度的任务列表 ==========
+  const getTasksForDimension = (dimKey) => {
+    const dimName = getDimName(dimKey);
+    // 根据维度名称匹配任务分类
+    const matchingTasks = todayTasks.filter(task => {
+      if (task.category === "本周任务" || task.category === "常规任务") return false;
+      if (task.abandoned) return false;
+      
+      // 匹配分类
+      if (task.category === dimName) return true;
+      
+      // 校内子分类匹配
+      if (task.category === '校内' && task.subCategory === dimName) return true;
+      
+      // 特殊匹配：运动
+      if (dimKey === 'yundong' && task.category === '运动') return true;
+      
+      return false;
+    });
+    
+    return matchingTasks;
+  };
+
+  // ========== 辅助函数 ==========
   const getExpColor = (exp) => {
     if (exp === 0) return '#e5e7eb';
     if (exp < 10) return '#fbbf24';
@@ -14605,86 +14630,250 @@ const ExpPanel = ({ selectedDate }) => {
   };
 
   const getDimColor = (key, opacity = 0.15) => {
-  const colors = {
-    yuwen: `rgba(255, 107, 107, ${opacity})`,
-    shuxue: `rgba(78, 205, 196, ${opacity})`,
-    yingyu: `rgba(255, 159, 67, ${opacity})`,
-    tongshi: `rgba(108, 92, 231, ${opacity})`,
-    chuangzao: `rgba(253, 203, 110, ${opacity})`,
-    yundong: `rgba(0, 206, 201, ${opacity})`,
-    shenghuo: `rgba(248, 165, 194, ${opacity})`,   // 粉色系
-    xinli: `rgba(162, 155, 254, ${opacity})`       // 紫色系
+    const colors = {
+      yuwen: `rgba(255, 107, 107, ${opacity})`,
+      shuxue: `rgba(78, 205, 196, ${opacity})`,
+      yingyu: `rgba(255, 159, 67, ${opacity})`,
+      tongshi: `rgba(108, 92, 231, ${opacity})`,
+      chuangzao: `rgba(253, 203, 110, ${opacity})`,
+      yundong: `rgba(0, 206, 201, ${opacity})`,
+      shenghuo: `rgba(248, 165, 194, ${opacity})`,
+      xinli: `rgba(162, 155, 254, ${opacity})`
+    };
+    return colors[key] || `rgba(200, 200, 200, ${opacity})`;
   };
-  return colors[key] || `rgba(200, 200, 200, ${opacity})`;
-};
 
   const getDimName = (key) => {
-  const names = {
-    yuwen: '语文',
-    shuxue: '数学',
-    yingyu: '英语',
-    tongshi: '通识',
-    chuangzao: '综合',
-    yundong: '运动',
-    shenghuo: '生活',    // 新增
-    xinli: '心理'        // 新增
+    const names = {
+      yuwen: '语文',
+      shuxue: '数学',
+      yingyu: '英语',
+      tongshi: '通识',
+      chuangzao: '综合',
+      yundong: '运动',
+      shenghuo: '生活',
+      xinli: '心理'
+    };
+    return names[key] || key;
   };
-  return names[key] || key;
-};
 
- const getDimEmoji = (key) => {
-  const emojis = {
-    yuwen: '📚',
-    shuxue: '🔢',
-    yingyu: '🔤',
-    tongshi: '🌍',
-    chuangzao: '🎯',
-    yundong: '🏃',
-    shenghuo: '🏠',      // 新增
-    xinli: '🧠'          // 新增
+  const getDimEmoji = (key) => {
+    const emojis = {
+      yuwen: '📚',
+      shuxue: '🔢',
+      yingyu: '🔤',
+      tongshi: '🌍',
+      chuangzao: '🎯',
+      yundong: '🏃',
+      shenghuo: '🏠',
+      xinli: '🧠'
+    };
+    return emojis[key] || '📌';
   };
-  return emojis[key] || '📌';
-};
 
+  // ========== 任务详情弹窗组件 ==========
+  const TaskDetailModal = ({ dimKey, onClose }) => {
+    const dimName = getDimName(dimKey);
+    const tasks = getTasksForDimension(dimKey);
+    const dimTotalExp = todayExp[dimKey] || 0;
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10000,
+        padding: '10px'
+      }} onClick={onClose}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          width: '90%',
+          maxWidth: '400px',
+          maxHeight: '70vh',
+          overflow: 'auto',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+        }} onClick={e => e.stopPropagation()}>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            borderBottom: '1px solid #f0f0f0',
+            paddingBottom: '12px'
+          }}>
+            <div>
+              <span style={{ fontSize: '20px', marginRight: '8px' }}>{getDimEmoji(dimKey)}</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>{dimName}</span>
+              <span style={{ fontSize: '13px', color: '#999', marginLeft: '8px' }}>
+                +{dimTotalExp} 分
+              </span>
+            </div>
+            <div
+              onClick={onClose}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: '#f0f0f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '18px',
+                color: '#666'
+              }}
+            >
+              ×
+            </div>
+          </div>
+          
+          <div style={{ marginBottom: '12px', fontSize: '13px', color: '#666' }}>
+            今日任务 ({tasks.length} 个)
+          </div>
+          
+          {tasks.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '30px',
+              color: '#999',
+              fontSize: '13px'
+            }}>
+              今日暂无 {dimName} 任务
+            </div>
+          ) : (
+            <div>
+              {tasks.map((task, idx) => {
+                const minutes = Math.floor((task.timeSpent || 0) / 60);
+                const isCompleted = task.done === true && task.abandoned !== true;
+                const isAbandoned = task.abandoned === true;
+                
+                return (
+                  <div
+                    key={task.id}
+                    style={{
+                      padding: '10px 12px',
+                      borderBottom: idx < tasks.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: idx % 2 === 0 ? '#fafafa' : 'transparent',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                      {/* 完成状态图标 */}
+                      <span style={{ flexShrink: 0 }}>
+                        {isCompleted ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17L4 12" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                          </svg>
+                        ) : isAbandoned ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <line x1="4" y1="4" x2="20" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                            <line x1="20" y1="4" x2="4" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
+                          </svg>
+                        )}
+                      </span>
+                      
+                      <span style={{
+                        fontSize: '13px',
+                        color: isCompleted ? '#999' : (isAbandoned ? '#ccc' : '#333'),
+                        textDecoration: isCompleted ? 'line-through' : 'none',
+                        wordBreak: 'break-word',
+                        flex: 1
+                      }}>
+                        {task.text}
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#999',
+                      minWidth: '40px',
+                      textAlign: 'right'
+                    }}>
+                      {minutes > 0 ? `${minutes}m` : ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          <div
+            onClick={onClose}
+            style={{
+              marginTop: '16px',
+              padding: '10px',
+              backgroundColor: '#61A2Da',
+              color: 'white',
+              borderRadius: '8px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            关闭
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ========== 主渲染 ==========
   return (
     <div ref={panelRef} style={{ position: 'relative', display: 'inline-block' }}>
       {/* 主按钮 */}
-<div
-  onClick={() => setShowDetail(!showDetail)}
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: isMobile ? '1px' : '2px',
-    padding: isMobile ? '1px 4px' : '1px 6px',
-    height: isMobile ? '20px' : '24px',
-    backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: isMobile ? '8px' : '9px',
-    whiteSpace: 'nowrap',
-    border: '1px solid #e0e0e0',
-    flexShrink: 0
-  }}
-  title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
->
-  <span style={{ fontSize: isMobile ? '9px' : '10px' }}>{getRatingEmoji()}</span>
-  <span style={{ 
-    fontWeight: 'bold', 
-    color: todayTotal > 0 ? '#2e7d32' : '#999', 
-    fontSize: isMobile ? '8px' : '9px' 
-  }}>
-    +{todayTotal}
-  </span>
-  <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#999' }}> </span>
-  <span style={{ 
-    fontSize: isMobile ? '8px' : '9px', 
-    color: '#999',
-    fontWeight: 'bold'
-  }}>
-    Lv.{level}
-  </span>
-  <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#ccc' }}>▼</span>
-</div>
+      <div
+        onClick={() => setShowDetail(!showDetail)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? '1px' : '2px',
+          padding: isMobile ? '1px 4px' : '1px 6px',
+          height: isMobile ? '20px' : '24px',
+          backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
+          borderRadius: '10px',
+          cursor: 'pointer',
+          fontSize: isMobile ? '8px' : '9px',
+          whiteSpace: 'nowrap',
+          border: '1px solid #e0e0e0',
+          flexShrink: 0
+        }}
+        title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
+      >
+        <span style={{ fontSize: isMobile ? '9px' : '10px' }}>{getRatingEmoji()}</span>
+        <span style={{ 
+          fontWeight: 'bold', 
+          color: todayTotal > 0 ? '#2e7d32' : '#999', 
+          fontSize: isMobile ? '8px' : '9px' 
+        }}>
+          +{todayTotal}
+        </span>
+        <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#999' }}> </span>
+        <span style={{ 
+          fontSize: isMobile ? '8px' : '9px', 
+          color: '#999',
+          fontWeight: 'bold'
+        }}>
+          Lv.{level}
+        </span>
+        <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#ccc' }}>▼</span>
+      </div>
 
       {/* 下拉详情面板 */}
       {showDetail && (
@@ -14749,7 +14938,7 @@ const ExpPanel = ({ selectedDate }) => {
             </div>
           </div>
 
-          {/* 维度列表 */}
+          {/* 维度列表 - 点击可查看任务 */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
@@ -14766,15 +14955,35 @@ const ExpPanel = ({ selectedDate }) => {
               const bgColor = getDimColor(key, 0.08);
               const dimName = getDimName(key);
               const dimEmoji = getDimEmoji(key);
+              const tasksForDim = getTasksForDimension(key);
+              const taskCount = tasksForDim.length;
+              const completedCount = tasksForDim.filter(t => t.done && !t.abandoned).length;
 
               return (
-                <div key={key} style={{
-                  padding: isMobile ? '8px 10px' : '10px 14px',
-                  borderRadius: isMobile ? '8px' : '10px',
-                  backgroundColor: hasExp ? bgColor : '#fafafa',
-                  border: '1px solid #f0f0f0',
-                  fontSize: isMobile ? '12px' : '13px'
-                }}>
+                <div 
+                  key={key} 
+                  style={{
+                    padding: isMobile ? '8px 10px' : '10px 14px',
+                    borderRadius: isMobile ? '8px' : '10px',
+                    backgroundColor: hasExp ? bgColor : '#fafafa',
+                    border: '1px solid #f0f0f0',
+                    fontSize: isMobile ? '12px' : '13px',
+                    cursor: 'pointer',  // 添加指针样式
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => {
+                    // 点击维度卡片，显示任务详情
+                    setShowTaskDetail(key);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#61A2Da';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(97, 162, 218, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#f0f0f0';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -14794,6 +15003,19 @@ const ExpPanel = ({ selectedDate }) => {
                       }}>
                         {dimName}
                       </span>
+                      {/* 显示任务数量 */}
+                      {taskCount > 0 && (
+                        <span style={{
+                          fontSize: isMobile ? '9px' : '10px',
+                          color: completedCount === taskCount ? '#4caf50' : '#999',
+                          backgroundColor: completedCount === taskCount ? '#e8f5e9' : '#f5f5f5',
+                          padding: '1px 6px',
+                          borderRadius: '10px',
+                          marginLeft: '2px'
+                        }}>
+                          {completedCount}/{taskCount}
+                        </span>
+                      )}
                     </span>
                     <span style={{
                       fontSize: isMobile ? '11px' : '13px',
@@ -14834,7 +15056,18 @@ const ExpPanel = ({ selectedDate }) => {
             })}
           </div>
 
-          
+          {/* 底部提示 */}
+          <div style={{
+            marginTop: isMobile ? '12px' : '16px',
+            padding: '8px',
+            textAlign: 'center',
+            fontSize: isMobile ? '10px' : '11px',
+            color: '#999',
+            borderTop: '1px solid #f0f0f0',
+            paddingTop: isMobile ? '10px' : '12px'
+          }}>
+            💡 点击分类查看今日任务
+          </div>
 
           {/* 关闭按钮 - 手机端 */}
           <div
@@ -14852,6 +15085,14 @@ const ExpPanel = ({ selectedDate }) => {
             ✕ 关闭
           </div>
         </div>
+      )}
+
+      {/* 任务详情弹窗 */}
+      {showTaskDetail && (
+        <TaskDetailModal
+          dimKey={showTaskDetail}
+          onClose={() => setShowTaskDetail(null)}
+        />
       )}
     </div>
   );
@@ -15576,6 +15817,26 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
         console.log('✅ 恢复子分类排序顺序');
       }
       
+      // 13. 恢复科目待办
+      if (backupData.subjectTodoEntries) {
+        localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
+        console.log('✅ 恢复科目待办');
+      }
+      
+      // 14. 恢复每日任务模板（已经在前面恢复了）
+      
+      // 15. 恢复子分类颜色
+      if (backupData.subCategoryColors) {
+        localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
+        console.log('✅ 恢复子分类颜色');
+      }
+      
+      // 16. 恢复类别颜色
+      if (backupData.categoryColors) {
+        localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
+        console.log('✅ 恢复类别颜色');
+      }
+      
       console.log('✅ 覆盖恢复完成！');
       alert('数据已覆盖恢复！页面将重新加载。');
       setTimeout(() => window.location.reload(), 1000);
@@ -15669,7 +15930,24 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
         console.log('✅ 合并成绩记录完成');
       }
       
-      alert('数据合并完成！');
+      // 8. 合并每日任务模板（本地优先）
+      if (backupData.dailyTaskTemplates) {
+        const templateMap = new Map();
+        dailyTaskTemplates.forEach(t => templateMap.set(t.id, t));
+        backupData.dailyTaskTemplates.forEach(t => {
+          if (!templateMap.has(t.id)) {
+            templateMap.set(t.id, t);
+          }
+        });
+        const mergedTemplates = Array.from(templateMap.values());
+        setDailyTaskTemplates(mergedTemplates);
+        localStorage.setItem('daily_task_templates', JSON.stringify(mergedTemplates));
+        console.log('✅ 合并每日任务模板完成');
+      }
+      
+      console.log('✅ 智能合并完成！');
+      alert('数据合并完成！页面将重新加载。');
+      setTimeout(() => window.location.reload(), 1000);
     }
     
   } catch (error) {
@@ -15684,6 +15962,7 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
   monthTasks, 
   grades, 
   expData,
+  dailyTaskTemplates,
   setTasksByDate, 
   setDailyRatings, 
   setDailyReflections, 
@@ -15694,8 +15973,8 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
   setCategories,
   setSemesterEndDate,
   setReminderText,
-  saveMainData,
-  setDailyTaskTemplates
+  setDailyTaskTemplates,
+  saveMainData
 ]);
 
 
@@ -15989,10 +16268,7 @@ const debouncedSync = useCallback(() => {
   console.log('⏭️ 自动同步已禁用');
   return;
   
-  // 下面的代码不再执行
-  // const token = localStorage.getItem(PAGE_ID + '_github_token');
-  // const autoSyncEnabled = localStorage.getItem(PAGE_ID + '_github_auto_sync') === 'true';
-  // ...
+  
 }, []);
 
 
@@ -24357,6 +24633,7 @@ if (totalCount === 0) {
   </div>
 
 {/* 恢复云端按钮 */}
+{/* 覆盖云端按钮 */}
 <div
   onClick={(e) => {
     e.preventDefault();
@@ -24367,8 +24644,8 @@ if (totalCount === 0) {
       return;
     }
     
-    // ✅ 改成合并模式
-    if (window.confirm('确定要从云端合并数据到本地吗？\n\n✅ 云端有本地没有的数据 → 添加\n✅ 本地有云端没有的数据 → 保留\n✅ 相同数据 → 本地优先')) {
+    // ✅ 改成覆盖模式
+    if (window.confirm('确定要从云端覆盖本地数据吗？\n\n⚠️ 警告：本地数据将被云端数据完全覆盖！\n⚠️ 此操作不可撤销！')) {
       const forceRestoreFromCloud = async () => {
         try {
           const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
@@ -24397,12 +24674,12 @@ if (totalCount === 0) {
           const content = gist.files['study-tracker-data.json']?.content;
           const backupData = JSON.parse(content);
 
-          // ✅ 使用合并模式恢复
-          await handleRestoreData(backupData, 'merge');
+          // ✅ 使用覆盖模式恢复
+          await handleRestoreData(backupData, 'overwrite');
           
         } catch (error) {
-          console.error('合并失败:', error);
-          alert('合并失败: ' + error.message);
+          console.error('覆盖失败:', error);
+          alert('覆盖失败: ' + error.message);
         }
       };
       
@@ -24414,7 +24691,7 @@ if (totalCount === 0) {
     alignItems: "center",
     justifyContent: "center",
     padding: "4px 6px",
-    backgroundColor: "#61A2Da",
+    backgroundColor: "#61A2Da",  // 改成红色，表示危险操作
     color: "#fff",
     fontSize: 11,
     borderRadius: 6,
@@ -24426,7 +24703,7 @@ if (totalCount === 0) {
     flexShrink: 0
   }}
 >
-  合并云端
+  恢复云端
 </div>
 
   {/* 其他设置按钮 */}
