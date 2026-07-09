@@ -26,7 +26,21 @@ const GradeModal = ({ onClose, isVisible }) => {
   const touchMoveIndex = useRef(null);
 
   const mainSubjects = ['数学', '语文', '英语'];
-  
+  // 年级选择状态
+const [selectedGrade, setSelectedGrade] = useState(() => {
+  const saved = localStorage.getItem('grade_selected_grade');
+  return saved || '一下';
+});
+
+// 年级列表
+const gradeOptions = [
+  '一上', '一下', 
+  '二上', '二下', 
+  '三上', '三下', 
+  '四上', '四下', 
+  '五上', '五下', 
+  '六上', '六下'
+];
 
 
 // 在现有的 useState 后面添加以下代码
@@ -190,46 +204,78 @@ const [filteredHistory, setFilteredHistory] = useState([]);
     localStorage.setItem('grade_subcategories', JSON.stringify(subjectSubCategories));
   }, [subjectSubCategories]);
 
-  // 初始化加载成绩数据
-  useEffect(() => {
-    const loadGrades = () => {
-      try {
-        const storageKey = `${STORAGE_KEY}_grades`;
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-          const savedGrades = JSON.parse(saved);
-          const normalizedGrades = savedGrades.map(grade => ({
-            ...grade,
-            scoreType: grade.scoreType || '100分制',
-            subCategory: grade.subCategory || ''
-          }));
-          setGrades(normalizedGrades);
-        }
-      } catch (error) {
-        console.error('加载成绩数据失败:', error);
-      }
-    };
-    
-    if (isVisible) {
-      loadGrades();
-    }
-  }, [isVisible]);
-
-  const saveGrades = (updatedGrades) => {
-    setGrades(updatedGrades);
+// 初始化加载成绩数据
+useEffect(() => {
+  const loadGrades = () => {
     try {
       const storageKey = `${STORAGE_KEY}_grades`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
-      // 如果有 App 传递的更新函数，调用它
-      if (onGradeUpdate) {
-        onGradeUpdate(updatedGrades);
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        
+        // ✅ 检查数据结构
+        if (Array.isArray(parsed)) {
+          // 旧格式：数组 → 迁移到"一下"
+          const normalized = {
+            '一下': parsed.map(grade => ({
+              ...grade,
+              grade: '一下',
+              scoreType: grade.scoreType || '100分制',
+              subCategory: grade.subCategory || ''
+            }))
+          };
+          localStorage.setItem(storageKey, JSON.stringify(normalized));
+          setGrades(normalized);
+          console.log('✅ 数据已迁移到"一下":', normalized['一下'].length, '条');
+        } else if (typeof parsed === 'object' && parsed !== null) {
+          // 新格式：按年级分组
+          const normalized = {};
+          Object.keys(parsed).forEach(grade => {
+            normalized[grade] = (parsed[grade] || []).map(g => ({
+              ...g,
+              grade: g.grade || grade,
+              scoreType: g.scoreType || '100分制',
+              subCategory: g.subCategory || ''
+            }));
+          });
+          setGrades(normalized);
+          console.log('✅ 加载成绩数据:', Object.keys(normalized));
+          console.log('📊 "一下" 有', (normalized['一下'] || []).length, '条');
+        } else {
+          setGrades({});
+        }
       }
     } catch (error) {
-      console.error('保存成绩数据失败:', error);
+      console.error('加载成绩数据失败:', error);
+      setGrades({});
     }
   };
-// 在 saveGrades 函数后面添加以下代码
+  
+  if (isVisible) {
+    loadGrades();
+  }
+}, [isVisible]);
 
+const saveGrades = (updatedGrades) => {
+  setGrades(updatedGrades);
+  try {
+    const storageKey = `${STORAGE_KEY}_grades`;
+    localStorage.setItem(storageKey, JSON.stringify(updatedGrades));
+    if (onGradeUpdate) {
+      onGradeUpdate(updatedGrades);
+    }
+  } catch (error) {
+    console.error('保存成绩数据失败:', error);
+  }
+};
+// 在 saveGrades 函数后面添加以下代码
+const getCurrentGradeGrades = () => {
+  // 如果 grades 是对象，返回对应年级的数组
+  if (grades && typeof grades === 'object') {
+    return grades[selectedGrade] || [];
+  }
+  return [];
+};
 // 保存测试内容到历史记录
 const saveToHistory = (content) => {
   if (!content || !content.trim()) return;
@@ -309,56 +355,82 @@ const handleAddGrade = () => {
 };
 
   // 开始编辑成绩
-  const handleEditGrade = (grade) => {
-    setEditingGrade(grade);
-    setSelectedSubject(grade.subject);
-    setNewGrade({
-      date: grade.date,
-      subject: grade.subject,
-      subCategory: grade.subCategory || '',
-      testContent: grade.testContent,
-      score: grade.score,
-      scoreType: grade.scoreType || '100分制',
-      fullScore: grade.fullScore || '100',
-      wrongQuestions: grade.wrongQuestions || '',
-      analysis: grade.analysis || ''
-    });
-    setShowAddForm(true);
-  };
+// 开始编辑成绩
+const handleEditGrade = (grade) => {
+  setEditingGrade(grade);
+  setSelectedSubject(grade.subject);
+  setNewGrade({
+    date: grade.date,
+    subject: grade.subject,
+    subCategory: grade.subCategory || '',
+    testContent: grade.testContent,
+    score: grade.score,
+    scoreType: grade.scoreType || '100分制',
+    fullScore: grade.fullScore || '100',
+    wrongQuestions: grade.wrongQuestions || '',
+    analysis: grade.analysis || ''
+  });
+  setShowAddForm(true);
+};
 
-  // 保存编辑后的成绩
- // 修改 handleSaveEditGrade 函数
+// 保存编辑后的成绩
 const handleSaveEditGrade = () => {
   if (!newGrade.testContent || !newGrade.score) {
     alert('请填写测试内容和得分');
     return;
   }
 
-  // 👇 添加这一行：保存测试内容到历史记录
   saveToHistory(newGrade.testContent);
 
-  const updatedGrades = grades.map(grade => 
-    grade.id === editingGrade.id ? {
-      ...grade,
-      ...newGrade,
-      subCategory: newGrade.subCategory || '未分类',
-      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-    } : grade
-  );
-  
-  saveGrades(updatedGrades);
+  // 直接更新当前年级的成绩列表
+  setGrades(prev => {
+    const currentGrades = prev[selectedGrade] || [];
+    const updatedGrades = currentGrades.map(grade => 
+      grade.id === editingGrade.id ? {
+        ...grade,
+        ...newGrade,
+        subCategory: newGrade.subCategory || '未分类',
+        isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore),
+        grade: selectedGrade
+      } : grade
+    );
+    
+    const updated = {
+      ...prev,
+      [selectedGrade]: updatedGrades
+    };
+    
+    localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(updated));
+    if (onGradeUpdate) {
+      onGradeUpdate(updated);
+    }
+    return updated;
+  });
+
   resetNewGradeForm(selectedSubject, selectedSubCategory);
   setShowAddForm(false);
   setEditingGrade(null);
 };
 
   // 删除成绩记录
-  const handleDeleteGrade = (id) => {
-    if (window.confirm('确定要删除这条成绩记录吗？')) {
-      const updatedGrades = grades.filter(grade => grade.id !== id);
-      saveGrades(updatedGrades);
-    }
-  };
+// 删除成绩记录
+const handleDeleteGrade = (id) => {
+  if (window.confirm('确定要删除这条成绩记录吗？')) {
+    setGrades(prev => {
+      const currentGrades = prev[selectedGrade] || [];
+      const updatedGrades = currentGrades.filter(grade => grade.id !== id);
+      const updated = {
+        ...prev,
+        [selectedGrade]: updatedGrades
+      };
+      localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(updated));
+      if (onGradeUpdate) {
+        onGradeUpdate(updated);
+      }
+      return updated;
+    });
+  }
+};
 
   // 获取百分比分数
   const getPercentageScore = (grade) => {
@@ -393,46 +465,59 @@ const handleSaveEditGrade = () => {
   };
 
   // 获取筛选后的成绩
-  const getFilteredGrades = () => {
-    let filtered = grades.filter(grade => grade.subject === selectedSubject);
-    
-    if (selectedSubCategory) {
-      filtered = filtered.filter(grade => grade.subCategory === selectedSubCategory);
-    }
-    
-    return filtered;
-  };
+// 获取筛选后的成绩
+const getFilteredGrades = () => {
+  // 获取当前年级的成绩列表
+  const currentGrades = getCurrentGradeGrades();
+  
+  // 确保是数组
+  if (!Array.isArray(currentGrades)) return [];
+  
+  let filtered = currentGrades.filter(grade => grade.subject === selectedSubject);
+  
+  if (selectedSubCategory) {
+    filtered = filtered.filter(grade => grade.subCategory === selectedSubCategory);
+  }
+  
+  return filtered;
+};
 
   // 生成图表数据
-  const getChartData = () => {
-    const filtered = getFilteredGrades();
-    const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
-    
-    return sorted.map(grade => ({
-      id: grade.id,
-      date: grade.date,
-      label: grade.date.slice(5),
-      score: getPercentageScore(grade),
-      isFullMark: grade.isFullMark,
-      testContent: grade.testContent,
-      subCategory: grade.subCategory
-    }));
-  };
+// 生成图表数据
+const getChartData = () => {
+  const filtered = getFilteredGrades();
+  if (!Array.isArray(filtered)) return [];
+  
+  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+  
+  return sorted.map(grade => ({
+    id: grade.id,
+    date: grade.date,
+    label: grade.date.slice(5),
+    score: getPercentageScore(grade),
+    isFullMark: grade.isFullMark,
+    testContent: grade.testContent,
+    subCategory: grade.subCategory
+  }));
+};
 
   // 统计信息
-  const getStats = () => {
-    const filtered = getFilteredGrades();
-    if (filtered.length === 0) return { count: 0, avgScore: 0, fullMarks: 0 };
-    
-    const avgScore = filtered.reduce((sum, g) => sum + getPercentageScore(g), 0) / filtered.length;
-    const fullMarks = filtered.filter(g => g.isFullMark).length;
-    
-    return {
-      count: filtered.length,
-      avgScore: Math.round(avgScore),
-      fullMarks: fullMarks
-    };
+// 统计信息
+const getStats = () => {
+  const currentGrades = getCurrentGradeGrades();
+  if (!Array.isArray(currentGrades) || currentGrades.length === 0) {
+    return { count: 0, avgScore: 0, fullMarks: 0 };
+  }
+  
+  const avgScore = currentGrades.reduce((sum, g) => sum + getPercentageScore(g), 0) / currentGrades.length;
+  const fullMarks = currentGrades.filter(g => g.isFullMark).length;
+  
+  return {
+    count: currentGrades.length,
+    avgScore: Math.round(avgScore),
+    fullMarks: fullMarks
   };
+};
 
   const stats = getStats();
   const chartData = getChartData();
@@ -692,125 +777,164 @@ button:focus-visible {
   overscrollBehavior: 'contain'
 }}>
   {/* 标题栏 - 图标在标题右侧、关闭按钮左侧 */}
-  <div style={{
+ 
+
+ <div style={{
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   marginBottom: '20px'
 }}>
-  {/* 左侧占位 - 宽度与右侧按钮组相同，保持标题居中 */}
-  <div style={{ width: '100px' }}></div>
-    <h2 style={{ 
-      textAlign: 'center', 
-      margin: 0,
-      color: '#61A2Da',
-      fontSize: '20px'
-    }}>
-      成绩记录
-    </h2>
-    
-    {/* 图标按钮组 - 放在标题右侧 */}
-  {/* 右侧按钮组 - 统一尺寸，中心对齐 */}
-<div style={{
-  display: 'flex',
-  gap: '8px',
-  alignItems: 'center',
-  height: '28px'
-}}>
- {/* 2. 修改右上角添加按钮的 onClick */}
-<button
-  className="add-grade-btn icon-btn"
-  onClick={() => {
-    setShowAddForm(!showAddForm);
-    if (!showAddForm) {
-      // 传入当前选中的科目和子分类
-      resetNewGradeForm(selectedSubject, selectedSubCategory);
-      setEditingGrade(null);
-    }
-  }}
-  style={{
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    width: '28px',
-    height: '28px',
+  {/* 左侧：年级选择器 */}
+  <div style={{
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-    borderRadius: '4px'
-  }}
-  title={showAddForm ? '取消添加' : '添加新成绩'}
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-</button>
-
-  {/* 管理子分类 - 铅笔图标（灰色） */}
-  <button
-    className="add-grade-btn icon-btn"
-    onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
-    style={{
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      width: '28px',
-      height: '28px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-      borderRadius: '4px'
-    }}
-    title={showSubCategoryManager ? '关闭管理' : '管理子分类'}
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path 
-        d="M17 3L21 7L7 21H3L3 17L17 3Z" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path 
-        d="M15 5L19 9" 
-        stroke="#999" 
-        strokeWidth="1.8" 
-        strokeLinecap="round"
-      />
-    </svg>
-  </button>
-
-  {/* 关闭按钮 - 悬浮变色（灰色变深灰） */}
-  <button
-   className="add-grade-btn icon-btn"
-    onClick={onClose}
-    style={{
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      width: '28px',
-      height: '28px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-      borderRadius: '4px'
-    }}
-    onMouseEnter={(e) => e.currentTarget.style.color = '#999'}
-    onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
-    title="关闭"
-  >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  </button>
-</div>
+    gap: '6px',
+    width: '100px'  // 保持宽度不变，让标题居中
+  }}>
+    <span style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>📚</span>
+    <select
+      value={selectedGrade}
+      onChange={(e) => {
+        const newGrade = e.target.value;
+        setSelectedGrade(newGrade);
+        localStorage.setItem('grade_selected_grade', newGrade);
+      }}
+      style={{
+        padding: '2px 6px',
+        borderRadius: '4px',
+        border: '1px solid #d1d5db',
+        fontSize: '12px',
+        backgroundColor: 'white',
+        cursor: 'pointer',
+        outline: 'none',
+        height: '26px',
+        maxWidth: '60px'
+      }}
+    >
+      {gradeOptions.map(grade => (
+        <option key={grade} value={grade}>
+          {grade}
+        </option>
+      ))}
+    </select>
+    <span style={{
+      fontSize: '10px',
+      color: '#999'
+    }}>
+      ({getCurrentGradeGrades().length})
+    </span>
   </div>
+  
+  <h2 style={{ 
+    textAlign: 'center', 
+    margin: 0,
+    color: '#61A2Da',
+    fontSize: '20px'
+  }}>
+    成绩记录
+  </h2>
+  
+  {/* 右侧按钮组 - 统一尺寸，中心对齐 */}
+  <div style={{
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    height: '28px',
+    width: '100px',  // 保持宽度不变
+    justifyContent: 'flex-end'
+  }}>
+    {/* 添加按钮 */}
+    <button
+      className="add-grade-btn icon-btn"
+      onClick={() => {
+        setShowAddForm(!showAddForm);
+        if (!showAddForm) {
+          resetNewGradeForm(selectedSubject, selectedSubCategory);
+          setEditingGrade(null);
+        }
+      }}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        borderRadius: '4px'
+      }}
+      title={showAddForm ? '取消添加' : '添加新成绩'}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="4" x2="12" y2="20" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
+
+    {/* 管理子分类 - 铅笔图标（灰色） */}
+    <button
+      className="add-grade-btn icon-btn"
+      onClick={() => setShowSubCategoryManager(!showSubCategoryManager)}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        borderRadius: '4px'
+      }}
+      title={showSubCategoryManager ? '关闭管理' : '管理子分类'}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path 
+          d="M17 3L21 7L7 21H3L3 17L17 3Z" 
+          stroke="#999" 
+          strokeWidth="1.8" 
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        <path 
+          d="M15 5L19 9" 
+          stroke="#999" 
+          strokeWidth="1.8" 
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+
+    {/* 关闭按钮 */}
+    <button
+      className="add-grade-btn icon-btn"
+      onClick={onClose}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        width: '28px',
+        height: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        borderRadius: '4px'
+      }}
+      title="关闭"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
   {/* 科目按钮 */}
   <div style={{
     display: 'flex',
@@ -960,7 +1084,7 @@ button:focus-visible {
             return '#a0c4ff';
           };
           const barColor = getBarColor(percentage);
-          const originalGrade = grades.find(g => g.id === item.id);
+          const originalGrade = grades[selectedGrade]?.find(g => g.id === item.id);
           
           return (
             <div
@@ -2005,6 +2129,7 @@ button:focus-visible {
     </div>
   )}
 </div>
+
 
       
     </div>
@@ -14410,34 +14535,52 @@ const DIMENSIONS = {
   yingyu: { name: "英语", emoji: "🔤", color: "#FF9F43" },
   tongshi: { name: "通识", emoji: "🌍", color: "#6C5CE7" },
   chuangzao: { name: "综合", emoji: "🎯", color: "#FDCB6E" },
-  yundong: { name: "运动", emoji: "🏃", color: "#00CEC9" },      // 生活→运动
-  shenghuo: { name: "生活", emoji: "🏠", color: "#F8A5C2" },     // 新增生活
-  xinli: { name: "心理", emoji: "🧠", color: "#A29BFE" }         // 新增心理
+  yundong: { name: "运动", emoji: "🏃", color: "#00CEC9" },
+  shenghuo: { name: "生活", emoji: "🏠", color: "#F8A5C2" },
+  xinli: { name: "心理", emoji: "🧠", color: "#A29BFE" },
+  // 校内子分类单独映射
+  shuxue_sub: { name: "数学(校内)", emoji: "🔢", color: "#4ECDC4" },
+  yuwen_sub: { name: "语文(校内)", emoji: "📚", color: "#FF6B6B" },
+  yingyu_sub: { name: "英语(校内)", emoji: "🔤", color: "#FF9F43" },
+  yundong_sub: { name: "运动(校内)", emoji: "🏃", color: "#00CEC9" },
+  kexue_sub: { name: "科学(校内)", emoji: "🔬", color: "#26C6DA" } 
 };
 
 // 2.2 任务分类 → 维度映射
 const CATEGORY_TO_DIM = {
+  // 大类
   "语文": "yuwen",
   "数学": "shuxue",
   "英语": "yingyu",
   "通识": "tongshi",
-  "创造": "chuangzao",
-  "生活": "shenghuo"
+  "综合": "chuangzao",
+  "运动": "yundong",
+  "生活": "shenghuo",
+  "心理": "xinli",
+  // 校内子分类（通过 category + subCategory 组合判断）
+  "校内_数学": "shuxue_sub",
+  "校内_语文": "yuwen_sub",
+  "校内_英语": "yingyu_sub",
+  "校内_运动": "yundong_sub",
+  "校内_科学": "kexue_sub"
 };
 
-
-// 2.3 每个任务的基础经验值
 const BASE_EXP = {
-  "语文": 2,
-  "数学": 2,
-  "英语": 2,
-  "通识": 2,
-  "综合": 2,
-  "运动": 2,
-  "生活": 2,
-  "心理": 2
-};
-
+    "语文": 2,
+    "数学": 2,
+    "英语": 2,
+    "通识": 2,
+    "综合": 2,
+    "运动": 2,
+    "生活": 2,
+    "心理": 2,
+    "科学": 2,
+    "校内_数学": 2,
+    "校内_语文": 2,
+    "校内_英语": 2,
+    "校内_运动": 2,
+    "校内_科学": 2
+  };
 
 // 2.4 经验等级配置
 const EXP_PER_LEVEL = 50;
@@ -14449,15 +14592,32 @@ const [expData, setExpData] = useState(() => {
   return saved ? JSON.parse(saved) : { daily: {}, total: {} };
 });
 
-// 2.6 获取任务奖励
+// ===== 获取任务奖励（支持校内子分类） =====
 const getTaskRewards = useCallback((task) => {
   const rewards = {};
   const category = task.category;
-  const dimKey = CATEGORY_TO_DIM[category];
+  const subCategory = task.subCategory || '';
+  
+  let dimKey = null;
+  
+  // 1. 如果是校内分类且有子分类，优先匹配子分类
+  if (category === '校内' && subCategory) {
+    const subKey = `校内_${subCategory}`;
+    if (CATEGORY_TO_DIM[subKey]) {
+      dimKey = CATEGORY_TO_DIM[subKey];
+    }
+  }
+  
+  // 2. 如果没有匹配到子分类，尝试匹配大类
+  if (!dimKey && CATEGORY_TO_DIM[category]) {
+    dimKey = CATEGORY_TO_DIM[category];
+  }
+  
+  // 3. 如果还是没有匹配到，返回空
   if (!dimKey) return rewards;
   
   // ✅ 使用任务自定义经验值，如果没有则使用基础值2
-  const exp = task.expValue || 2;
+  const exp = task.expValue || BASE_EXP[category] || 2;
   
   rewards[dimKey] = exp;
   return rewards;
@@ -14590,27 +14750,35 @@ const ExpPanel = ({ selectedDate }) => {
   });
 
   // ========== 获取某个维度的任务列表 ==========
-  const getTasksForDimension = (dimKey) => {
-    const dimName = getDimName(dimKey);
-    // 根据维度名称匹配任务分类
-    const matchingTasks = todayTasks.filter(task => {
-      if (task.category === "本周任务" || task.category === "常规任务") return false;
-      if (task.abandoned) return false;
-      
-      // 匹配分类
-      if (task.category === dimName) return true;
-      
-      // 校内子分类匹配
-      if (task.category === '校内' && task.subCategory === dimName) return true;
-      
-      // 特殊匹配：运动
-      if (dimKey === 'yundong' && task.category === '运动') return true;
-      
-      return false;
-    });
+// ========== 获取某个维度的任务列表（支持校内子分类） ==========
+const getTasksForDimension = (dimKey) => {
+  const dimName = getDimName(dimKey);
+  const todayTasks = tasksByDate[selectedDate] || [];
+  
+  const matchingTasks = todayTasks.filter(task => {
+    if (task.category === "本周任务" || task.category === "常规任务") return false;
+    if (task.abandoned) return false;
     
-    return matchingTasks;
-  };
+    // 1. 匹配大类
+    if (task.category === dimName) return true;
+    
+    // 2. 匹配校内子分类
+    if (task.category === '校内' && task.subCategory === dimName) return true;
+    
+    // 3. 特殊匹配（运动）
+    if (dimKey === 'yundong' && task.category === '运动') return true;
+    if (dimKey === 'yundong_sub' && task.category === '校内' && task.subCategory === '运动') return true;
+    if (dimKey === 'kexue_sub' && task.category === '校内' && task.subCategory === '科学') return true; 
+    // 4. 特殊匹配（数学、语文、英语校内子分类）
+    if (dimKey === 'shuxue_sub' && task.category === '校内' && task.subCategory === '数学') return true;
+    if (dimKey === 'yuwen_sub' && task.category === '校内' && task.subCategory === '语文') return true;
+    if (dimKey === 'yingyu_sub' && task.category === '校内' && task.subCategory === '英语') return true;
+    
+    return false;
+  });
+  
+  return matchingTasks;
+};
 
   // ========== 辅助函数 ==========
   const getExpColor = (exp) => {
@@ -14630,46 +14798,62 @@ const ExpPanel = ({ selectedDate }) => {
   };
 
   const getDimColor = (key, opacity = 0.15) => {
-    const colors = {
-      yuwen: `rgba(255, 107, 107, ${opacity})`,
-      shuxue: `rgba(78, 205, 196, ${opacity})`,
-      yingyu: `rgba(255, 159, 67, ${opacity})`,
-      tongshi: `rgba(108, 92, 231, ${opacity})`,
-      chuangzao: `rgba(253, 203, 110, ${opacity})`,
-      yundong: `rgba(0, 206, 201, ${opacity})`,
-      shenghuo: `rgba(248, 165, 194, ${opacity})`,
-      xinli: `rgba(162, 155, 254, ${opacity})`
-    };
-    return colors[key] || `rgba(200, 200, 200, ${opacity})`;
+  const colors = {
+    yuwen: `rgba(255, 107, 107, ${opacity})`,
+    shuxue: `rgba(78, 205, 196, ${opacity})`,
+    yingyu: `rgba(255, 159, 67, ${opacity})`,
+    tongshi: `rgba(108, 92, 231, ${opacity})`,
+    chuangzao: `rgba(253, 203, 110, ${opacity})`,
+    yundong: `rgba(0, 206, 201, ${opacity})`,
+    shenghuo: `rgba(248, 165, 194, ${opacity})`,
+    xinli: `rgba(162, 155, 254, ${opacity})`,
+    shuxue_sub: `rgba(78, 205, 196, ${opacity})`,
+    yuwen_sub: `rgba(255, 107, 107, ${opacity})`,
+    yingyu_sub: `rgba(255, 159, 67, ${opacity})`,
+    yundong_sub: `rgba(0, 206, 201, ${opacity})`,
+    kexue_sub: `rgba(38, 198, 218, ${opacity})` 
   };
+  return colors[key] || `rgba(200, 200, 200, ${opacity})`;
+};
 
-  const getDimName = (key) => {
-    const names = {
-      yuwen: '语文',
-      shuxue: '数学',
-      yingyu: '英语',
-      tongshi: '通识',
-      chuangzao: '综合',
-      yundong: '运动',
-      shenghuo: '生活',
-      xinli: '心理'
-    };
-    return names[key] || key;
+ const getDimName = (key) => {
+  const names = {
+    yuwen: '语文',
+    shuxue: '数学',
+    yingyu: '英语',
+    tongshi: '通识',
+    chuangzao: '综合',
+    yundong: '运动',
+    shenghuo: '生活',
+    xinli: '心理',
+    shuxue_sub: '数学(校内)',
+    yuwen_sub: '语文(校内)',
+    yingyu_sub: '英语(校内)',
+    yundong_sub: '运动(校内)',
+    kexue_sub: '科学(校内)' 
   };
+  return names[key] || key;
+};
 
-  const getDimEmoji = (key) => {
-    const emojis = {
-      yuwen: '📚',
-      shuxue: '🔢',
-      yingyu: '🔤',
-      tongshi: '🌍',
-      chuangzao: '🎯',
-      yundong: '🏃',
-      shenghuo: '🏠',
-      xinli: '🧠'
-    };
-    return emojis[key] || '📌';
+const getDimEmoji = (key) => {
+  const emojis = {
+    yuwen: '📚',
+    shuxue: '🔢',
+    yingyu: '🔤',
+    tongshi: '🌍',
+    chuangzao: '🎯',
+    yundong: '🏃',
+    shenghuo: '🏠',
+    xinli: '🧠',
+    shuxue_sub: '🔢',
+    yuwen_sub: '📚',
+    yingyu_sub: '🔤',
+    yundong_sub: '🏃',
+    kexue_sub: '🔬'  
+
   };
+  return emojis[key] || '📌';
+};
 
   // ========== 任务详情弹窗组件 ==========
   const TaskDetailModal = ({ dimKey, onClose }) => {
@@ -15722,7 +15906,20 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => {
   try {
     console.log('🔄 开始恢复数据...', mode);
+// 在覆盖模式中添加
+if (backupData.gradeSubCategories) {
+  localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
+  console.log('✅ 恢复成绩子分类:', JSON.parse(backupData.gradeSubCategories));
+}
 
+// 在合并模式中添加
+if (backupData.gradeSubCategories) {
+  const current = JSON.parse(localStorage.getItem('grade_subcategories') || '{}');
+  const backup = JSON.parse(backupData.gradeSubCategories);
+  const merged = { ...backup, ...current };  // 云端优先，本地补充
+  localStorage.setItem('grade_subcategories', JSON.stringify(merged));
+  console.log('✅ 合并成绩子分类:', merged);
+}
     // 恢复每日任务模板
     if (backupData.dailyTaskTemplates) {
       setDailyTaskTemplates(backupData.dailyTaskTemplates);
@@ -16068,7 +16265,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
     
     Object.assign(allDailyRatings, dailyRatings);
     Object.assign(allDailyReflections, dailyReflections);
-    
+    const gradeSubCategories = localStorage.getItem('grade_subcategories') || '{}';
     // 收集排序数据
     const allTaskOrders = {};
     const allSubCategoryOrders = {};
@@ -16138,6 +16335,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
       })),
       categories,
       grades: grades.slice(-100),
+      gradeSubCategories: gradeSubCategories,
       reminderText,
       semesterEndDate,
       expData: expData,  // ✅ 添加这一行：同步经验数据
@@ -19706,7 +19904,6 @@ weekTasks.forEach(task => {
         newTasksByDate[targetDate].push(task);
       });
       
-      console.log('📦 更新后的数据:', Object.keys(newTasksByDate));
       return newTasksByDate;
     });
 
@@ -22291,9 +22488,7 @@ onSave={(newConfig) => {
         📋 每日固定任务
       </h3>
       
-      <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px', textAlign: 'center' }}>
-        这些任务每天会自动生成，完成后第二天会重新出现
-      </p>
+      
       
       {/* 添加任务区域 - 增加分值输入 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -22340,7 +22535,7 @@ onSave={(newConfig) => {
       WebkitAppearance: 'none'
     }}
   />
-  <span style={{ fontSize: '12px', color: '#999' }}>(1-100)</span>
+  
 </div>
        <div
   onClick={() => {
