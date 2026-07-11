@@ -2141,7 +2141,13 @@ button:focus-visible {
 
 
 // 搜索任务模态框组件
-const SearchTaskModal = ({ tasksByDate, onClose }) => {
+// 搜索任务模态框组件 - 修改后
+const SearchTaskModal = ({ 
+  tasksByDate, 
+  onClose, 
+  onJumpToDate,  // ✅ 新增：跳转回调
+  currentDate     // ✅ 新增：当前日期，用于高亮
+}) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -2162,49 +2168,42 @@ const SearchTaskModal = ({ tasksByDate, onClose }) => {
   }, [tasksByDate]);
   
   // 执行搜索
- // 执行搜索
-const performSearch = useCallback(() => {
-  // ✅ 关键修复：没有关键词时，清空结果，不显示任何任务
-  if (!searchKeyword.trim()) {
-    setSearchResults([]);
-    return;
-  }
+  const performSearch = useCallback(() => {
+    if (!searchKeyword.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    let allTasks = getAllTasks();
+    
+    const keyword = searchKeyword.trim().toLowerCase();
+    allTasks = allTasks.filter(task => 
+      task.text.toLowerCase().includes(keyword) ||
+      (task.note && task.note.toLowerCase().includes(keyword)) ||
+      (task.reflection && task.reflection.toLowerCase().includes(keyword))
+    );
+    
+    if (selectedCategory !== 'all') {
+      allTasks = allTasks.filter(task => task.category === selectedCategory);
+    }
+    
+    if (selectedStatus === 'completed') {
+      allTasks = allTasks.filter(task => task.done === true && task.abandoned !== true);
+    } else if (selectedStatus === 'incomplete') {
+      allTasks = allTasks.filter(task => task.done !== true && task.abandoned !== true);
+    } else if (selectedStatus === 'abandoned') {
+      allTasks = allTasks.filter(task => task.abandoned === true);
+    }
+    
+    allTasks.sort((a, b) => b.date.localeCompare(a.date));
+    setSearchResults(allTasks);
+  }, [searchKeyword, selectedCategory, selectedStatus, getAllTasks]);
   
-  let allTasks = getAllTasks();
-  
-  // 关键词过滤
-  const keyword = searchKeyword.trim().toLowerCase();
-  allTasks = allTasks.filter(task => 
-    task.text.toLowerCase().includes(keyword) ||
-    (task.note && task.note.toLowerCase().includes(keyword)) ||
-    (task.reflection && task.reflection.toLowerCase().includes(keyword))
-  );
-  
-  // 分类过滤
-  if (selectedCategory !== 'all') {
-    allTasks = allTasks.filter(task => task.category === selectedCategory);
-  }
-  
-  // 状态过滤
-  if (selectedStatus === 'completed') {
-    allTasks = allTasks.filter(task => task.done === true && task.abandoned !== true);
-  } else if (selectedStatus === 'incomplete') {
-    allTasks = allTasks.filter(task => task.done !== true && task.abandoned !== true);
-  } else if (selectedStatus === 'abandoned') {
-    allTasks = allTasks.filter(task => task.abandoned === true);
-  }
-  
-  // 按日期倒序排序
-  allTasks.sort((a, b) => b.date.localeCompare(a.date));
-  
-  setSearchResults(allTasks);
-}, [searchKeyword, selectedCategory, selectedStatus, getAllTasks]);
-  // 监听搜索条件变化
   useEffect(() => {
     performSearch();
   }, [searchKeyword, selectedCategory, selectedStatus, performSearch]);
   
-  // 获取所有分类（用于筛选）
+  // 获取所有分类
   const categories = useMemo(() => {
     const cats = new Set();
     getAllTasks().forEach(task => {
@@ -2213,7 +2212,6 @@ const performSearch = useCallback(() => {
     return ['all', ...Array.from(cats)];
   }, [getAllTasks]);
   
-  // 统计信息
   const stats = {
     total: searchResults.length,
     completed: searchResults.filter(t => t.done === true && t.abandoned !== true).length,
@@ -2221,7 +2219,6 @@ const performSearch = useCallback(() => {
     abandoned: searchResults.filter(t => t.abandoned === true).length
   };
   
-  // 获取任务状态样式
   const getTaskStatusIcon = (task) => {
     if (task.abandoned) {
       return <span style={{ color: '#999', fontSize: '12px' }}>❌</span>;
@@ -2232,7 +2229,6 @@ const performSearch = useCallback(() => {
     return <span style={{ color: '#f44336', fontSize: '12px' }}>⬜</span>;
   };
   
-  // 获取分类颜色
   const getCategoryColor = (category) => {
     const colors = {
       '语文': '#FFFCE8',
@@ -2244,7 +2240,15 @@ const performSearch = useCallback(() => {
     };
     return colors[category] || '#f0f0f0';
   };
-  
+
+  // ✅ 新增：处理点击任务跳转
+  const handleTaskClick = (task) => {
+    if (onJumpToDate && task.date) {
+      onJumpToDate(task.date);
+    }
+    onClose();
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -2329,7 +2333,6 @@ const performSearch = useCallback(() => {
           flexWrap: 'wrap',
           flexShrink: 0
         }}>
-          {/* 分类筛选 */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -2347,7 +2350,6 @@ const performSearch = useCallback(() => {
             ))}
           </select>
           
-          {/* 状态筛选 */}
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
@@ -2394,127 +2396,150 @@ const performSearch = useCallback(() => {
           </div>
         </div>
         
-      
-{/* 搜索结果列表 */}
-<div style={{
-  flex: 1,
-  overflowY: 'auto',
-  minHeight: 0
-}}>
-  {!searchKeyword.trim() ? (
-    // 没有输入关键词时，显示提示
-    <div style={{
-      textAlign: 'center',
-      padding: '60px 20px',
-      color: '#999',
-      fontSize: '13px'
-    }}>
-      🔍 输入关键词开始搜索
-    </div>
-  ) : searchResults.length === 0 ? (
-    // 有关键词但没有结果
-    <div style={{
-      textAlign: 'center',
-      padding: '60px 20px',
-      color: '#999',
-      fontSize: '13px'
-    }}>
-      没有找到匹配的任务
-    </div>
-  ) : (
-    // 显示搜索结果
-    searchResults.map((task, idx) => (
-      <div
-        key={`${task.id}_${idx}`}
-        style={{
-          padding: '12px',
-          borderBottom: '1px solid #f0f0f0',
-          backgroundColor: idx % 2 === 0 ? '#fff' : '#fafafa',
-          borderRadius: '8px',
-          marginBottom: '8px'
-        }}
-      >
-
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  {/* 状态图标 */}
-                  <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                    {getTaskStatusIcon(task)}
-                  </div>
-                  
-                  {/* 主要内容 */}
-                  <div style={{ flex: 1 }}>
-                    {/* 任务文本 */}
-                    <div style={{
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                      color: task.done ? '#999' : '#333',
-                      textDecoration: task.done ? 'line-through' : 'none',
-                      marginBottom: '4px'
-                    }}>
-                      {task.text}
+        {/* 搜索结果列表 */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0
+        }}>
+          {!searchKeyword.trim() ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#999',
+              fontSize: '13px'
+            }}>
+              🔍 输入关键词开始搜索
+            </div>
+          ) : searchResults.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#999',
+              fontSize: '13px'
+            }}>
+              没有找到匹配的任务
+            </div>
+          ) : (
+            searchResults.map((task, idx) => {
+              const isCurrentDate = task.date === currentDate;
+              return (
+                <div
+                  key={`${task.id}_${idx}`}
+                  onClick={() => handleTaskClick(task)}  // ✅ 点击跳转
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid #f0f0f0',
+                    backgroundColor: isCurrentDate ? '#e8f0fe' : (idx % 2 === 0 ? '#fff' : '#fafafa'),
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                    cursor: 'pointer',
+                    border: isCurrentDate ? '1px solid #61A2Da' : 'none',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isCurrentDate ? '#d0e3fc' : '#f0f7ff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isCurrentDate ? '#e8f0fe' : (idx % 2 === 0 ? '#fff' : '#fafafa');
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    {/* 状态图标 */}
+                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
+                      {getTaskStatusIcon(task)}
                     </div>
                     
-                    {/* 元信息 */}
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      fontSize: '10px',
-                      color: '#999',
-                      marginBottom: '4px'
-                    }}>
-                      <span>📅 {task.date.slice(5)}</span>
-                      <span style={{
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        backgroundColor: getCategoryColor(task.category),
-                        color: task.category === '校内' ? '#fff' : '#333'
+                    {/* 主要内容 */}
+                    <div style={{ flex: 1 }}>
+                      {/* 任务文本 */}
+                      <div style={{
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        color: task.done ? '#999' : '#333',
+                        textDecoration: task.done ? 'line-through' : 'none',
+                        marginBottom: '4px'
                       }}>
-                        {task.category}{task.subCategory ? ` / ${task.subCategory}` : ''}
-                      </span>
-                      {task.timeSpent > 0 && (
-                        <span>⏱ {Math.floor(task.timeSpent / 60)}分钟</span>
+                        {task.text}
+                      </div>
+                      
+                      {/* 元信息 */}
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        fontSize: '10px',
+                        color: '#999',
+                        marginBottom: '4px'
+                      }}>
+                        <span style={{
+                          fontWeight: isCurrentDate ? 'bold' : 'normal',
+                          color: isCurrentDate ? '#61A2Da' : '#999'
+                        }}>
+                          📅 {task.date.slice(5)} {isCurrentDate && '（当前）'}
+                        </span>
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '10px',
+                          backgroundColor: getCategoryColor(task.category),
+                          color: task.category === '校内' ? '#fff' : '#333'
+                        }}>
+                          {task.category}{task.subCategory ? ` / ${task.subCategory}` : ''}
+                        </span>
+                        {task.timeSpent > 0 && (
+                          <span>⏱ {Math.floor(task.timeSpent / 60)}分钟</span>
+                        )}
+                      </div>
+                      
+                      {/* 备注预览 */}
+                      {task.note && (
+                        <div style={{
+                          fontSize: '11px',
+                          color: '#666',
+                          backgroundColor: '#f5f5f5',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          marginTop: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {task.note}
+                        </div>
+                      )}
+                      
+                      {/* 感想预览 */}
+                      {task.reflection && (
+                        <div style={{
+                          fontSize: '11px',
+                          color: '#8B4513',
+                          backgroundColor: '#fff9c4',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          marginTop: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          💡 {task.reflection}
+                        </div>
                       )}
                     </div>
-                    
-                    {/* 备注预览 */}
-                    {task.note && (
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#666',
-                        backgroundColor: '#f5f5f5',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        marginTop: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                         {task.note}
-                      </div>
-                    )}
-                    
-                    {/* 感想预览 */}
-                    {task.reflection && (
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#8B4513',
-                        backgroundColor: '#fff9c4',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        marginTop: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        💡 {task.reflection}
-                      </div>
-                    )}
+                  </div>
+                  
+                  {/* 跳转提示 - 小字 */}
+                  <div style={{
+                    textAlign: 'right',
+                    fontSize: '9px',
+                    color: '#61A2Da',
+                    marginTop: '4px',
+                    opacity: 0.6
+                  }}>
+                    点击跳转到该日期 →
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         
@@ -22153,7 +22178,16 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
 {showSearchModal && (
   <SearchTaskModal
     tasksByDate={tasksByDate}
+    currentDate={selectedDate}                    // ✅ 传入当前日期
     onClose={() => setShowSearchModal(false)}
+    onJumpToDate={(date) => {                     // ✅ 新增：跳转回调
+      setSelectedDate(date);
+      // 更新周视图，确保跳转到的日期在可视范围内
+      const targetDate = new Date(date);
+      const targetMonday = getMonday(targetDate);
+      setCurrentMonday(targetMonday);
+      // 关闭搜索弹窗（已在 handleTaskClick 中关闭）
+    }}
   />
 )}
 
