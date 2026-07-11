@@ -16481,7 +16481,8 @@ const syncToGitHub = useCallback(async (silent = false) => {
         targetCategory: task.targetCategory,
         targetSubCategory: task.targetSubCategory,
         abandoned: task.abandoned,
-        abandonInfo: task.abandonInfo
+        abandonInfo: task.abandonInfo,
+    expValue: task.expValue
       }));
     });
     
@@ -20039,6 +20040,7 @@ Fly Guy 1本
           target: 0,
           unit: "%"
         },
+        expValue: 2, 
         createdAt: new Date().toISOString(),
       };
 
@@ -20099,7 +20101,8 @@ Fly Guy 1本
         isWeekTask: true,
         weekStart: weekStart,
         targetCategory: task.targetCategory || '校内',
-        targetSubCategory: ''
+        targetSubCategory: '',
+  expValue: 2  // ✅ 添加这行
       };
       
       newTasksToAdd.push(newTask);
@@ -20229,7 +20232,8 @@ const handleAddWeekTask = (text, targetCategory = '校内', targetSubCategory = 
           isWeekTask: true,
           weekStart: weekStart,
           targetCategory: targetCategory,  // 完成后移动到的分类
-          targetSubCategory: targetSubCategory
+          targetSubCategory: targetSubCategory,
+  expValue: 2  // ✅ 添加这行
         };
         
         newTasksByDate[dateObj.date].push(newTask);
@@ -20758,6 +20762,7 @@ taskInfos.forEach((taskInfo, idx) => {
         target: 0,
         unit: "%"
       },
+      expValue: 2,  // ✅ 添加这行
       createdAt: new Date().toISOString()
     };
     
@@ -21805,7 +21810,11 @@ const clearAllData = async () => {
   if (window.confirm("确定要清空所有数据吗？此操作不可恢复！")) {
     // 清空任务数据
     setTasksByDate({});
-    setTemplates([]);
+   
+       // ✅ 新增：清空经验数据
+    setExpData({ daily: {}, total: {} });
+    localStorage.removeItem('exp_data_v2');
+    console.log('✅ 已清空经验数据');
     
     // 清空本月任务
     setMonthTasks([]);
@@ -25762,7 +25771,7 @@ if (totalCount === 0) {
           }
           
           setTasksByDate(importedData.tasks || {});
-          setTemplates(importedData.templates || []);
+          
           setCategories(importedData.categories || baseCategories);
           
           
