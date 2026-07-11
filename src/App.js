@@ -14834,7 +14834,7 @@ const ExpPanel = ({ selectedDate }) => {
   };
 
   // ========== 获取经验数据 ==========
-  const todayExp = expData.daily[selectedDate] || {};
+  const todayExp = expData?.daily?.[selectedDate] || {};
   const totalExp = expData.total || {};
   const grandTotal = Object.values(totalExp).reduce((sum, val) => sum + val, 0);
   const todayTotal = Object.values(todayExp).reduce((sum, val) => sum + val, 0);
@@ -18305,12 +18305,16 @@ useEffect(() => {
       tasksByDate,        // 已经存在
       isInitialized,
       selectedDate,
+      expData: expData,              // ✅ 添加
+      dailyRatings: dailyRatings,    // ✅ 添加
+      dailyReflections: dailyReflections , // ✅ 添加
       todayTasks: tasksByDate[selectedDate] || []
     }),
     triggerConfetti: triggerConfetti,
     setConfettiParts: setConfettiParts,
     // ✅ 添加这一行，直接暴露 tasksByDate
-    getTasksByDate: () => tasksByDate
+    getTasksByDate: () => tasksByDate,
+    getExpData: () => expData       
   };
   
   return () => {
