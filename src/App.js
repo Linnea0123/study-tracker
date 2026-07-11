@@ -16154,11 +16154,17 @@ if (backupData.dailyReflections) {
       }
       
       // 10. 恢复经验数据
-      if (backupData.expData) {
-        setExpData(backupData.expData);
-        localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
-        console.log('✅ 恢复经验数据:', backupData.expData);
-      }
+      // 10. 恢复经验数据
+if (backupData.expData) {
+  console.log('📦 备份中的 expData:', backupData.expData);
+  console.log('📊 备份中的 expData 总积分:', backupData.expData.total);
+  
+  setExpData(backupData.expData);
+  localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+  console.log('✅ 恢复经验数据完成');
+} else {
+  console.log('⚠️ 备份中没有 expData 数据');
+}
       
       // 11. 恢复任务排序顺序
       if (backupData.taskOrders) {
@@ -22459,6 +22465,7 @@ onSave={(newConfig) => {
     <ExpPanel 
   selectedDate={selectedDate}
   dailyRatings={dailyRatings}  // ← 添加这行
+  expData={expData}  
 />
   </div>
 
