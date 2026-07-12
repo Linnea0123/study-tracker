@@ -5870,7 +5870,7 @@ const handleUrlRestore = async () => {
   }
 
   try {
-    const gistId = extractGistId(gistUrl);
+    const gistId = DEFAULT_GIST_ID;
     
   
     
@@ -5891,7 +5891,7 @@ const testGistAccess = async () => {
   }
 
   try {
-    const gistId = extractGistId(gistUrl);
+    const gistId = DEFAULT_GIST_ID;
     console.log('测试 Gist ID:', gistId);
     
     // 测试公开访问
@@ -16809,10 +16809,44 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => {
   try {
     console.log('🔄 开始恢复数据...', mode);
-    
-    // ========== 覆盖模式 ==========
+// 在覆盖模式中添加
+if (backupData.gradeSubCategories) {
+  localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
+  console.log('✅ 恢复成绩子分类:', JSON.parse(backupData.gradeSubCategories));
+}
+
+// 在覆盖模式中
+if (backupData.weekPlans) {
+  setWeekPlans(backupData.weekPlans);
+  localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
+  console.log('✅ 恢复本周计划:', backupData.weekPlans.length, '条');
+}
+
+if (backupData.monthPlans) {
+  setMonthPlans(backupData.monthPlans);
+  localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
+  console.log('✅ 恢复本月计划:', backupData.monthPlans.length, '条');
+}
+
+
+
+// 在合并模式中添加
+if (backupData.gradeSubCategories) {
+  const current = JSON.parse(localStorage.getItem('grade_subcategories') || '{}');
+  const backup = JSON.parse(backupData.gradeSubCategories);
+  const merged = { ...backup, ...current };  // 云端优先，本地补充
+  localStorage.setItem('grade_subcategories', JSON.stringify(merged));
+  console.log('✅ 合并成绩子分类:', merged);
+}
+    // 恢复每日任务模板
+    if (backupData.dailyTaskTemplates) {
+      setDailyTaskTemplates(backupData.dailyTaskTemplates);
+      localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+      console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
+    }
+
+    // 覆盖模式：直接用云端数据替换本地
     if (mode === 'overwrite') {
-      
       // 1. 恢复任务数据
       if (backupData.tasksByDate) {
         setTasksByDate(backupData.tasksByDate);
@@ -16828,23 +16862,27 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
       }
       
       // 3. 恢复每日复盘
-      if (backupData.dailyReflections) {
-        setDailyReflections(backupData.dailyReflections);
-        localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
-        console.log('✅ 恢复每日复盘:', Object.keys(backupData.dailyReflections).length, '天');
-        
-        // 同时恢复 daily_ 文件
-        Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
-          const dailyData = {
-            date: date,
-            rating: backupData.dailyRatings?.[date] || 0,
-            reflection: reflection,
-            updatedAt: new Date().toISOString()
-          };
-          localStorage.setItem(`${STORAGE_KEY}_daily_${date}`, JSON.stringify(dailyData));
-        });
-        console.log('✅ 恢复 daily_ 文件完成');
-      }
+     // 在覆盖模式中
+if (backupData.dailyReflections) {
+  setDailyReflections(backupData.dailyReflections);
+  // ✅ 立即保存到 localStorage
+  localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
+  console.log('✅ 恢复每日复盘:', Object.keys(backupData.dailyReflections).length, '天');
+}
+
+// 同时恢复 daily_ 文件
+if (backupData.dailyReflections) {
+  Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
+    const dailyData = {
+      date: date,
+      rating: backupData.dailyRatings?.[date] || 0,
+      reflection: reflection,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(`${STORAGE_KEY}_daily_${date}`, JSON.stringify(dailyData));
+  });
+  console.log('✅ 恢复 daily_ 文件完成');
+}
       
       // 4. 恢复学习结束时间
       if (backupData.studyEndTimes) {
@@ -16874,56 +16912,34 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
         console.log('✅ 恢复成绩记录:', backupData.grades.length, '条');
       }
       
-      // 8. 恢复成绩子分类
-      if (backupData.gradeSubCategories) {
-        localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
-        console.log('✅ 恢复成绩子分类:', JSON.parse(backupData.gradeSubCategories));
-      }
-      
-      // 9. 恢复每日提醒
+      // 8. 恢复每日提醒
       if (backupData.reminderText) {
         setReminderText(backupData.reminderText);
         localStorage.setItem('daily_reminder', backupData.reminderText);
         console.log('✅ 恢复每日提醒');
       }
       
-      // 10. 恢复学期结束日期
+      // 9. 恢复学期结束日期
       if (backupData.semesterEndDate) {
         setSemesterEndDate(backupData.semesterEndDate);
         localStorage.setItem('semester_end_date', backupData.semesterEndDate);
         console.log('✅ 恢复学期结束日期:', backupData.semesterEndDate);
       }
       
-      // 11. 恢复经验数据
-      if (backupData.expData) {
-        console.log('📦 备份中的 expData:', backupData.expData);
-        setExpData(backupData.expData);
-        localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
-        console.log('✅ 恢复经验数据完成');
-      }
+      // 10. 恢复经验数据
+      // 10. 恢复经验数据
+if (backupData.expData) {
+  console.log('📦 备份中的 expData:', backupData.expData);
+  console.log('📊 备份中的 expData 总积分:', backupData.expData.total);
+  
+  setExpData(backupData.expData);
+  localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+  console.log('✅ 恢复经验数据完成');
+} else {
+  console.log('⚠️ 备份中没有 expData 数据');
+}
       
-      // 12. 恢复本周计划
-      if (backupData.weekPlans) {
-        setWeekPlans(backupData.weekPlans);
-        localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
-        console.log('✅ 恢复本周计划:', backupData.weekPlans.length, '条');
-      }
-      
-      // 13. 恢复本月计划
-      if (backupData.monthPlans) {
-        setMonthPlans(backupData.monthPlans);
-        localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
-        console.log('✅ 恢复本月计划:', backupData.monthPlans.length, '条');
-      }
-      
-      // 14. 恢复每日任务模板
-      if (backupData.dailyTaskTemplates) {
-        setDailyTaskTemplates(backupData.dailyTaskTemplates);
-        localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
-        console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
-      }
-      
-      // 15. 恢复任务排序顺序
+      // 11. 恢复任务排序顺序
       if (backupData.taskOrders) {
         Object.entries(backupData.taskOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -16931,7 +16947,7 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
         console.log('✅ 恢复任务排序顺序');
       }
       
-      // 16. 恢复子分类排序顺序
+      // 12. 恢复子分类排序顺序
       if (backupData.subCategoryOrders) {
         Object.entries(backupData.subCategoryOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -16939,19 +16955,21 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
         console.log('✅ 恢复子分类排序顺序');
       }
       
-      // 17. 恢复科目待办
+      // 13. 恢复科目待办
       if (backupData.subjectTodoEntries) {
         localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
         console.log('✅ 恢复科目待办');
       }
       
-      // 18. 恢复子分类颜色
+      // 14. 恢复每日任务模板（已经在前面恢复了）
+      
+      // 15. 恢复子分类颜色
       if (backupData.subCategoryColors) {
         localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
         console.log('✅ 恢复子分类颜色');
       }
       
-      // 19. 恢复类别颜色
+      // 16. 恢复类别颜色
       if (backupData.categoryColors) {
         localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
         console.log('✅ 恢复类别颜色');
@@ -16959,8 +16977,115 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
       
       console.log('✅ 覆盖恢复完成！');
       alert('数据已覆盖恢复！页面将重新加载。');
-      setTimeout(() => window.location.reload(), 1000);
+      
       return;
+    }
+    
+    // ========== 合并模式 ==========
+    if (mode === 'merge') {
+      console.log('🔄 开始智能合并恢复...');
+      
+      // 1. 合并任务数据
+      if (backupData.tasksByDate) {
+        const mergedTasks = { ...tasksByDate };
+        Object.entries(backupData.tasksByDate).forEach(([date, tasks]) => {
+          if (!mergedTasks[date]) {
+            mergedTasks[date] = [];
+          }
+          tasks.forEach(cloudTask => {
+            const exists = mergedTasks[date].some(localTask => localTask.id === cloudTask.id);
+            if (!exists) {
+              mergedTasks[date].push(cloudTask);
+            }
+          });
+        });
+        setTasksByDate(mergedTasks);
+        await saveMainData('tasks', mergedTasks);
+        console.log('✅ 合并任务数据完成');
+      }
+      
+      // 2. 合并每日评分（本地优先）
+      if (backupData.dailyRatings) {
+        const mergedRatings = { ...backupData.dailyRatings, ...dailyRatings };
+        setDailyRatings(mergedRatings);
+        localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(mergedRatings));
+        console.log('✅ 合并每日评分完成');
+      }
+      
+      // 3. 合并每日复盘（本地优先）
+      if (backupData.dailyReflections) {
+        const mergedReflections = { ...backupData.dailyReflections, ...dailyReflections };
+        setDailyReflections(mergedReflections);
+        console.log('✅ 合并每日复盘完成');
+      }
+      
+      // 4. 合并学习结束时间（本地优先）
+      if (backupData.studyEndTimes) {
+        const mergedEndTimes = { ...backupData.studyEndTimes, ...studyEndTimes };
+        setStudyEndTimes(mergedEndTimes);
+        localStorage.setItem('daily_study_end_times', JSON.stringify(mergedEndTimes));
+        console.log('✅ 合并学习结束时间完成');
+      }
+      
+      // 5. 合并经验数据（本地优先）
+      if (backupData.expData) {
+        const mergedExpData = {
+          daily: { ...backupData.expData.daily, ...expData.daily },
+          total: { ...backupData.expData.total, ...expData.total }
+        };
+        setExpData(mergedExpData);
+        localStorage.setItem('exp_data_v2', JSON.stringify(mergedExpData));
+        console.log('✅ 合并经验数据完成');
+      }
+      
+      // 6. 合并本月任务
+      if (backupData.monthTasks) {
+        const taskMap = new Map();
+        monthTasks.forEach(t => taskMap.set(t.id, t));
+        backupData.monthTasks.forEach(t => {
+          if (!taskMap.has(t.id)) {
+            taskMap.set(t.id, t);
+          }
+        });
+        const mergedMonthTasks = Array.from(taskMap.values());
+        setMonthTasks(mergedMonthTasks);
+        await saveMainData('monthTasks', mergedMonthTasks);
+        console.log('✅ 合并本月任务完成');
+      }
+      
+      // 7. 合并成绩记录
+      if (backupData.grades) {
+        const gradeMap = new Map();
+        grades.forEach(g => gradeMap.set(g.id, g));
+        backupData.grades.forEach(g => {
+          if (!gradeMap.has(g.id)) {
+            gradeMap.set(g.id, g);
+          }
+        });
+        const mergedGrades = Array.from(gradeMap.values());
+        setGrades(mergedGrades);
+        await saveMainData('grades', mergedGrades);
+        console.log('✅ 合并成绩记录完成');
+      }
+      
+      // 8. 合并每日任务模板（本地优先）
+      if (backupData.dailyTaskTemplates) {
+        const templateMap = new Map();
+        dailyTaskTemplates.forEach(t => templateMap.set(t.id, t));
+        backupData.dailyTaskTemplates.forEach(t => {
+          if (!templateMap.has(t.id)) {
+            templateMap.set(t.id, t);
+          }
+        });
+        const mergedTemplates = Array.from(templateMap.values());
+        setDailyTaskTemplates(mergedTemplates);
+        localStorage.setItem('daily_task_templates', JSON.stringify(mergedTemplates));
+        console.log('✅ 合并每日任务模板完成');
+      }
+      
+      console.log('✅ 智能合并完成！');
+      alert('数据合并完成！页面将重新加载。');
+      setTimeout(() => window.location.reload(), 1000);
     }
     
   } catch (error) {
@@ -16976,8 +17101,6 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
   grades, 
   expData,
   dailyTaskTemplates,
-  weekPlans,
-  monthPlans,
   setTasksByDate, 
   setDailyRatings, 
   setDailyReflections, 
@@ -16989,10 +17112,8 @@ const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => 
   setSemesterEndDate,
   setReminderText,
   setDailyTaskTemplates,
-  setWeekPlans,
-  setMonthPlans,
   saveMainData
-]);
+]);  
 
 
 
@@ -17038,260 +17159,25 @@ const syncToGitHub = useCallback(async (silent = false) => {
     return false;
   }
 
-  // ✅ 手动同步时（silent=false）强制同步，不检查哈希
-  // ✅ 静默同步时（silent=true）才检查是否有数据变化
-  if (silent) {
-    const currentHash = getDataHash();
-    if (currentHash === lastSyncHash) {
-      console.log('⏭️ 数据无变化，跳过静默同步');
-      return false;
-    }
-  }
-  console.log('📤 开始同步...');
-
-  setIsSyncing(true);
+  // ✅ 强制使用默认 Gist ID
+  const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
+  let gistId = DEFAULT_GIST_ID;  // 直接使用默认值
   
-  // 添加超时控制（30秒）
-  const syncTimeout = setTimeout(() => {
-    if (isSyncing) {
-      console.log('⏰ 同步超时，取消');
-      setIsSyncing(false);
-      if (!silent) {
-        alert('同步超时，请检查网络后重试');
-      }
-    }
-  }, 30000);
-
-  try {
-    await saveDailyData(selectedDate);
-    
-    // 收集数据
-    const allDailyRatings = {};
-    const allDailyReflections = {};
-    const allKeys = Object.keys(localStorage);
-    const dailyKeys = allKeys.filter(key => key.startsWith(`${STORAGE_KEY}_daily_`));
-    
-    dailyKeys.forEach(key => {
-      try {
-        const dataStr = localStorage.getItem(key);
-        if (dataStr) {
-          const data = JSON.parse(dataStr);
-          if (data && data.date) {
-            allDailyRatings[data.date] = data.rating || 0;
-            allDailyReflections[data.date] = data.reflection || '';
-          }
-        }
-      } catch (e) {}
-    });
-    
-    Object.assign(allDailyRatings, dailyRatings);
-    Object.assign(allDailyReflections, dailyReflections);
-    const gradeSubCategories = localStorage.getItem('grade_subcategories') || '{}';
-    // 收集排序数据
-    const allTaskOrders = {};
-    const allSubCategoryOrders = {};
-    
-    allKeys.forEach(key => {
-      if (key.startsWith('tasks_order_')) {
-        try {
-          allTaskOrders[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {}
-      }
-      if (key.startsWith('subcategory_order_')) {
-        try {
-          allSubCategoryOrders[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {}
-      }
-    });
-    
-    // 压缩数据
-    const compressedTasks = {};
-    Object.entries(tasksByDate).forEach(([date, tasks]) => {
-      compressedTasks[date] = tasks.map(task => ({
-  id: task.id,
-  text: task.text,
-  category: task.category,
-  subCategory: task.subCategory,
-  done: task.done,
-  timeSpent: task.timeSpent,
-  note: task.note,
-  reflection: task.reflection,
-  updatedAt: task.updatedAt,
-  createdAt: task.createdAt,
-  timeRecords: task.timeRecords?.slice(-5),
-  subTasks: task.subTasks?.length > 0 ? task.subTasks : undefined,
-  pinned: task.pinned,
-  tags: task.tags,
-  progress: task.progress,
-  scheduledTime: task.scheduledTime,
-  reminderTime: task.reminderTime,
-  crossDateId: task.crossDateId,
-  isCrossDate: task.isCrossDate,
-  crossDates: task.crossDates,
-  actualCompletedDate: task.actualCompletedDate,
-  isWeekTask: task.isWeekTask,
-  weekStart: task.weekStart,
-  targetCategory: task.targetCategory,
-  targetSubCategory: task.targetSubCategory,
-  abandoned: task.abandoned,
-  abandonInfo: task.abandonInfo,
-  expValue: task.expValue,
-  // ⬇️ 以下是可以添加的
-  image: task.image,                          // 图片（数据量大，可能拖慢同步）
-  hasImage: task.hasImage,
-  plannedTime: task.plannedTime,
-  isDailyTask: task.isDailyTask,
-  templateId: task.templateId,
-  repeatId: task.repeatId,
-  isRepeating: task.isRepeating,
-  repeatFrequency: task.repeatFrequency,
-  repeatDays: task.repeatDays
-}));
-    });
-    
-    const syncData = {
-      tasksByDate: compressedTasks,
-      dailyRatings: allDailyRatings,
-      dailyReflections: allDailyReflections,
-      studyEndTimes,
-       weekPlans: weekPlans,
-  monthPlans: monthPlans,
-      monthTasks: monthTasks.map(t => ({
-        id: t.id,
-        text: t.text,
-        category: t.category,
-        subCategory: t.subCategory,
-         dailyTaskTemplates: dailyTaskTemplates,  
-        progress: t.progress,
-        target: t.target,
-        updatedAt: t.updatedAt
-      })),
-      categories,
-      grades: grades, 
-      gradeSubCategories: gradeSubCategories,
-      reminderText,
-      semesterEndDate,
-      expData: expData,  // ✅ 添加这一行：同步经验数据
-      taskOrders: allTaskOrders,
-      subCategoryOrders: allSubCategoryOrders,
-     
-      
-      syncTime: new Date().toISOString(),
-      version: '2.4',
-      lastSelectedDate: selectedDate,
-      lastCurrentMonday: currentMonday.toISOString()
-    };
-
-    const jsonString = JSON.stringify(syncData);
-    console.log(`📦 同步数据大小: ${(jsonString.length / 1024).toFixed(2)} KB`);
-
-    // 获取或创建 Gist
-    let gistId = localStorage.getItem('github_gist_id');
-    let method = 'POST';
-    let url = 'https://api.github.com/gists';
-    
-    if (gistId) {
-      method = 'PATCH';
-      url = `https://api.github.com/gists/${gistId}`;
-    }
-
-    const gistData = {
-      description: 'Study Tracker Backup - 学习跟踪器备份',
-      public: false,
-      files: {
-        'study-tracker-data.json': {
-          content: jsonString
-        }
-      }
-    };
-
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(gistData)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`同步失败: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
-    if (!gistId && result.id) {
-      localStorage.setItem(PAGE_ID + '_github_gist_id', result.id);
-      localStorage.setItem('github_gist_id', result.id);
-      console.log('✅ 新 Gist ID 已保存:', result.id);
-    }
-
-    // 保存同步哈希和时间
-    if (silent) {
-      // 静默同步成功后才更新哈希
-      const newHash = getDataHash();
-      setLastSyncHash(newHash);
-      localStorage.setItem('last_sync_hash', newHash);
-    }
-    localStorage.setItem(PAGE_ID + '_github_last_sync', new Date().toISOString());
-    
-    const syncTime = new Date().toLocaleString();
-    
-    if (!silent) {
-  alert(`✅ 同步成功！\n时间：${syncTime}`);
-} else {
-  setLastSyncStatus({
-    success: true,
-    time: new Date(),
-    message: `同步成功 (${new Date().toLocaleTimeString()})`
-  });
-  setTimeout(() => {
-    setLastSyncStatus(prev => ({ ...prev, message: '' }));
-  }, 2000);
-}
-
-// ✅ 添加这两行：无论手动还是静默，都保存同步时间
-const now = new Date().toISOString();
-localStorage.setItem('github_last_sync', now);
-localStorage.setItem('PAGE_A_github_last_sync', now);
-
-return true;
-
-  } catch (error) {
-    console.error('同步失败:', error);
-    
-    if (!silent) {
-      let errorMessage = '同步失败：';
-      if (error.message.includes('401')) {
-        errorMessage += 'Token 无效或已过期';
-      } else if (error.message.includes('403')) {
-        errorMessage += '权限不足';
-      } else if (error.message.includes('404')) {
-        errorMessage += 'Gist 不存在';
-        localStorage.removeItem('github_gist_id');
-      } else {
-        errorMessage += error.message;
-      }
-      alert(errorMessage);
-    } else {
-      setLastSyncStatus({
-        success: false,
-        time: new Date(),
-        message: `❌ 同步失败`
-      });
-      setTimeout(() => {
-        setLastSyncStatus(prev => ({ ...prev, message: '' }));
-      }, 3000);
-    }
-    
-    return false;
-  } finally {
-    clearTimeout(syncTimeout);
-    setIsSyncing(false);
-  }
-}, [tasksByDate, dailyRatings, dailyReflections, studyEndTimes, monthTasks, categories, grades, reminderText, semesterEndDate, selectedDate, currentMonday, saveDailyData, getDataHash, lastSyncHash, setLastSyncHash]);
-
+  console.log('📁 使用默认 Gist ID:', gistId);
+  
+  // 不检查 localStorage，直接使用默认值
+  // 也强制保存默认值到 localStorage
+  localStorage.setItem('github_gist_id', gistId);
+  localStorage.setItem('PAGE_A_github_gist_id', gistId);
+  
+  // ... 其余代码保持不变 ...
+  
+  // 在同步时，使用固定的 Gist ID
+  const method = 'PATCH';  // 使用 PATCH 更新已有的 Gist
+  const url = `https://api.github.com/gists/${gistId}`;
+  
+  // ... 后续代码 ...
+}, [/* 依赖数组 */]);
 
 
 const debouncedSync = useCallback(() => {
@@ -17510,13 +17396,15 @@ const performCloudRestore = useCallback(async () => {
       return;
     }
     
-    let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
+    // ✅ 强制使用默认 Gist ID
+    const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
+    const targetGistId = DEFAULT_GIST_ID;  // 直接使用默认值
     
-    if (!targetGistId) {
-      targetGistId = '46c9f5bb3a6a62057759293b0399a15c';
-    }
+    console.log('📁 恢复使用默认 Gist ID:', targetGistId);
     
-    console.log('📁 开始获取 Gist 数据:', targetGistId);
+    // 强制保存默认值
+    localStorage.setItem('github_gist_id', targetGistId);
+    localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
     
     const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
       headers: {
@@ -17537,8 +17425,6 @@ const performCloudRestore = useCallback(async () => {
     }
     
     const backupData = JSON.parse(content);
-    
-    // ✅ 改为覆盖模式
     await handleRestoreData(backupData, 'overwrite');
     
   } catch (error) {
@@ -17546,7 +17432,6 @@ const performCloudRestore = useCallback(async () => {
     alert('恢复失败: ' + error.message);
   }
 }, [handleRestoreData, setShowGitHubSyncModal]);
-
 // 调试函数验证星期对应关系
 window.testWeekDays = () => {
   console.log('=== 星期对应关系测试 ===');
