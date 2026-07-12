@@ -3415,7 +3415,909 @@ const renderTodoItem = (todo) => {
 };
 
 
+// 兑换弹窗组件
+// 兑换弹窗组件 - 带编辑和删除功能
+const ExchangeModal = ({ 
+  onClose, 
+  totalExp, 
+  totalExpAll, 
+  exchangeRecords, 
+  onExchange,
+  onEditGift,
+  onDeleteGift
+}) => {
+  const [selectedGift, setSelectedGift] = useState(null);
+  const [editingGift, setEditingGift] = useState(null);
+  const [giftList, setGiftList] = useState(() => {
+    // 从 localStorage 加载自定义礼物列表，如果没有则使用默认列表
+    const saved = localStorage.getItem('gift_list');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // 默认礼物列表
+    return [
+      { 
+        id: 'gift_1', 
+        name: '游戏时间30分钟', 
+        cost: 50, 
+        emoji: '🎮',
+        description: '享受30分钟的游戏时间'
+      },
+      { 
+        id: 'gift_2', 
+        name: '冰淇淋奖励', 
+        cost: 30, 
+        emoji: '🍦',
+        description: '奖励自己一个冰淇淋'
+      },
+      { 
+        id: 'gift_3', 
+        name: '看一集动画片', 
+        cost: 40, 
+        emoji: '📺',
+        description: '看一集喜欢的动画片'
+      },
+      { 
+        id: 'gift_4', 
+        name: '小玩具奖励', 
+        cost: 80, 
+        emoji: '🧸',
+        description: '获得一个小玩具'
+      },
+      { 
+        id: 'gift_5', 
+        name: '披萨晚餐', 
+        cost: 100, 
+        emoji: '🍕',
+        description: '享受一顿披萨晚餐'
+      },
+      { 
+        id: 'gift_6', 
+        name: '画画时间', 
+        cost: 25, 
+        emoji: '🎨',
+        description: '30分钟自由画画时间'
+      },
+      { 
+        id: 'gift_7', 
+        name: '新书一本', 
+        cost: 60, 
+        emoji: '📚',
+        description: '获得一本新书'
+      },
+      { 
+        id: 'gift_8', 
+        name: '超级奖励', 
+        cost: 200, 
+        emoji: '⭐',
+        description: '任意选择一个奖励！'
+      }
+    ];
+  });
 
+  const [showAddGiftModal, setShowAddGiftModal] = useState(false);
+  const [newGiftData, setNewGiftData] = useState({
+    emoji: '🎁',
+    name: '',
+    cost: '',
+    description: ''
+  });
+  // 保存礼物列表到 localStorage
+  useEffect(() => {
+    localStorage.setItem('gift_list', JSON.stringify(giftList));
+  }, [giftList]);
+
+  // 计算已兑换的礼物
+  const exchangedGiftIds = new Set(Object.keys(exchangeRecords || {}));
+  const exchangedCount = exchangedGiftIds.size;
+
+  // 处理兑换
+// 在 ExchangeModal 组件中
+const handleExchange = (gift) => {
+  // 检查积分是否足够
+  if (totalExp < gift.cost) {
+    alert(`❌ 积分不足！需要 ${gift.cost} 分，当前 ${totalExp} 分`);
+    return;
+  }
+  
+  // ✅ 删除这里的 confirm，直接调用 onExchange
+  onExchange(gift);
+  setSelectedGift(gift.id);
+};
+
+  // 编辑礼物
+  const handleEditGift = (gift) => {
+    setEditingGift(gift);
+  };
+
+  // 保存编辑
+  const saveEditGift = (giftId, newData) => {
+    setGiftList(prev => prev.map(g => 
+      g.id === giftId ? { ...g, ...newData } : g
+    ));
+    setEditingGift(null);
+    
+    // 如果这个礼物已经兑换了，也更新兑换记录中的礼物信息
+    if (exchangeRecords[giftId]) {
+      const updatedRecords = {
+        ...exchangeRecords,
+        [giftId]: {
+          ...exchangeRecords[giftId],
+          gift: { ...exchangeRecords[giftId].gift, ...newData }
+        }
+      };
+      localStorage.setItem('exchange_records', JSON.stringify(updatedRecords));
+      // 通知父组件更新
+      if (onEditGift) {
+        onEditGift(giftId, newData);
+      }
+    }
+  };
+
+  // 👇 在这里添加 handleSaveNewGift 函数
+const handleSaveNewGift = (giftData) => {
+  setGiftList(prev => [...prev, giftData]);
+  setShowAddGiftModal(false);
+  setNewGiftData({
+    emoji: '🎁',
+    name: '',
+    cost: '',
+    description: ''
+  });
+  
+  // 显示成功提示
+  const toast = document.createElement('div');
+  toast.textContent = `✅ 已添加礼物 "${giftData.name}"！`;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4caf50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 3000;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+};
+
+
+  // 删除礼物
+  const handleDeleteGift = (giftId) => {
+    if (exchangedGiftIds.has(giftId)) {
+      alert('❌ 该礼物已被兑换，不能删除！');
+      return;
+    }
+    
+    if (window.confirm(`确定要删除礼物 "${giftList.find(g => g.id === giftId)?.name}" 吗？`)) {
+      setGiftList(prev => prev.filter(g => g.id !== giftId));
+      if (onDeleteGift) {
+        onDeleteGift(giftId);
+      }
+    }
+  };
+
+// 修改添加按钮的点击事件
+<div
+  onClick={() => setShowAddGiftModal(true)}
+  style={{
+    padding: '4px 12px',
+    backgroundColor: '#4caf50',
+    color: 'white',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px'
+  }}
+>
+  ＋ 添加
+</div>
+  // 添加礼物弹窗
+const AddGiftModal = ({ onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    emoji: '🎁',
+    name: '',
+    cost: '',
+    description: ''
+  });
+
+  const handleSave = () => {
+    if (!formData.name.trim()) {
+      alert('请输入礼物名称');
+      return;
+    }
+    const costNum = parseInt(formData.cost);
+    if (isNaN(costNum) || costNum <= 0) {
+      alert('请输入有效的积分（必须大于0）');
+      return;
+    }
+    
+    onSave({
+      id: `gift_${Date.now()}`,
+      name: formData.name.trim(),
+      cost: costNum,
+      emoji: formData.emoji || '🎁',
+      description: formData.description.trim() || '一个惊喜礼物'
+    });
+  };
+
+  // 快速添加预设礼物
+  const quickAddPreset = (preset) => {
+    setFormData({
+      emoji: preset.emoji,
+      name: preset.name,
+      cost: preset.cost.toString(),
+      description: preset.description
+    });
+  };
+
+  const presets = [
+    { emoji: '🎮', name: '游戏时间30分钟', cost: 50, description: '享受30分钟的游戏时间' },
+    { emoji: '🍦', name: '冰淇淋奖励', cost: 30, description: '奖励自己一个冰淇淋' },
+    { emoji: '📺', name: '看一集动画片', cost: 40, description: '看一集喜欢的动画片' },
+    { emoji: '🧸', name: '小玩具奖励', cost: 80, description: '获得一个小玩具' },
+    { emoji: '🍕', name: '披萨晚餐', cost: 100, description: '享受一顿披萨晚餐' },
+    { emoji: '🎨', name: '画画时间', cost: 25, description: '30分钟自由画画时间' },
+    { emoji: '📚', name: '新书一本', cost: 60, description: '获得一本新书' },
+    { emoji: '⭐', name: '超级奖励', cost: 200, description: '任意选择一个奖励！' },
+    { emoji: '🎵', name: '听音乐30分钟', cost: 20, description: '享受30分钟的音乐时间' },
+    { emoji: '📱', name: '看手机15分钟', cost: 15, description: '15分钟自由看手机时间' }
+  ];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 3000,
+      padding: '10px'
+    }} onClick={onCancel}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        padding: '20px',
+        width: '95%',
+        maxWidth: '400px',
+        maxHeight: '85vh',
+        overflow: 'auto'
+      }} onClick={e => e.stopPropagation()}>
+        <h4 style={{ 
+          margin: '0 0 16px 0', 
+          textAlign: 'center', 
+          color: '#61A2Da',
+          fontSize: '18px'
+        }}>
+          🎁 添加新礼物
+        </h4>
+        
+        {/* 快速选择预设 */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#666', 
+            marginBottom: '8px',
+            fontWeight: 'bold'
+          }}>
+            快速选择预设：
+          </div>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '6px'
+          }}>
+            {presets.map((preset, index) => (
+              <div
+                key={index}
+                onClick={() => quickAddPreset(preset)}
+                style={{
+                  padding: '4px 10px',
+                  backgroundColor: '#f0f4f8',
+                  borderRadius: '16px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  border: '1px solid #e0e0e0',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {preset.emoji} {preset.name}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ 
+          borderTop: '1px solid #f0f0f0', 
+          marginBottom: '16px',
+          paddingTop: '16px'
+        }}>
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#999', 
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            或手动填写：
+          </div>
+        </div>
+        
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+            表情符号 <span style={{ color: '#999' }}>(必填)</span>
+          </label>
+          <input
+            type="text"
+            value={formData.emoji}
+            onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+            placeholder="例如：🎮"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+            礼物名称 <span style={{ color: '#f44336' }}>*</span>
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="输入礼物名称"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+          />
+        </div>
+        
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+            所需积分 <span style={{ color: '#f44336' }}>*</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={formData.cost}
+            onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+            placeholder="例如：50"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+            描述 <span style={{ color: '#999' }}>(可选)</span>
+          </label>
+          <input
+            type="text"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="输入礼物描述"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              borderRadius: '8px',
+              textAlign: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            取消
+          </div>
+          <div
+            onClick={handleSave}
+            style={{
+              flex: 1,
+              padding: '10px',
+              backgroundColor: '#61A2Da',
+              color: 'white',
+              borderRadius: '8px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            添加礼物
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+  // 编辑弹窗
+  const EditGiftModal = ({ gift, onSave, onCancel }) => {
+    const [editData, setEditData] = useState({
+      name: gift.name,
+      cost: gift.cost,
+      emoji: gift.emoji,
+      description: gift.description
+    });
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 3000,
+        padding: '10px'
+      }} onClick={onCancel}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '20px',
+          width: '90%',
+          maxWidth: '350px'
+        }} onClick={e => e.stopPropagation()}>
+          <h4 style={{ margin: '0 0 16px 0', textAlign: 'center', color: '#61A2Da' }}>
+            ✏️ 编辑礼物
+          </h4>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              表情符号
+            </label>
+            <input
+              type="text"
+              value={editData.emoji}
+              onChange={(e) => setEditData({ ...editData, emoji: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              礼物名称
+            </label>
+            <input
+              type="text"
+              value={editData.name}
+              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              所需积分
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={editData.cost}
+              onChange={(e) => setEditData({ ...editData, cost: parseInt(e.target.value) || 0 })}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              描述
+            </label>
+            <input
+              type="text"
+              value={editData.description}
+              onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div
+              onClick={onCancel}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#f0f0f0',
+                color: '#333',
+                borderRadius: '8px',
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              取消
+            </div>
+            <div
+              onClick={() => {
+                if (!editData.name.trim()) {
+                  alert('请输入礼物名称');
+                  return;
+                }
+                if (editData.cost <= 0) {
+                  alert('积分必须大于0');
+                  return;
+                }
+                onSave(gift.id, editData);
+              }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#61A2Da',
+                color: 'white',
+                borderRadius: '8px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              保存
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 2000,
+      padding: '10px'
+    }} onClick={(e) => e.stopPropagation()}> 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        width: '95%',
+        maxWidth: '480px',
+        maxHeight: '85vh',
+        overflow: 'auto',
+        padding: '20px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+      }} onClick={e => e.stopPropagation()}>
+        
+        {/* 头部 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <h3 style={{ margin: 0, color: '#61A2Da', fontSize: '18px' }}>
+            🎁 积分兑换
+          </h3>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* 添加礼物按钮 */}
+            <div
+              onClick={() => setShowAddGiftModal(true)} 
+              style={{
+                padding: '4px 12px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              ＋ 添加
+            </div>
+            <div
+              onClick={onClose}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: '#f0f0f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '18px',
+                color: '#666'
+              }}
+            >
+              ×
+            </div>
+          </div>
+        </div>
+
+        {/* 积分信息 */}
+     {/* 积分信息 - 显示可兑换积分 */}
+
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr',
+  gap: '8px',
+  padding: '12px',
+  backgroundColor: '#e8f0fe',
+  borderRadius: '12px',
+  marginBottom: '16px'
+}}>
+  <div style={{ textAlign: 'center' }}>
+    <div style={{ fontSize: '10px', color: '#666' }}>总经验</div>
+    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#61A2Da' }}>
+      {totalExpAll} 分
+    </div>
+  </div>
+  <div style={{ textAlign: 'center' }}>
+    <div style={{ fontSize: '10px', color: '#666' }}>可兑换积分</div>
+    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#FF9800' }}>
+      {totalExp} 分
+    </div>
+  </div>
+  {/* 在 ExchangeModal 中 */}
+<div style={{ textAlign: 'center' }}>
+  <div style={{ fontSize: '10px', color: '#666' }}>已消耗</div>
+  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f44336' }}>
+    {Object.values(exchangeRecords || {}).reduce((sum, r) => sum + (r.totalCost || 0), 0)} 分
+  </div>
+</div>
+</div>
+
+        {/* 礼物列表 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px',
+          marginBottom: '16px'
+        }}>
+          {giftList.map(gift => {
+  const record = exchangeRecords?.[gift.id];
+  const count = record?.count || 0;
+  const isExchanged = count > 0;
+  const canAfford = totalExp >= gift.cost;
+  
+  return (
+    <div
+      key={gift.id}
+      style={{
+        padding: '12px',
+        border: count > 0 ? '2px solid #4caf50' : '1px solid #e0e0e0',
+        borderRadius: '12px',
+        textAlign: 'center',
+        backgroundColor: count > 0 ? '#f0faf0' : 'white',
+        opacity: count > 0 ? 0.9 : 1,
+        position: 'relative'
+      }}
+    >
+      {/* 右上角编辑和删除按钮 - 只有未兑换过的才能编辑删除 */}
+      {count === 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '4px',
+          right: '4px',
+          display: 'flex',
+          gap: '2px'
+        }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditGift(gift);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              borderRadius: '4px',
+              color: '#999'
+            }}
+            title="编辑礼物"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M17 3L21 7L7 21H3L3 17L17 3Z" stroke="#999" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M15 5L19 9" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteGift(gift.id);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              borderRadius: '4px',
+              color: '#999'
+            }}
+            title="删除礼物"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <line x1="18" y1="6" x2="6" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+      
+      {/* 兑换次数标记 */}
+      {count > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '4px',
+          right: '4px',
+          fontSize: '12px',
+          color: '#4caf50',
+          fontWeight: 'bold',
+          backgroundColor: '#e8f5e9',
+          padding: '2px 8px',
+          borderRadius: '12px'
+        }}>
+          ×{count}
+        </div>
+      )}
+      
+      <div style={{ fontSize: '28px', marginBottom: '4px' }}>
+        {gift.emoji}
+      </div>
+      <div style={{ 
+        fontSize: '12px', 
+        fontWeight: 'bold',
+        color: count > 0 ? '#4caf50' : '#333',
+        marginBottom: '2px'
+      }}>
+        {gift.name}
+      </div>
+      <div style={{ 
+        fontSize: '10px', 
+        color: '#999',
+        marginBottom: '6px',
+        lineHeight: '1.3'
+      }}>
+        {gift.description}
+      </div>
+      
+      {/* 兑换按钮 */}
+      <div style={{
+        fontSize: '11px',
+        fontWeight: 'bold',
+        color: canAfford ? '#61A2Da' : '#f44336',
+        backgroundColor: canAfford ? '#e8f0fe' : '#ffebee',
+        padding: '2px 8px',
+        borderRadius: '12px',
+        display: 'inline-block',
+        cursor: 'pointer'
+      }}
+      onClick={() => handleExchange(gift)}
+      >
+        {count > 0 ? `再兑换 (${gift.cost}分)` : `兑换 (${gift.cost}分)`}
+      </div>
+      
+      {/* 显示已兑换次数和总消耗 */}
+      {count > 0 && (
+        <div style={{
+          fontSize: '10px',
+          color: '#999',
+          marginTop: '4px'
+        }}>
+          已兑换 {count} 次，共消耗 {record?.totalCost || 0} 分
+        </div>
+      )}
+    </div>
+  );
+})}
+        </div>
+
+        {/* 说明 */}
+        <div style={{
+          fontSize: '11px',
+          color: '#999',
+          padding: '10px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          textAlign: 'center',
+          lineHeight: '1.5'
+        }}>
+          💡 兑换不消耗积分，只是记录你的成就！
+          <br/>
+          右上角的 ✏️ 可以编辑礼物，🗑️ 可以删除（已兑换的不能删除）
+        </div>
+      </div>
+
+ {/* ✅ 添加礼物弹窗 - 放在外层 div 的底部 */}
+    {showAddGiftModal && (
+      <AddGiftModal
+        onSave={handleSaveNewGift}
+        onCancel={() => setShowAddGiftModal(false)}
+      />
+    )}
+
+      {/* 编辑弹窗 */}
+      {editingGift && (
+        <EditGiftModal
+          gift={editingGift}
+          onSave={saveEditGift}
+          onCancel={() => setEditingGift(null)}
+        />
+      )}
+    </div>
+  );
+};
 
 const TimeRecordModal = ({ onClose, tasksByDate, categories, selectedDate, onEditRecord, onDeleteRecord }) => {
   const [selectedFilterDate, setSelectedFilterDate] = useState(selectedDate || new Date().toISOString().split('T')[0]);
@@ -8135,6 +9037,30 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
    
     setShowAddForm(false);
   };
+// 添加计划
+
+
+// 切换计划完成状态
+const togglePlanDone = (type, id) => {
+  if (type === 'week') {
+    setWeekPlans(prev => prev.map(plan =>
+      plan.id === id ? { ...plan, done: !plan.done } : plan
+    ));
+  } else {
+    setMonthPlans(prev => prev.map(plan =>
+      plan.id === id ? { ...plan, done: !plan.done } : plan
+    ));
+  }
+};
+
+// 删除计划
+const deletePlan = (type, id) => {
+  if (type === 'week') {
+    setWeekPlans(prev => prev.filter(plan => plan.id !== id));
+  } else {
+    setMonthPlans(prev => prev.filter(plan => plan.id !== id));
+  }
+};
 
   const calculateMonthProgress = () => {
     if (tasks.length === 0) return 0;
@@ -11040,7 +11966,7 @@ const handleProgressAdjust = (increment) => {
     }}
     style={{
       fontSize: "10px",
-      color: "#FF9800",
+      color: (task.expValue || 2) < 0 ? "#f44336" : "#FF9800",  
       cursor: isSortingMode ? "default" : "pointer",
       backgroundColor: "#fff3e0",
       padding: "0 6px",
@@ -11540,6 +12466,7 @@ const handleProgressAdjust = (increment) => {
       )}
 
 {/* 经验值设置弹窗 */}
+
 {showExpModal && (
   <div
     style={{
@@ -11574,7 +12501,7 @@ const handleProgressAdjust = (increment) => {
         color: '#61A2Da',
         fontSize: '16px'
       }}>
-        经验值
+        经验值 {expInputValue < 0 && '⚠️ 负分'}
       </h3>
       
       <p style={{
@@ -11584,50 +12511,48 @@ const handleProgressAdjust = (increment) => {
         marginBottom: '12px'
       }}>
         <strong>{task.text}</strong>
+        <span style={{ fontSize: '11px', color: '#999', marginLeft: '8px' }}>
+          (支持负值)
+        </span>
       </p>
       
       <div style={{ marginBottom: '16px' }}>
-  <label style={{
-    display: 'block',
-    fontSize: '13px',
-    color: '#333',
-    marginBottom: '6px'
-  }}>
-    
-  </label>
-  <input
-    type="number"
-    min="0"
-    max="100"
-    value={expInputValue}
-    onChange={(e) => {
-      const val = parseInt(e.target.value) || 0;
-      setExpInputValue(Math.min(Math.max(0, val), 100));
-    }}
-    style={{
-      width: '100%',
-      padding: '10px',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      fontSize: '16px',
-      textAlign: 'center',
-      boxSizing: 'border-box'
-    }}
-    autoFocus
-    onFocus={(e) => e.target.select()}
-  />
-  {/* ❌ 删除这两行 */}
-  {/* <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '11px',
-    color: '#999',
-    marginTop: '4px'
-  }}>
-    <span>0</span>
-    <span>100</span>
-  </div> */}
-</div>
+        <input
+          type="number"
+          min="-100"
+          max="100"
+          value={expInputValue}
+          onChange={(e) => {
+            const val = parseInt(e.target.value) || 0;
+            setExpInputValue(Math.min(Math.max(-100, val), 100));
+          }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: expInputValue < 0 ? '2px solid #f44336' : '1px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '16px',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            backgroundColor: expInputValue < 0 ? '#fff5f5' : 'white'
+          }}
+          autoFocus
+          onFocus={(e) => e.target.select()}
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: '11px',
+          color: '#999',
+          marginTop: '4px'
+        }}>
+          <span>-100</span>
+          <span style={{ color: expInputValue < 0 ? '#f44336' : '#4caf50' }}>
+            {expInputValue < 0 ? '⚠️ 负分' : '正分'}
+          </span>
+          <span>100</span>
+        </div>
+      </div>
       
       <div style={{
         display: 'flex',
@@ -11650,14 +12575,14 @@ const handleProgressAdjust = (increment) => {
         </div>
         <div
           onClick={() => {
-            const finalExp = Math.min(Math.max(0, expInputValue), 100);
+            const finalExp = Math.min(Math.max(-100, expInputValue), 100);
             onUpdateExpValue?.(task, finalExp);
             setShowExpModal(false);
           }}
           style={{
             flex: 1,
             padding: '10px',
-            backgroundColor: '#61A2Da',
+            backgroundColor: expInputValue < 0 ? '#f44336' : '#61A2Da',
             color: 'white',
             borderRadius: '8px',
             cursor: 'pointer',
@@ -11666,7 +12591,7 @@ const handleProgressAdjust = (increment) => {
             textAlign: 'center'
           }}
         >
-          确认
+          {expInputValue < 0 ? '确认负分' : '确认'}
         </div>
       </div>
     </div>
@@ -14025,262 +14950,7 @@ const SquareCheckMark = ({ show, size = 14, color = "#bbb" }) => {
   );
 };
 
-const MilestoneModal = ({ onClose, totalCompletedTasks }) => {
-  // 每100个任务升一级，1级需要100个任务
-  const currentLevel = Math.floor(totalCompletedTasks / 100);
-  // 当前等级区间的起始值（0, 100, 200, 300...）
-  const levelStart = currentLevel * 100;
-  // 当前等级区间的结束值
-  const levelEnd = levelStart + 100;
-  // 当前等级区间内的进度（0-100）
-  const levelProgress = totalCompletedTasks - levelStart;
-  // 进度百分比
-  const progressPercent = (levelProgress / 100) * 100;
 
-  // 等级称号
-  const getLevelTitle = (level) => {
-    if (level === 0) return "学习萌新";
-    if (level === 1) return "1级学者";
-    if (level === 2) return "2级学者";
-    if (level === 3) return "3级学者";
-    if (level === 4) return "4级学者";
-    if (level === 5) return "5级学者";
-    if (level === 6) return "6级学者";
-    if (level === 7) return "7级学者";
-    if (level === 8) return "8级学者";
-    if (level === 9) return "9级学者";
-    if (level >= 10) return `${level}级学者`;
-    return `${level}级学者`;
-  };
-
-  // 等级颜色
-  const getLevelColor = (level) => {
-    if (level === 0) return "#9E9E9E";
-    if (level === 1) return "#CD7F32"; // 青铜
-    if (level === 2) return "#C0C0C0"; // 白银
-    if (level === 3) return "#FFD700"; // 黄金
-    if (level === 4) return "#00BCD4"; // 钻石
-    if (level === 5) return "#9C27B0"; // 铂金
-    if (level === 6) return "#FF5722"; // 橙金
-    if (level === 7) return "#E91E63"; // 粉金
-    if (level === 8) return "#3F51B5"; // 蓝金
-    if (level === 9) return "#009688"; // 翠金
-    if (level >= 10) return "#FFD700"; // 黄金
-    return "#4CAF50";
-  };
-
-  // 下一等级需要的任务数
-  const tasksToNextLevel = levelEnd - totalCompletedTasks;
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      padding: '10px'
-    }} onClick={onClose}>
-      <style>{`
-        .milestone-close-btn,
-        .milestone-close-btn:hover,
-        .milestone-close-btn:active,
-        .milestone-close-btn:focus {
-          color: #999 !important;
-          background-color: transparent !important;
-        }
-      `}</style>
-      
-      <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '420px',  // ← 从 320px 改成 420px，加宽
-        overflow: 'hidden',
-        position: 'relative',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
-        
-        {/* 右上角关闭按钮 */}
-        <button
-          className="milestone-close-btn"
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            width: '28px',
-            height: '28px',
-            backgroundColor: 'transparent',
-            color: '#999',
-            border: 'none',
-            borderRadius: '50%',
-            fontSize: '18px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10
-          }}
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          ×
-        </button>
-
-        {/* 头部 - 等级徽章 */}
-        <div style={{
-          padding: '24px 20px 16px 20px',
-          textAlign: 'center',
-          background: `linear-gradient(135deg, ${getLevelColor(currentLevel)}20 0%, #f5f5f5 100%)`
-        }}>
-          <div style={{
-            fontSize: '48px',
-            marginBottom: '8px',
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-          }}>
-            🏆
-          </div>
-          <div style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: getLevelColor(currentLevel),
-            marginBottom: '4px'
-          }}>
-            {getLevelTitle(currentLevel)}
-          </div>
-          <div style={{
-            fontSize: '13px',
-            color: '#666'
-          }}>
-            已完成 {totalCompletedTasks} 个任务
-          </div>
-        </div>
-
-        {/* 等级进度条 */}
-        <div style={{ padding: '16px 20px' }}>
-          {/* 等级区间显示 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '12px',
-            color: '#999',
-            marginBottom: '6px'
-          }}>
-            <span>{levelStart}</span>
-            <span style={{ fontWeight: 'bold', color: getLevelColor(currentLevel) }}>
-              Lv.{currentLevel}
-            </span>
-            <span>{levelEnd}</span>
-          </div>
-          
-     {/* 进度条 */}
-{/* 进度条 */}
-<div style={{
-  width: '100%',
-  height: '10px',
-  backgroundColor: '#f0f0f0',
-  borderRadius: '5px',
-  overflow: 'hidden',
-  marginBottom: '8px'
-}}>
-  <div style={{
-    width: `${progressPercent}%`,
-    height: '100%',
-    backgroundColor: getLevelColor(currentLevel),
-    borderRadius: '5px',
-    transition: 'width 0.3s ease'
-  }} />
-</div>
-          
-          {/* 进度数字 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '11px',
-            color: '#666',
-            marginBottom: '8px'
-          }}>
-            <span>📊 当前进度</span>
-            <span>{levelProgress}/100</span>
-          </div>
-
-          {/* 下一级提示 */}
-          {tasksToNextLevel > 0 && (
-            <div style={{
-              fontSize: '11px',
-              color: '#888',
-              textAlign: 'center',
-              marginTop: '12px',
-              padding: '8px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px'
-            }}>
-              💪 再完成 {tasksToNextLevel} 个任务，升至 {getLevelTitle(currentLevel + 1)}
-            </div>
-          )}
-        </div>
-
-        {/* 勋章列表 - 显示已解锁的等级徽章 */}
-       {/* 勋章列表 - 显示已解锁的等级徽章 */}
-<div style={{ padding: '0 16px 20px 16px' }}>
-  <div style={{ 
-    fontSize: '12px', 
-    color: '#999', 
-    marginBottom: '12px',
-    textAlign: 'center',
-    borderTop: '1px solid #f0f0f0',
-    paddingTop: '12px'
-  }}>
-    已解锁等级徽章
-  </div>
-  
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(level => {
-      const isUnlocked = totalCompletedTasks >= (level * 100);
-      const levelColor = getLevelColor(level);
-      
-      return (
-        <div
-          key={level}
-          style={{
-            width: '65px',           // ← 从 55px 加宽到 65px
-            padding: '8px 4px',      // ← 增加上下内边距
-            textAlign: 'center',
-            backgroundColor: isUnlocked ? `${levelColor}15` : '#f5f5f5',
-            borderRadius: '10px',    // ← 稍微增大圆角
-            opacity: isUnlocked ? 1 : 0.5,
-            border: isUnlocked ? `1px solid ${levelColor}30` : '1px solid #eee'
-          }}
-        >
-          <div style={{ 
-            fontSize: '22px',        // ← 图标稍微加大
-            marginBottom: '4px',
-            filter: isUnlocked ? 'none' : 'grayscale(1)'
-          }}>
-            {isUnlocked ? '🏅' : '🔒'}
-          </div>
-          <div style={{ 
-            fontSize: '11px',        // ← 字号稍微加大
-            fontWeight: isUnlocked ? 'bold' : 'normal',
-            color: isUnlocked ? levelColor : '#999'
-          }}>
-            {level === 0 ? '萌新' : `${level}级`}
-          </div>
-          <div style={{ fontSize: '9px', color: '#aaa' }}>{level * 100}</div>
-        </div>
-      );
-    })}
-  </div>
-</div>
-      </div>
-    </div>
-  );
-};
 // 在 App 组件外添加这个组件
 const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
   return (
@@ -14342,6 +15012,10 @@ const CustomConfirmModal = ({ message, onConfirm, onCancel, onClose }) => {
 };
 
 function App() {
+  // 兑换弹窗状态
+  const [showAddPlanModal, setShowAddPlanModal] = useState(false);
+const [addPlanInput, setAddPlanInput] = useState('');
+const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [newDailyTaskExpValue, setNewDailyTaskExpValue] = useState(2);
 const [silentSyncEnabled, setSilentSyncEnabled] = useState(false);
 const syncDebounceTimerRef = useRef(null);
@@ -14353,6 +15027,62 @@ const [newTaskProgressCurrent, setNewTaskProgressCurrent] = useState(0);
 const [newTaskTargetProgress, setNewTaskTargetProgress] = useState(100);
 const [enableProgress, setEnableProgress] = useState(false);
 const [showSearchModal, setShowSearchModal] = useState(false);
+// 计划面板状态
+
+const [showPlanPanel, setShowPlanPanel] = useState(false);
+const [planTab, setPlanTab] = useState('week');
+
+// ✅ 改为数组存储
+const [weekPlans, setWeekPlans] = useState(() => {
+  const saved = localStorage.getItem('week_plans');
+  return saved ? JSON.parse(saved) : [];
+});
+
+const [monthPlans, setMonthPlans] = useState(() => {
+  const saved = localStorage.getItem('month_plans');
+  return saved ? JSON.parse(saved) : [];
+});
+
+// 新增输入状态
+const [newPlanInput, setNewPlanInput] = useState('');
+// 保存计划
+useEffect(() => {
+  localStorage.setItem('week_plans', JSON.stringify(weekPlans));
+}, [weekPlans]);
+
+useEffect(() => {
+  localStorage.setItem('month_plans', JSON.stringify(monthPlans));
+}, [monthPlans]);
+
+
+// 保存计划
+useEffect(() => {
+  localStorage.setItem('week_plans', JSON.stringify(weekPlans));
+}, [weekPlans]);
+
+useEffect(() => {
+  localStorage.setItem('month_plans', JSON.stringify(monthPlans));
+}, [monthPlans]);
+
+// 👇 在这里添加点击外部关闭的 useEffect
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (showPlanPanel) {
+      const panel = document.querySelector('[data-plan-panel]');
+      if (panel && !panel.contains(event.target)) {
+        const planBtn = document.querySelector('[data-plan-btn]');
+        if (planBtn && planBtn.contains(event.target)) {
+          return;
+        }
+        setShowPlanPanel(false);
+      }
+    }
+  };
+  
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, [showPlanPanel]);
+
 const [appMode, setAppMode] = useState(() => {
   const saved = localStorage.getItem('app_mode');
   return saved || 'semester';
@@ -14369,6 +15099,19 @@ const [dailyTaskTemplates, setDailyTaskTemplates] = useState(() => {
   }
   return [];
 });
+// 兑换记录状态
+const [exchangeRecords, setExchangeRecords] = useState(() => {
+  const saved = localStorage.getItem('exchange_records');
+  return saved ? JSON.parse(saved) : {};
+});
+
+
+
+// 保存兑换记录
+useEffect(() => {
+  localStorage.setItem('exchange_records', JSON.stringify(exchangeRecords));
+}, [exchangeRecords]);
+
 
 const [showDailyTaskManager, setShowDailyTaskManager] = useState(false);
 const [newDailyTaskText, setNewDailyTaskText] = useState('');
@@ -14407,7 +15150,7 @@ const [showTemplateList, setShowTemplateList] = useState(false);
 
 const [showTimeRecordModal, setShowTimeRecordModal] = useState(false);
   // 在 App 组件开头，其他 useState 附近添加
-const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+
   // 在 App 组件中，找到其他 useRef 定义的位置，添加：
 const isUserTogglingRef = useRef(false);
   // 添加这个状态定义
@@ -14695,6 +15438,7 @@ const [expData, setExpData] = useState(() => {
 
 // ===== 获取任务奖励（支持校内子分类） =====
 // ===== 获取任务奖励 =====
+// 获取任务奖励（支持负值）
 const getTaskRewards = useCallback((task) => {
   const rewards = {};
   const category = task.category;
@@ -14718,14 +15462,15 @@ const getTaskRewards = useCallback((task) => {
   // 3. 如果还是没有匹配到，返回空
   if (!dimKey) return rewards;
   
-  // 使用任务自定义经验值，如果没有则使用默认值2
-  const exp = task.expValue || 2;
+  // ✅ 使用任务自定义经验值，允许负值
+  const exp = task.expValue !== undefined ? task.expValue : 2;
   
   rewards[dimKey] = exp;
   return rewards;
 }, []);
 
 // 2.7 添加经验
+// 添加经验（支持负值）
 const addExp = useCallback((date, rewards) => {
   setExpData(prev => {
     const newDaily = { ...prev.daily };
@@ -14734,7 +15479,8 @@ const addExp = useCallback((date, rewards) => {
     if (!newDaily[date]) newDaily[date] = {};
     
     Object.entries(rewards).forEach(([dim, value]) => {
-      if (value !== 0) {  // ✅ 允许正数和负数
+      if (value !== 0) {
+        // ✅ 允许正数和负数
         newDaily[date][dim] = (newDaily[date][dim] || 0) + value;
         newTotal[dim] = (newTotal[dim] || 0) + value;
       }
@@ -14775,6 +15521,18 @@ const getTotalExp = useCallback(() => {
 const getGrandTotal = useCallback(() => {
   return Object.values(expData.total).reduce((sum, val) => sum + val, 0);
 }, [expData]);
+
+// ✅ 获取可兑换积分（放在这里）
+// 计算可兑换积分 = 总经验 - 已消耗积分
+const getRedeemableExp = useCallback(() => {
+  const totalExp = getGrandTotal();
+  // ✅ 使用 totalCost 计算已消耗积分
+  const usedExp = Object.values(exchangeRecords).reduce((sum, r) => sum + (r.totalCost || 0), 0);
+  const redeemable = totalExp - usedExp;
+  console.log('📊 积分计算:', { totalExp, usedExp, redeemable }); // 调试用
+  return redeemable;
+}, [exchangeRecords, getGrandTotal]);
+  
 
 // 2.12 获取今日总经验
 const getTodayTotal = useCallback((date) => {
@@ -15340,13 +16098,14 @@ const getDimEmoji = (key) => {
                 </span>
               )}
             </span>
-            <span style={{
-              fontSize: isMobile ? '10px' : '12px',
-              fontWeight: 'bold',
-              color: today > 0 ? '#34c759' : '#999'
-            }}>
-              {today > 0 ? `+${today}` : ''}
-            </span>
+            
+<span style={{
+  fontSize: isMobile ? '10px' : '12px',
+  fontWeight: 'bold',
+  color: today > 0 ? '#34c759' : (today < 0 ? '#f44336' : '#999')
+}}>
+  {today > 0 ? `+${today}` : (today < 0 ? `${today}` : '')}
+</span>
           </div>
           
           <div style={{
@@ -16047,33 +16806,13 @@ const saveDailyData = useCallback(async (date = selectedDate) => {
 
 
 
-
 const handleRestoreData = useCallback(async (backupData, mode = 'overwrite') => {
   try {
     console.log('🔄 开始恢复数据...', mode);
-// 在覆盖模式中添加
-if (backupData.gradeSubCategories) {
-  localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
-  console.log('✅ 恢复成绩子分类:', JSON.parse(backupData.gradeSubCategories));
-}
-
-// 在合并模式中添加
-if (backupData.gradeSubCategories) {
-  const current = JSON.parse(localStorage.getItem('grade_subcategories') || '{}');
-  const backup = JSON.parse(backupData.gradeSubCategories);
-  const merged = { ...backup, ...current };  // 云端优先，本地补充
-  localStorage.setItem('grade_subcategories', JSON.stringify(merged));
-  console.log('✅ 合并成绩子分类:', merged);
-}
-    // 恢复每日任务模板
-    if (backupData.dailyTaskTemplates) {
-      setDailyTaskTemplates(backupData.dailyTaskTemplates);
-      localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
-      console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
-    }
-
-    // 覆盖模式：直接用云端数据替换本地
+    
+    // ========== 覆盖模式 ==========
     if (mode === 'overwrite') {
+      
       // 1. 恢复任务数据
       if (backupData.tasksByDate) {
         setTasksByDate(backupData.tasksByDate);
@@ -16089,27 +16828,23 @@ if (backupData.gradeSubCategories) {
       }
       
       // 3. 恢复每日复盘
-     // 在覆盖模式中
-if (backupData.dailyReflections) {
-  setDailyReflections(backupData.dailyReflections);
-  // ✅ 立即保存到 localStorage
-  localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
-  console.log('✅ 恢复每日复盘:', Object.keys(backupData.dailyReflections).length, '天');
-}
-
-// 同时恢复 daily_ 文件
-if (backupData.dailyReflections) {
-  Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
-    const dailyData = {
-      date: date,
-      rating: backupData.dailyRatings?.[date] || 0,
-      reflection: reflection,
-      updatedAt: new Date().toISOString()
-    };
-    localStorage.setItem(`${STORAGE_KEY}_daily_${date}`, JSON.stringify(dailyData));
-  });
-  console.log('✅ 恢复 daily_ 文件完成');
-}
+      if (backupData.dailyReflections) {
+        setDailyReflections(backupData.dailyReflections);
+        localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
+        console.log('✅ 恢复每日复盘:', Object.keys(backupData.dailyReflections).length, '天');
+        
+        // 同时恢复 daily_ 文件
+        Object.entries(backupData.dailyReflections).forEach(([date, reflection]) => {
+          const dailyData = {
+            date: date,
+            rating: backupData.dailyRatings?.[date] || 0,
+            reflection: reflection,
+            updatedAt: new Date().toISOString()
+          };
+          localStorage.setItem(`${STORAGE_KEY}_daily_${date}`, JSON.stringify(dailyData));
+        });
+        console.log('✅ 恢复 daily_ 文件完成');
+      }
       
       // 4. 恢复学习结束时间
       if (backupData.studyEndTimes) {
@@ -16139,34 +16874,56 @@ if (backupData.dailyReflections) {
         console.log('✅ 恢复成绩记录:', backupData.grades.length, '条');
       }
       
-      // 8. 恢复每日提醒
+      // 8. 恢复成绩子分类
+      if (backupData.gradeSubCategories) {
+        localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
+        console.log('✅ 恢复成绩子分类:', JSON.parse(backupData.gradeSubCategories));
+      }
+      
+      // 9. 恢复每日提醒
       if (backupData.reminderText) {
         setReminderText(backupData.reminderText);
         localStorage.setItem('daily_reminder', backupData.reminderText);
         console.log('✅ 恢复每日提醒');
       }
       
-      // 9. 恢复学期结束日期
+      // 10. 恢复学期结束日期
       if (backupData.semesterEndDate) {
         setSemesterEndDate(backupData.semesterEndDate);
         localStorage.setItem('semester_end_date', backupData.semesterEndDate);
         console.log('✅ 恢复学期结束日期:', backupData.semesterEndDate);
       }
       
-      // 10. 恢复经验数据
-      // 10. 恢复经验数据
-if (backupData.expData) {
-  console.log('📦 备份中的 expData:', backupData.expData);
-  console.log('📊 备份中的 expData 总积分:', backupData.expData.total);
-  
-  setExpData(backupData.expData);
-  localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
-  console.log('✅ 恢复经验数据完成');
-} else {
-  console.log('⚠️ 备份中没有 expData 数据');
-}
+      // 11. 恢复经验数据
+      if (backupData.expData) {
+        console.log('📦 备份中的 expData:', backupData.expData);
+        setExpData(backupData.expData);
+        localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+        console.log('✅ 恢复经验数据完成');
+      }
       
-      // 11. 恢复任务排序顺序
+      // 12. 恢复本周计划
+      if (backupData.weekPlans) {
+        setWeekPlans(backupData.weekPlans);
+        localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
+        console.log('✅ 恢复本周计划:', backupData.weekPlans.length, '条');
+      }
+      
+      // 13. 恢复本月计划
+      if (backupData.monthPlans) {
+        setMonthPlans(backupData.monthPlans);
+        localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
+        console.log('✅ 恢复本月计划:', backupData.monthPlans.length, '条');
+      }
+      
+      // 14. 恢复每日任务模板
+      if (backupData.dailyTaskTemplates) {
+        setDailyTaskTemplates(backupData.dailyTaskTemplates);
+        localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+        console.log('✅ 恢复每日任务模板:', backupData.dailyTaskTemplates.length, '个');
+      }
+      
+      // 15. 恢复任务排序顺序
       if (backupData.taskOrders) {
         Object.entries(backupData.taskOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -16174,7 +16931,7 @@ if (backupData.expData) {
         console.log('✅ 恢复任务排序顺序');
       }
       
-      // 12. 恢复子分类排序顺序
+      // 16. 恢复子分类排序顺序
       if (backupData.subCategoryOrders) {
         Object.entries(backupData.subCategoryOrders).forEach(([key, value]) => {
           localStorage.setItem(key, JSON.stringify(value));
@@ -16182,21 +16939,19 @@ if (backupData.expData) {
         console.log('✅ 恢复子分类排序顺序');
       }
       
-      // 13. 恢复科目待办
+      // 17. 恢复科目待办
       if (backupData.subjectTodoEntries) {
         localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
         console.log('✅ 恢复科目待办');
       }
       
-      // 14. 恢复每日任务模板（已经在前面恢复了）
-      
-      // 15. 恢复子分类颜色
+      // 18. 恢复子分类颜色
       if (backupData.subCategoryColors) {
         localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
         console.log('✅ 恢复子分类颜色');
       }
       
-      // 16. 恢复类别颜色
+      // 19. 恢复类别颜色
       if (backupData.categoryColors) {
         localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
         console.log('✅ 恢复类别颜色');
@@ -16204,115 +16959,8 @@ if (backupData.expData) {
       
       console.log('✅ 覆盖恢复完成！');
       alert('数据已覆盖恢复！页面将重新加载。');
-      
-      return;
-    }
-    
-    // ========== 合并模式 ==========
-    if (mode === 'merge') {
-      console.log('🔄 开始智能合并恢复...');
-      
-      // 1. 合并任务数据
-      if (backupData.tasksByDate) {
-        const mergedTasks = { ...tasksByDate };
-        Object.entries(backupData.tasksByDate).forEach(([date, tasks]) => {
-          if (!mergedTasks[date]) {
-            mergedTasks[date] = [];
-          }
-          tasks.forEach(cloudTask => {
-            const exists = mergedTasks[date].some(localTask => localTask.id === cloudTask.id);
-            if (!exists) {
-              mergedTasks[date].push(cloudTask);
-            }
-          });
-        });
-        setTasksByDate(mergedTasks);
-        await saveMainData('tasks', mergedTasks);
-        console.log('✅ 合并任务数据完成');
-      }
-      
-      // 2. 合并每日评分（本地优先）
-      if (backupData.dailyRatings) {
-        const mergedRatings = { ...backupData.dailyRatings, ...dailyRatings };
-        setDailyRatings(mergedRatings);
-        localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(mergedRatings));
-        console.log('✅ 合并每日评分完成');
-      }
-      
-      // 3. 合并每日复盘（本地优先）
-      if (backupData.dailyReflections) {
-        const mergedReflections = { ...backupData.dailyReflections, ...dailyReflections };
-        setDailyReflections(mergedReflections);
-        console.log('✅ 合并每日复盘完成');
-      }
-      
-      // 4. 合并学习结束时间（本地优先）
-      if (backupData.studyEndTimes) {
-        const mergedEndTimes = { ...backupData.studyEndTimes, ...studyEndTimes };
-        setStudyEndTimes(mergedEndTimes);
-        localStorage.setItem('daily_study_end_times', JSON.stringify(mergedEndTimes));
-        console.log('✅ 合并学习结束时间完成');
-      }
-      
-      // 5. 合并经验数据（本地优先）
-      if (backupData.expData) {
-        const mergedExpData = {
-          daily: { ...backupData.expData.daily, ...expData.daily },
-          total: { ...backupData.expData.total, ...expData.total }
-        };
-        setExpData(mergedExpData);
-        localStorage.setItem('exp_data_v2', JSON.stringify(mergedExpData));
-        console.log('✅ 合并经验数据完成');
-      }
-      
-      // 6. 合并本月任务
-      if (backupData.monthTasks) {
-        const taskMap = new Map();
-        monthTasks.forEach(t => taskMap.set(t.id, t));
-        backupData.monthTasks.forEach(t => {
-          if (!taskMap.has(t.id)) {
-            taskMap.set(t.id, t);
-          }
-        });
-        const mergedMonthTasks = Array.from(taskMap.values());
-        setMonthTasks(mergedMonthTasks);
-        await saveMainData('monthTasks', mergedMonthTasks);
-        console.log('✅ 合并本月任务完成');
-      }
-      
-      // 7. 合并成绩记录
-      if (backupData.grades) {
-        const gradeMap = new Map();
-        grades.forEach(g => gradeMap.set(g.id, g));
-        backupData.grades.forEach(g => {
-          if (!gradeMap.has(g.id)) {
-            gradeMap.set(g.id, g);
-          }
-        });
-        const mergedGrades = Array.from(gradeMap.values());
-        setGrades(mergedGrades);
-        await saveMainData('grades', mergedGrades);
-        console.log('✅ 合并成绩记录完成');
-      }
-      
-      // 8. 合并每日任务模板（本地优先）
-      if (backupData.dailyTaskTemplates) {
-        const templateMap = new Map();
-        dailyTaskTemplates.forEach(t => templateMap.set(t.id, t));
-        backupData.dailyTaskTemplates.forEach(t => {
-          if (!templateMap.has(t.id)) {
-            templateMap.set(t.id, t);
-          }
-        });
-        const mergedTemplates = Array.from(templateMap.values());
-        setDailyTaskTemplates(mergedTemplates);
-        localStorage.setItem('daily_task_templates', JSON.stringify(mergedTemplates));
-        console.log('✅ 合并每日任务模板完成');
-      }
-      
-      console.log('✅ 智能合并完成！');
-      alert('数据合并完成！页面将重新加载。');
       setTimeout(() => window.location.reload(), 1000);
+      return;
     }
     
   } catch (error) {
@@ -16328,6 +16976,8 @@ if (backupData.expData) {
   grades, 
   expData,
   dailyTaskTemplates,
+  weekPlans,
+  monthPlans,
   setTasksByDate, 
   setDailyRatings, 
   setDailyReflections, 
@@ -16339,8 +16989,11 @@ if (backupData.expData) {
   setSemesterEndDate,
   setReminderText,
   setDailyTaskTemplates,
+  setWeekPlans,
+  setMonthPlans,
   saveMainData
 ]);
+
 
 
 const getDataHash = useCallback(() => {
@@ -16501,7 +17154,8 @@ const syncToGitHub = useCallback(async (silent = false) => {
       dailyRatings: allDailyRatings,
       dailyReflections: allDailyReflections,
       studyEndTimes,
-      
+       weekPlans: weekPlans,
+  monthPlans: monthPlans,
       monthTasks: monthTasks.map(t => ({
         id: t.id,
         text: t.text,
@@ -17261,16 +17915,15 @@ const handleCrossDateTask = (task, targetDates) => {
 
 
 
+// 修改 updateTaskExpValue 函数中的范围限制
 const updateTaskExpValue = useCallback((task, newExpValue) => {
   console.log('📝 更新经验值:', task.text, '→', newExpValue);
   
-  // 限制范围 0-100
-  const finalValue = Math.min(Math.max(0, newExpValue), 100);
-  
-  // 获取任务当前的 expValue
+  // ✅ 允许负值，范围 -100 到 100
+  const finalValue = Math.min(Math.max(-100, newExpValue), 100);
   const oldExpValue = task.expValue || 2;
   
-  // ========== 🎯 核心修复：如果任务已完成，调整总积分 ==========
+  // ========== 如果任务已完成，调整总积分 ==========
   const isTaskDone = task.done === true && task.abandoned !== true;
   
   if (isTaskDone && oldExpValue !== finalValue) {
@@ -17281,7 +17934,6 @@ const updateTaskExpValue = useCallback((task, newExpValue) => {
     const subCategory = task.subCategory || '';
     let dimKey = null;
     
-    // 校内子分类映射
     if (category === '校内' && subCategory) {
       const subMap = {
         '数学': 'shuxue',
@@ -17293,7 +17945,6 @@ const updateTaskExpValue = useCallback((task, newExpValue) => {
       dimKey = subMap[subCategory];
     }
     
-    // 主分类映射
     if (!dimKey) {
       const catMap = {
         '语文': 'yuwen',
@@ -17310,17 +17961,18 @@ const updateTaskExpValue = useCallback((task, newExpValue) => {
     }
     
     if (dimKey) {
-      // 更新总积分
       setExpData(prev => {
         const newTotal = { ...prev.total };
         const currentValue = newTotal[dimKey] || 0;
-        newTotal[dimKey] = Math.max(0, currentValue + diff);
+        newTotal[dimKey] = currentValue + diff;
         
-        // 同时更新今日积分（如果任务是今天完成的）
         const today = new Date().toISOString().split('T')[0];
         const newDaily = { ...prev.daily };
         if (newDaily[today] && newDaily[today][dimKey] !== undefined) {
-          newDaily[today][dimKey] = Math.max(0, (newDaily[today][dimKey] || 0) + diff);
+          newDaily[today][dimKey] = (newDaily[today][dimKey] || 0) + diff;
+        } else {
+          if (!newDaily[today]) newDaily[today] = {};
+          newDaily[today][dimKey] = diff;
         }
         
         const newData = {
@@ -17328,50 +17980,90 @@ const updateTaskExpValue = useCallback((task, newExpValue) => {
           total: newTotal
         };
         localStorage.setItem('exp_data_v2', JSON.stringify(newData));
-        console.log(`✅ 积分已调整: ${oldExpValue} → ${finalValue} (${diff > 0 ? '+' : ''}${diff})`);
-        console.log(`📊 ${dimKey} 总积分: ${newTotal[dimKey]}`);
         return newData;
       });
     }
   }
   
-  // ========== 更新任务的 expValue ==========
+  // ========== 🔧 关键：更新任务的 expValue ==========
   const updateTask = (t) => ({
     ...t,
     expValue: finalValue
   });
   
+  // ========== 🔧 确保更新任务并触发重新渲染 ==========
   if (task.isWeekTask) {
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
+      let hasChanges = false;
+      
       Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].map(t =>
-          t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
-            ? updateTask(t)
-            : t
-        );
+        newTasksByDate[date] = newTasksByDate[date].map(t => {
+          if (t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart) {
+            hasChanges = true;
+            return updateTask(t);
+          }
+          return t;
+        });
       });
-      return newTasksByDate;
+      
+      if (hasChanges) {
+        // ✅ 强制刷新：创建新对象引用
+        return { ...newTasksByDate };
+      }
+      return prev;
     });
   } else if (task.crossDateId) {
     setTasksByDate(prev => {
       const newTasksByDate = { ...prev };
+      let hasChanges = false;
+      
       Object.keys(newTasksByDate).forEach(date => {
-        newTasksByDate[date] = newTasksByDate[date].map(t =>
-          t.crossDateId === task.crossDateId ? updateTask(t) : t
-        );
+        newTasksByDate[date] = newTasksByDate[date].map(t => {
+          if (t.crossDateId === task.crossDateId) {
+            hasChanges = true;
+            return updateTask(t);
+          }
+          return t;
+        });
       });
-      return newTasksByDate;
+      
+      if (hasChanges) {
+        return { ...newTasksByDate };
+      }
+      return prev;
     });
   } else {
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(t =>
+    // ✅ 普通任务：更新当前日期的任务
+    setTasksByDate(prev => {
+      const currentTasks = prev[selectedDate] || [];
+      const updatedTasks = currentTasks.map(t => 
         t.id === task.id ? updateTask(t) : t
-      )
-    }));
+      );
+      
+      // ✅ 检查是否有变化
+      const hasChanged = updatedTasks.some((t, index) => {
+        return t.expValue !== currentTasks[index]?.expValue;
+      });
+      
+      if (hasChanged) {
+        return {
+          ...prev,
+          [selectedDate]: updatedTasks
+        };
+      }
+      return prev;
+    });
   }
-}, [selectedDate]);
+  
+  // ✅ 添加这个：强制触发刷新
+  setTimeout(() => {
+    // 触发一个微小的状态更新来强制重新渲染
+    setExpData(prev => ({ ...prev }));
+  }, 50);
+  
+  console.log('✅ 任务 expValue 已更新为:', finalValue);
+}, [selectedDate, setTasksByDate, setExpData]);
 
 const toggleDone = (task, currentDateFromTask = null) => {
   // ✅ 如果任务已放弃，不允许操作
@@ -19608,8 +20300,99 @@ const handleSaveSubCategories = (categoryName, subCategories) => {
         
 
 
+// 处理兑换
+// 处理兑换 - 扣除可兑换积分
+// 处理兑换
+// 处理兑换
+const handleExchange = (gift) => {
+  // 计算可兑换积分
+  const redeemableExp = getRedeemableExp();
+  
+  if (redeemableExp < gift.cost) {
+    alert(`❌ 可兑换积分不足！需要 ${gift.cost} 分，当前可兑换 ${redeemableExp} 分`);
+    return;
+  }
+  
+  if (window.confirm(`确定要兑换 "${gift.name}" 吗？\n需要 ${gift.cost} 分`)) {
+    // ✅ 确保正确累加 totalCost
+    setExchangeRecords(prev => {
+      const existing = prev[gift.id];
+      const newCount = (existing?.count || 0) + 1;
+      const newTotalCost = (existing?.totalCost || 0) + gift.cost;
+      
+      const newRecords = {
+        ...prev,
+        [gift.id]: {
+          count: newCount,
+          totalCost: newTotalCost,  // ✅ 确保正确累加
+          lastExchangedAt: new Date().toISOString()
+        }
+      };
+      
+      localStorage.setItem('exchange_records', JSON.stringify(newRecords));
+      console.log('📝 兑换记录更新:', newRecords); // 调试用
+      return newRecords;
+    });
+    
+    // 显示成功提示
+    const toast = document.createElement('div');
+    toast.textContent = `🎉 成功兑换 "${gift.name}"！消耗 ${gift.cost} 分`;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 3000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+};
 
+// ========== 计划相关函数 ==========
+const addPlan = (type) => {
+  if (!newPlanInput.trim()) return;
+  
+  const newPlan = {
+    id: Date.now().toString(),
+    text: newPlanInput.trim(),
+    done: false,
+    createdAt: new Date().toISOString()
+  };
+  
+  if (type === 'week') {
+    setWeekPlans(prev => [...prev, newPlan]);
+  } else {
+    setMonthPlans(prev => [...prev, newPlan]);
+  }
+  setNewPlanInput('');
+};
 
+const togglePlanDone = (type, id) => {
+  if (type === 'week') {
+    setWeekPlans(prev => prev.map(plan =>
+      plan.id === id ? { ...plan, done: !plan.done } : plan
+    ));
+  } else {
+    setMonthPlans(prev => prev.map(plan =>
+      plan.id === id ? { ...plan, done: !plan.done } : plan
+    ));
+  }
+};
+
+const deletePlan = (type, id) => {
+  if (type === 'week') {
+    setWeekPlans(prev => prev.filter(plan => plan.id !== id));
+  } else {
+    setMonthPlans(prev => prev.filter(plan => plan.id !== id));
+  }
+};
 
 // 添加任务函数
 const handleAddTask = () => {
@@ -22143,13 +22926,7 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
 
 
 
-{/* 里程碑模态框 */}
-{showMilestoneModal && (
-  <MilestoneModal
-    onClose={() => setShowMilestoneModal(false)}
-    totalCompletedTasks={calculateTotalCompletedTasks}
-  />
-)}
+
  
 
 {showSubjectTodoModal && (
@@ -22461,28 +23238,7 @@ onSave={(newConfig) => {
     gap: "6px",
     zIndex: 10
   }}>
-    {/* 奖杯按钮 - 里程碑 */}
-    <button
-      onClick={() => setShowMilestoneModal(true)}
-      style={{
-        width: 32,
-        height: 32,
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 0
-      }}
-      title="里程碑"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="10" r="7" stroke="#61A2Da" strokeWidth="1.8" fill="none"/>
-        <polygon points="12,5.5 13.5,9 17,9 14.2,11.2 15.2,14.5 12,12.5 8.8,14.5 9.8,11.2 7,9 10.5,9" fill="#61A2Da"/>
-        <path d="M9 17 L7 22 L12 20 L17 22 L15 17" stroke="#61A2Da" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-      </svg>
-    </button>
+
 
     {/* ✅ 属性面板（经验值）- 放在奖杯右侧 */}
     <ExpPanel 
@@ -22706,8 +23462,8 @@ onSave={(newConfig) => {
  {/* ✅ 新增：每日固定任务模板按钮 */}
     <div
       onClick={() => {
-        setShowDailyTaskManager(true);
-        setShowMoreMenu(false);
+        setShowExchangeModal(true);
+    setShowMoreMenu(false);
       }}
       style={{
         padding: "4px 8px",
@@ -22719,11 +23475,30 @@ onSave={(newConfig) => {
         textAlign: "center"
       }}
     >
-      每日
+      兑换
     </div>
  
 
   </div>
+)}
+
+{/* ✅ 兑换弹窗 */}
+{showExchangeModal && (
+  <ExchangeModal
+    onClose={() => setShowExchangeModal(false)}
+   totalExp={getRedeemableExp()}  // ✅ 传入可兑换积分
+    totalExpAll={getGrandTotal()}  
+    exchangeRecords={exchangeRecords}
+    onExchange={handleExchange}
+    onEditGift={(giftId, newData) => {
+      // 可选：处理编辑回调
+      console.log('礼物已编辑:', giftId, newData);
+    }}
+    onDeleteGift={(giftId) => {
+      // 可选：处理删除回调
+      console.log('礼物已删除:', giftId);
+    }}
+  />
 )}
 
 {/* ✅ 每日任务管理弹窗 */}
@@ -22916,18 +23691,40 @@ onSave={(newConfig) => {
 )}
 
       
- <div style={{
+<div style={{
   display: "flex",
-  justifyContent: "center",     // ← 改成 center
+  justifyContent: "center",  // ← 改成 center，整体居中
   alignItems: "center",
   fontSize: 12,
   marginTop: "-8px",
   marginBottom: 10,
   padding: "0 4px",
-  position: "relative"          // ← 添加相对定位
+  position: "relative"
 }}>
-  {/* 左侧：打卡统计 - 现在居中 */}
-  <div style={{ color: "#666" }}>
+  {/* ✅ 计划按钮 - 绝对定位在左侧 */}
+  <div
+    onClick={() => setShowPlanPanel(!showPlanPanel)}
+    style={{
+      position: "absolute",
+      left: "4px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      padding: "2px 8px",
+      background: "transparent",  // ← 透明背景
+      color: "#61A2Da",
+      borderRadius: "12px",
+      fontSize: "14px",
+      fontWeight: "bold",
+      cursor: "pointer",
+      userSelect: "none",
+      border: "none"
+    }}
+  >
+    📋
+  </div>
+  
+  {/* 打卡统计 - 居中 */}
+  <div style={{ color: "#666", textAlign: "center" }}>
     已打卡 {
       Object.values(tasksByDate).filter(dailyTasks => 
         dailyTasks.some(task => task.done === true)
@@ -22936,14 +23733,400 @@ onSave={(newConfig) => {
       Object.values(tasksByDate).flat().filter(t => t.done).length
     } 个学习任务
   </div>
-  
-{/* 右侧：本学期倒计时 - 可点击编辑 */}
-{/* 右侧：本学期倒计时 - 可点击编辑 */}
-
-
 </div>
 
 
+
+
+
+{/* 计划面板 - 展开/收起 */}
+{/* 计划下拉面板 - 类似属性面板 */}
+{showPlanPanel && (
+<div data-plan-panel style={{
+    position: 'fixed',
+    top: '70px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100vw - 32px)',
+    maxWidth: '420px',
+    maxHeight: '70vh',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+    border: '1px solid #e0e0e0',
+    padding: '16px 18px',
+    zIndex: 9999,
+    overflowY: 'auto',
+    overscrollBehavior: 'contain'
+  }}>
+    {/* 标签切换 + 添加按钮 */}
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "12px",
+      borderBottom: "1px solid #e0e0e0",
+      paddingBottom: "8px"
+    }}>
+      <div style={{ display: "flex", gap: "6px" }}>
+        <div
+          onClick={() => setPlanTab('week')}
+          style={{
+            padding: "4px 14px",
+            borderRadius: "16px",
+            backgroundColor: planTab === 'week' ? "#61A2Da" : "#f0f0f0",
+            color: planTab === 'week' ? "#fff" : "#666",
+            fontSize: "12px",
+            fontWeight: planTab === 'week' ? "bold" : "normal",
+            cursor: "pointer",
+            transition: "none"
+          }}
+        >
+          本周 ({weekPlans.filter(p => !p.done).length} 未完成)
+        </div>
+        <div
+          onClick={() => setPlanTab('month')}
+          style={{
+            padding: "4px 14px",
+            borderRadius: "16px",
+            backgroundColor: planTab === 'month' ? "#61A2Da" : "#f0f0f0",
+            color: planTab === 'month' ? "#fff" : "#666",
+            fontSize: "12px",
+            fontWeight: planTab === 'month' ? "bold" : "normal",
+            cursor: "pointer",
+            transition: "none"
+          }}
+        >
+          本月 ({monthPlans.filter(p => !p.done).length} 未完成)
+        </div>
+      </div>
+      
+      {/* 添加按钮 */}
+      <div
+        onClick={() => setShowAddPlanModal(true)}
+        style={{
+          padding: "2px 12px",
+          backgroundColor: "#61A2Da",
+          color: "white",
+          borderRadius: "14px",
+          cursor: "pointer",
+          fontSize: "12px",
+          fontWeight: "bold",
+          whiteSpace: "nowrap"
+        }}
+      >
+        ＋
+      </div>
+    </div>
+
+    {/* 本周计划列表 */}
+    {planTab === 'week' && (
+      <div>
+        {weekPlans.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "30px",
+            color: "#999",
+            fontSize: "13px"
+          }}>
+            暂无本周计划 📝
+          </div>
+        ) : (
+          weekPlans.map(plan => (
+            <div
+              key={plan.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "6px 10px",
+                borderBottom: "1px solid #f0f0f0",
+                backgroundColor: plan.done ? "#f8faf8" : "transparent",
+                borderRadius: "4px"
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={plan.done}
+                onChange={() => togglePlanDone('week', plan.id)}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  cursor: "pointer",
+                  flexShrink: 0
+                }}
+              />
+              <span style={{
+                flex: 1,
+                fontSize: "13px",
+                color: plan.done ? "#999" : "#333",
+                textDecoration: plan.done ? "line-through" : "none",
+                wordBreak: "break-word"
+              }}>
+                {plan.text}
+              </span>
+              <div
+                onClick={() => deletePlan('week', plan.id)}
+                style={{
+                  width: "22px",
+                  height: "22px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#ccc",
+                  fontSize: "16px",
+                  flexShrink: 0
+                }}
+                title="删除"
+              >
+                ×
+              </div>
+            </div>
+          ))
+        )}
+        {weekPlans.length > 0 && (
+          <div style={{
+            fontSize: "11px",
+            color: "#999",
+            marginTop: "8px",
+            textAlign: "right"
+          }}>
+            已完成 {weekPlans.filter(p => p.done).length}/{weekPlans.length}
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* 本月计划列表 */}
+    {planTab === 'month' && (
+      <div>
+        {monthPlans.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "30px",
+            color: "#999",
+            fontSize: "13px"
+          }}>
+            暂无本月计划 📝
+          </div>
+        ) : (
+          monthPlans.map(plan => (
+            <div
+              key={plan.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "6px 10px",
+                borderBottom: "1px solid #f0f0f0",
+                backgroundColor: plan.done ? "#f8faf8" : "transparent",
+                borderRadius: "4px"
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={plan.done}
+                onChange={() => togglePlanDone('month', plan.id)}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  cursor: "pointer",
+                  flexShrink: 0
+                }}
+              />
+              <span style={{
+                flex: 1,
+                fontSize: "13px",
+                color: plan.done ? "#999" : "#333",
+                textDecoration: plan.done ? "line-through" : "none",
+                wordBreak: "break-word"
+              }}>
+                {plan.text}
+              </span>
+              <div
+                onClick={() => deletePlan('month', plan.id)}
+                style={{
+                  width: "22px",
+                  height: "22px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#ccc",
+                  fontSize: "16px",
+                  flexShrink: 0
+                }}
+                title="删除"
+              >
+                ×
+              </div>
+            </div>
+          ))
+        )}
+        {monthPlans.length > 0 && (
+          <div style={{
+            fontSize: "11px",
+            color: "#999",
+            marginTop: "8px",
+            textAlign: "right"
+          }}>
+            已完成 {monthPlans.filter(p => p.done).length}/{monthPlans.length}
+          </div>
+        )}
+      </div>
+    )}
+    
+    {/* 关闭提示 - 手机端 */}
+    <div
+      onClick={() => setShowPlanPanel(false)}
+      style={{
+        marginTop: "8px",
+        padding: "4px 0",
+        textAlign: "center",
+        fontSize: "11px",
+        color: "#999",
+        cursor: "pointer",
+        display: window.innerWidth <= 480 ? "block" : "none"
+      }}
+    >
+      ✕ 关闭
+    </div>
+  </div>
+)}
+
+{/* 添加计划弹窗 */}
+{showAddPlanModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 3000,
+    padding: '10px'
+  }} onClick={() => setShowAddPlanModal(false)}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      padding: '20px',
+      width: '90%',
+      maxWidth: '350px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+    }} onClick={e => e.stopPropagation()}>
+      
+      <h4 style={{
+        textAlign: 'center',
+        margin: '0 0 16px 0',
+        color: '#61A2Da',
+        fontSize: '16px'
+      }}>
+        📝 添加计划
+      </h4>
+      
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{
+          display: 'block',
+          fontSize: '12px',
+          color: '#666',
+          marginBottom: '6px'
+        }}>
+          计划内容
+        </label>
+        <input
+          type="text"
+          value={addPlanInput}
+          onChange={(e) => setAddPlanInput(e.target.value)}
+          placeholder="输入计划内容..."
+          autoFocus
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '14px',
+            boxSizing: 'border-box',
+            outline: 'none'
+          }}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              // 确认添加
+              if (addPlanInput.trim()) {
+                const newPlan = {
+                  id: Date.now().toString(),
+                  text: addPlanInput.trim(),
+                  done: false,
+                  createdAt: new Date().toISOString()
+                };
+                if (planTab === 'week') {
+                  setWeekPlans(prev => [...prev, newPlan]);
+                } else {
+                  setMonthPlans(prev => [...prev, newPlan]);
+                }
+                setAddPlanInput('');
+                setShowAddPlanModal(false);
+              }
+            }
+          }}
+        />
+      </div>
+      
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <div
+          onClick={() => setShowAddPlanModal(false)}
+          style={{
+            flex: 1,
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            color: '#333',
+            borderRadius: '8px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          取消
+        </div>
+        <div
+          onClick={() => {
+            if (addPlanInput.trim()) {
+              const newPlan = {
+                id: Date.now().toString(),
+                text: addPlanInput.trim(),
+                done: false,
+                createdAt: new Date().toISOString()
+              };
+              if (planTab === 'week') {
+                setWeekPlans(prev => [...prev, newPlan]);
+              } else {
+                setMonthPlans(prev => [...prev, newPlan]);
+              }
+              setAddPlanInput('');
+              setShowAddPlanModal(false);
+            }
+          }}
+          style={{
+            flex: 1,
+            padding: '10px',
+            backgroundColor: '#61A2Da',
+            color: 'white',
+            borderRadius: '8px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}
+        >
+          添加
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
   {/* 第一行：周次靠左显示 */}
 <div style={{
@@ -23500,8 +24683,19 @@ if (totalCount === 0) {
     transform: translateX(-50%);
   }
 }
-  
- 
+  /* ✅ 添加 slideDown 动画 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 
   /* 🎉 撒花放大动画 */
@@ -23672,25 +24866,39 @@ if (totalCount === 0) {
         </div>
       )}
       {/* 👇 在这里添加经验值输入框 👇 */}
+
 <div style={{ marginBottom: 12 }}>
   <div style={{ fontSize: 12, color: '#666', marginBottom: 5, display: 'block' }}>
-    分值
+    分值 <span style={{ fontSize: 11, color: '#999' }}>(支持负值)</span>
   </div>
   <input
     type="number"
-    min="0"
+    min="-100"
     max="100"
     value={newTaskExpValue}
-    onChange={(e) => setNewTaskExpValue(parseInt(e.target.value) || 0)}
+    onChange={(e) => {
+      const val = parseInt(e.target.value);
+      if (e.target.value === '') {
+        setNewTaskExpValue('');
+      } else if (!isNaN(val) && val >= -100 && val <= 100) {
+        setNewTaskExpValue(val);
+      }
+    }}
     style={{
       width: '100%',
       padding: '8px 12px',
-      border: '1px solid #ccc',
+      border: newTaskExpValue < 0 ? '2px solid #f44336' : '1px solid #ccc',
       borderRadius: 8,
       fontSize: 14,
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      backgroundColor: newTaskExpValue < 0 ? '#fff5f5' : 'white'
     }}
   />
+  {newTaskExpValue < 0 && (
+    <div style={{ fontSize: 11, color: '#f44336', marginTop: 4 }}>
+      ⚠️ 完成此任务将扣除 {Math.abs(newTaskExpValue)} 分
+    </div>
+  )}
 </div>
       {/* 按钮区域 - 使用 div 代替 button，彻底移除悬浮效果 */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
@@ -25431,16 +26639,22 @@ if (totalCount === 0) {
               {/* 无子分类的任务 */}
               {tasksWithoutSubCategory.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    color: '#61A2Da',
-                    marginBottom: '8px',
-                    paddingBottom: '4px',
-                    borderBottom: '1px solid #e0e0e0'
-                  }}>
-                    📋 全部
-                  </div>
+                  <div
+  data-plan-btn
+  onClick={() => setShowPlanPanel(!showPlanPanel)}
+  style={{
+    padding: "2px 8px",
+    background: "transparent",
+    color: "#61A2Da",
+    fontSize: "14px",
+    cursor: "pointer",
+    userSelect: "none",
+    border: "none"
+  }}
+>
+  📋
+</div>
+
                   {tasksWithoutSubCategory.map((task, idx) => renderTaskItem(task, idx, tasksWithoutSubCategory.length))}
                 </div>
               )}
@@ -25677,7 +26891,51 @@ if (totalCount === 0) {
           <span style={{ fontSize: '18px' }}>📁</span>
           管理类别
         </div>
+{/* 兑换记录 */}
 
+<div
+  onClick={() => {
+    const records = Object.entries(exchangeRecords || {});
+    if (records.length === 0) {
+      alert('还没有兑换任何礼物，继续加油！💪');
+      return;
+    }
+    
+    // 生成详细记录
+    const giftMap = {};
+    giftList.forEach(g => { giftMap[g.id] = g; });
+    
+    let message = '🎁 兑换记录：\n\n';
+    let totalCount = 0;
+    let totalCost = 0;
+    
+    records.forEach(([id, record]) => {
+      const gift = giftMap[id];
+      if (gift) {
+        message += `${gift.emoji} ${gift.name} ×${record.count} 次 (消耗 ${record.totalCost} 分)\n`;
+        totalCount += record.count;
+        totalCost += record.totalCost;
+      }
+    });
+    
+    message += `\n📊 总计：兑换 ${totalCount} 次，消耗 ${totalCost} 分`;
+    alert(message);
+    setShowSettingsMenu(false);
+  }}
+  style={{
+    padding: '12px',
+    backgroundColor: '#f5f5f5',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  <span style={{ fontSize: '18px' }}>🎁</span>
+  兑换记录
+</div>
         {/* 清空数据 - 红色文字 */}
         <div
           onClick={() => {
