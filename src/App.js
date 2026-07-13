@@ -15433,6 +15433,7 @@ const getTodayStats = useCallback((date) => {
 // ===== 2. 经验系统完整定义 =====
 // ============================================================
 
+
 // ===== 维度定义（只保留主分类） =====
 const DIMENSIONS = {
   yuwen: { name: "语文", emoji: "📚", color: "#FF6B6B" },
@@ -15605,19 +15606,19 @@ const calculateLevel = useCallback((exp) => {
 // ============================================================
 
 const ExpPanel = ({ selectedDate }) => {
+  const EXP_PER_LEVEL = 50;
+const MAX_EXP = 1000;
   const [showDetail, setShowDetail] = useState(false);
-  const [showTaskDetail, setShowTaskDetail] = useState(null); // 新增：显示任务详情的维度
+  const [showTaskDetail, setShowTaskDetail] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 480);
   const panelRef = useRef(null);
 
-  // 监听窗口大小变化
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 480);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 点击外部关闭
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
@@ -15629,13 +15630,11 @@ const ExpPanel = ({ selectedDate }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // ========== 获取今日评分 ==========
   const getTodayRating = () => {
     const rating = dailyRatings[selectedDate] || 0;
     return rating;
   };
 
-  // ========== 根据评分获取表情 ==========
   const getRatingEmoji = () => {
     const rating = getTodayRating();
     if (rating === 1) return '😞';
@@ -15646,15 +15645,79 @@ const ExpPanel = ({ selectedDate }) => {
     return '🙂';
   };
 
-  // ========== 获取经验数据 ==========
-  const todayExp = expData?.daily?.[selectedDate] || {};
-  const totalExp = expData.total || {};
-  const grandTotal = Object.values(totalExp).reduce((sum, val) => sum + val, 0);
-  const todayTotal = Object.values(todayExp).reduce((sum, val) => sum + val, 0);
+  // ========== 定义映射 ==========
+  const subToMainMap = {
+    '数学': 'shuxue',
+    '语文': 'yuwen',
+    '英语': 'yingyu',
+    '科学': 'tongshi',
+    '运动': 'yundong'
+  };
+
+  const catMap = {
+    '语文': 'yuwen',
+    '数学': 'shuxue',
+    '英语': 'yingyu',
+    '通识': 'tongshi',
+    '综合': 'chuangzao',
+    '运动': 'yundong',
+    '生活': 'shenghuo',
+    '心理': 'xinli'
+  };
+
+  // ========== 计算总积分（6月29日及之后） ==========
+  const START_DATE = '2026-06-29';
+  const allTasksFlattened = Object.values(tasksByDate).flat();
+
+  const totalExpFiltered = {};
+  allTasksFlattened.forEach(task => {
+    if (task.done && !task.abandoned) {
+      const taskDate = task.date || task.createdAt?.split('T')[0];
+      if (!taskDate || taskDate < START_DATE) return;
+      
+      let dimKey = null;
+      const cat = task.category;
+      const subCat = task.subCategory || '';
+      
+      if (cat === '校内' && subCat && subToMainMap[subCat]) {
+        dimKey = subToMainMap[subCat];
+      } else if (catMap[cat]) {
+        dimKey = catMap[cat];
+      }
+      
+      if (dimKey) {
+        totalExpFiltered[dimKey] = (totalExpFiltered[dimKey] || 0) + (task.expValue || 2);
+      }
+    }
+  });
+
+  const grandTotal = Object.values(totalExpFiltered).reduce((sum, val) => sum + val, 0);
   const level = Math.floor(grandTotal / EXP_PER_LEVEL) + 1;
 
-  // ========== 获取今日任务统计 ==========
+  // ========== 计算今日积分 ==========
   const todayTasks = tasksByDate[selectedDate] || [];
+  const todayExp = {};
+  todayTasks.forEach(task => {
+    if (task.done && !task.abandoned) {
+      let dimKey = null;
+      const cat = task.category;
+      const subCat = task.subCategory || '';
+      
+      if (cat === '校内' && subCat && subToMainMap[subCat]) {
+        dimKey = subToMainMap[subCat];
+      } else if (catMap[cat]) {
+        dimKey = catMap[cat];
+      }
+      
+      if (dimKey) {
+        todayExp[dimKey] = (todayExp[dimKey] || 0) + (task.expValue || 2);
+      }
+    }
+  });
+
+  const todayTotal = Object.values(todayExp).reduce((sum, val) => sum + val, 0);
+
+  // ========== 获取今日任务统计 ==========
   let done = 0;
   let total = 0;
   todayTasks.forEach(task => {
@@ -15665,43 +15728,37 @@ const ExpPanel = ({ selectedDate }) => {
   });
 
   // ========== 获取某个维度的任务列表 ==========
-// ========== 获取某个维度的任务列表（支持校内子分类） ==========
-// ========== 获取某个维度的任务列表 ==========
-const getTasksForDimension = (dimKey) => {
-  const dimName = getDimName(dimKey);
-  const todayTasks = tasksByDate[selectedDate] || [];
-  
-  // 定义子分类到主分类的映射
-  const subToMainMap = {
-    '数学': '数学',
-    '语文': '语文',
-    '英语': '英语',
-    '科学': '通识',  // 科学 → 通识
-    '运动': '运动'
+  const getTasksForDimension = (dimKey) => {
+    const dimName = getDimName(dimKey);
+    const todayTasks = tasksByDate[selectedDate] || [];
+    
+    const subToMainMapForDim = {
+      '数学': '数学',
+      '语文': '语文',
+      '英语': '英语',
+      '科学': '通识',
+      '运动': '运动'
+    };
+    
+    const matchingTasks = todayTasks.filter(task => {
+      if (task.category === "本周任务" || task.category === "常规任务") return false;
+      if (task.abandoned) return false;
+      
+      if (task.category === dimName) return true;
+      
+      if (task.category === '校内' && task.subCategory) {
+        const mainCategory = subToMainMapForDim[task.subCategory];
+        if (mainCategory === dimName) return true;
+      }
+      
+      if (dimKey === 'yundong' && task.category === '运动') return true;
+      if (dimKey === 'kexue' && task.category === '科学') return true;
+      
+      return false;
+    });
+    
+    return matchingTasks;
   };
-  
-  const matchingTasks = todayTasks.filter(task => {
-    if (task.category === "本周任务" || task.category === "常规任务") return false;
-    if (task.abandoned) return false;
-    
-    // 1. 匹配主分类
-    if (task.category === dimName) return true;
-    
-    // 2. 校内子分类 → 映射到主分类
-    if (task.category === '校内' && task.subCategory) {
-      const mainCategory = subToMainMap[task.subCategory];
-      if (mainCategory === dimName) return true;
-    }
-    
-    // 3. 特殊匹配
-    if (dimKey === 'yundong' && task.category === '运动') return true;
-    if (dimKey === 'kexue' && task.category === '科学') return true;
-    
-    return false;
-  });
-  
-  return matchingTasks;
-};
 
   // ========== 辅助函数 ==========
   const getExpColor = (exp) => {
@@ -15712,77 +15769,87 @@ const getTasksForDimension = (dimKey) => {
     return '#10b981';
   };
 
-  const getProgress = (exp) => {
-    return Math.min((exp / MAX_EXP) * 100, 100);
-  };
+const getExpInLevel = (exp) => {
+  // 当前等级内已获得的经验 (0-50)
+  return exp % EXP_PER_LEVEL;
+};
 
-  const getExpInLevel = (exp) => {
-    return exp % EXP_PER_LEVEL;
-  };
+const getProgress = (exp) => {
+  // 当前等级内进度 (0-100%)
+  const expInLevel = exp % EXP_PER_LEVEL;
+  return (expInLevel / EXP_PER_LEVEL) * 100;
+};
+
+const getLevel = (exp) => {
+  // 0-50 是 Lv.1，51-100 是 Lv.2
+  if (exp <= 50) return 1;
+  return Math.floor((exp - 1) / EXP_PER_LEVEL) + 1;
+};
 
   const getDimColor = (key, opacity = 0.15) => {
-  const colors = {
-    yuwen: `rgba(255, 107, 107, ${opacity})`,
-    shuxue: `rgba(78, 205, 196, ${opacity})`,
-    yingyu: `rgba(255, 159, 67, ${opacity})`,
-    tongshi: `rgba(108, 92, 231, ${opacity})`,
-    chuangzao: `rgba(253, 203, 110, ${opacity})`,
-    yundong: `rgba(0, 206, 201, ${opacity})`,
-    shenghuo: `rgba(248, 165, 194, ${opacity})`,
-    xinli: `rgba(162, 155, 254, ${opacity})`,
-    shuxue_sub: `rgba(78, 205, 196, ${opacity})`,
-    yuwen_sub: `rgba(255, 107, 107, ${opacity})`,
-    yingyu_sub: `rgba(255, 159, 67, ${opacity})`,
-    yundong_sub: `rgba(0, 206, 201, ${opacity})`,
-    kexue_sub: `rgba(38, 198, 218, ${opacity})` 
+    const colors = {
+      yuwen: `rgba(255, 107, 107, ${opacity})`,
+      shuxue: `rgba(78, 205, 196, ${opacity})`,
+      yingyu: `rgba(255, 159, 67, ${opacity})`,
+      tongshi: `rgba(108, 92, 231, ${opacity})`,
+      chuangzao: `rgba(253, 203, 110, ${opacity})`,
+      yundong: `rgba(0, 206, 201, ${opacity})`,
+      shenghuo: `rgba(248, 165, 194, ${opacity})`,
+      xinli: `rgba(162, 155, 254, ${opacity})`,
+      shuxue_sub: `rgba(78, 205, 196, ${opacity})`,
+      yuwen_sub: `rgba(255, 107, 107, ${opacity})`,
+      yingyu_sub: `rgba(255, 159, 67, ${opacity})`,
+      yundong_sub: `rgba(0, 206, 201, ${opacity})`,
+      kexue_sub: `rgba(38, 198, 218, ${opacity})`
+    };
+    return colors[key] || `rgba(200, 200, 200, ${opacity})`;
   };
-  return colors[key] || `rgba(200, 200, 200, ${opacity})`;
-};
 
- const getDimName = (key) => {
-  const names = {
-    yuwen: '语文',
-    shuxue: '数学',
-    yingyu: '英语',
-    tongshi: '通识',
-    chuangzao: '综合',
-    yundong: '运动',
-    shenghuo: '生活',
-    xinli: '心理',
-    shuxue_sub: '数学(校内)',
-    yuwen_sub: '语文(校内)',
-    yingyu_sub: '英语(校内)',
-    yundong_sub: '运动(校内)',
-    kexue_sub: '科学(校内)' 
+  const getDimName = (key) => {
+    const names = {
+      yuwen: '语文',
+      shuxue: '数学',
+      yingyu: '英语',
+      tongshi: '通识',
+      chuangzao: '综合',
+      yundong: '运动',
+      shenghuo: '生活',
+      xinli: '心理',
+      shuxue_sub: '数学(校内)',
+      yuwen_sub: '语文(校内)',
+      yingyu_sub: '英语(校内)',
+      yundong_sub: '运动(校内)',
+      kexue_sub: '科学(校内)'
+    };
+    return names[key] || key;
   };
-  return names[key] || key;
-};
 
-const getDimEmoji = (key) => {
-  const emojis = {
-    yuwen: '📚',
-    shuxue: '🔢',
-    yingyu: '🔤',
-    tongshi: '🌍',
-    chuangzao: '🎯',
-    yundong: '🏃',
-    shenghuo: '🏠',
-    xinli: '🧠',
-    shuxue_sub: '🔢',
-    yuwen_sub: '📚',
-    yingyu_sub: '🔤',
-    yundong_sub: '🏃',
-    kexue_sub: '🔬'  
-
+  const getDimEmoji = (key) => {
+    const emojis = {
+      yuwen: '📚',
+      shuxue: '🔢',
+      yingyu: '🔤',
+      tongshi: '🌍',
+      chuangzao: '🎯',
+      yundong: '🏃',
+      shenghuo: '🏠',
+      xinli: '🧠',
+      shuxue_sub: '🔢',
+      yuwen_sub: '📚',
+      yingyu_sub: '🔤',
+      yundong_sub: '🏃',
+      kexue_sub: '🔬'
+    };
+    return emojis[key] || '📌';
   };
-  return emojis[key] || '📌';
-};
 
   // ========== 任务详情弹窗组件 ==========
   const TaskDetailModal = ({ dimKey, onClose }) => {
     const dimName = getDimName(dimKey);
     const tasks = getTasksForDimension(dimKey);
     const dimTotalExp = todayExp[dimKey] || 0;
+    
+    const isMobile = window.innerWidth < 480;
     
     return (
       <div style={{
@@ -15792,50 +15859,61 @@ const getDimEmoji = (key) => {
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 10000,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10000,
-        padding: '10px'
+        alignItems: 'center'
       }} onClick={onClose}>
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          width: '90%',
-          maxWidth: '400px',
-          maxHeight: '70vh',
-          overflow: 'auto',
-          padding: '20px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-        }} onClick={e => e.stopPropagation()}>
+       <div style={{
+  position: 'fixed',
+  top: '50%',
+  left: '0',  // ✅ 改成 0，从最左边开始
+  transform: isMobile 
+    ? 'translate(calc(0px + 8px), calc(-50% + 200px))'  // ✅ 水平偏移改成从左边开始
+    : 'translate(calc(0px + 80px), calc(-50% + 230px))', // ✅ 水平偏移改成从左边开始
+  width: isMobile ? 'calc(100vw - 48px)' : '420px',
+  maxWidth: isMobile ? 'calc(100vw - 48px)' : '420px',
+  minWidth: isMobile ? 'auto' : '320px',
+  maxHeight: 'calc(100vh - 40px)',
+  backgroundColor: '#fff',
+  borderRadius: '16px',
+  boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+  border: '1px solid #e0e0e0',
+  padding: isMobile ? '14px 16px' : '18px 22px',
+  zIndex: 10001,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box'
+}} onClick={e => e.stopPropagation()}>
           
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '16px',
+            marginBottom: '12px',
             borderBottom: '1px solid #f0f0f0',
-            paddingBottom: '12px'
+            paddingBottom: '10px',
+            flexShrink: 0
           }}>
-            <div>
-              <span style={{ fontSize: '20px', marginRight: '8px' }}>{getDimEmoji(dimKey)}</span>
-              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>{dimName}</span>
-              <span style={{ fontSize: '13px', color: '#999', marginLeft: '8px' }}>
-                +{dimTotalExp} 分
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '18px' }}>{getDimEmoji(dimKey)}</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{dimName}</span>
+              <span style={{ fontSize: '12px', color: '#999' }}>+{dimTotalExp}分</span>
             </div>
             <div
               onClick={onClose}
               style={{
-                width: '28px',
-                height: '28px',
+                width: '26px',
+                height: '26px',
                 borderRadius: '50%',
                 backgroundColor: '#f0f0f0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                fontSize: '18px',
+                fontSize: '16px',
                 color: '#666'
               }}
             >
@@ -15843,115 +15921,116 @@ const getDimEmoji = (key) => {
             </div>
           </div>
           
-          <div style={{ marginBottom: '12px', fontSize: '13px', color: '#666' }}>
+          <div style={{ 
+            marginBottom: '10px', 
+            fontSize: '12px', 
+            color: '#666',
+            flexShrink: 0
+          }}>
             今日任务 ({tasks.length} 个)
           </div>
           
-          {tasks.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '30px',
-              color: '#999',
-              fontSize: '13px'
-            }}>
-              今日暂无 {dimName} 任务
-            </div>
-          ) : (
-            <div>
-              {/* 任务列表项 - 分值显示在右侧 */}
-{tasks.map((task, idx) => {
-  const minutes = Math.floor((task.timeSpent || 0) / 60);
-  const isCompleted = task.done === true && task.abandoned !== true;
-  const isAbandoned = task.abandoned === true;
-  const expValue = task.expValue || 2;  // 获取任务分值
-  
-  return (
-    <div
-      key={task.id}
-      style={{
-        padding: '8px 12px',
-        borderBottom: idx < tasks.length - 1 ? '1px solid #f0f0f0' : 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: idx % 2 === 0 ? '#fafafa' : 'transparent',
-        borderRadius: '6px'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-        {/* 完成状态图标 */}
-        <span style={{ flexShrink: 0 }}>
-          {isCompleted ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6L9 17L4 12" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-            </svg>
-          ) : isAbandoned ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <line x1="4" y1="4" x2="20" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
-              <line x1="20" y1="4" x2="4" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="4" width="16" height="16" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
-            </svg>
-          )}
-        </span>
-        
-        {/* 任务文字 */}
-        <span style={{
-          fontSize: '13px',
-          color: isCompleted ? '#999' : (isAbandoned ? '#ccc' : '#333'),
-          wordBreak: 'break-word',
-          flex: 1
-        }}>
-          {task.text}
-        </span>
-      </div>
-      
-      {/* 右侧：分值和时长 */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        flexShrink: 0,
-        marginLeft: '8px'
-      }}>
-        {/* 分值 - 显示在右侧 */}
-        <span style={{
-          fontSize: '11px',
-          fontWeight: 'bold',
-          color: '#FF9800',
-          
-          padding: '1px 8px',
-          borderRadius: '10px',
-          minWidth: '20px',
-          textAlign: 'center'
-        }}>
-          {expValue}分
-        </span>
-        
-        {/* 时长 */}
-        {minutes > 0 && (
-          <span style={{
-            fontSize: '11px',
-            color: '#999',
-            minWidth: '30px',
-            textAlign: 'right'
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '4px',
+            minHeight: '60px',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>
-            {minutes}m
-          </span>
-        )}
-      </div>
-    </div>
-  );
-})}
-            </div>
-          )}
+            {tasks.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '30px',
+                color: '#999',
+                fontSize: '13px'
+              }}>
+                今日暂无 {dimName} 任务
+              </div>
+            ) : (
+              tasks.map((task, idx) => {
+                const minutes = Math.floor((task.timeSpent || 0) / 60);
+                const isCompleted = task.done === true && task.abandoned !== true;
+                const isAbandoned = task.abandoned === true;
+                const expValue = task.expValue || 2;
+                
+                return (
+                  <div
+                    key={task.id}
+                    style={{
+                      padding: '6px 8px',
+                      borderBottom: idx < tasks.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: idx % 2 === 0 ? '#fafafa' : 'transparent',
+                      borderRadius: '6px',
+                      gap: '6px',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+                      <span style={{ flexShrink: 0 }}>
+                        {isCompleted ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17L4 12" stroke="#4caf50" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                          </svg>
+                        ) : isAbandoned ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <line x1="4" y1="4" x2="20" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                            <line x1="20" y1="4" x2="4" y2="20" stroke="#999" strokeWidth="3" strokeLinecap="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="#999" strokeWidth="1.8" fill="none"/>
+                          </svg>
+                        )}
+                      </span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: isCompleted ? '#999' : (isAbandoned ? '#ccc' : '#333'),
+                        wordBreak: 'break-word',
+                        flex: 1
+                      }}>
+                        {task.text}
+                      </span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        color: '#FF9800',
+                        padding: '0px 6px',
+                        borderRadius: '10px',
+                        minWidth: '16px',
+                        textAlign: 'center'
+                      }}>
+                        {expValue}
+                      </span>
+                      {minutes > 0 && (
+                        <span style={{
+                          fontSize: '10px',
+                          color: '#999',
+                          minWidth: '20px',
+                          textAlign: 'right'
+                        }}>
+                          {minutes}m
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
           
           <div
             onClick={onClose}
             style={{
-              marginTop: '16px',
+              marginTop: '12px',
               padding: '10px',
               backgroundColor: '#61A2Da',
               color: 'white',
@@ -15959,7 +16038,8 @@ const getDimEmoji = (key) => {
               textAlign: 'center',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              flexShrink: 0
             }}
           >
             关闭
@@ -15968,233 +16048,231 @@ const getDimEmoji = (key) => {
       </div>
     );
   };
-
+console.log('🔍 DIMENSIONS keys:', Object.keys(DIMENSIONS));
+console.log('🔍 totalExpFiltered keys:', Object.keys(totalExpFiltered));
+console.log('🔍 yuwen 值:', totalExpFiltered.yuwen);
   // ========== 主渲染 ==========
   return (
     <div ref={panelRef} style={{ position: 'relative', display: 'inline-block' }}>
-      {/* 主按钮 */}
-     
-<div
-  onClick={() => setShowDetail(!showDetail)}
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: isMobile ? '2px' : '4px',
-    padding: isMobile ? '2px 6px' : '2px 10px',
-    height: isMobile ? '24px' : '28px',
-    backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    fontSize: isMobile ? '10px' : '11px',
-    whiteSpace: 'nowrap',
-    border: '1px solid #e0e0e0',
-    flexShrink: 0
-  }}
-  title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
->
-  <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{getRatingEmoji()}</span>
-  <span style={{ 
-    fontWeight: 'bold', 
-    color: todayTotal > 0 ? '#2e7d32' : '#999', 
-    fontSize: isMobile ? '10px' : '12px' 
-  }}>
-    +{todayTotal}
-  </span>
-  <span style={{ fontSize: isMobile ? '8px' : '10px', color: '#999', fontWeight: 'bold' }}>
-    Lv.{level}
-  </span>
-</div>
-
-{/* ✅ 下拉详情面板 - 强制水平居中 */}
-{/* 下拉详情面板 - 回到之前正常工作的版本 */}
-{showDetail && (
-  <div style={{
-    position: 'fixed',
-    top: isMobile ? '60px' : '70px',
-    left: isMobile ? '8px' : '80px',
-    width: isMobile ? 'calc(100vw - 48px)' : '420px',  // ✅ 从 32px 改为 48px，左右边距更大
-    maxWidth: isMobile ? 'calc(100vw - 48px)' : '450px',
-    minWidth: isMobile ? '280px' : '320px',  // ✅ 手机端最小宽度减小
-    maxHeight: isMobile ? '80vh' : '70vh',
-    backgroundColor: '#fff',
-    borderRadius: isMobile ? '16px' : '12px',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
-    border: '1px solid #e0e0e0',
-    padding: isMobile ? '12px 14px' : '18px 22px',  // ✅ 手机端内边距也减小
-    zIndex: 9999,
-    overflowY: 'auto',
-    overscrollBehavior: 'contain',
-    transform: 'none'
-  }}>
-    {/* 顶部统计 */}
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: isMobile ? '12px' : '16px',
-      paddingBottom: isMobile ? '10px' : '12px',
-      borderBottom: '1px solid #f0f0f0'
-    }}>
-      <div>
-        <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>今日</div>
-        <div style={{ 
-          fontSize: isMobile ? '18px' : '22px', 
-          fontWeight: 'bold', 
-          color: '#34c759',
+      <div
+        onClick={() => setShowDetail(!showDetail)}
+        style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: isMobile ? '2px' : '4px',
+          padding: isMobile ? '2px 6px' : '2px 10px',
+          height: isMobile ? '24px' : '28px',
+          backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
+          borderRadius: '12px',
+          cursor: 'pointer',
+          fontSize: isMobile ? '10px' : '11px',
+          whiteSpace: 'nowrap',
+          border: '1px solid #e0e0e0',
+          flexShrink: 0
+        }}
+        title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
+      >
+        <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{getRatingEmoji()}</span>
+        <span style={{ 
+          fontWeight: 'bold', 
+          color: todayTotal > 0 ? '#2e7d32' : '#999', 
+          fontSize: isMobile ? '10px' : '12px' 
         }}>
           +{todayTotal}
-          <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
-            ({done}/{total})
-          </span>
-        </div>
+        </span>
+        <span style={{ fontSize: isMobile ? '8px' : '10px', color: '#999', fontWeight: 'bold' }}>
+          Lv.{level}
+        </span>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>总积分</div>
-        <div style={{ 
-          fontSize: isMobile ? '18px' : '22px', 
-          fontWeight: 'bold', 
-          color: '#1a73e8',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
+
+      {showDetail && (
+        <div style={{
+          position: 'fixed',
+          top: isMobile ? '60px' : '70px',
+          left: isMobile ? '8px' : '80px',
+          width: isMobile ? 'calc(100vw - 48px)' : '420px',
+          maxWidth: isMobile ? 'calc(100vw - 48px)' : '450px',
+          minWidth: isMobile ? '280px' : '320px',
+          maxHeight: isMobile ? '80vh' : '70vh',
+          backgroundColor: '#fff',
+          borderRadius: isMobile ? '16px' : '12px',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+          border: '1px solid #e0e0e0',
+          padding: isMobile ? '12px 14px' : '18px 22px',
+          zIndex: 9999,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          transform: 'none'
         }}>
-          {grandTotal}
-          <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
-            Lv.{level}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    {/* 维度列表 - 两列布局 */}
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
-      gap: isMobile ? '4px' : '6px',
-    }}>
-      {Object.keys(DIMENSIONS)
-        .filter(key => !key.includes('_sub'))
-        .map((key) => {
-          const today = todayExp[key] || 0;
-          const total = totalExp[key] || 0;
-          const hasExp = today > 0 || total > 0;
-          const progress = getProgress(total);
-          const expInLevel = getExpInLevel(total);
-          const dimLevel = Math.floor(total / EXP_PER_LEVEL) + 1;
-          const color = getExpColor(total);
-          const bgColor = getDimColor(key, 0.08);
-          const dimName = getDimName(key);
-          const tasksForDim = getTasksForDimension(key);
-          const taskCount = tasksForDim.length;
-          const completedCount = tasksForDim.filter(t => t.done && !t.abandoned).length;
-
-          return (
-            <div 
-              key={key} 
-              style={{
-                padding: isMobile ? '6px 8px' : '8px 12px',
-                borderRadius: isMobile ? '6px' : '8px',
-                backgroundColor: hasExp ? bgColor : '#fafafa',
-                border: '1px solid #f0f0f0',
-                fontSize: isMobile ? '11px' : '12px',
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                setShowTaskDetail(key);
-              }}
-            >
-              <div style={{
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: isMobile ? '12px' : '16px',
+            paddingBottom: isMobile ? '10px' : '12px',
+            borderBottom: '1px solid #f0f0f0'
+          }}>
+            <div>
+              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>今日</div>
+              <div style={{ 
+                fontSize: isMobile ? '18px' : '22px', 
+                fontWeight: 'bold', 
+                color: '#34c759',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                gap: '6px'
               }}>
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: isMobile ? '3px' : '6px',
-                  fontSize: isMobile ? '11px' : '13px'
-                }}>
-                  <span style={{ 
-                    color: '#333', 
-                    fontSize: isMobile ? '11px' : '13px', 
-                    fontWeight: '500' 
-                  }}>
-                    {dimName}
-                  </span>
-                  {taskCount > 0 && (
-                    <span style={{
-                      fontSize: isMobile ? '8px' : '9px',
-                      color: completedCount === taskCount ? '#4caf50' : '#999',
-                      backgroundColor: completedCount === taskCount ? '#e8f5e9' : '#f5f5f5',
-                      padding: '1px 4px',
-                      borderRadius: '8px',
-                      marginLeft: '2px'
-                    }}>
-                      {completedCount}/{taskCount}
-                    </span>
-                  )}
+                +{todayTotal}
+                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+                  ({done}/{total})
                 </span>
-                <span style={{
-                  fontSize: isMobile ? '10px' : '12px',
-                  fontWeight: 'bold',
-                  color: today > 0 ? '#34c759' : '#999'
-                }}>
-                  {today > 0 ? `+${today}` : ''}
-                </span>
-              </div>
-              
-              <div style={{
-                height: isMobile ? '3px' : '4px',
-                backgroundColor: '#eee',
-                borderRadius: '2px',
-                marginTop: isMobile ? '3px' : '4px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${progress}%`,
-                  backgroundColor: color,
-                  borderRadius: '2px'
-                }} />
-              </div>
-              
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: isMobile ? '8px' : '10px',
-                color: '#999',
-                marginTop: isMobile ? '2px' : '3px'
-              }}>
-                <span>{expInLevel}/{EXP_PER_LEVEL}</span>
-                <span>Lv.{dimLevel}</span>
               </div>
             </div>
-          );
-        })}
-    </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>总积分</div>
+              <div style={{ 
+                fontSize: isMobile ? '18px' : '22px', 
+                fontWeight: 'bold', 
+                color: '#1a73e8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                {grandTotal}
+                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+                  Lv.{level}
+                </span>
+              </div>
+            </div>
+          </div>
 
-    {/* 关闭按钮 - 手机端 */}
-    <div
-      onClick={() => setShowDetail(false)}
-      style={{
-        marginTop: isMobile ? '6px' : '0',
-        padding: isMobile ? '4px 0' : '0',
-        textAlign: 'center',
-        fontSize: isMobile ? '11px' : '0',
-        color: '#999',
-        cursor: 'pointer',
-        display: isMobile ? 'block' : 'none'
-      }}
-    >
-      ✕ 关闭
-    </div>
-  </div>
-)}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
+            gap: isMobile ? '4px' : '6px',
+          }}>
+            {Object.keys(DIMENSIONS)
+              .filter(key => !key.includes('_sub'))
+              .map((key) => {
+                const today = todayExp[key] || 0;
+                const total = totalExpFiltered[key] || 0;
+                const level = total <= 50 ? 1 : Math.floor((total - 1) / EXP_PER_LEVEL) + 1;
+                const maxExpForLevel = level * EXP_PER_LEVEL;
 
-      {/* 任务详情弹窗 */}
+                const hasExp = today > 0 || total > 0;
+                const expInLevel = total <= 50 ? total : total % EXP_PER_LEVEL;
+const progress = (expInLevel / 50) * 100;
+                
+                const dimLevel = total <= 50 ? 1 : Math.floor((total - 1) / EXP_PER_LEVEL) + 1;
+                const color = getExpColor(total);
+                const bgColor = getDimColor(key, 0.08);
+                const dimName = getDimName(key);
+                const tasksForDim = getTasksForDimension(key);
+                const taskCount = tasksForDim.length;
+                const completedCount = tasksForDim.filter(t => t.done && !t.abandoned).length;
+
+                return (
+                  <div 
+                    key={key} 
+                    style={{
+                      padding: isMobile ? '6px 8px' : '8px 12px',
+                      borderRadius: isMobile ? '6px' : '8px',
+                      backgroundColor: hasExp ? bgColor : '#fafafa',
+                      border: '1px solid #f0f0f0',
+                      fontSize: isMobile ? '11px' : '12px',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      setShowTaskDetail(key);
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: isMobile ? '3px' : '6px',
+                        fontSize: isMobile ? '11px' : '13px'
+                      }}>
+                        <span style={{ 
+                          color: '#333', 
+                          fontSize: isMobile ? '11px' : '13px', 
+                          fontWeight: '500' 
+                        }}>
+                          {dimName}
+                        </span>
+                        {taskCount > 0 && (
+                          <span style={{
+                            fontSize: isMobile ? '8px' : '9px',
+                            color: completedCount === taskCount ? '#4caf50' : '#999',
+                            backgroundColor: completedCount === taskCount ? '#e8f5e9' : '#f5f5f5',
+                            padding: '1px 4px',
+                            borderRadius: '8px',
+                            marginLeft: '2px'
+                          }}>
+                            {completedCount}/{taskCount}
+                          </span>
+                        )}
+                      </span>
+                      <span style={{
+                        fontSize: isMobile ? '10px' : '12px',
+                        fontWeight: 'bold',
+                        color: today > 0 ? '#34c759' : '#999'
+                      }}>
+                        {today > 0 ? `+${today}` : ''}
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      height: isMobile ? '3px' : '4px',
+                      backgroundColor: '#eee',
+                      borderRadius: '2px',
+                      marginTop: isMobile ? '3px' : '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${progress}%`,
+                        backgroundColor: color,
+                        borderRadius: '2px'
+                      }} />
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: isMobile ? '8px' : '10px',
+                      color: '#999',
+                      marginTop: isMobile ? '2px' : '3px'
+                    }}>
+                      <span>{expInLevel}/{EXP_PER_LEVEL}</span>
+                      <span>Lv.{dimLevel}</span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+
+          <div
+            onClick={() => setShowDetail(false)}
+            style={{
+              marginTop: isMobile ? '6px' : '0',
+              padding: isMobile ? '4px 0' : '0',
+              textAlign: 'center',
+              fontSize: isMobile ? '11px' : '0',
+              color: '#999',
+              cursor: 'pointer',
+              display: isMobile ? 'block' : 'none'
+            }}
+          >
+            ✕ 关闭
+          </div>
+        </div>
+      )}
+
       {showTaskDetail && (
         <TaskDetailModal
           dimKey={showTaskDetail}
