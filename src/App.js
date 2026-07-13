@@ -208,6 +208,8 @@ const [filteredHistory, setFilteredHistory] = useState([]);
   }, [subjectSubCategories]);
 
 // 初始化加载成绩数据
+// 替换加载 grades 的 useEffect：
+
 useEffect(() => {
   const loadGrades = () => {
     try {
@@ -216,22 +218,29 @@ useEffect(() => {
       if (saved) {
         const parsed = JSON.parse(saved);
         
-        // ✅ 检查数据结构
+        // 如果是数组格式（旧数据），迁移到 "一下" 年级
         if (Array.isArray(parsed)) {
-          // 旧格式：数组 → 迁移到"一下"
-          const normalized = {
-            '一下': parsed.map(grade => ({
-              ...grade,
-              grade: '一下',
-              scoreType: grade.scoreType || '100分制',
-              subCategory: grade.subCategory || ''
-            }))
-          };
-          localStorage.setItem(storageKey, JSON.stringify(normalized));
-          setGrades(normalized);
-          console.log('✅ 数据已迁移到"一下":', normalized['一下'].length, '条');
-        } else if (typeof parsed === 'object' && parsed !== null) {
-          // 新格式：按年级分组
+          if (parsed.length > 0) {
+            const normalized = {
+              '一下': parsed.map(grade => ({
+                ...grade,
+                grade: '一下',
+                scoreType: grade.scoreType || '100分制',
+                subCategory: grade.subCategory || ''
+              }))
+            };
+            localStorage.setItem(storageKey, JSON.stringify(normalized));
+            setGrades(normalized);
+            console.log('✅ 数据已迁移到"一下":', normalized['一下'].length, '条');
+          } else {
+            setGrades({});
+          }
+          return;
+        }
+        
+        // 如果是对象格式，直接使用
+        if (typeof parsed === 'object' && parsed !== null) {
+          // 确保每个年级的数据都有正确的格式
           const normalized = {};
           Object.keys(parsed).forEach(grade => {
             normalized[grade] = (parsed[grade] || []).map(g => ({
@@ -243,10 +252,15 @@ useEffect(() => {
           });
           setGrades(normalized);
           console.log('✅ 加载成绩数据:', Object.keys(normalized));
-          console.log('📊 "一下" 有', (normalized['一下'] || []).length, '条');
-        } else {
-          setGrades({});
+          if (normalized['一下']) {
+            console.log('📊 "一下" 有', normalized['一下'].length, '条');
+          }
+          return;
         }
+        
+        setGrades({});
+      } else {
+        setGrades({});
       }
     } catch (error) {
       console.error('加载成绩数据失败:', error);
@@ -258,6 +272,8 @@ useEffect(() => {
     loadGrades();
   }
 }, [isVisible]);
+
+// 替换 saveGrades 函数：
 
 const saveGrades = (updatedGrades) => {
   setGrades(updatedGrades);
@@ -272,8 +288,10 @@ const saveGrades = (updatedGrades) => {
   }
 };
 // 在 saveGrades 函数后面添加以下代码
+// 替换 getCurrentGradeGrades 函数：
+
 const getCurrentGradeGrades = () => {
-  // 如果 grades 是对象，返回对应年级的数组
+  // grades 是对象，返回对应年级的数组
   if (grades && typeof grades === 'object') {
     return grades[selectedGrade] || [];
   }
@@ -333,23 +351,36 @@ const resetNewGradeForm = (subject, subCategory) => {
 
   // 添加新成绩记录
 // 修改 handleAddGrade 函数
+// 替换 handleAddGrade 函数：
+
 const handleAddGrade = () => {
   if (!newGrade.testContent || !newGrade.score) {
     alert('请填写测试内容和得分');
     return;
   }
 
-  // 👇 添加这一行：保存测试内容到历史记录
+  // 保存测试内容到历史记录
   saveToHistory(newGrade.testContent);
 
   const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const updatedGrades = [...grades, {
+  // 获取当前年级的成绩列表
+  const currentGrades = grades[selectedGrade] || [];
+  
+  // 创建新成绩
+  const newGradeEntry = {
     id: uniqueId,
     ...newGrade,
+    grade: selectedGrade,
     subCategory: newGrade.subCategory || '未分类',
     isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
-  }];
+  };
+
+  // 更新对应年级的成绩列表
+  const updatedGrades = {
+    ...grades,
+    [selectedGrade]: [...currentGrades, newGradeEntry]
+  };
   
   saveGrades(updatedGrades);
   resetNewGradeForm(selectedSubject, selectedSubCategory);
@@ -377,6 +408,8 @@ const handleEditGrade = (grade) => {
 };
 
 // 保存编辑后的成绩
+// 替换 handleSaveEditGrade 函数：
+
 const handleSaveEditGrade = () => {
   if (!newGrade.testContent || !newGrade.score) {
     alert('请填写测试内容和得分');
@@ -385,31 +418,26 @@ const handleSaveEditGrade = () => {
 
   saveToHistory(newGrade.testContent);
 
-  // 直接更新当前年级的成绩列表
-  setGrades(prev => {
-    const currentGrades = prev[selectedGrade] || [];
-    const updatedGrades = currentGrades.map(grade => 
-      grade.id === editingGrade.id ? {
-        ...grade,
-        ...newGrade,
-        subCategory: newGrade.subCategory || '未分类',
-        isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore),
-        grade: selectedGrade
-      } : grade
-    );
-    
-    const updated = {
-      ...prev,
-      [selectedGrade]: updatedGrades
-    };
-    
-    localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(updated));
-    if (onGradeUpdate) {
-      onGradeUpdate(updated);
-    }
-    return updated;
-  });
+  // 获取当前年级的成绩列表
+  const currentGrades = grades[selectedGrade] || [];
+  
+  // 更新对应的成绩记录
+  const updatedGradesList = currentGrades.map(grade => 
+    grade.id === editingGrade.id ? {
+      ...grade,
+      ...newGrade,
+      grade: selectedGrade,
+      subCategory: newGrade.subCategory || '未分类',
+      isFullMark: parseInt(newGrade.score) === parseInt(newGrade.fullScore)
+    } : grade
+  );
 
+  const updated = {
+    ...grades,
+    [selectedGrade]: updatedGradesList
+  };
+  
+  saveGrades(updated);
   resetNewGradeForm(selectedSubject, selectedSubCategory);
   setShowAddForm(false);
   setEditingGrade(null);
@@ -417,21 +445,17 @@ const handleSaveEditGrade = () => {
 
   // 删除成绩记录
 // 删除成绩记录
+// 替换 handleDeleteGrade 函数：
+
 const handleDeleteGrade = (id) => {
   if (window.confirm('确定要删除这条成绩记录吗？')) {
-    setGrades(prev => {
-      const currentGrades = prev[selectedGrade] || [];
-      const updatedGrades = currentGrades.filter(grade => grade.id !== id);
-      const updated = {
-        ...prev,
-        [selectedGrade]: updatedGrades
-      };
-      localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(updated));
-      if (onGradeUpdate) {
-        onGradeUpdate(updated);
-      }
-      return updated;
-    });
+    const currentGrades = grades[selectedGrade] || [];
+    const updatedGradesList = currentGrades.filter(grade => grade.id !== id);
+    const updated = {
+      ...grades,
+      [selectedGrade]: updatedGradesList
+    };
+    saveGrades(updated);
   }
 };
 
@@ -15117,9 +15141,40 @@ const [showDailyTaskManager, setShowDailyTaskManager] = useState(false);
 const [newDailyTaskText, setNewDailyTaskText] = useState('');
 
 // ========== 成绩记录相关状态 ==========
+// 在 GradeModal 组件中，找到 grades 的 useState 并替换为：
+
 const [grades, setGrades] = useState(() => {
-  const saved = localStorage.getItem(`${STORAGE_KEY}_grades`);
-  return saved ? JSON.parse(saved) : [];
+  const storageKey = `${STORAGE_KEY}_grades`;
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      // 如果是数组格式（旧数据），转换为对象格式
+      if (Array.isArray(parsed)) {
+        // 如果数组有数据，迁移到 "一下" 年级
+        if (parsed.length > 0) {
+          const normalized = {
+            '一下': parsed.map(grade => ({
+              ...grade,
+              grade: '一下',
+              scoreType: grade.scoreType || '100分制',
+              subCategory: grade.subCategory || ''
+            }))
+          };
+          localStorage.setItem(storageKey, JSON.stringify(normalized));
+          return normalized;
+        }
+        return {};
+      }
+      // 如果是对象格式，直接使用
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error('解析成绩数据失败:', e);
+    }
+  }
+  return {};
 });
 
 // 添加这个函数来更新成绩
@@ -17150,36 +17205,201 @@ const getDataHash = useCallback(() => {
 
 
 
+// 替换 syncToGitHub 函数
+// 替换 syncToGitHub 函数
 const syncToGitHub = useCallback(async (silent = false) => {
-  const token = localStorage.getItem('github_token');
+  if (isSyncing) {
+    console.log('⏳ 同步进行中，请稍候...');
+    return;
+  }
+
+  const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
   if (!token) {
-    if (!silent) {
-      setShowGitHubSyncModal(true);
-      alert('请先设置 GitHub Token');
-    }
+    alert('请先设置 GitHub Token');
+    setShowGitHubSyncModal(true);
     return false;
   }
 
-  // ✅ 强制使用默认 Gist ID
-  const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
-  let gistId = DEFAULT_GIST_ID;  // 直接使用默认值
-  
-  console.log('📁 使用默认 Gist ID:', gistId);
-  
-  // 不检查 localStorage，直接使用默认值
-  // 也强制保存默认值到 localStorage
-  localStorage.setItem('github_gist_id', gistId);
-  localStorage.setItem('PAGE_A_github_gist_id', gistId);
-  
-  // ... 其余代码保持不变 ...
-  
-  // 在同步时，使用固定的 Gist ID
-  const method = 'PATCH';  // 使用 PATCH 更新已有的 Gist
-  const url = `https://api.github.com/gists/${gistId}`;
-  
-  // ... 后续代码 ...
-}, [/* 依赖数组 */]);
+  setIsSyncing(true);
 
+  try {
+    // 使用默认 Gist ID
+    const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
+    const targetGistId = DEFAULT_GIST_ID;
+    
+    localStorage.setItem('github_gist_id', targetGistId);
+    localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
+
+    // 准备要同步的数据
+    const syncData = {
+      tasksByDate: tasksByDate,
+      dailyRatings: dailyRatings,
+      dailyReflections: dailyReflections,
+      studyEndTimes: studyEndTimes,
+      monthTasks: monthTasks,
+      grades: grades,
+      categories: categories,
+      expData: expData,
+      semesterEndDate: semesterEndDate,
+      reminderText: reminderText,
+      weekPlans: weekPlans,
+      monthPlans: monthPlans,
+      dailyTaskTemplates: dailyTaskTemplates,
+      subCategoryColors: subCategoryColors,
+      categoryColors: categoryColors,
+      gradeSubCategories: JSON.stringify(localStorage.getItem('grade_subcategories') || '{}'),
+      subjectTodoEntries: JSON.parse(localStorage.getItem('subject_todo_entries_v2') || '{}'),
+      syncTime: new Date().toISOString(),
+      version: '2.0'
+    };
+
+    // 获取现有的 Gist
+    const getResponse = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    let method = 'POST';
+    let url = 'https://api.github.com/gists';
+
+    if (getResponse.ok) {
+      method = 'PATCH';
+      url = `https://api.github.com/gists/${targetGistId}`;
+    } else if (getResponse.status === 404) {
+      method = 'POST';
+      url = 'https://api.github.com/gists';
+    } else {
+      throw new Error(`获取 Gist 失败: ${getResponse.status}`);
+    }
+
+    // 构建请求体
+    const requestBody = {
+      description: '学习跟踪器数据备份',
+      public: false,
+      files: {
+        'study-tracker-data.json': {
+          content: JSON.stringify(syncData, null, 2)
+        }
+      }
+    };
+
+    const syncResponse = await fetch(url, {
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!syncResponse.ok) {
+      const errorData = await syncResponse.json();
+      throw new Error(`同步失败: ${syncResponse.status} - ${errorData.message || '未知错误'}`);
+    }
+
+    const result = await syncResponse.json();
+
+    // 更新同步时间
+    const syncTime = new Date().toISOString();
+    localStorage.setItem('PAGE_A_github_last_sync', syncTime);
+    localStorage.setItem('github_last_sync', syncTime);
+    localStorage.setItem('PAGE_A_github_gist_id', result.id);
+    localStorage.setItem('github_gist_id', result.id);
+
+    // ✅ 只显示同步成功提示（浮动 Toast）
+    const toast = document.createElement('div');
+    toast.textContent = '✅ 同步成功！';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4caf50;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 3000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      animation: fadeIn 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+
+    // ✅ 同时更新 lastSyncStatus（用于"其他设置"中显示）
+    setLastSyncStatus({
+      success: true,
+      time: syncTime,
+      message: `✅ 同步成功`
+    });
+
+    return true;
+
+  } catch (error) {
+    console.error('❌ 同步失败:', error);
+    
+    // ❌ 失败时显示错误提示
+    const toast = document.createElement('div');
+    toast.textContent = `❌ 同步失败: ${error.message}`;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 3000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      max-width: 90%;
+      text-align: center;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+
+    setLastSyncStatus({
+      success: false,
+      time: new Date().toISOString(),
+      message: `❌ 同步失败`
+    });
+
+    return false;
+
+  } finally {
+    setIsSyncing(false);
+  }
+}, [
+  tasksByDate,
+  dailyRatings,
+  dailyReflections,
+  studyEndTimes,
+  monthTasks,
+  grades,
+  categories,
+  expData,
+  semesterEndDate,
+  reminderText,
+  weekPlans,
+  monthPlans,
+  dailyTaskTemplates,
+  subCategoryColors,
+  categoryColors,
+  isSyncing
+]);
 
 const debouncedSync = useCallback(() => {
   // ✅ 完全禁用自动同步
@@ -26467,28 +26687,7 @@ if (totalCount === 0) {
   </div>
 ))}
 
-{/* 同步状态提示 - 短暂显示 */}
-{lastSyncStatus.message && (
-  <div style={{
-    position: 'fixed',
-    bottom: 80,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: lastSyncStatus.success === true ? '#28a745' : 
-                     lastSyncStatus.success === false ? '#dc3545' : '#ffc107',
-    color: 'white',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    zIndex: 2000,
-    boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-    pointerEvents: 'none',
-    whiteSpace: 'nowrap',
-    fontFamily: 'sans-serif'
-  }}>
-    {lastSyncStatus.message}
-  </div>
-)}
+
 
 
 {/* 类别时间详情模态框 */}
