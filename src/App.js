@@ -24302,7 +24302,7 @@ if (totalCount === 0) {
   const showNumber = totalCount > 0;
   
   return (
-    <div
+<div
   key={dateStr}
   onClick={() => setSelectedDate(dateStr)}
   style={{
@@ -24314,7 +24314,6 @@ if (totalCount === 0) {
     margin: "0 2px",
     fontSize: 12,
     cursor: "pointer",
-    // ✅ 今天淡蓝色，选中淡黄色，否则透明
     backgroundColor: isSelected ? "#fff9c4" : (isToday ? "#e8f0fe" : "transparent"),
     color: isToday ? "#61A2Da" : "#000",
     display: "flex",
@@ -24323,88 +24322,110 @@ if (totalCount === 0) {
     minHeight: "20px",
     borderRadius: isToday ? "4px" : "0",
     border: isToday ? "1px solid #61A2Da" : "none",
-    // ✅ 去掉橙色背景，统一用淡蓝
     background: dailyRating > 0 
       ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 0%, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 50%, ${getRatingColor(dailyRating)}20 100%)`
       : (isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent'))
   }}
-    >
-      {/* 星期几 - 今天显示"今天"标签 */}
-      
-      
-      {/* 日期 - 今天加粗 */}
-      <div style={{ 
-        fontSize: 10,
-        fontFamily: "sans-serif",
-        fontWeight: isToday ? "bold" : "normal"
+>
+  {/* 星期几 */}
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center", 
+    justifyContent: "center",
+    fontSize: 10,
+    fontWeight: isToday ? "bold" : "normal"
+  }}>
+    <span style={{ fontFamily: "sans-serif" }}>{d.label}</span>
+    {hasCrossDateTask && (
+      <span style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "10px",
+        height: "10px",
+        fontSize: "7px",
+        color: "#f44336",
+        marginLeft: "2px"
       }}>
-        {d.date.slice(5)}
+        休
+      </span>
+    )}
+  </div>
+  
+  {/* 日期 */}
+  <div style={{ 
+    fontSize: 10,
+    fontFamily: "sans-serif",
+    fontWeight: isToday ? "bold" : "normal",
+    color: isToday ? "#61A2Da" : "#666"
+  }}>
+    {d.date.slice(5)}
+  </div>
+  
+  {/* 任务数量显示 - 固定宽度 */}
+  {showNumber && (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: "4px"
+    }}>
+      <div style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1px 6px",
+        backgroundColor: "#fff",
+        borderRadius: "4px",
+        border: `0.5px solid ${numberColor}`,
+        width: "36px"
+      }}>
+        <span style={{
+          fontSize: "9px",
+          fontWeight: "bold",
+          color: numberColor,
+          fontFamily: "sans-serif"
+        }}>
+          {completedCount}/{totalCount}
+        </span>
       </div>
-      
-      {/* 任务数量显示 - 固定宽度 */}
-      {showNumber && (
+    </div>
+  )}
+  
+  {/* 结束时间显示 - 固定宽度 */}
+  {studyEndTime && (() => {
+    const [hour, minute] = studyEndTime.split(':').map(Number);
+    const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: "2px"
+      }}>
         <div style={{
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          marginTop: "4px"
+          padding: "1px 6px",
+          backgroundColor: "#fff",
+          borderRadius: "4px",
+          border: `0.5px solid ${isAfter9PM ? "#f44336" : "#4caf50"}`,
+          width: "36px"
         }}>
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "1px 6px",
-            backgroundColor: "#fff",
-            borderRadius: "4px",
-            border: `0.5px solid ${numberColor}`,
-            width: "36px"
+          <span style={{
+            fontSize: "9px",
+            fontWeight: "500",
+            color: isAfter9PM ? "#f44336" : "#4caf50",
+            fontFamily: "sans-serif"
           }}>
-            <span style={{
-              fontSize: "9px",
-              fontWeight: "bold",
-              color: numberColor,
-              fontFamily: "sans-serif"
-            }}>
-              {completedCount}/{totalCount}
-            </span>
-          </div>
+            {studyEndTime}
+          </span>
         </div>
-      )}
-      
-      {/* 结束时间显示 - 固定宽度 */}
-      {studyEndTime && (() => {
-        const [hour, minute] = studyEndTime.split(':').map(Number);
-        const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
-        return (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: "2px"
-          }}>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "1px 6px",
-              backgroundColor: "#fff",
-              borderRadius: "4px",
-              border: `0.5px solid ${isAfter9PM ? "#f44336" : "#4caf50"}`,
-              width: "36px"
-            }}>
-              <span style={{
-                fontSize: "9px",
-                fontWeight: "500",
-                color: isAfter9PM ? "#f44336" : "#4caf50",
-                fontFamily: "sans-serif"
-              }}>
-                {studyEndTime}
-              </span>
-            </div>
-          </div>
-        );
-      })()}
-    </div>
+      </div>
+    );
+  })()}
+</div>
   );
 })}
 </div>
@@ -25389,108 +25410,118 @@ if (totalCount === 0) {
       flex: 1,
       WebkitOverflowScrolling: 'touch'
     }}>
-      {categoryTabs.map(tab => {
-        // ✅ 判断是否显示已完成任务视图
-        const isCompletedView = selectedCategoryTab === `${tab === '全部' ? '全部' : tab.name}_completed`;
-        const isActive = selectedCategoryTab === tab || isCompletedView;
-        
-        // ✅ 获取完成数量和总数
-        let completedCount = 0;
-        let totalCount = 0;
-        let shortName = '';
-        let displayNumber = 0;
-        
-        if (tab === '全部') {
-          // ✅ 全部标签
-          const allTasks = todayTasks.filter(t => 
-            t.category !== "本周任务" && !t.isRegularTask
-          );
-          const allCompleted = allTasks.filter(t => t.done === true && t.abandoned !== true);
-          completedCount = allCompleted.length;
-          totalCount = allTasks.length;
-          shortName = '全部';
-          // ✅ 第一次点击显示总数，第二次点击显示已完成数量
-          displayNumber = isCompletedView ? completedCount : totalCount;
-        } else {
-          // ✅ 具体分类
-          const catTasks = todayTasks.filter(t => 
-            t.category === tab.name && 
-            t.category !== "本周任务" && 
-            !t.isRegularTask
-          );
-          const catCompleted = catTasks.filter(t => t.done === true && t.abandoned !== true);
-          completedCount = catCompleted.length;
-          totalCount = catTasks.length;
-          
-          // ✅ 短名称
-          switch(tab.name) {
-            case '语文': shortName = '语'; break;
-            case '数学': shortName = '数'; break;
-            case '英语': shortName = '英'; break;
-            case '通识': shortName = '通'; break;
-            case '综合': shortName = '综'; break;
-            case '运动': shortName = '运'; break;
-            case '生活': shortName = '生'; break;
-            case '心理': shortName = '心'; break;
-            case '校内': shortName = '校'; break;
-            default: shortName = tab.name.slice(0, 1);
+      {categoryTabs.map((tab) => {
+  // ✅ tab 是对象，直接使用 tab.name
+  const tabName = tab.name || tab;
+  const isAllTab = tabName === '全部';
+  
+  // ✅ 判断是否显示已完成任务视图
+  const isCompletedView = selectedCategoryTab === '全部_completed' || 
+                          selectedCategoryTab === `${tabName}_completed`;
+  
+  // ✅ 判断是否激活
+  let isActive = false;
+  if (isAllTab) {
+    isActive = selectedCategoryTab === '全部' || selectedCategoryTab === '全部_completed';
+  } else {
+    isActive = selectedCategoryTab === tabName || selectedCategoryTab === `${tabName}_completed`;
+  }
+  
+  // ✅ 获取完成数量和总数
+  let completedCount = 0;
+  let totalCount = 0;
+  let shortName = '';
+  let displayNumber = 0;
+  
+  if (isAllTab) {
+    // ✅ 全部标签
+    const allTasks = todayTasks.filter(t => 
+      t.category !== "本周任务" && !t.isRegularTask
+    );
+    const allCompleted = allTasks.filter(t => t.done === true && t.abandoned !== true);
+    completedCount = allCompleted.length;
+    totalCount = allTasks.length;
+    shortName = '全部';
+    displayNumber = isCompletedView ? completedCount : totalCount;
+  } else {
+    // ✅ 具体分类 - 使用 tabName
+    const catTasks = todayTasks.filter(t => 
+      t.category === tabName && 
+      t.category !== "本周任务" && 
+      !t.isRegularTask
+    );
+    const catCompleted = catTasks.filter(t => t.done === true && t.abandoned !== true);
+    completedCount = catCompleted.length;
+    totalCount = catTasks.length;
+    
+    // ✅ 短名称
+    switch(tabName) {
+      case '语文': shortName = '语'; break;
+      case '数学': shortName = '数'; break;
+      case '英语': shortName = '英'; break;
+      case '通识': shortName = '通'; break;
+      case '综合': shortName = '综'; break;
+      case '运动': shortName = '运'; break;
+      case '生活': shortName = '生'; break;
+      case '心理': shortName = '心'; break;
+      case '校内': shortName = '校'; break;
+      default: shortName = tabName.slice(0, 1);
+    }
+    displayNumber = isCompletedView ? completedCount : totalCount;
+  }
+  
+  return (
+    <div
+      key={tabName}
+      onClick={() => {
+        if (isAllTab) {
+          // ✅ 全部标签切换
+          if (selectedCategoryTab === '全部') {
+            setSelectedCategoryTab('全部_completed');
+          } else if (selectedCategoryTab === '全部_completed') {
+            setSelectedCategoryTab('全部');
+          } else {
+            setSelectedCategoryTab('全部');
           }
-          // ✅ 第一次点击显示总数，第二次点击显示已完成数量
-          displayNumber = isCompletedView ? completedCount : totalCount;
+        } else {
+          // ✅ 具体分类切换
+          if (selectedCategoryTab === tabName) {
+            setSelectedCategoryTab(`${tabName}_completed`);
+          } else if (selectedCategoryTab === `${tabName}_completed`) {
+            setSelectedCategoryTab(tabName);
+          } else {
+            setSelectedCategoryTab(tabName);
+          }
         }
-        
-        return (
-          <div
-            key={tab === '全部' ? tab : tab.name}
-            onClick={() => {
-              if (tab === '全部') {
-                // ✅ 全部标签切换：全部 → 全部已完成
-                if (selectedCategoryTab === '全部') {
-                  setSelectedCategoryTab('全部_completed');
-                } else if (selectedCategoryTab === '全部_completed') {
-                  setSelectedCategoryTab('全部');
-                } else {
-                  setSelectedCategoryTab('全部');
-                }
-              } else {
-                // ✅ 具体分类切换
-                if (selectedCategoryTab === tab.name) {
-                  setSelectedCategoryTab(`${tab.name}_completed`);
-                } else if (selectedCategoryTab === `${tab.name}_completed`) {
-                  setSelectedCategoryTab(tab.name);
-                } else {
-                  setSelectedCategoryTab(tab.name);
-                }
-              }
-            }}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '16px',
-              backgroundColor: isActive ? '#61A2Da' : '#f0f0f0',
-              color: isActive ? '#fff' : '#666',
-              fontSize: '11px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              fontWeight: isActive ? 'bold' : 'normal',
-              userSelect: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <span>{shortName}</span>
-            <span style={{
-              fontSize: '10px',
-              color: isActive ? 'rgba(255,255,255,0.8)' : '#999',
-              fontWeight: isActive ? 'bold' : 'normal'
-            }}>
-              {displayNumber}
-            </span>
-            
-          </div>
-        );
-      })}
+      }}
+      style={{
+        padding: '4px 10px',
+        borderRadius: '16px',
+        backgroundColor: isActive ? '#61A2Da' : '#f0f0f0',
+        color: isActive ? '#fff' : '#666',
+        fontSize: '11px',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        fontWeight: isActive ? 'bold' : 'normal',
+        userSelect: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}
+    >
+      <span>{shortName}</span>
+      <span style={{
+        fontSize: '10px',
+        color: isActive ? 'rgba(255,255,255,0.8)' : '#999',
+        fontWeight: isActive ? 'bold' : 'normal'
+      }}>
+        {displayNumber}
+      </span>
+      {/* ❌ 删除两个小符号 */}
+    </div>
+  );
+})}
     </div>
     
     {/* 右侧：添加 + 批量按钮 */}
@@ -25576,7 +25607,7 @@ if (totalCount === 0) {
   const catTasks = getCategoryTasks(c.name);
   
   // ✅ 判断是否显示已完成任务视图
-  const isCompletedView = selectedCategoryTab === `${c.name}_completed`;
+  const isCompletedView = selectedCategoryTab === '全部_completed' || selectedCategoryTab === `${c.name}_completed`;
   
   // ✅ 根据模式过滤任务
   let filteredTasks = catTasks;
@@ -25584,8 +25615,6 @@ if (totalCount === 0) {
     // ✅ 已完成视图：只显示已完成的任务（排除放弃的）
     filteredTasks = catTasks.filter(t => t.done === true && t.abandoned !== true);
   }
-  // ✅ 全部视图：显示所有任务（排除放弃的？或者保留放弃的？根据你的需求）
-  // 这里保持原有逻辑，显示所有任务
   
   if (filteredTasks.length === 0) return null;
   
@@ -25609,7 +25638,10 @@ if (totalCount === 0) {
   const borderColor = getCategoryBorderColor();
 
   // ✅ 根据选中的标签决定是否显示
-  if (selectedCategoryTab !== '全部' && selectedCategoryTab !== c.name && selectedCategoryTab !== `${c.name}_completed`) {
+  if (selectedCategoryTab !== '全部' && 
+      selectedCategoryTab !== '全部_completed' && 
+      selectedCategoryTab !== c.name && 
+      selectedCategoryTab !== `${c.name}_completed`) {
     return null;
   }
 
@@ -25746,7 +25778,7 @@ if (totalCount === 0) {
         <div style={{ padding: 8 }}>
           {c.name === '校内' ? (
             (() => {
-              // ✅ 使用 filteredTasks 而不是 getTasksBySubCategory
+              // ✅ 使用 filteredTasks 重新分组
               const subCategoryTasks = {};
               filteredTasks.forEach(task => {
                 const subCat = task.subCategory || '未分类';
@@ -25951,7 +25983,7 @@ if (totalCount === 0) {
             })()
           ) : (
             <SortableTaskList
-              tasks={filteredTasks}  // ✅ 使用 filteredTasks
+              tasks={filteredTasks}
               category={c.name}
               subCategory={null}
               selectedDate={selectedDate}
@@ -25986,6 +26018,10 @@ if (totalCount === 0) {
     </div>
   );
 })}
+
+
+
+
 {/* 学习结束时间 + 复盘区域 */}
 <div style={{ marginBottom: 8 }}>
   
