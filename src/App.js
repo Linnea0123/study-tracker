@@ -15973,245 +15973,226 @@ const getDimEmoji = (key) => {
   return (
     <div ref={panelRef} style={{ position: 'relative', display: 'inline-block' }}>
       {/* 主按钮 */}
-      <div
-        onClick={() => setShowDetail(!showDetail)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: isMobile ? '1px' : '2px',
-          padding: isMobile ? '1px 4px' : '1px 6px',
-          height: isMobile ? '20px' : '24px',
-          backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
-          borderRadius: '10px',
-          cursor: 'pointer',
-          fontSize: isMobile ? '8px' : '9px',
-          whiteSpace: 'nowrap',
-          border: '1px solid #e0e0e0',
-          flexShrink: 0
-        }}
-        title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
-      >
-        <span style={{ fontSize: isMobile ? '9px' : '10px' }}>{getRatingEmoji()}</span>
-        <span style={{ 
-          fontWeight: 'bold', 
-          color: todayTotal > 0 ? '#2e7d32' : '#999', 
-          fontSize: isMobile ? '8px' : '9px' 
-        }}>
-          +{todayTotal}
-        </span>
-        <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#999' }}> </span>
-        <span style={{ 
-          fontSize: isMobile ? '8px' : '9px', 
-          color: '#999',
-          fontWeight: 'bold'
-        }}>
-          Lv.{level}
-        </span>
-        <span style={{ fontSize: isMobile ? '5px' : '6px', color: '#ccc' }}>▼</span>
-      </div>
+     
+<div
+  onClick={() => setShowDetail(!showDetail)}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: isMobile ? '2px' : '4px',
+    padding: isMobile ? '2px 6px' : '2px 10px',
+    height: isMobile ? '24px' : '28px',
+    backgroundColor: todayTotal > 0 ? '#e8f5e9' : '#f5f5f5',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontSize: isMobile ? '10px' : '11px',
+    whiteSpace: 'nowrap',
+    border: '1px solid #e0e0e0',
+    flexShrink: 0
+  }}
+  title={`今日积分: +${todayTotal} | 总积分: ${grandTotal} | Lv.${level}`}
+>
+  <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{getRatingEmoji()}</span>
+  <span style={{ 
+    fontWeight: 'bold', 
+    color: todayTotal > 0 ? '#2e7d32' : '#999', 
+    fontSize: isMobile ? '10px' : '12px' 
+  }}>
+    +{todayTotal}
+  </span>
+  <span style={{ fontSize: isMobile ? '8px' : '10px', color: '#999', fontWeight: 'bold' }}>
+    Lv.{level}
+  </span>
+</div>
 
-      {/* 下拉详情面板 */}
-      {showDetail && (
-         <div style={{
+{/* ✅ 下拉详情面板 - 强制水平居中 */}
+{/* 下拉详情面板 - 回到之前正常工作的版本 */}
+{showDetail && (
+  <div style={{
     position: 'fixed',
     top: isMobile ? '60px' : '70px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: isMobile ? 'calc(100vw - 32px)' : '420px',
-    maxWidth: isMobile ? 'calc(100vw - 32px)' : '450px',
-    minWidth: isMobile ? 'calc(100vw - 32px)' : '320px',
-    maxHeight: isMobile ? '80vh' : '70vh',  // 增加高度
+    left: isMobile ? '8px' : '80px',
+    width: isMobile ? 'calc(100vw - 48px)' : '420px',  // ✅ 从 32px 改为 48px，左右边距更大
+    maxWidth: isMobile ? 'calc(100vw - 48px)' : '450px',
+    minWidth: isMobile ? '280px' : '320px',  // ✅ 手机端最小宽度减小
+    maxHeight: isMobile ? '80vh' : '70vh',
     backgroundColor: '#fff',
     borderRadius: isMobile ? '16px' : '12px',
     boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
     border: '1px solid #e0e0e0',
-    padding: isMobile ? '14px 16px' : '18px 22px',
+    padding: isMobile ? '12px 14px' : '18px 22px',  // ✅ 手机端内边距也减小
     zIndex: 9999,
-    overflowY: 'auto',  // 保留滚动，但内容足够显示所有维度
-    overscrollBehavior: 'contain'
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    transform: 'none'
   }}>
-          {/* 顶部统计 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: isMobile ? '12px' : '16px',
-            paddingBottom: isMobile ? '10px' : '12px',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            <div>
-              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>今日</div>
-              <div style={{ 
-                fontSize: isMobile ? '18px' : '22px', 
-                fontWeight: 'bold', 
-                color: '#34c759',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                +{todayTotal}
-                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
-                  ({done}/{total})
-                </span>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>总积分</div>
-              <div style={{ 
-                fontSize: isMobile ? '18px' : '22px', 
-                fontWeight: 'bold', 
-                color: '#1a73e8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                {grandTotal}
-                <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
-                  Lv.{level}
-                </span>
-              </div>
-            </div>
-          </div>
+    {/* 顶部统计 */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: isMobile ? '12px' : '16px',
+      paddingBottom: isMobile ? '10px' : '12px',
+      borderBottom: '1px solid #f0f0f0'
+    }}>
+      <div>
+        <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>今日</div>
+        <div style={{ 
+          fontSize: isMobile ? '18px' : '22px', 
+          fontWeight: 'bold', 
+          color: '#34c759',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          +{todayTotal}
+          <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+            ({done}/{total})
+          </span>
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#999' }}>总积分</div>
+        <div style={{ 
+          fontSize: isMobile ? '18px' : '22px', 
+          fontWeight: 'bold', 
+          color: '#1a73e8',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          {grandTotal}
+          <span style={{ fontSize: isMobile ? '11px' : '14px', color: '#999', fontWeight: 'normal' }}>
+            Lv.{level}
+          </span>
+        </div>
+      </div>
+    </div>
 
-          {/* 维度列表 - 点击可查看任务 */}
-         {/* 维度列表 - 只显示主分类，不显示校内子分类 */}
-{/* 维度列表 - 不显示 emoji */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
-  gap: isMobile ? '4px' : '6px',
-}}>
-  {Object.keys(DIMENSIONS)
-    .filter(key => !key.includes('_sub'))
-    .map((key) => {
-      const today = todayExp[key] || 0;
-      const total = totalExp[key] || 0;
-      const hasExp = today > 0 || total > 0;
-      const progress = getProgress(total);
-      const expInLevel = getExpInLevel(total);
-      const dimLevel = Math.floor(total / EXP_PER_LEVEL) + 1;
-      const color = getExpColor(total);
-      const bgColor = getDimColor(key, 0.08);
-      const dimName = getDimName(key);
-      const tasksForDim = getTasksForDimension(key);
-      const taskCount = tasksForDim.length;
-      const completedCount = tasksForDim.filter(t => t.done && !t.abandoned).length;
+    {/* 维度列表 - 两列布局 */}
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr',
+      gap: isMobile ? '4px' : '6px',
+    }}>
+      {Object.keys(DIMENSIONS)
+        .filter(key => !key.includes('_sub'))
+        .map((key) => {
+          const today = todayExp[key] || 0;
+          const total = totalExp[key] || 0;
+          const hasExp = today > 0 || total > 0;
+          const progress = getProgress(total);
+          const expInLevel = getExpInLevel(total);
+          const dimLevel = Math.floor(total / EXP_PER_LEVEL) + 1;
+          const color = getExpColor(total);
+          const bgColor = getDimColor(key, 0.08);
+          const dimName = getDimName(key);
+          const tasksForDim = getTasksForDimension(key);
+          const taskCount = tasksForDim.length;
+          const completedCount = tasksForDim.filter(t => t.done && !t.abandoned).length;
 
-      return (
-        <div 
-          key={key} 
-          style={{
-            padding: isMobile ? '6px 8px' : '8px 12px',
-            borderRadius: isMobile ? '6px' : '8px',
-            backgroundColor: hasExp ? bgColor : '#fafafa',
-            border: '1px solid #f0f0f0',
-            fontSize: isMobile ? '11px' : '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onClick={() => {
-            setShowTaskDetail(key);
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#61A2Da';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(97, 162, 218, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#f0f0f0';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: isMobile ? '3px' : '6px',
-              fontSize: isMobile ? '11px' : '13px'
-            }}>
-              {/* 删除 emoji */}
-              <span style={{ 
-                color: '#333', 
-                fontSize: isMobile ? '11px' : '13px', 
-                fontWeight: '500' 
+          return (
+            <div 
+              key={key} 
+              style={{
+                padding: isMobile ? '6px 8px' : '8px 12px',
+                borderRadius: isMobile ? '6px' : '8px',
+                backgroundColor: hasExp ? bgColor : '#fafafa',
+                border: '1px solid #f0f0f0',
+                fontSize: isMobile ? '11px' : '12px',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                setShowTaskDetail(key);
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                {dimName}
-              </span>
-              {taskCount > 0 && (
-                <span style={{
-                  fontSize: isMobile ? '8px' : '9px',
-                  color: completedCount === taskCount ? '#4caf50' : '#999',
-                  backgroundColor: completedCount === taskCount ? '#e8f5e9' : '#f5f5f5',
-                  padding: '1px 4px',
-                  borderRadius: '8px',
-                  marginLeft: '2px'
+                <span style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: isMobile ? '3px' : '6px',
+                  fontSize: isMobile ? '11px' : '13px'
                 }}>
-                  {completedCount}/{taskCount}
+                  <span style={{ 
+                    color: '#333', 
+                    fontSize: isMobile ? '11px' : '13px', 
+                    fontWeight: '500' 
+                  }}>
+                    {dimName}
+                  </span>
+                  {taskCount > 0 && (
+                    <span style={{
+                      fontSize: isMobile ? '8px' : '9px',
+                      color: completedCount === taskCount ? '#4caf50' : '#999',
+                      backgroundColor: completedCount === taskCount ? '#e8f5e9' : '#f5f5f5',
+                      padding: '1px 4px',
+                      borderRadius: '8px',
+                      marginLeft: '2px'
+                    }}>
+                      {completedCount}/{taskCount}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            
-<span style={{
-  fontSize: isMobile ? '10px' : '12px',
-  fontWeight: 'bold',
-  color: today > 0 ? '#34c759' : (today < 0 ? '#f44336' : '#999')
-}}>
-  {today > 0 ? `+${today}` : (today < 0 ? `${today}` : '')}
-</span>
-          </div>
-          
-          <div style={{
-            height: isMobile ? '3px' : '4px',
-            backgroundColor: '#eee',
-            borderRadius: '2px',
-            marginTop: isMobile ? '3px' : '4px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${progress}%`,
-              backgroundColor: color,
-              borderRadius: '2px'
-            }} />
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: isMobile ? '8px' : '10px',
-            color: '#999',
-            marginTop: isMobile ? '2px' : '3px'
-          }}>
-            <span>{expInLevel}/{EXP_PER_LEVEL}</span>
-            <span>Lv.{dimLevel}</span>
-          </div>
-        </div>
-      );
-    })}
-</div>
+                <span style={{
+                  fontSize: isMobile ? '10px' : '12px',
+                  fontWeight: 'bold',
+                  color: today > 0 ? '#34c759' : '#999'
+                }}>
+                  {today > 0 ? `+${today}` : ''}
+                </span>
+              </div>
+              
+              <div style={{
+                height: isMobile ? '3px' : '4px',
+                backgroundColor: '#eee',
+                borderRadius: '2px',
+                marginTop: isMobile ? '3px' : '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${progress}%`,
+                  backgroundColor: color,
+                  borderRadius: '2px'
+                }} />
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: isMobile ? '8px' : '10px',
+                color: '#999',
+                marginTop: isMobile ? '2px' : '3px'
+              }}>
+                <span>{expInLevel}/{EXP_PER_LEVEL}</span>
+                <span>Lv.{dimLevel}</span>
+              </div>
+            </div>
+          );
+        })}
+    </div>
 
-         
-
-          {/* 关闭按钮 - 手机端 */}
-          <div
-  onClick={() => setShowDetail(false)}
-  style={{
-    marginTop: isMobile ? '6px' : '0',
-    padding: isMobile ? '4px 0' : '0',  // 从 10px 改为 4px 0
-    textAlign: 'center',
-    fontSize: isMobile ? '11px' : '0',  // 从 14px 改为 11px
-    color: '#999',
-    cursor: 'pointer',
-    display: isMobile ? 'block' : 'none'
-  }}
->
-  ✕ 关闭
-</div>
-        </div>
-      )}
+    {/* 关闭按钮 - 手机端 */}
+    <div
+      onClick={() => setShowDetail(false)}
+      style={{
+        marginTop: isMobile ? '6px' : '0',
+        padding: isMobile ? '4px 0' : '0',
+        textAlign: 'center',
+        fontSize: isMobile ? '11px' : '0',
+        color: '#999',
+        cursor: 'pointer',
+        display: isMobile ? 'block' : 'none'
+      }}
+    >
+      ✕ 关闭
+    </div>
+  </div>
+)}
 
       {/* 任务详情弹窗 */}
       {showTaskDetail && (
