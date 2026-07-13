@@ -16466,8 +16466,8 @@ const categoryTabs = useMemo(() => {
       
       let shortName = c.name;
       switch(c.name) {
-        case '语文': shortName = '语'; break;
-        case '数学': shortName = '数'; break;
+        case '语文': shortName = '语文'; break;
+        case '数学': shortName = '数学'; break;
         case '英语': shortName = '英'; break;
         case '通识': shortName = '通'; break;
         case '综合': shortName = '综'; break;
@@ -16766,6 +16766,7 @@ const getCurrentDailyReflection = () => {
 
 // 设置当前选中日期的复盘内容
 // 设置当前选中日期的复盘内容
+// 设置当前选中日期的复盘内容
 const setCurrentDailyReflection = (reflection) => {
   // 1. 保存到 dailyReflections 状态
   setDailyReflections(prev => {
@@ -16773,7 +16774,7 @@ const setCurrentDailyReflection = (reflection) => {
       ...prev,
       [selectedDate]: reflection
     };
-    // 立即保存到 localStorage
+    // ✅ 立即保存到 localStorage
     localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(newReflections));
     console.log('💾 保存复盘:', selectedDate, reflection);
     return newReflections;
@@ -19424,7 +19425,31 @@ if (savedMonthTasks) {
   setMonthTasks([]);
 }
 
+ // ✅ 加载每日评分
+      const savedRatings = localStorage.getItem(`${STORAGE_KEY}_dailyRatings`);
+      if (savedRatings) {
+        try {
+          const parsed = JSON.parse(savedRatings);
+          setDailyRatings(parsed);
+          console.log('✅ 加载评分数据:', Object.keys(parsed).length, '天');
+        } catch (e) {
+          console.error('解析评分数据失败:', e);
+          setDailyRatings({});
+        }
+      }
 
+      // ✅ 加载每日复盘 (新增)
+      const savedReflections = localStorage.getItem(`${STORAGE_KEY}_dailyReflections`);
+      if (savedReflections) {
+        try {
+          const parsed = JSON.parse(savedReflections);
+          setDailyReflections(parsed);
+          console.log('✅ 加载复盘数据:', Object.keys(parsed).length, '天');
+        } catch (e) {
+          console.error('解析复盘数据失败:', e);
+          setDailyReflections({});
+        }
+      }
 // 加载分类数据
 const savedCategories = await loadDataWithFallback('categories', null);
 if (savedCategories) {
@@ -19707,6 +19732,21 @@ useEffect(() => {
   };
 }, [monthTasks, isInitialized]);
 
+
+ // ========== ✅ 自动保存复盘和评分 - 放在这里 ==========
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (Object.keys(dailyReflections).length > 0) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(dailyReflections));
+    }
+  }, [dailyReflections, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (Object.keys(dailyRatings).length > 0) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(dailyRatings));
+    }
+  }, [dailyRatings, isInitialized]);
 
 // 切换日期时保存当前日期的数据
 useEffect(() => {
@@ -23116,8 +23156,9 @@ onSave={(newConfig) => {
   {/* 左侧：奖杯按钮 + 属性面板 */}
   <div style={{
     position: "absolute",
-    top: 0,
+     top: "50%",  // ✅ 改为 50%
     left: 0,
+    transform: "translateY(-50%)",  // ✅ 添加垂直居中
     display: "flex",
     alignItems: "center",
     gap: "6px",
@@ -23714,7 +23755,7 @@ onSave={(newConfig) => {
             color: "#999",
             fontSize: "13px"
           }}>
-            暂无本周计划 📝
+            暂无本周计划
           </div>
         ) : (
           weekPlans.map(plan => (
@@ -24171,6 +24212,7 @@ onSave={(newConfig) => {
   {weekDates.map((d) => {
   const dateStr = d.date;
   const isSelected = dateStr === selectedDate;
+   const isToday = dateStr === new Date().toISOString().split("T")[0];  
   const dayTasks = tasksByDate[dateStr] || [];
   
 
@@ -24261,53 +24303,40 @@ if (totalCount === 0) {
   
   return (
     <div
-      key={dateStr}
-      onClick={() => setSelectedDate(dateStr)}
-      style={{
-        padding: "4px 6px",
-        borderBottom: `2px solid ${isSelected ? "#0b52b0" : "#e0e0e0"}`,
-        textAlign: "center",
-        flex: 1,
-        minWidth: 0,
-        margin: "0 2px",
-        fontSize: 12,
-        cursor: "pointer",
-        backgroundColor: isSelected ? "#fff9c4" : "transparent",
-        color: isSelected ? "#000" : "#000",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        minHeight: "20px",
-        background: dailyRating > 0 
-          ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
-          : isSelected ? '#fff9c4' : 'transparent'
-      }}
+  key={dateStr}
+  onClick={() => setSelectedDate(dateStr)}
+  style={{
+    padding: "4px 6px",
+    borderBottom: isToday ? `1px solid #61A2Da` : "none",
+    textAlign: "center",
+    flex: 1,
+    minWidth: 0,
+    margin: "0 2px",
+    fontSize: 12,
+    cursor: "pointer",
+    // ✅ 今天淡蓝色，选中淡黄色，否则透明
+    backgroundColor: isSelected ? "#fff9c4" : (isToday ? "#e8f0fe" : "transparent"),
+    color: isToday ? "#61A2Da" : "#000",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    minHeight: "20px",
+    borderRadius: isToday ? "4px" : "0",
+    border: isToday ? "1px solid #61A2Da" : "none",
+    // ✅ 去掉橙色背景，统一用淡蓝
+    background: dailyRating > 0 
+      ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 0%, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 50%, ${getRatingColor(dailyRating)}20 100%)`
+      : (isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent'))
+  }}
     >
-      {/* 星期几 */}
-      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "sans-serif" }}>{d.label}</span>
-        {hasCrossDateTask && (
-          <span style={{
-            position: "absolute",
-            left: "100%",
-            marginLeft: "2px",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "10px",
-            height: "10px",
-            fontSize: "7px",
-            color: "#f44336",
-          }}>
-            休
-          </span>
-        )}
-      </div>
+      {/* 星期几 - 今天显示"今天"标签 */}
       
-      {/* 日期 */}
+      
+      {/* 日期 - 今天加粗 */}
       <div style={{ 
         fontSize: 10,
-        fontFamily: "sans-serif"
+        fontFamily: "sans-serif",
+        fontWeight: isToday ? "bold" : "normal"
       }}>
         {d.date.slice(5)}
       </div>
@@ -25334,6 +25363,7 @@ if (totalCount === 0) {
 
 
 {/* ========== 分类标签切换栏 + 添加/批量按钮 ========== */}
+{/* ========== 分类标签切换栏 ========== */}
 {categoryTabs.length > 1 && (
   <div style={{
     display: 'flex',
@@ -25360,52 +25390,110 @@ if (totalCount === 0) {
       WebkitOverflowScrolling: 'touch'
     }}>
       {categoryTabs.map(tab => {
+        // ✅ 判断是否显示已完成任务视图
+        const isCompletedView = selectedCategoryTab === `${tab === '全部' ? '全部' : tab.name}_completed`;
+        const isActive = selectedCategoryTab === tab || isCompletedView;
+        
+        // ✅ 获取完成数量和总数
+        let completedCount = 0;
+        let totalCount = 0;
+        let shortName = '';
+        let displayNumber = 0;
+        
         if (tab === '全部') {
-          return (
-            <div
-              key={tab}
-              onClick={() => setSelectedCategoryTab(tab)}
-              style={{
-                padding: '4px 12px',
-                borderRadius: '16px',
-                backgroundColor: selectedCategoryTab === tab ? '#61A2Da' : '#f0f0f0',
-                color: selectedCategoryTab === tab ? '#fff' : '#666',
-                fontSize: '12px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                fontWeight: selectedCategoryTab === tab ? 'bold' : 'normal',
-                userSelect: 'none'
-              }}
-            >
-              全部
-            </div>
+          // ✅ 全部标签
+          const allTasks = todayTasks.filter(t => 
+            t.category !== "本周任务" && !t.isRegularTask
           );
+          const allCompleted = allTasks.filter(t => t.done === true && t.abandoned !== true);
+          completedCount = allCompleted.length;
+          totalCount = allTasks.length;
+          shortName = '全部';
+          // ✅ 第一次点击显示总数，第二次点击显示已完成数量
+          displayNumber = isCompletedView ? completedCount : totalCount;
+        } else {
+          // ✅ 具体分类
+          const catTasks = todayTasks.filter(t => 
+            t.category === tab.name && 
+            t.category !== "本周任务" && 
+            !t.isRegularTask
+          );
+          const catCompleted = catTasks.filter(t => t.done === true && t.abandoned !== true);
+          completedCount = catCompleted.length;
+          totalCount = catTasks.length;
+          
+          // ✅ 短名称
+          switch(tab.name) {
+            case '语文': shortName = '语'; break;
+            case '数学': shortName = '数'; break;
+            case '英语': shortName = '英'; break;
+            case '通识': shortName = '通'; break;
+            case '综合': shortName = '综'; break;
+            case '运动': shortName = '运'; break;
+            case '生活': shortName = '生'; break;
+            case '心理': shortName = '心'; break;
+            case '校内': shortName = '校'; break;
+            default: shortName = tab.name.slice(0, 1);
+          }
+          // ✅ 第一次点击显示总数，第二次点击显示已完成数量
+          displayNumber = isCompletedView ? completedCount : totalCount;
         }
+        
         return (
           <div
-            key={tab.name}
-            onClick={() => setSelectedCategoryTab(tab.name)}
+            key={tab === '全部' ? tab : tab.name}
+            onClick={() => {
+              if (tab === '全部') {
+                // ✅ 全部标签切换：全部 → 全部已完成
+                if (selectedCategoryTab === '全部') {
+                  setSelectedCategoryTab('全部_completed');
+                } else if (selectedCategoryTab === '全部_completed') {
+                  setSelectedCategoryTab('全部');
+                } else {
+                  setSelectedCategoryTab('全部');
+                }
+              } else {
+                // ✅ 具体分类切换
+                if (selectedCategoryTab === tab.name) {
+                  setSelectedCategoryTab(`${tab.name}_completed`);
+                } else if (selectedCategoryTab === `${tab.name}_completed`) {
+                  setSelectedCategoryTab(tab.name);
+                } else {
+                  setSelectedCategoryTab(tab.name);
+                }
+              }
+            }}
             style={{
               padding: '4px 10px',
               borderRadius: '16px',
-              backgroundColor: selectedCategoryTab === tab.name ? '#61A2Da' : '#f0f0f0',
-              color: selectedCategoryTab === tab.name ? '#fff' : '#666',
+              backgroundColor: isActive ? '#61A2Da' : '#f0f0f0',
+              color: isActive ? '#fff' : '#666',
               fontSize: '11px',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               flexShrink: 0,
-              fontWeight: selectedCategoryTab === tab.name ? 'bold' : 'normal',
-              userSelect: 'none'
+              fontWeight: isActive ? 'bold' : 'normal',
+              userSelect: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
-            {tab.label}
+            <span>{shortName}</span>
+            <span style={{
+              fontSize: '10px',
+              color: isActive ? 'rgba(255,255,255,0.8)' : '#999',
+              fontWeight: isActive ? 'bold' : 'normal'
+            }}>
+              {displayNumber}
+            </span>
+            
           </div>
         );
       })}
     </div>
     
-    {/* 右侧：添加 + 批量按钮 - 固定不滚动 */}
+    {/* 右侧：添加 + 批量按钮 */}
     <div style={{ 
       display: 'flex', 
       gap: '4px', 
@@ -25485,10 +25573,23 @@ if (totalCount === 0) {
 
 {/* ========== 原有分类渲染 - 完全保持不变 ========== */}
 {(appMode === 'summer' ? categories.filter(c => c.name !== '校内') : categories).map((c) => {
-  // ⭐ 完全保留原有的分类渲染逻辑
   const catTasks = getCategoryTasks(c.name);
-  if (catTasks.length === 0) return null;
-  const isComplete = isCategoryComplete(c.name);
+  
+  // ✅ 判断是否显示已完成任务视图
+  const isCompletedView = selectedCategoryTab === `${c.name}_completed`;
+  
+  // ✅ 根据模式过滤任务
+  let filteredTasks = catTasks;
+  if (isCompletedView) {
+    // ✅ 已完成视图：只显示已完成的任务（排除放弃的）
+    filteredTasks = catTasks.filter(t => t.done === true && t.abandoned !== true);
+  }
+  // ✅ 全部视图：显示所有任务（排除放弃的？或者保留放弃的？根据你的需求）
+  // 这里保持原有逻辑，显示所有任务
+  
+  if (filteredTasks.length === 0) return null;
+  
+  const isComplete = filteredTasks.length > 0 && filteredTasks.every(task => task.done === true && task.abandoned !== true);
   const isCollapsed = collapsedCategories[c.name];
   const isSortingMode = sortingSubCategory?.category === c.name && !sortingSubCategory?.subCategory;
   
@@ -25507,8 +25608,8 @@ if (totalCount === 0) {
   
   const borderColor = getCategoryBorderColor();
 
-  // ⭐ 根据选中的标签决定是否显示
-  if (selectedCategoryTab !== '全部' && selectedCategoryTab !== c.name) {
+  // ✅ 根据选中的标签决定是否显示
+  if (selectedCategoryTab !== '全部' && selectedCategoryTab !== c.name && selectedCategoryTab !== `${c.name}_completed`) {
     return null;
   }
 
@@ -25522,7 +25623,7 @@ if (totalCount === 0) {
         border: `2px solid ${borderColor}`,
       }}
     >
-      {/* ⭐ 分类标题 - 整条可点击 */}
+      {/* ✅ 分类标题 - 显示过滤后的任务数量 */}
       <div
         onClick={() => setCollapsedCategories(prev => ({ ...prev, [c.name]: !prev[c.name] }))}
         style={{
@@ -25555,7 +25656,7 @@ if (totalCount === 0) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-            {c.name} ({getCategoryTasks(c.name).filter(t => t.done === true && t.abandoned !== true).length}/{getCategoryTasks(c.name).length})
+            {c.name} ({filteredTasks.filter(t => t.done === true && t.abandoned !== true).length}/{filteredTasks.length})
             {isComplete && <SquareCheckMark show={true} size={12} color="#bbb" />}
           </span>
         </div>
@@ -25640,12 +25741,21 @@ if (totalCount === 0) {
         </div>
       </div>
 
-      {/* ⭐ 原有的任务列表 - 完全不变 */}
+      {/* ✅ 任务列表 - 使用 filteredTasks */}
       {!collapsedCategories[c.name] && (
         <div style={{ padding: 8 }}>
           {c.name === '校内' ? (
             (() => {
-              const subCategoryTasks = getTasksBySubCategory(c.name);
+              // ✅ 使用 filteredTasks 而不是 getTasksBySubCategory
+              const subCategoryTasks = {};
+              filteredTasks.forEach(task => {
+                const subCat = task.subCategory || '未分类';
+                if (!subCategoryTasks[subCat]) {
+                  subCategoryTasks[subCat] = [];
+                }
+                subCategoryTasks[subCat].push(task);
+              });
+              
               const subCategoryKeys = Object.keys(subCategoryTasks);
               
               const getSubCategoryOrder = () => {
@@ -25669,179 +25779,179 @@ if (totalCount === 0) {
               const sortedSubCategoryKeys = getSubCategoryOrder();
               
               return sortedSubCategoryKeys.map((subCat) => {
-  const subCatTasks = subCategoryTasks[subCat];
-  const subCatKey = `${c.name}_${subCat}`;
-  const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done);
-  const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
-  const isSortingMode = sortingSubCategory?.subCategory === subCat;
-  
-  const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
-    return sum + (task.timeSpent || 0);
-  }, 0);
-  
-  return (
-    <div key={subCat} style={{ marginBottom: 8 }}>
-      <div
-        onClick={() => setCollapsedSubCategories(prev => ({
-          ...prev,
-          [subCatKey]: !isSubCollapsed
-        }))}
-        style={{
-          backgroundColor: (subCategoryColors[subCat] || (() => {
-            switch(subCat) {
-              case '数学': return '#E8F5E9';
-              case '语文': return '#FFFCE8';
-              case '英语': return '#FCE4EC';
-              case '运动': return '#E3F2FD';
-              default: return '#F5F5F5';
-            }
-          })()),
-          color: allDone ? "#aaa" : '#333',
-          padding: '4px 8px',
-          fontWeight: "bold",
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderRadius: '6px',
-          fontSize: '12px',
-          marginBottom: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-          {subCat} ({subCatTasks.filter(t => t.done === true && t.abandoned !== true).length}/{subCatTasks.length})
-          {allDone && <SquareCheckMark show={true} size={12} color="#bbb" />}
-        </span>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              if (sortingSubCategory?.subCategory === subCat) {
-                setSortingSubCategory(null);
-              } else {
-                setSortingSubCategory({ category: c.name, subCategory: subCat });
-              }
-            }}
-            style={{
-              borderRadius: 4,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: "8px",
-              userSelect: "none",
-              transition: "none"
-            }}
-            title={sortingSubCategory?.subCategory === subCat ? "完成排序" : "调整顺序"}
-          >
-            {sortingSubCategory?.subCategory === subCat ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="#999" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-                <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-                <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
-              </svg>
-            )}
-          </div>
-          
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              const newTime = window.prompt(
-                `修改 ${subCat} 子类别总时间（单位：分钟）`,
-                Math.floor(subCategoryTotalTime / 60).toString()
-              );
-              
-              if (newTime !== null) {
-                const minutes = parseInt(newTime) || 0;
-                const newSeconds = minutes * 60;
+                const subCatTasks = subCategoryTasks[subCat];
+                const subCatKey = `${c.name}_${subCat}`;
+                const allDone = subCatTasks.length > 0 && subCatTasks.every(task => task.done === true && task.abandoned !== true);
+                const isSubCollapsed = collapsedSubCategories[subCatKey] || false;
+                const isSortingMode = sortingSubCategory?.subCategory === subCat;
                 
-                if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
-                  const timeDifference = newSeconds - subCategoryTotalTime;
-                  
-                  if (timeDifference !== 0 && subCatTasks.length > 0) {
-                    const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+                const subCategoryTotalTime = subCatTasks.reduce((sum, task) => {
+                  return sum + (task.timeSpent || 0);
+                }, 0);
+                
+                return (
+                  <div key={subCat} style={{ marginBottom: 8 }}>
+                    <div
+                      onClick={() => setCollapsedSubCategories(prev => ({
+                        ...prev,
+                        [subCatKey]: !isSubCollapsed
+                      }))}
+                      style={{
+                        backgroundColor: (subCategoryColors[subCat] || (() => {
+                          switch(subCat) {
+                            case '数学': return '#E8F5E9';
+                            case '语文': return '#FFFCE8';
+                            case '英语': return '#FCE4EC';
+                            case '运动': return '#E3F2FD';
+                            default: return '#F5F5F5';
+                          }
+                        })()),
+                        color: allDone ? "#aaa" : '#333',
+                        padding: '4px 8px',
+                        fontWeight: "bold",
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        marginBottom: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {subCat} ({subCatTasks.filter(t => t.done === true && t.abandoned !== true).length}/{subCatTasks.length})
+                        {allDone && <SquareCheckMark show={true} size={12} color="#bbb" />}
+                      </span>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (sortingSubCategory?.subCategory === subCat) {
+                              setSortingSubCategory(null);
+                            } else {
+                              setSortingSubCategory({ category: c.name, subCategory: subCat });
+                            }
+                          }}
+                          style={{
+                            borderRadius: 4,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: "8px",
+                            userSelect: "none",
+                            transition: "none"
+                          }}
+                          title={sortingSubCategory?.subCategory === subCat ? "完成排序" : "调整顺序"}
+                        >
+                          {sortingSubCategory?.subCategory === subCat ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path d="M20 6L9 17L4 12" stroke="#999" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" fill="none"/>
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <line x1="4" y1="6" x2="20" y2="6" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+                              <line x1="4" y1="12" x2="20" y2="12" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+                              <line x1="4" y1="18" x2="20" y2="18" stroke="#999" strokeWidth="2.5" strokeLinecap="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newTime = window.prompt(
+                              `修改 ${subCat} 子类别总时间（单位：分钟）`,
+                              Math.floor(subCategoryTotalTime / 60).toString()
+                            );
+                            
+                            if (newTime !== null) {
+                              const minutes = parseInt(newTime) || 0;
+                              const newSeconds = minutes * 60;
+                              
+                              if (newSeconds >= 0 && newSeconds !== subCategoryTotalTime) {
+                                const timeDifference = newSeconds - subCategoryTotalTime;
+                                
+                                if (timeDifference !== 0 && subCatTasks.length > 0) {
+                                  const timePerTask = Math.floor(timeDifference / subCatTasks.length);
+                                  
+                                  setTasksByDate(prev => {
+                                    const newTasksByDate = { ...prev };
+                                    const todayTasks = newTasksByDate[selectedDate] || [];
+                                    
+                                    newTasksByDate[selectedDate] = todayTasks.map(t => 
+                                      t.category === c.name && t.subCategory === subCat 
+                                        ? { ...t, timeSpent: Math.max(0, (t.timeSpent || 0) + timePerTask) }
+                                        : t
+                                    );
+                                    
+                                    return newTasksByDate;
+                                  });
+                                }
+                              }
+                            }
+                          }}
+                          style={{
+                            fontSize: '11px',
+                            color: '#333',
+                            cursor: 'pointer',
+                            fontFamily: 'Calibri, "微软雅黑", sans-serif',
+                            minWidth: '15px',
+                            width: '30px',
+                            textAlign: 'right',
+                            background: 'transparent',
+                            border: 'none',
+                            fontWeight: "normal",
+                            display: "inline-block"
+                          }}
+                          title="点击修改子类别总时间（单位：分钟）"
+                        >
+                          {formatCategoryTime(subCategoryTotalTime)}
+                        </span>
+                      </div>
+                    </div>
                     
-                    setTasksByDate(prev => {
-                      const newTasksByDate = { ...prev };
-                      const todayTasks = newTasksByDate[selectedDate] || [];
-                      
-                      newTasksByDate[selectedDate] = todayTasks.map(t => 
-                        t.category === c.name && t.subCategory === subCat 
-                          ? { ...t, timeSpent: Math.max(0, (t.timeSpent || 0) + timePerTask) }
-                          : t
-                      );
-                      
-                      return newTasksByDate;
-                    });
-                  }
-                }
-              }
-            }}
-            style={{
-              fontSize: '11px',
-              color: '#333',
-              cursor: 'pointer',
-              fontFamily: 'Calibri, "微软雅黑", sans-serif',
-              minWidth: '15px',
-              width: '30px',
-              textAlign: 'right',
-              background: 'transparent',
-              border: 'none',
-              fontWeight: "normal",
-              display: "inline-block"
-            }}
-            title="点击修改子类别总时间（单位：分钟）"
-          >
-            {formatCategoryTime(subCategoryTotalTime)}
-          </span>
-        </div>
-      </div>
-      
-      {!isSubCollapsed && (
-        <SortableTaskList
-          tasks={subCatTasks}
-          category={c.name}
-          tasksByDate={tasksByDate} 
-          subCategory={subCat}
-          selectedDate={selectedDate}
-          getTaskCompletionType={getTaskCompletionType} 
-          isSortingMode={isSortingMode}
-          onSortingEnd={(newOrder) => {
-            const orderKey = `tasks_order_${c.name}_${subCat}`;
-            localStorage.setItem(orderKey, JSON.stringify(newOrder));
-            setTasksByDate(prev => ({ ...prev }));
-          }}
-          onDeleteTask={deleteTask}
-          onEditTime={editTaskTime}
-          onDeleteImage={handleDeleteImage}
-          onEditNote={editTaskNote}
-          onEditReflection={editTaskReflection}
-          onOpenEditModal={openTaskEditModal}
-          onShowImageModal={setShowImageModal}
-          toggleDone={toggleDone}
-          formatTimeNoSeconds={formatTimeNoSeconds}
-          formatTimeWithSeconds={formatTimeWithSeconds}
-          onMoveTask={moveTask}
-          categories={baseCategories}
-          setShowMoveModal={setShowMoveModal}
-          onUpdateProgress={handleUpdateProgress}
-          onUpdateExpValue={updateTaskExpValue} 
-          onEditSubTask={editSubTask}
-          onToggleSubTask={toggleSubTask}
-        />
-      )}
-    </div>
-  );
-});
+                    {!isSubCollapsed && (
+                      <SortableTaskList
+                        tasks={subCatTasks}
+                        category={c.name}
+                        tasksByDate={tasksByDate} 
+                        subCategory={subCat}
+                        selectedDate={selectedDate}
+                        getTaskCompletionType={getTaskCompletionType} 
+                        isSortingMode={isSortingMode}
+                        onSortingEnd={(newOrder) => {
+                          const orderKey = `tasks_order_${c.name}_${subCat}`;
+                          localStorage.setItem(orderKey, JSON.stringify(newOrder));
+                          setTasksByDate(prev => ({ ...prev }));
+                        }}
+                        onDeleteTask={deleteTask}
+                        onEditTime={editTaskTime}
+                        onDeleteImage={handleDeleteImage}
+                        onEditNote={editTaskNote}
+                        onEditReflection={editTaskReflection}
+                        onOpenEditModal={openTaskEditModal}
+                        onShowImageModal={setShowImageModal}
+                        toggleDone={toggleDone}
+                        formatTimeNoSeconds={formatTimeNoSeconds}
+                        formatTimeWithSeconds={formatTimeWithSeconds}
+                        onMoveTask={moveTask}
+                        categories={baseCategories}
+                        setShowMoveModal={setShowMoveModal}
+                        onUpdateProgress={handleUpdateProgress}
+                        onUpdateExpValue={updateTaskExpValue} 
+                        onEditSubTask={editSubTask}
+                        onToggleSubTask={toggleSubTask}
+                      />
+                    )}
+                  </div>
+                );
+              });
             })()
           ) : (
             <SortableTaskList
-              tasks={getCategoryTasks(c.name)}
+              tasks={filteredTasks}  // ✅ 使用 filteredTasks
               category={c.name}
               subCategory={null}
               selectedDate={selectedDate}
