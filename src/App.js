@@ -24482,6 +24482,7 @@ onSave={(newConfig) => {
 
 
 {/* 第三行：日期（周一到周日） */}
+{/* 第三行：日期（周一到周日） */}
 <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -24489,224 +24490,222 @@ onSave={(newConfig) => {
 }}>
   
   {weekDates.map((d) => {
-  const dateStr = d.date;
-  const isSelected = dateStr === selectedDate;
-   const isToday = dateStr === new Date().toISOString().split("T")[0];  
-  const dayTasks = tasksByDate[dateStr] || [];
-  
+    const dateStr = d.date;
+    const isSelected = dateStr === selectedDate;
+    const isToday = dateStr === new Date().toISOString().split("T")[0];
+    
+    const dayTasks = tasksByDate[dateStr] || [];
+    const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
+    
+    const dailyRating = dailyRatings[dateStr] || 0;
+    const studyEndTime = studyEndTimes[dateStr] || '';
+    
+    const getRatingColor = (rating) => {
+      switch(rating) {
+        case 5: return '#4CAF50';
+        case 4: return '#8BC34A';
+        case 3: return '#FFC107';
+        case 2: return '#FF9800';
+        case 1: return '#F44336';
+        default: return 'transparent';
+      }
+    };
+    
+    const learningTasks = dayTasks.filter(task => {
+      if (task.category === "本周任务") return false;
+      if (task.isRegularTask && !task.done) return false;
+      if (appMode === 'summer' && task.category === '校内') return false;
+      if (task.category === "生活") return false;
+      return true;
+    });
 
+    let totalCount = 0;
+    let completedCount = 0;
+    let abandonedCount = 0;
 
-  const hasCrossDateTask = dayTasks.some(task => task.crossDateId || task.dateRange);
-  
-  // 获取每日评分
-  const dailyRating = dailyRatings[dateStr] || 0;
-  const studyEndTime = studyEndTimes[dateStr] || '';
-  
-  const getRatingColor = (rating) => {
-    switch(rating) {
-      case 5: return '#4CAF50';
-      case 4: return '#8BC34A';
-      case 3: return '#FFC107';
-      case 2: return '#FF9800';
-      case 1: return '#F44336';
-      default: return 'transparent';
-    }
-  };
-  
- 
-const learningTasks = dayTasks.filter(task => {
-  if (task.category === "本周任务") return false;
-  if (task.isRegularTask && !task.done) return false;
-  // 暑假模式隐藏校内
-  if (appMode === 'summer' && task.category === '校内') return false;
-  // ✅ 新增：排除"生活"分类的任务
-  if (task.category === "生活") return false;
-  return true;
-});
-
-
-// ✅ 新的统计逻辑：有子任务的统计子任务，没子任务的统计母任务
-let totalCount = 0;
-let completedCount = 0;
-let abandonedCount = 0;
-
-learningTasks.forEach(task => {
-  const hasSubTasks = task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0;
-  
-  if (hasSubTasks) {
-    // 有子任务：统计子任务（母任务本身不计入）
-    task.subTasks.forEach(subTask => {
-      totalCount++;
-      if (subTask.done) {
-        completedCount++;
+    learningTasks.forEach(task => {
+      const hasSubTasks = task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0;
+      
+      if (hasSubTasks) {
+        task.subTasks.forEach(subTask => {
+          totalCount++;
+          if (subTask.done) completedCount++;
+        });
+      } else {
+        totalCount++;
+        if (task.done === true && task.abandoned !== true) completedCount++;
+        if (task.abandoned) abandonedCount++;
       }
     });
-  } else {
-    // 没有子任务：统计母任务本身
-    totalCount++;
-    if (task.done === true && task.abandoned !== true) {
-      completedCount++;
+
+    const incompleteCount = totalCount - completedCount - abandonedCount;
+
+    let numberColor = "#666";
+    let dotColor = "#666";
+
+    if (totalCount === 0) {
+      numberColor = "transparent";
+      dotColor = "transparent";
+    } else if (incompleteCount > 0) {
+      numberColor = "#f44336";
+      dotColor = "#f44336";
+    } else if (completedCount === totalCount) {
+      numberColor = "#4caf50";
+      dotColor = "#4caf50";
+    } else {
+      numberColor = "#999";
+      dotColor = "#999";
     }
-    if (task.abandoned) {
-      abandonedCount++;
-    }
-  }
-});
-
-
-// 计算未完成数量
-const incompleteCount = totalCount - completedCount - abandonedCount;
-
-// 设置颜色
-let numberColor = "#666";
-let dotColor = "#666";
-
-if (totalCount === 0) {
-  numberColor = "transparent";
-  dotColor = "transparent";
-} else if (incompleteCount > 0) {
-  // 有未完成的任务 → 红色
-  numberColor = "#f44336";
-  dotColor = "#f44336";
-} else if (completedCount === totalCount) {
-  // 全部完成 → 绿色
-  numberColor = "#4caf50";
-  dotColor = "#4caf50";
-} else {
-  // 没有未完成，但有放弃 → 灰色
-  numberColor = "#999";
-  dotColor = "#999";
-}
-  // 显示数字（有任务时才显示）
-  const showNumber = totalCount > 0;
-  
-  return (
-<div
-  key={dateStr}
-  onClick={() => setSelectedDate(dateStr)}
-  style={{
-    padding: "4px 6px",
-    borderBottom: isToday ? `1px solid #61A2Da` : "none",
-    textAlign: "center",
-    flex: 1,
-    minWidth: 0,
-    margin: "0 2px",
-    fontSize: 12,
-    cursor: "pointer",
-    backgroundColor: isSelected ? "#fff9c4" : (isToday ? "#e8f0fe" : "transparent"),
-    color: isToday ? "#61A2Da" : "#000",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    minHeight: "20px",
-    borderRadius: isToday ? "4px" : "0",
-    border: isToday ? "1px solid #61A2Da" : "none",
-    background: dailyRating > 0 
-      ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 0%, ${isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent')} 50%, ${getRatingColor(dailyRating)}20 100%)`
-      : (isSelected ? '#fff9c4' : (isToday ? '#e8f0fe' : 'transparent'))
-  }}
->
-  {/* 星期几 */}
-  <div style={{ 
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "center",
-    fontSize: 10,
-    fontWeight: isToday ? "bold" : "normal"
-  }}>
-    <span style={{ fontFamily: "sans-serif" }}>{d.label}</span>
-    {hasCrossDateTask && (
-      <span style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "10px",
-        height: "10px",
-        fontSize: "7px",
-        color: "#f44336",
-        marginLeft: "2px"
-      }}>
-        休
-      </span>
-    )}
-  </div>
-  
-  {/* 日期 */}
-  <div style={{ 
-    fontSize: 10,
-    fontFamily: "sans-serif",
-    fontWeight: isToday ? "bold" : "normal",
-    color: isToday ? "#61A2Da" : "#666"
-  }}>
-    {d.date.slice(5)}
-  </div>
-  
-  {/* 任务数量显示 - 固定宽度 */}
-  {showNumber && (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: "4px"
-    }}>
-      <div style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1px 6px",
-        backgroundColor: "#fff",
-        borderRadius: "4px",
-        border: `0.5px solid ${numberColor}`,
-        width: "36px"
-      }}>
-        <span style={{
-          fontSize: "9px",
-          fontWeight: "bold",
-          color: numberColor,
-          fontFamily: "sans-serif"
-        }}>
-          {completedCount}/{totalCount}
-        </span>
-      </div>
-    </div>
-  )}
-  
-  {/* 结束时间显示 - 固定宽度 */}
-  {studyEndTime && (() => {
-    const [hour, minute] = studyEndTime.split(':').map(Number);
-    const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+    
+    const showNumber = totalCount > 0;
+    
     return (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: "2px"
-      }}>
-        <div style={{
-          display: "inline-flex",
+      <div
+        key={dateStr}
+        onClick={() => setSelectedDate(dateStr)}
+        style={{
+          padding: "4px 6px",
+          borderBottom: "none",  // ❌ 去掉今天的下边框
+          textAlign: "center",
+          flex: 1,
+          minWidth: 0,
+          margin: "0 2px",
+          fontSize: 12,
+          cursor: "pointer",
+          backgroundColor: isSelected ? "#fff9c4" : "transparent",  // 选中时保持黄色
+          color: "#000",  // ❌ 去掉今天的蓝色文字，统一黑色
+          display: "flex",
+          flexDirection: "column",
           alignItems: "center",
+          minHeight: "20px",
+          borderRadius: "0",  // ❌ 去掉圆角
+          border: "none",  // ❌ 去掉边框
+          background: dailyRating > 0 
+            ? `linear-gradient(to bottom, ${isSelected ? '#fff9c4' : 'transparent'} 0%, ${isSelected ? '#fff9c4' : 'transparent'} 50%, ${getRatingColor(dailyRating)}20 100%)`
+            : (isSelected ? '#fff9c4' : 'transparent'),
+          position: "relative"
+        }}
+      >
+        {/* 👇 星期几行 - "今"字在左侧绝对定位，周几居中 */}
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
           justifyContent: "center",
-          padding: "1px 6px",
-          backgroundColor: "#fff",
-          borderRadius: "4px",
-          border: `0.5px solid ${isAfter9PM ? "#f44336" : "#4caf50"}`,
-          width: "36px"
+          fontSize: 10,
+          fontWeight: "normal",  // ❌ 去掉今天的加粗
+          position: "relative",
+          width: "100%"
         }}>
-          <span style={{
-            fontSize: "9px",
-            fontWeight: "500",
-            color: isAfter9PM ? "#f44336" : "#4caf50",
-            fontFamily: "sans-serif"
-          }}>
-            {studyEndTime}
-          </span>
+          {/* 👇 "今"字在左侧绝对定位 */}
+          {isToday && (
+            <span style={{
+              position: "absolute",
+               left: "2px", 
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: "8px",
+              fontWeight: "bold",
+              color: "#FF6B6B",
+              fontFamily: "sans-serif"
+            }}>
+              今
+            </span>
+          )}
+          
+          <span style={{ fontFamily: "sans-serif" }}>{d.label}</span>
+          
+          {hasCrossDateTask && (
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "10px",
+              height: "10px",
+              fontSize: "7px",
+              color: "#f44336",
+              marginLeft: "2px"
+            }}>
+              休
+            </span>
+          )}
         </div>
+        
+        {/* 日期 */}
+        <div style={{ 
+          fontSize: 10,
+          fontFamily: "sans-serif",
+          fontWeight: "normal",  // ❌ 去掉今天的加粗
+          color: "#666"  // ❌ 去掉今天的蓝色，统一灰色
+        }}>
+          {d.date.slice(5)}
+        </div>
+        
+        {/* 任务数量显示 */}
+        {showNumber && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: "4px"
+          }}>
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1px 6px",
+              backgroundColor: "#fff",
+              borderRadius: "4px",
+              border: `0.5px solid ${numberColor}`,
+              width: "36px"
+            }}>
+              <span style={{
+                fontSize: "9px",
+                fontWeight: "bold",
+                color: numberColor,
+                fontFamily: "sans-serif"
+              }}>
+                {completedCount}/{totalCount}
+              </span>
+            </div>
+          </div>
+        )}
+        
+        {/* 结束时间显示 */}
+        {studyEndTime && (() => {
+          const [hour, minute] = studyEndTime.split(':').map(Number);
+          const isAfter9PM = hour > 21 || (hour === 21 && minute > 0);
+          return (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "2px"
+            }}>
+              <div style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "1px 6px",
+                backgroundColor: "#fff",
+                borderRadius: "4px",
+                border: `0.5px solid ${isAfter9PM ? "#f44336" : "#4caf50"}`,
+                width: "36px"
+              }}>
+                <span style={{
+                  fontSize: "9px",
+                  fontWeight: "500",
+                  color: isAfter9PM ? "#f44336" : "#4caf50",
+                  fontFamily: "sans-serif"
+                }}>
+                  {studyEndTime}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     );
-  })()}
-</div>
-  );
-})}
+  })}
 </div>
 
 
