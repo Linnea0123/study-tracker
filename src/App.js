@@ -24469,6 +24469,119 @@ onSave={(newConfig) => {
     </span>
     <span>天</span>
   </div>
+
+
+ {/* 同步按钮 */}
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      if (isSyncing) {
+        alert('正在同步中，请稍候...');
+        return;
+      }
+      syncToGitHub();
+    }}
+    style={{
+      cursor: isSyncing ? "not-allowed" : "pointer",
+      opacity: isSyncing ? 0.5 : 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "28px",
+      height: "28px",
+      borderRadius: "50%",
+      
+      transition: "none"
+    }}
+    title="同步到云端"
+  >
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
+      <polyline points="10.5 11.5 12 10 13.5 11.5"/>
+      <line x1="12" x2="12" y1="10" y2="14"/>
+    </svg>
+  </div>
+
+  {/* 恢复按钮 */}
+  <div
+    onClick={(e) => {
+      e.stopPropagation();
+      if (isRestoring) return;
+      
+      const token = localStorage.getItem(PAGE_ID + '_github_token');
+      if (!token) {
+        alert('请先设置 GitHub Token');
+        setShowGitHubSyncModal(true);
+        return;
+      }
+      
+      if (window.confirm('⚠️ 确定要从云端恢复数据吗？\n\n此操作将：\n• 用云端数据覆盖本地数据\n• 丢失所有本地未同步的更改\n• 不可撤销！')) {
+        setIsRestoring(true);
+        
+        const forceRestoreFromCloud = async () => {
+          try {
+            const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+            let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
+            
+            if (!targetGistId) {
+              const latestGist = await getLatestStudyTrackerGist(token);
+              if (latestGist) {
+                targetGistId = latestGist.id;
+                localStorage.setItem('github_gist_id', targetGistId);
+              } else {
+                throw new Error('未找到云端备份数据');
+              }
+            }
+
+            const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!response.ok) throw new Error(`获取失败: ${response.status}`);
+
+            const gist = await response.json();
+            const content = gist.files['study-tracker-data.json']?.content;
+            const backupData = JSON.parse(content);
+
+            await handleRestoreData(backupData, 'overwrite');
+            
+          } catch (error) {
+            console.error('恢复失败:', error);
+            alert('恢复失败: ' + error.message);
+          } finally {
+            setIsRestoring(false);
+          }
+        };
+        
+        forceRestoreFromCloud();
+      }
+    }}
+    style={{
+      cursor: isRestoring ? "not-allowed" : "pointer",
+      opacity: isRestoring ? 0.5 : 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "28px",
+      height: "28px",
+      borderRadius: "50%",
+      
+      transition: "none"
+    }}
+    title="从云端恢复"
+  >
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
+      <polyline points="10.5 12.5 12 14 13.5 12.5"/>
+      <line x1="12" x2="12" y1="10" y2="14"/>
+    </svg>
+  </div>
+
+
+
 </div>
 
 
@@ -24600,7 +24713,7 @@ onSave={(newConfig) => {
           {isToday && (
             <span style={{
               position: "absolute",
-               left: "2px", 
+               left: "0px", 
               top: "50%",
               transform: "translateY(-50%)",
               fontSize: "8px",
