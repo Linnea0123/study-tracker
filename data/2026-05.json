@@ -1,0 +1,4925 @@
+{
+  "2026-05-07": [
+    {
+      "id": "1778123574823",
+      "text": "111\n222\n222",
+      "category": "校内",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "已完成222",
+        "note": "",
+        "timestamp": "2026-05-07T03:15:46.510Z"
+      }
+    },
+    {
+      "id": "1778127090380",
+      "text": "222",
+      "category": "校内",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "fontFamily: 'inherit',\n      resize: 'none',\n      overflow: 'hidden',\n      boxSizing: 'border-box',\n      minHeight: '40px'\n    }}",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1778141438422",
+      "text": "111",
+      "category": "校内",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "身体不适",
+        "note": "",
+        "timestamp": "2026-05-07T08:10:43.511Z"
+      }
+    },
+    {
+      "id": "1778120846304_2026-05-11",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "tags": [
+        {
+          "color": "#ff4444",
+          "name": "重要",
+          "textColor": "#fff"
+        }
+      ],
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": false,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    },
+    {
+      "id": "1778126941795_2026-05-07",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    },
+    {
+      "id": "1778138300661_fegui22z_2026-05-07_0",
+      "text": "1.看课作P47错题（列竖式计算进位忘写、横式答案忘写、相同数位对齐等），另外数学簿上练习了8题，规范列竖式计算的格式。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T07:18:20.661Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778138300661_4iy0h60m_2026-05-07_1",
+      "text": "2自主练习口算，明天口算练习",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T07:18:20.661Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778142085824_wxmy3inh_2026-05-07_0",
+      "text": "1️⃣背诵课文10《古诗二首》，准备生字笔顺、词语听写过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778142085824_t1v8w748_2026-05-07_1",
+      "text": "2️⃣背诵课堂作业本47页的歇后语。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778142085824_0ccun08v_2026-05-07_2",
+      "text": "3️⃣和大人一起读《孙悟空打妖怪》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778142085824_tidypdou_2026-05-07_3",
+      "text": "4️⃣自主练字:首、池、采、尖、角、早。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "note": "",
+        "reason": "没时间",
+        "timestamp": "2026-05-07T13:41:51.016Z"
+      }
+    },
+    {
+      "id": "1778142085824_a59c9xhp_2026-05-07_4",
+      "text": "5️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "note": "",
+        "reason": "没时间",
+        "timestamp": "2026-05-07T13:41:54.043Z"
+      }
+    },
+    {
+      "id": "1778142085824_hbpatm6f_2026-05-07_5",
+      "text": "【防震减灾疏散演练】",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "学生到校时间：5月8日周五早上7:45—8:00。",
+      "reflection": "",
+      "createdAt": "2026-05-07T08:21:25.824Z",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-08": [
+    {
+      "id": "1778199630283",
+      "text": "222",
+      "category": "校内",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1778201157749",
+      "text": "222",
+      "category": "科学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1778126941795_2026-05-08",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    },
+    {
+      "id": "1778222265669_jqeodpi3_2026-05-08_0",
+      "text": "1.看课作P48、49错题（全对12人：12、14、18、19、21、25、30、34、39、40、44、45）",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "题目没做完。+号没写。。。",
+      "createdAt": "2026-05-08T06:37:45.669Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778222265669_tn7tzcyd_2026-05-08_1",
+      "text": "2.口算练习纸订正并签名 ，自主练习口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T06:37:45.669Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778251844350_u69qhf57_2026-05-08_0",
+      "text": "1️⃣复习巩固期中练习，家长签字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T14:50:44.350Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778251844350_q9xo6hvu_2026-05-08_1",
+      "text": "2️⃣复习《古诗二首》，背诵并准备生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T14:50:44.350Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778251844350_dfyc3bfn_2026-05-08_2",
+      "text": "3️⃣预习《浪花》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T14:50:44.350Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778251844350_akcl7m4r_2026-05-08_3",
+      "text": "4️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T14:50:44.350Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "note": "",
+        "reason": "没时间",
+        "timestamp": "2026-05-08T14:50:59.137Z"
+      }
+    },
+    {
+      "id": "1778251844350_9r9x97zm_2026-05-08_4",
+      "text": "5️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-08T14:50:44.350Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-28": [
+    {
+      "id": "focus_1779939978151_u0oqogl8",
+      "text": "11",
+      "category": "校内",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T03:46:18.151Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 3,
+        "target": 100,
+        "unit": ""
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779966818268_32z55jg4_2026-05-28_0",
+      "text": "1️⃣预习《动物王国开大会》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 2100,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T11:13:38.268Z",
+      "timeRecords": [
+        {
+          "time": "19:56",
+          "change": 35,
+          "previousTotal": 0,
+          "newTotal": 35,
+          "note": "",
+          "timestamp": "2026-05-28T11:56:31.555Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779966818268_jbp8uz41_2026-05-28_1",
+      "text": "2️⃣复习巩固第六单元练习，家长签字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "99.5",
+      "createdAt": "2026-05-28T11:13:38.268Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779966818268_nruxvnv6_2026-05-28_2",
+      "text": "3️⃣复习巩固《一分钟》生字过关练习，家长签字。（全对的小朋友未下发）",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "全对",
+      "createdAt": "2026-05-28T11:13:38.268Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779966818268_sdj7jx94_2026-05-28_3",
+      "text": "4️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T11:13:38.268Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-28T13:52:39.551Z"
+      }
+    },
+    {
+      "id": "1779966818268_o3qk6lrs_2026-05-28_4",
+      "text": "5️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T11:13:38.268Z",
+      "timeRecords": [
+        {
+          "time": "19:13",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-28T11:13:43.094Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779966848982_omlzwrek_2026-05-28_0",
+      "text": "1.口算纸订正并签名，自主练习口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T11:14:08.982Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779966848982_y5y1rqd7_2026-05-28_1",
+      "text": "2.实践作业：",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T11:14:08.982Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1779976344662_zjr8lf1m",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T13:52:24.662Z",
+      "timeRecords": [
+        {
+          "time": "21:52",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-28T13:52:32.097Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 51,
+        "target": 91,
+        "unit": ""
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-20": [
+    {
+      "id": "focus_1779264671373_fa3cp2lg",
+      "text": "阅读",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:11:11.373Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1779264714309_0wcem3mq",
+      "text": "运动",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:11:54.309Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1779264734261_r90qrm2l",
+      "text": "阅读",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:12:14.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1779264736437_ips41jva",
+      "text": "运动",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:12:16.437Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779206418545_2026-05-20",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
+      "id": "1779264529593_la472pmu_2026-05-20_0",
+      "text": "1.订正口算纸并签名，自主练习100以内口算，先关注正确率。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:08:49.593Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779264529593_xmk3dr80_2026-05-20_1",
+      "text": "2.读读记记书P73，看课作P58错题（全对25人）。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:08:49.593Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779264543866_as7zsno8_2026-05-20_0",
+      "text": "1️⃣和大人一起读《夏夜多美》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:09:03.866Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779264543866_zufrzblr_2026-05-20_1",
+      "text": "2️⃣准备第六单元生字注音过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:09:03.866Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779264543866_k8t5u3y9_2026-05-20_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:09:03.866Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779264543866_4bmg3oo0_2026-05-20_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-20T08:09:03.866Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-01": [
+    {
+      "id": "1777449403971_5knrvd2p_2026-05-01_0",
+      "text": "1️⃣复习一到四单元，准备期中练习。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403970_0_0",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_2kh4xy6g_2026-05-01_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "timeRecords": [
+        {
+          "change": 60,
+          "newTotal": 60,
+          "note": "",
+          "previousTotal": 0,
+          "time": "18:24",
+          "timestamp": "2026-04-29T10:24:13.436Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_1_1",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-04-29"
+    },
+    {
+      "id": "1777449403971_894gkunb_2026-05-01_2",
+      "text": "3️⃣复习园地五，准备生字笔顺，词语听写过关，背诵日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_2_2",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_9ytchmf7_2026-05-01_3",
+      "text": "4️⃣复习巩固今天下发的生字过关纸和看图写话过关纸。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_3_3",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_zlxsnz0s_2026-05-01_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777449403971_u3j2hmqq_2026-05-01_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777522705553_k2qdvww8_2026-05-01_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-30T04:18:25.553Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-02": [
+    {
+      "id": "1777449403971_xv8ozfcc_2026-05-02_0",
+      "text": "1️⃣复习一到四单元，准备期中练习。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403970_0_0",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_w0lspjhu_2026-05-02_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "timeRecords": [
+        {
+          "change": 60,
+          "newTotal": 60,
+          "note": "",
+          "previousTotal": 0,
+          "time": "18:24",
+          "timestamp": "2026-04-29T10:24:13.436Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_1_1",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-04-29"
+    },
+    {
+      "id": "1777449403971_bh0acy62_2026-05-02_2",
+      "text": "3️⃣复习园地五，准备生字笔顺，词语听写过关，背诵日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_2_2",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_r6ygn5cu_2026-05-02_3",
+      "text": "4️⃣复习巩固今天下发的生字过关纸和看图写话过关纸。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_3_3",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_xf2elx6w_2026-05-02_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777449403971_m2irz4ad_2026-05-02_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777522705553_lx14b09g_2026-05-02_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-30T04:18:25.553Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-03": [
+    {
+      "id": "1777449403971_3uwoo51c_2026-05-03_0",
+      "text": "1️⃣复习一到四单元，准备期中练习。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403970_0_0",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_p6yymp18_2026-05-03_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "timeRecords": [
+        {
+          "change": 60,
+          "newTotal": 60,
+          "note": "",
+          "previousTotal": 0,
+          "time": "18:24",
+          "timestamp": "2026-04-29T10:24:13.436Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_1_1",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-04-29"
+    },
+    {
+      "id": "1777449403971_dep985oj_2026-05-03_2",
+      "text": "3️⃣复习园地五，准备生字笔顺，词语听写过关，背诵日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_2_2",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_hai21xui_2026-05-03_3",
+      "text": "4️⃣复习巩固今天下发的生字过关纸和看图写话过关纸。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_3_3",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_27rjyelb_2026-05-03_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777449403971_7nxisbwr_2026-05-03_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777522705553_sj2h3003_2026-05-03_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-30T04:18:25.553Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-04": [
+    {
+      "id": "1777449403971_yro5nq6q_2026-05-04_0",
+      "text": "1️⃣复习一到四单元，准备期中练习。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403970_0_0",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-05-04"
+    },
+    {
+      "id": "1777449403971_dkgc1b9w_2026-05-04_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "timeRecords": [
+        {
+          "change": 60,
+          "newTotal": 60,
+          "note": "",
+          "previousTotal": 0,
+          "time": "18:24",
+          "timestamp": "2026-04-29T10:24:13.436Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_1_1",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-04-29"
+    },
+    {
+      "id": "1777449403971_adcou2rc_2026-05-04_2",
+      "text": "3️⃣复习园地五，准备生字笔顺，词语听写过关，背诵日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_2_2",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-05-04"
+    },
+    {
+      "id": "1777449403971_7ymlxuz0_2026-05-04_3",
+      "text": "4️⃣复习巩固今天下发的生字过关纸和看图写话过关纸。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_3_3",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_eiy1rirf_2026-05-04_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777449403971_1pw2fn3u_2026-05-04_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true
+    },
+    {
+      "id": "1777522705553_ylnhapns_2026-05-04_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-30T04:18:25.553Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778126941795_2026-05-04",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    },
+    {
+      "id": "moved_1781485354195_816lcmo1",
+      "text": "学习少先队员六知六会",
+      "category": "校内",
+      "subCategory": "其他",
+      "done": true,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "updatedAt": "2026-06-15T01:02:34.195Z",
+      "createdAt": "2026-06-15T01:02:34.195Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    }
+  ],
+  "2026-05-05": [
+    {
+      "id": "1777449403971_rtz998z4_2026-05-05_0",
+      "text": "1️⃣复习一到四单元，准备期中练习。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403970_0_0",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-05-05"
+    },
+    {
+      "id": "1777449403971_i009zly2_2026-05-05_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "timeRecords": [
+        {
+          "change": 60,
+          "newTotal": 60,
+          "note": "",
+          "previousTotal": 0,
+          "time": "18:24",
+          "timestamp": "2026-04-29T10:24:13.436Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_1_1",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-04-29"
+    },
+    {
+      "id": "1777449403971_2zrdfxjk_2026-05-05_2",
+      "text": "3️⃣复习园地五，准备生字笔顺，词语听写过关，背诵日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_2_2",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ]
+    },
+    {
+      "id": "1777449403971_25awifka_2026-05-05_3",
+      "text": "4️⃣复习巩固今天下发的生字过关纸和看图写话过关纸。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1777449403971_3_3",
+      "crossDates": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05"
+      ],
+      "actualCompletedDate": "2026-05-05"
+    },
+    {
+      "id": "1777449403971_lfmv9opy_2026-05-05_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1777449403971_d57xu0w3_2026-05-05_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-29T07:56:43.971Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1777522705553_snj17d89_2026-05-05_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-04-30T04:18:25.553Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778126941795_2026-05-05",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-06": [
+    {
+      "id": "1778049582455_9nvbjwzp_2026-05-06_0",
+      "text": "第四单元练习卷订正并签名",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T06:39:42.455Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778049582455_q20zs54a_2026-05-06_1",
+      "text": "自主练习口算",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T06:39:42.455Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778055359527_mettuv30_2026-05-06_0",
+      "text": "1️⃣预习口语交际。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.527Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778055359527_3h6sgwvu_2026-05-06_1",
+      "text": "2️⃣明天中午全班填写《入队申请书》，请做好准备。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.527Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778055359528_gqj3grr1_2026-05-06_2",
+      "text": "3️⃣准备注音过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.528Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778055359528_f5fvw590_2026-05-06_3",
+      "text": "4️⃣本周古诗《别董大》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.528Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1778055359528_cpmgfk9y_2026-05-06_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.528Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "note": "",
+        "reason": "没时间",
+        "timestamp": "2026-05-07T04:07:38.364Z"
+      }
+    },
+    {
+      "id": "1778055359528_lsjegxzz_2026-05-06_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-06T08:15:59.528Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "note": "",
+        "reason": "没时间",
+        "timestamp": "2026-05-07T04:07:45.005Z"
+      }
+    },
+    {
+      "id": "1778126941795_2026-05-06",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-09": [
+    {
+      "id": "1778126941795_2026-05-09",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-10": [
+    {
+      "id": "1778126941795_2026-05-10",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-11": [
+    {
+      "id": "1778142159920_2026-05-11",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-12": [
+    {
+      "id": "1778142159920_2026-05-12",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-13": [
+    {
+      "id": "1778142159920_2026-05-13",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-14": [
+    {
+      "id": "1778142159920_2026-05-14",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-15": [
+    {
+      "id": "1778142159920_2026-05-15",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-16": [
+    {
+      "id": "1778142159920_2026-05-16",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-17": [
+    {
+      "id": "1778142159920_2026-05-17",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-18": [
+    {
+      "id": "1779091251420_dorwr1qg_2026-05-18_0",
+      "text": "1.读读记记书P70，看课作P56错题。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T08:00:51.421Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-20T08:49:09.336Z"
+      }
+    },
+    {
+      "id": "1779091251421_qmj3l5eq_2026-05-18_1",
+      "text": "2.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T08:00:51.421Z",
+      "timeRecords": [
+        {
+          "change": 20,
+          "newTotal": 20,
+          "note": "",
+          "previousTotal": 0,
+          "time": "19:58",
+          "timestamp": "2026-05-18T11:58:49.995Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779103564723_6jadajgk_2026-05-18_0",
+      "text": "1️⃣准备园地六生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T11:26:04.723Z",
+      "timeRecords": [
+        {
+          "change": 20,
+          "newTotal": 20,
+          "note": "",
+          "previousTotal": 0,
+          "time": "19:32",
+          "timestamp": "2026-05-18T11:32:14.321Z"
+        }
+      ],
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779103564723_b268ruz1_2026-05-18_1",
+      "text": "2️⃣本周古诗《春夜喜雨》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T11:26:04.723Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779103564723_konmhbtf_2026-05-18_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T11:26:04.723Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-20T08:48:54.193Z"
+      }
+    },
+    {
+      "id": "1779103564723_zxey694b_2026-05-18_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-18T11:26:04.723Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1779176671510_5c1o60ro",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T07:44:31.510Z",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779206418545_2026-05-18",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    }
+  ],
+  "2026-05-19": [
+    {
+      "id": "1779177193908_olxwgzf5_2026-05-19_0",
+      "text": "1️⃣背诵园地六日积月累。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T07:53:13.908Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-20T08:48:32.961Z"
+      }
+    },
+    {
+      "id": "1779177193908_1scjuil2_2026-05-19_1",
+      "text": "2️⃣复习第五单元，准备单元过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T07:53:13.908Z",
+      "timeRecords": [
+        {
+          "time": "21:37",
+          "change": 20,
+          "previousTotal": 0,
+          "newTotal": 20,
+          "note": "",
+          "timestamp": "2026-05-19T13:37:55.678Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779177193908_svsl8kfk_2026-05-19_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T07:53:13.908Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-20T08:48:37.503Z"
+      }
+    },
+    {
+      "id": "1779177193908_os3b5fr0_2026-05-19_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T07:53:13.908Z",
+      "timeRecords": [
+        {
+          "time": "21:37",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-19T13:37:59.507Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779178026056_doizoebg_2026-05-19_0",
+      "text": "1.读读记记书上P71、72。看课作P57错题。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T08:07:06.056Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779178026056_09tjfdh4_2026-05-19_1",
+      "text": "2.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-19T08:07:06.056Z",
+      "timeRecords": [
+        {
+          "time": "21:38",
+          "change": 20,
+          "previousTotal": 0,
+          "newTotal": 20,
+          "note": "",
+          "timestamp": "2026-05-19T13:38:05.848Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779206418545_2026-05-19",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    }
+  ],
+  "2026-05-21": [
+    {
+      "id": "1779206418545_2026-05-21",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
+      "id": "1779347962898_dp4p71le_2026-05-21_0",
+      "text": "1.看课作P59、60、61错题。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-21T07:19:22.898Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779347962898_ajes66yg_2026-05-21_1",
+      "text": "2.自主练习口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-21T07:19:22.898Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779350636613_q0eb2omu_2026-05-21_0",
+      "text": "1️⃣准备第六单元看拼音写词语过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-21T08:03:56.613Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779350636613_tzcey8os_2026-05-21_1",
+      "text": "2️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-21T08:03:56.613Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-22T01:01:02.199Z"
+      }
+    },
+    {
+      "id": "1779350636613_dokdoscr_2026-05-21_2",
+      "text": "3️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-21T08:03:56.613Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-22": [
+    {
+      "id": "1779206418545_2026-05-22",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
+      "id": "1779436623736_2yilerbc_2026-05-22_0",
+      "text": "1️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_0_dwnp6hfd",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_e5og4l71_2026-05-22_1",
+      "text": "2️⃣复习巩固第五单元练习，家长签字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_1_vnn2bskz",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_2xpseceg_2026-05-22_2",
+      "text": "3️⃣预习课文14《文具的家》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_2_rv6w3imk",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_8nv1dsgr_2026-05-22_3",
+      "text": "4️⃣自主复习第六单元。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_3_7v3ci21j",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_l5nkykoi_2026-05-22_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623736_zq14dcf2_2026-05-22_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623737_t0jyvr83_2026-05-22_6",
+      "text": "7️⃣周一上交一份以“24节气”为主题的绘画作品。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623737_6_gl1xufd4",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    }
+  ],
+  "2026-05-23": [
+    {
+      "id": "1779206418545_2026-05-23",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
+      "id": "1779436623736_vg93jtx5_2026-05-23_0",
+      "text": "1️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_0_dwnp6hfd",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_v52qevsg_2026-05-23_1",
+      "text": "2️⃣复习巩固第五单元练习，家长签字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_1_vnn2bskz",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_9hjmvcp2_2026-05-23_2",
+      "text": "3️⃣预习课文14《文具的家》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_2_rv6w3imk",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_sjmufvew_2026-05-23_3",
+      "text": "4️⃣自主复习第六单元。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_3_7v3ci21j",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_w53tyzt8_2026-05-23_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623737_8dxylcvr_2026-05-23_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623737_2k0bzh0v_2026-05-23_6",
+      "text": "7️⃣周一上交一份以“24节气”为主题的绘画作品。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623737_6_gl1xufd4",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    }
+  ],
+  "2026-05-24": [
+    {
+      "id": "1779206418545_2026-05-24",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
+      "id": "1779436623736_8buf57u3_2026-05-24_0",
+      "text": "1️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_0_dwnp6hfd",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_25x45sc2_2026-05-24_1",
+      "text": "2️⃣复习巩固第五单元练习，家长签字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_1_vnn2bskz",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_c1aw6rhg_2026-05-24_2",
+      "text": "3️⃣预习课文14《文具的家》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_2_rv6w3imk",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_xhm6h0en_2026-05-24_3",
+      "text": "4️⃣自主复习第六单元。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623736_3_7v3ci21j",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    },
+    {
+      "id": "1779436623736_ariic2fo_2026-05-24_4",
+      "text": "5️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.736Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623737_0vnp5nnp_2026-05-24_5",
+      "text": "6️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779436623737_dh2luibq_2026-05-24_6",
+      "text": "7️⃣周一上交一份以“24节气”为主题的绘画作品。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-22T07:57:03.737Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1779436623737_6_gl1xufd4",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-22",
+        "2026-05-23",
+        "2026-05-24"
+      ]
+    }
+  ],
+  "2026-05-25": [
+    {
+      "id": "1779699219570_w6f995kq_2026-05-25_0",
+      "text": "1.自主练习100以内口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:39.570Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779699219570_s2oi9e2k_2026-05-25_1",
+      "text": "2.预习书P78、79“认识人民币”，在家认一认人民币（纸币和硬币），明天带学具人民币。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:39.570Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779699230420_2v5ij1tw_2026-05-25_0",
+      "text": "1️⃣熟读《文具的家》，准备生字过关",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:50.420Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779699230420_2qfbgwyn_2026-05-25_1",
+      "text": "2️⃣复习第六单元。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:50.420Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779699230420_4malvn4i_2026-05-25_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:50.420Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-26T04:57:04.318Z"
+      }
+    },
+    {
+      "id": "1779699230420_fr8v88sr_2026-05-25_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-25T08:53:50.420Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-26": [
+    {
+      "id": "1779775504067_ag65ow5h_2026-05-26_0",
+      "text": "1.今天学习了“认识人民币”，回家再认一认、换一换，根据活动要求做一做。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T06:05:04.067Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779775504067_ecphm6q3_2026-05-26_1",
+      "text": "2.自主练习100以内口算。 ",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T06:05:04.067Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1779782463484_wuuha3up_2026-05-26_0",
+      "text": "1️⃣预习《一分钟》。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T08:01:03.484Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779782463484_rry3el15_2026-05-26_1",
+      "text": "2️⃣认真书写一首与二十四节气或四季有关的诗，写在田字格上。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T08:01:03.484Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779782463484_cjyqiurh_2026-05-26_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T08:01:03.484Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779782463484_pnhie1co_2026-05-26_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-26T08:01:03.484Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-05-27": [
+    {
+      "id": "1779868937051_vomapad0_2026-05-27_0",
+      "text": "1️⃣熟读《一分钟》，完成课后第二题，准备生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-27T08:02:17.051Z",
+      "timeRecords": [
+        {
+          "time": "21:06",
+          "change": 20,
+          "previousTotal": 0,
+          "newTotal": 20,
+          "note": "",
+          "timestamp": "2026-05-27T13:06:26.513Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779868937051_nrlchsjx_2026-05-27_1",
+      "text": "2️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-27T08:02:17.051Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-27T14:27:03.085Z"
+      }
+    },
+    {
+      "id": "1779868937051_2ciawqpi_2026-05-27_2",
+      "text": "3️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-27T08:02:17.051Z",
+      "timeRecords": [
+        {
+          "time": "19:00",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-27T11:00:39.447Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779869088421_if27f8ve_2026-05-27_0",
+      "text": "1.今天学了“买卖我做主”，用学具钱兑换零钱，学会算钱、付钱、找零。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 900,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-27T08:04:48.421Z",
+      "timeRecords": [
+        {
+          "time": "21:06",
+          "change": 15,
+          "previousTotal": 0,
+          "newTotal": 15,
+          "note": "",
+          "timestamp": "2026-05-27T13:06:35.260Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1779869088421_bf8e7wnh_2026-05-27_1",
+      "text": "2.自主练习口算。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 1200,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-27T08:04:48.421Z",
+      "timeRecords": [
+        {
+          "time": "21:06",
+          "change": 20,
+          "previousTotal": 0,
+          "newTotal": 20,
+          "note": "",
+          "timestamp": "2026-05-27T13:06:31.193Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "focus_1779940497290_a5u1s0ua",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-28T03:54:57.290Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 48,
+        "target": 91,
+        "unit": ""
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    }
+  ],
+  "2026-05-29": [
+    {
+      "id": "focus_1780060793576_w46z5m78",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:19:53.576Z",
+      "timeRecords": [
+        {
+          "time": "21:20",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-29T13:20:04.975Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 54,
+        "target": 91,
+        "unit": ""
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1780060876658_q2zk5hcy_2026-05-29_0",
+      "text": "1.第五单元练习卷订正并签名，复习第六、七单元。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876658_0_noid04y5",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060876659_dhb0an63_2026-05-29_1",
+      "text": "2.自主练习100以内口算，关注正确率。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 2100,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [
+        {
+          "time": "16:53",
+          "change": 35,
+          "previousTotal": 0,
+          "newTotal": 35,
+          "note": "",
+          "timestamp": "2026-05-30T08:53:20.188Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876659_1_z49mtyb2",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060896726_0lemc4cm_2026-05-29_0",
+      "text": "1️⃣熟读课文《动物王国开大会》，准备生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1380,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "15:51",
+          "change": 23,
+          "previousTotal": 0,
+          "newTotal": 23,
+          "note": "",
+          "timestamp": "2026-05-31T07:51:50.859Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_0_z1o1of3p",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060896726_43yl6dnc_2026-05-29_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 4560,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "14:44",
+          "change": 46,
+          "previousTotal": 0,
+          "newTotal": 46,
+          "note": "",
+          "timestamp": "2026-05-31T06:44:48.578Z"
+        },
+        {
+          "time": "15:23",
+          "change": 30,
+          "previousTotal": 46,
+          "newTotal": 76,
+          "note": "",
+          "timestamp": "2026-05-31T07:23:23.657Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_1_pzp72sd7",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060896726_cicwj4y2_2026-05-29_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "写字哇哇哭。",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "21:21",
+          "change": 60,
+          "previousTotal": 0,
+          "newTotal": 60,
+          "note": "",
+          "timestamp": "2026-05-29T13:21:48.655Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1780060896726_hgla71q6_2026-05-29_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.727Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-31T12:57:40.969Z"
+      }
+    }
+  ],
+  "2026-05-30": [
+    {
+      "id": "1780060876659_it21jhtk_2026-05-30_0",
+      "text": "1.第五单元练习卷订正并签名，复习第六、七单元。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876658_0_noid04y5",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060876659_bged4b7e_2026-05-30_1",
+      "text": "2.自主练习100以内口算，关注正确率。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 2100,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [
+        {
+          "time": "16:53",
+          "change": 35,
+          "previousTotal": 0,
+          "newTotal": 35,
+          "note": "",
+          "timestamp": "2026-05-30T08:53:20.188Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876659_1_z49mtyb2",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": "2026-05-30"
+    },
+    {
+      "id": "1780060896726_qhi7qn1a_2026-05-30_0",
+      "text": "1️⃣熟读课文《动物王国开大会》，准备生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1380,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "15:51",
+          "change": 23,
+          "previousTotal": 0,
+          "newTotal": 23,
+          "note": "",
+          "timestamp": "2026-05-31T07:51:50.859Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_0_z1o1of3p",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060896726_4or6sqmn_2026-05-30_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 4560,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "14:44",
+          "change": 46,
+          "previousTotal": 0,
+          "newTotal": 46,
+          "note": "",
+          "timestamp": "2026-05-31T06:44:48.578Z"
+        },
+        {
+          "time": "15:23",
+          "change": 30,
+          "previousTotal": 46,
+          "newTotal": 76,
+          "note": "",
+          "timestamp": "2026-05-31T07:23:23.657Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_1_pzp72sd7",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": null
+    },
+    {
+      "id": "1780060896726_q6ds7ywi_2026-05-30_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 2400,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "09:23",
+          "change": 40,
+          "previousTotal": 0,
+          "newTotal": 40,
+          "note": "",
+          "timestamp": "2026-05-30T01:23:02.141Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1780060896727_hqu2jjac_2026-05-30_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.727Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "abandoned": true,
+      "abandonInfo": {
+        "reason": "没时间",
+        "note": "",
+        "timestamp": "2026-05-31T12:57:36.061Z"
+      }
+    },
+    {
+      "id": "focus_1780131172915_gv1595f6",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-30T08:52:52.916Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 57,
+        "target": 91,
+        "unit": ""
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "focus_1780236845745_ybdibygu",
+      "text": "跳操",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-31T14:14:05.745Z",
+      "timeRecords": [
+        {
+          "time": "22:14",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-31T14:14:23.437Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    }
+  ],
+  "2026-05-31": [
+    {
+      "id": "1780060876659_cpwtu58l_2026-05-31_0",
+      "text": "1.第五单元练习卷订正并签名，复习第六、七单元。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876658_0_noid04y5",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": "2026-05-31"
+    },
+    {
+      "id": "1780060876659_tsn0epmh_2026-05-31_1",
+      "text": "2.自主练习100以内口算，关注正确率。",
+      "category": "校内",
+      "subCategory": "数学",
+      "done": true,
+      "timeSpent": 2100,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:16.659Z",
+      "timeRecords": [
+        {
+          "time": "16:53",
+          "change": 35,
+          "previousTotal": 0,
+          "newTotal": 35,
+          "note": "",
+          "timestamp": "2026-05-30T08:53:20.188Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060876659_1_z49mtyb2",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": "2026-05-31"
+    },
+    {
+      "id": "1780060896726_ksl2hguw_2026-05-31_0",
+      "text": "1️⃣熟读课文《动物王国开大会》，准备生字过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1380,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "15:51",
+          "change": 23,
+          "previousTotal": 0,
+          "newTotal": 23,
+          "note": "",
+          "timestamp": "2026-05-31T07:51:50.859Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_0_z1o1of3p",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": "2026-05-31"
+    },
+    {
+      "id": "1780060896726_uo21gyy0_2026-05-31_1",
+      "text": "2️⃣准备看图写话过关。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 4560,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "14:44",
+          "change": 46,
+          "previousTotal": 0,
+          "newTotal": 46,
+          "note": "",
+          "timestamp": "2026-05-31T06:44:48.578Z"
+        },
+        {
+          "time": "15:23",
+          "change": 30,
+          "previousTotal": 46,
+          "newTotal": 76,
+          "note": "",
+          "timestamp": "2026-05-31T07:23:23.657Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "crossDateId": "cross_1780060896726_1_pzp72sd7",
+      "isCrossDate": true,
+      "crossDates": [
+        "2026-05-29",
+        "2026-05-30",
+        "2026-05-31"
+      ],
+      "actualCompletedDate": "2026-05-31"
+    },
+    {
+      "id": "1780060896726_s1vfp2yx_2026-05-31_2",
+      "text": "3️⃣自主练字。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 2700,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.726Z",
+      "timeRecords": [
+        {
+          "time": "09:16",
+          "change": 45,
+          "previousTotal": 0,
+          "newTotal": 45,
+          "note": "",
+          "timestamp": "2026-05-31T01:16:05.442Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1780060896727_m8v6diwx_2026-05-31_3",
+      "text": "4️⃣课外阅读。",
+      "category": "校内",
+      "subCategory": "语文",
+      "done": true,
+      "timeSpent": 1740,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-29T13:21:36.727Z",
+      "timeRecords": [
+        {
+          "time": "20:57",
+          "change": 29,
+          "previousTotal": 0,
+          "newTotal": 29,
+          "note": "",
+          "timestamp": "2026-05-31T12:57:24.741Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1780190791466",
+      "text": "计算错题汇总 练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 3600,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [
+        {
+          "time": "10:54",
+          "change": 60,
+          "previousTotal": 0,
+          "newTotal": 60,
+          "note": "",
+          "timestamp": "2026-05-31T02:54:56.181Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1780196073293",
+      "text": "标点符号 练习",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 720,
+      "note": "",
+      "reflection": "不错。",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1780196181000",
+      "text": "的地得 练习",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 720,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [
+        {
+          "time": "10:56",
+          "change": 12,
+          "previousTotal": 0,
+          "newTotal": 12,
+          "note": "",
+          "timestamp": "2026-05-31T02:56:26.489Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "focus_1780216582780_m4u47ww2",
+      "text": "RAZ D 朗读",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-31T08:36:22.780Z",
+      "timeRecords": [
+        {
+          "time": "16:37",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-31T08:37:02.200Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 60,
+        "target": 91,
+        "unit": ""
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1780230317218",
+      "text": "Bluey 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 840,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [
+        {
+          "time": "20:25",
+          "change": 14,
+          "previousTotal": 0,
+          "newTotal": 14,
+          "note": "",
+          "timestamp": "2026-05-31T12:25:29.111Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "focus_1780236868946_iif3kale",
+      "text": "跳操",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-05-31T14:14:28.946Z",
+      "timeRecords": [
+        {
+          "time": "22:14",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-05-31T14:14:40.124Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    }
+  ]
+}
