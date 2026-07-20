@@ -2062,6 +2062,78 @@
         false
       ],
       "isRepeating": false
+    },
+    {
+      "id": "1784531767122_gcjdkqz9",
+      "text": "预习",
+      "category": "语文",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:07.122Z"
+    },
+    {
+      "id": "1784531767122_w2n1b91y",
+      "text": "二 乘法",
+      "category": "数学",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:07.122Z"
+    },
+    {
+      "id": "1784531767122_ywq5o4fk",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:07.122Z"
     }
   ],
   "2026-07-14": [
@@ -3166,6 +3238,248 @@
         false
       ],
       "isRepeating": false
+    }
+  ],
+  "2026-07-19": [
+    {
+      "id": "1784531775943_f9o485uf",
+      "text": "预习",
+      "category": "语文",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_c8ta4gh4",
+      "text": "古诗古文",
+      "category": "语文",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_ooid8mox",
+      "text": "二 乘法",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_81gcsv1i",
+      "text": "计算练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_7n1qqm0w",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_h9vkwke6",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_qjs9ewfy",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_udic56m6",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_izmixsbp",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
+    },
+    {
+      "id": "1784531775943_ag7r6bth",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-20T07:16:15.943Z"
     }
   ]
 }
