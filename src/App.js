@@ -6,7 +6,48 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 
+// ===== GitHub 同步配置 =====
+function getGitHubConfig() {
+  // 1. 先从 localStorage 读取
+  let token = localStorage.getItem('github_token');
+  let owner = localStorage.getItem('github_owner');
+  let repo = localStorage.getItem('github_repo');
+  
+  // 2. 如果有任何一项缺失，弹出输入框
+  if (!token || !owner || !repo) {
+    // ✅ 默认值直接填好，用户只需要输入 Token
+    token = prompt('🔑 请输入你的 GitHub Token（需要 repo 权限）:');
+    owner = prompt('👤 请输入你的 GitHub 用户名:', 'Linnea0123');    // ← 默认填好
+    repo = prompt('📁 请输入仓库名:', 'study-tracker');              // ← 默认填好
+    
+    if (token && owner && repo) {
+      localStorage.setItem('github_token', token);
+      localStorage.setItem('github_owner', owner);
+      localStorage.setItem('github_repo', repo);
+    }
+  }
+  
+  return { token, owner, repo };
+}
 
+// ===== 工具函数：获取当前月份 =====
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+
+// 辅助函数：支持中文的 Base64 编解码
+// ========================================
+function utf8ToBase64(str) {
+  // 处理中文：先 encodeURIComponent 转成 %XX 格式，再 unescape 转成字节，最后 btoa
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function base64ToUtf8(str) {
+  // 解码：先 atob 解码，再 escape 转成 %XX 格式，最后 decodeURIComponent 还原中文
+  return decodeURIComponent(escape(atob(str)));
+}
 
 
 const GradeModal = ({ onClose, isVisible }) => {
@@ -5602,10 +5643,9 @@ const handleManualBackup = async () => {
 
 
 
-
 const GitHubSyncModal = ({ config, onSave, onClose }) => {
   const [token, setToken] = useState(config.token || '');
-const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : false); // ✅ 改成 false
+  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : false);
   const [gistId, setGistId] = useState(config.gistId || '46c9f5bb3a6a62057759293b0399a15c');
 
   // 获取 Token 后四位
@@ -5614,9 +5654,8 @@ const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.
     return tokenValue.slice(-4);
   };
 
-  // ✅ 修改这里：期望的后四位改为 ocb0
   const expectedSuffix = 'ocb0';
-   const hasAutoSavedRef = useRef(false);  // <-- 添加这行
+  const hasAutoSavedRef = useRef(false);
 
   const handleSave = () => {
     if (!token.trim()) {
@@ -5667,7 +5706,6 @@ const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.
             value={token}
             onChange={(e) => {
               setToken(e.target.value);
-              // 用户手动修改时，重置自动保存标记
               hasAutoSavedRef.current = false;
             }}
             placeholder="输入 GitHub Token"
@@ -5681,7 +5719,6 @@ const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.
             }}
           />
           
-          {/* 显示后四位验证状态 */}
           {token.length >= 4 && (
             <div style={{ 
               fontSize: 12, 
@@ -5689,7 +5726,7 @@ const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.
               color: getTokenSuffix(token) === expectedSuffix ? '#4caf50' : '#f44336'
             }}>
               Token 后四位: <strong>{getTokenSuffix(token)}</strong>
-              {getTokenSuffix(token) === expectedSuffix ? ' ✓ 正确' : ' ✗ 不正确（应为 a15c）'}
+              {getTokenSuffix(token) === expectedSuffix ? ' ✓ 正确' : ' ✗ 不正确（应为 ocb0）'}
             </div>
           )}
           
@@ -15140,6 +15177,8 @@ useEffect(() => {
 const [showDailyTaskManager, setShowDailyTaskManager] = useState(false);
 const [newDailyTaskText, setNewDailyTaskText] = useState('');
 
+
+
 // ========== 成绩记录相关状态 ==========
 // 在 GradeModal 组件中，找到 grades 的 useState 并替换为：
 
@@ -15408,8 +15447,113 @@ const [showTemplateEditModal, setShowTemplateEditModal] = useState(false);
 
   const [tasksByDate, setTasksByDate] = useState({});
   // ============================================================
-// 在 tasksByDate 定义之后，添加以下所有代码
-// ============================================================
+// 从 GitHub 加载数据（按月分文件）
+// ========================================
+async function loadFromGitHub() {
+  const config = getGitHubConfig();  // ← 在函数内部获取
+  const month = getCurrentMonth();
+  const path = `data/${month}.json`;
+  
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+    // ... 后续代码
+  } catch (error) {
+    console.error('❌ 加载数据失败:', error);
+    return { tasksByDate: {}, sha: null };
+  }
+}
+
+// ========================================
+// 保存数据到 GitHub（按月分文件）
+// ========================================
+async function saveToGitHub(tasksByDate, sha = null) {
+  function utf8ToBase64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  
+  const config = getGitHubConfig();
+  const month = getCurrentMonth();
+  const path = `data/${month}.json`;
+  
+  if (!config.token || !config.owner || !config.repo) {
+    console.error('❌ GitHub 配置不完整，无法保存');
+    return null;
+  }
+  
+  const content = JSON.stringify(tasksByDate, null, 2);
+  
+  // ✅ 先检查文件是否存在
+  let currentSha = sha;
+  if (!currentSha) {
+    try {
+      const checkRes = await fetch(
+        `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${config.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (checkRes.ok) {
+        const fileData = await checkRes.json();
+        currentSha = fileData.sha;
+      }
+    } catch (e) {
+      // 文件不存在，继续创建
+      console.log('📂 文件不存在，将创建新文件');
+    }
+  }
+  
+  const body = {
+    message: `更新 ${month} 数据 - ${new Date().toLocaleString()}`,
+    content: utf8ToBase64(content)
+  };
+  
+  if (currentSha) {
+    body.sha = currentSha;
+  }
+  
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${config.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ ${month} 数据已同步到 GitHub`);
+      return result.content.sha;
+    } else {
+      const error = await response.json();
+      console.error('❌ 保存失败:', error);
+      
+      // ✅ 如果是 404，提示用户创建文件夹
+      if (response.status === 404) {
+        alert('❌ 仓库中没有 data 文件夹！\n\n请在 GitHub 仓库中创建 data 文件夹后再试。');
+      }
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ 保存失败:', error);
+    return null;
+  }
+}
 
 // ===== 1. getTodayStats（依赖 tasksByDate） =====
 const getTodayStats = useCallback((date) => {
@@ -17230,41 +17374,6 @@ if (backupData.expData) {
   saveMainData
 ]);  
 
-
-
-const getDataHash = useCallback(() => {
-  const taskHash = [];
-  Object.entries(tasksByDate).forEach(([date, tasks]) => {
-    tasks.forEach(task => {
-      taskHash.push({
-        id: task.id,
-        text: task.text,
-        done: task.done,
-        timeSpent: task.timeSpent,
-        updatedAt: task.updatedAt || task.createdAt
-      });
-    });
-  });
-  
-  const reflectionHash = Object.entries(dailyReflections).map(([date, content]) => ({
-    date,
-    content: typeof content === 'string' ? content : content?.content || ''
-  }));
-  
-  return JSON.stringify({
-    tasks: taskHash,
-    reflections: reflectionHash,
-    monthTasksCount: monthTasks.length,
-  
-    gradesCount: grades.length,
-    timestamp: Date.now()
-  });
-}, [tasksByDate, dailyReflections, monthTasks, grades]);
-// 
-
-
-
-// 替换 syncToGitHub 函数
 // 替换 syncToGitHub 函数
 const syncToGitHub = useCallback(async (silent = false) => {
   if (isSyncing) {
@@ -17459,6 +17568,246 @@ const syncToGitHub = useCallback(async (silent = false) => {
   categoryColors,
   isSyncing
 ]);
+
+// 在 syncToGitHub 函数后面添加这个函数
+const forceRestoreFromCloud = async () => {
+  try {
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+
+    let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
+    
+    // 如果没有保存的 Gist ID，使用默认值
+    if (!targetGistId) {
+      targetGistId = '46c9f5bb3a6a62057759293b0399a15c';
+      localStorage.setItem('github_gist_id', targetGistId);
+      localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
+    }
+
+    console.log('📡 正在从 Gist 获取数据:', targetGistId);
+
+    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`获取失败: ${response.status} - ${response.statusText}`);
+    }
+
+    const gist = await response.json();
+    console.log('✅ Gist 获取成功');
+
+    // 检查文件是否存在
+    const fileContent = gist.files?.['study-tracker-data.json']?.content;
+    if (!fileContent) {
+      throw new Error('未找到 study-tracker-data.json 文件');
+    }
+
+    console.log('📄 文件内容长度:', fileContent.length);
+
+    // 尝试解析 JSON
+    let backupData;
+    try {
+      backupData = JSON.parse(fileContent);
+    } catch (parseError) {
+      console.error('❌ JSON 解析失败:', parseError);
+      const preview = fileContent.substring(0, 200) + '...';
+      console.log('📄 文件内容预览:', preview);
+      throw new Error(`数据格式错误: ${parseError.message}\n请检查 Gist 中的数据是否完整。`);
+    }
+
+    // 验证数据完整性
+    if (!backupData.tasksByDate && !backupData.tasks) {
+      throw new Error('无效的数据格式：缺少 tasksByDate 或 tasks 字段');
+    }
+
+    console.log('✅ 数据解析成功，包含字段:', Object.keys(backupData));
+
+    // 显示数据概览
+    const taskCount = Object.keys(backupData.tasksByDate || backupData.tasks || {}).length;
+    const confirmMsg = `确定要从云端恢复数据吗？\n\n` +
+      `📊 数据概览：\n` +
+      `• 任务天数: ${taskCount}\n` +
+      `• 包含评分: ${backupData.dailyRatings ? '✅' : '❌'}\n` +
+      `• 包含复盘: ${backupData.dailyReflections ? '✅' : '❌'}\n` +
+      `• 包含经验数据: ${backupData.expData ? '✅' : '❌'}\n` +
+      `• 同步时间: ${backupData.syncTime ? new Date(backupData.syncTime).toLocaleString() : '未知'}\n\n` +
+      `⚠️ 这将覆盖当前所有本地数据！`;
+
+    if (!window.confirm(confirmMsg)) {
+      setIsRestoring(false);
+      return;
+    }
+
+    // 执行恢复
+    await handleRestoreData(backupData, 'overwrite');
+    
+  } catch (error) {
+    console.error('❌ 恢复失败:', error);
+    alert(`恢复失败: ${error.message}\n\n请检查：\n1. 网络连接是否正常\n2. Gist ID 是否正确\n3. Token 是否有 gist 权限`);
+    setIsRestoring(false);
+  }
+};  
+
+// ✅ 在这里插入 smartSyncAllMonths 函数
+// ========================================
+// 智能同步：只上传有变化的月份
+// ========================================
+async function smartSyncAllMonths() {
+  const token = localStorage.getItem('github_token');
+  if (!token) {
+    alert('请先设置 GitHub Token');
+    return;
+  }
+
+  const config = {
+    owner: 'Linnea0123',
+    repo: 'study-tracker'
+  };
+
+  // 从 localStorage 读取所有任务数据
+  const allTasks = JSON.parse(localStorage.getItem('tasks_monthly') || '{}');
+  
+  // 按月份分组
+  const monthsData = {};
+  Object.keys(allTasks).forEach(date => {
+    const month = date.substring(0, 7);
+    if (!monthsData[month]) {
+      monthsData[month] = {};
+    }
+    monthsData[month][date] = allTasks[date];
+  });
+
+  console.log(`📊 本地共有 ${Object.keys(monthsData).length} 个月的数据`);
+  console.log('📅 月份:', Object.keys(monthsData).join(', '));
+
+  let uploadCount = 0;
+  let skipCount = 0;
+
+  for (const [month, tasks] of Object.entries(monthsData)) {
+    const path = `data/${month}.json`;
+    const localContent = JSON.stringify(tasks, null, 2);
+    
+    let needUpload = false;
+    let sha = null;
+
+    try {
+      const checkRes = await fetch(
+        `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+
+      if (checkRes.ok) {
+        const fileData = await checkRes.json();
+        sha = fileData.sha;
+        const cloudContent = decodeURIComponent(escape(atob(fileData.content)));
+        if (cloudContent === localContent) {
+          console.log(`⏭️ ${path} 内容一致，跳过上传`);
+          skipCount++;
+          continue;
+        } else {
+          console.log(`🔄 ${path} 内容有变化，需要更新`);
+          needUpload = true;
+        }
+      } else {
+        console.log(`📂 ${path} 不存在，需要创建`);
+        needUpload = true;
+      }
+    } catch (e) {
+      console.log(`📂 ${path} 检查失败，将尝试创建`);
+      needUpload = true;
+    }
+
+    if (needUpload) {
+      const body = {
+        message: `更新 ${month} 数据 - ${new Date().toLocaleString()}`,
+        content: btoa(unescape(encodeURIComponent(localContent)))
+      };
+      if (sha) {
+        body.sha = sha;
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+          }
+        );
+
+        if (response.ok) {
+          uploadCount++;
+          console.log(`✅ ${path} 上传成功 (${Object.keys(tasks).length} 天)`);
+        } else {
+          const error = await response.json();
+          console.error(`❌ ${path} 上传失败:`, error);
+        }
+      } catch (error) {
+        console.error(`❌ ${path} 请求失败:`, error);
+      }
+    }
+  }
+
+  console.log(`\n✅ 同步完成！`);
+  console.log(`📤 上传了 ${uploadCount} 个文件`);
+  console.log(`⏭️ 跳过了 ${skipCount} 个未变化的文件`);
+  console.log(`🔗 查看: https://github.com/${config.owner}/${config.repo}/tree/main/data`);
+}
+
+
+
+const getDataHash = useCallback(() => {
+  const taskHash = [];
+  Object.entries(tasksByDate).forEach(([date, tasks]) => {
+    tasks.forEach(task => {
+      taskHash.push({
+        id: task.id,
+        text: task.text,
+        done: task.done,
+        timeSpent: task.timeSpent,
+        updatedAt: task.updatedAt || task.createdAt
+      });
+    });
+  });
+  
+  const reflectionHash = Object.entries(dailyReflections).map(([date, content]) => ({
+    date,
+    content: typeof content === 'string' ? content : content?.content || ''
+  }));
+  
+  return JSON.stringify({
+    tasks: taskHash,
+    reflections: reflectionHash,
+    monthTasksCount: monthTasks.length,
+  
+    gradesCount: grades.length,
+    timestamp: Date.now()
+  });
+}, [tasksByDate, dailyReflections, monthTasks, grades]);
+// 
+
+
+
+// 替换 syncToGitHub 函数
+
 
 const debouncedSync = useCallback(() => {
   // ✅ 完全禁用自动同步
@@ -19170,26 +19519,28 @@ useEffect(() => {
       saveMainData('tasks', tasksByDate);
     },
     getState: () => ({
-      tasksByDate,        // 已经存在
+      tasksByDate,
       isInitialized,
       selectedDate,
-      expData: expData,              // ✅ 添加
-      dailyRatings: dailyRatings,    // ✅ 添加
-      dailyReflections: dailyReflections , // ✅ 添加
+      expData: expData,
+      dailyRatings: dailyRatings,
+      dailyReflections: dailyReflections,
       todayTasks: tasksByDate[selectedDate] || []
     }),
     triggerConfetti: triggerConfetti,
     setConfettiParts: setConfettiParts,
-    // ✅ 添加这一行，直接暴露 tasksByDate
     getTasksByDate: () => tasksByDate,
-    getExpData: () => expData       
+    getExpData: () => expData
   };
+  
+  // ✅ 在这里添加这行！
+  window.forceRestoreFromCloud = forceRestoreFromCloud;
   
   return () => {
     delete window.appInstance;
+    delete window.forceRestoreFromCloud;
   };
 }, [tasksByDate, isInitialized, selectedDate, triggerConfetti]);
-
 
 
 
@@ -19551,39 +19902,39 @@ const moveTask = (task, targetCategory) => {
 
 // ✅ 修复后 - 使用 useRef 防止循环
 const isSavingRef = useRef(false);
+// ========================================
+// 数据变化时自动保存（防抖）
+// ========================================
 const saveTimeoutRef = useRef(null);
 
 useEffect(() => {
+  if (!isInitialized) return;
+  
   // 清除之前的定时器
   if (saveTimeoutRef.current) {
     clearTimeout(saveTimeoutRef.current);
   }
   
+  // 1. 立即保存到 localStorage（离线可用）
+  localStorage.setItem('tasks_monthly', JSON.stringify(tasksByDate));
+  
+  // 2. 延迟同步到 GitHub（3秒防抖）
   saveTimeoutRef.current = setTimeout(async () => {
-    // 防止重复保存
-    if (isSavingRef.current) return;
-    isSavingRef.current = true;
-    
-    try {
-      await saveMainData('tasks', tasksByDate);
-      console.log('任务数据自动保存:', Object.keys(tasksByDate).length, '天的数据');
-    } catch (error) {
-      console.error('任务数据保存失败:', error);
-    } finally {
-      isSavingRef.current = false;
+    const sha = localStorage.getItem('github_sha') || null;
+    const newSha = await saveToGitHub(tasksByDate, sha);
+    if (newSha) {
+      localStorage.setItem('github_sha', newSha);
     }
-  }, 2000); // 增加到 2 秒防抖
+  }, 3000);
   
   return () => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
   };
-}, [tasksByDate]); // 保留依赖，但通过防抖和标志位避免循环
+}, [tasksByDate, isInitialized]);
 
 // 修复其他数据的保存
-
-
 
 
 
@@ -19594,117 +19945,58 @@ useEffect(() => {
     await migrateLegacyData();
     
     try {
- 
-
-
-
-
-
-// 加载任务数据
-const savedTasks = await loadDataWithFallback('tasks', {});
-
-if (savedTasks) {
-  setTasksByDate(savedTasks);
-
-
-console.log('✅ 任务数据设置成功，天数:', Object.keys(savedTasks).length);
-
-// ===== 确保每个日期都有独立的常规任务 =====
-if (savedTasks && Object.keys(savedTasks).length > 0) {
-  // 收集所有常规任务模板（从所有日期中获取，去重）
-  const regularTemplates = [];
-  const seenTexts = new Set();
-  
-  // 从已有数据中收集常规任务模板
-  Object.values(savedTasks).forEach(tasks => {
-    tasks.forEach(task => {
-      if (task.isRegularTask && !seenTexts.has(task.text)) {
-        seenTexts.add(task.text);
-        regularTemplates.push({
-          text: task.text,
-          targetCategory: task.targetCategory,
-          targetSubCategory: task.targetSubCategory || '',
-          note: task.note || "",
-          tags: task.tags || []
-        });
+      // ========================================
+      // 🔥 新逻辑：从 GitHub 按月加载数据
+      // ========================================
+      
+      // 1. 先从 localStorage 加载（离线支持）
+      const localData = localStorage.getItem('tasks_monthly');
+      let localTasks = {};
+      if (localData) {
+        try {
+          localTasks = JSON.parse(localData);
+          console.log('📂 从 localStorage 加载数据，共', Object.keys(localTasks).length, '天');
+        } catch (e) {
+          console.error('解析本地数据失败:', e);
+        }
       }
-    });
-  });
-  
-  // 如果有常规任务模板，确保每个日期都有这些任务（独立副本）
-  if (regularTemplates.length > 0) {
-    const allDates = Object.keys(savedTasks);
-    let needsUpdate = false;
-    
-    allDates.forEach(date => {
-      const dateTasks = savedTasks[date] || [];
       
-      // 获取这个日期已有的常规任务文本
-      const existingRegularTexts = new Set(
-        dateTasks.filter(t => t.isRegularTask).map(t => t.text)
-      );
+      // 2. 从 GitHub 加载最新数据
+      const { tasksByDate: cloudData, sha } = await loadFromGitHub();
       
-      // 找出这个日期缺失的常规任务
-      const missingTemplates = regularTemplates.filter(
-        template => !existingRegularTexts.has(template.text)
-      );
-      
-      if (missingTemplates.length > 0) {
-        needsUpdate = true;
-        const newRegularTasks = missingTemplates.map(template => ({
-          id: `regular_${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}`,
-          text: template.text,
-          targetCategory: template.targetCategory,
-          targetSubCategory: template.targetSubCategory,
-          category: "常规任务",
-          done: false,
-          timeSpent: 0,
-          subTasks: [],
-          note: template.note,
-          reflection: "",
-          image: null,
-          scheduledTime: "",
-          pinned: false,
-          tags: template.tags || [],
-          isRegularTask: true,
-          progress: {
-            initial: 0,
-            current: 0,
-            target: 0,
-            unit: "%"
-          }
-        }));
-        
-        savedTasks[date] = [...dateTasks, ...newRegularTasks];
+      // 3. 合并数据（云端优先）
+      let mergedTasks = {};
+      if (cloudData && Object.keys(cloudData).length > 0) {
+        mergedTasks = { ...localTasks, ...cloudData };
+        console.log('✅ 从 GitHub 加载数据完成，合并后共', Object.keys(mergedTasks).length, '天');
+        localStorage.setItem('github_sha', sha || '');
+      } else if (Object.keys(localTasks).length > 0) {
+        mergedTasks = localTasks;
+        console.log('📂 使用本地数据，共', Object.keys(mergedTasks).length, '天');
+      } else {
+        mergedTasks = {};
+        console.log('📂 无任何数据，初始化为空');
       }
-    });
-    
-    if (needsUpdate) {
-      console.log('✅ 已为所有日期添加缺失的常规任务（独立副本）');
-      // 更新状态
-      setTasksByDate(savedTasks);
-    }
-  }
-}
-}
+      
+      // 4. 设置任务数据
+      setTasksByDate(mergedTasks);
+      localStorage.setItem('tasks_monthly', JSON.stringify(mergedTasks));
 
-else {
-  console.log('ℹ️ 没有任务数据，使用空对象');
-  setTasksByDate({});
-}
+      // ========================================
+      // 以下是原有逻辑：加载其他数据
+      // ========================================
 
+      // 加载本月任务
+      const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
+      if (savedMonthTasks) {
+        setMonthTasks(savedMonthTasks);
+        console.log('✅ 加载本月任务数据:', savedMonthTasks.length);
+      } else {
+        console.log('ℹ️ 本月任务数据为空，使用空数组');
+        setMonthTasks([]);
+      }
 
-
-const savedMonthTasks = await loadDataWithFallback('monthTasks', []);
-if (savedMonthTasks) {
-  setMonthTasks(savedMonthTasks);
-  console.log('✅ 加载本月任务数据:', savedMonthTasks.length);
-} else {
-  console.log('ℹ️ 本月任务数据为空，使用空数组');
-  setMonthTasks([]);
-}
-
- // ✅ 加载每日评分
+      // ✅ 加载每日评分
       const savedRatings = localStorage.getItem(`${STORAGE_KEY}_dailyRatings`);
       if (savedRatings) {
         try {
@@ -19717,7 +20009,7 @@ if (savedMonthTasks) {
         }
       }
 
-      // ✅ 加载每日复盘 (新增)
+      // ✅ 加载每日复盘
       const savedReflections = localStorage.getItem(`${STORAGE_KEY}_dailyReflections`);
       if (savedReflections) {
         try {
@@ -19729,82 +20021,75 @@ if (savedMonthTasks) {
           setDailyReflections({});
         }
       }
-// 加载分类数据
-const savedCategories = await loadDataWithFallback('categories', null);
-if (savedCategories) {
-  // 如果已有保存的分类，确保每个分类都有子类别
-  const updatedCategories = savedCategories.map(cat => {
-    let defaultSubCategories = [];
-    switch(cat.name) {
-      case '校内':
-        defaultSubCategories = ["数学", "语文", "英语", "运动"];
-        break;
-      default:
-        defaultSubCategories = [];
-    }
-    
-    // 如果保存的分类没有子类别或子类别为空，使用预设值
-    return {
-      ...cat,
-      subCategories: cat.subCategories && cat.subCategories.length > 0 
-        ? cat.subCategories 
-        : defaultSubCategories
-    };
-  });
-  
-  // ✅ 检查是否有"生活"分类，如果没有则添加
-  const hasLife = updatedCategories.some(c => c.name === '生活');
-  if (!hasLife) {
-    // 从 baseCategories 中找出"生活"分类
-    const lifeCategory = baseCategories.find(c => c.name === '生活');
-    if (lifeCategory) {
-      updatedCategories.push({ ...lifeCategory });
-      console.log('✅ 自动添加"生活"分类');
-    }
-  }
-  
-  setCategories(updatedCategories);
-  await saveMainData('categories', updatedCategories);
-  console.log('✅ 分类加载完成:', updatedCategories.map(c => c.name));
-} else {
-  // 没有保存的分类数据，使用预设值初始化
-  const categoriesWithSubCategories = baseCategories.map(cat => {
-    let subCategories = [];
-    switch(cat.name) {
-      case '校内':
-        subCategories = ["数学", "语文", "英语", "运动"];
-        break;
-      default:
-        subCategories = [];
-    }
-    return { ...cat, subCategories };
-  });
-  
-  setCategories(categoriesWithSubCategories);
-  await saveMainData('categories', categoriesWithSubCategories);
-}
 
+      // 加载分类数据
+      const savedCategories = await loadDataWithFallback('categories', null);
+      if (savedCategories) {
+        const updatedCategories = savedCategories.map(cat => {
+          let defaultSubCategories = [];
+          switch(cat.name) {
+            case '校内':
+              defaultSubCategories = ["数学", "语文", "英语", "运动"];
+              break;
+            default:
+              defaultSubCategories = [];
+          }
+          return {
+            ...cat,
+            subCategories: cat.subCategories && cat.subCategories.length > 0 
+              ? cat.subCategories 
+              : defaultSubCategories
+          };
+        });
+        
+        const hasLife = updatedCategories.some(c => c.name === '生活');
+        if (!hasLife) {
+          const lifeCategory = baseCategories.find(c => c.name === '生活');
+          if (lifeCategory) {
+            updatedCategories.push({ ...lifeCategory });
+            console.log('✅ 自动添加"生活"分类');
+          }
+        }
+        
+        setCategories(updatedCategories);
+        await saveMainData('categories', updatedCategories);
+        console.log('✅ 分类加载完成:', updatedCategories.map(c => c.name));
+      } else {
+        const categoriesWithSubCategories = baseCategories.map(cat => {
+          let subCategories = [];
+          switch(cat.name) {
+            case '校内':
+              subCategories = ["数学", "语文", "英语", "运动"];
+              break;
+            default:
+              subCategories = [];
+          }
+          return { ...cat, subCategories };
+        });
+        
+        setCategories(categoriesWithSubCategories);
+        await saveMainData('categories', categoriesWithSubCategories);
+      }
 
       // 设置定时备份
       localStorage.setItem('study-tracker-PAGE_A-v2_isInitialized', 'true');
       
       setIsInitialized(true);
       
-// 👇 在这里添加
-setTimeout(() => {
-  isFirstLoad.current = false;
-}, 500);
-
-
-
+      setTimeout(() => {
+        isFirstLoad.current = false;
+      }, 500);
 
     } catch (error) {
       console.error('初始化失败:', error);
+      setIsInitialized(true);
     }
   };
 
   initializeApp();
 }, []);
+
+
 // ===== 每天第一次打开页面自动备份一次 =====
 // ✅ 修复后 - 使用 useRef 保证只执行一次
 const hasBackedUpTodayRef = useRef(false);
@@ -24503,82 +24788,52 @@ onSave={(newConfig) => {
   </div>
 
   {/* 恢复按钮 */}
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      if (isRestoring) return;
-      
-      const token = localStorage.getItem(PAGE_ID + '_github_token');
-      if (!token) {
-        alert('请先设置 GitHub Token');
-        setShowGitHubSyncModal(true);
-        return;
-      }
-      
-      if (window.confirm('⚠️ 确定要从云端恢复数据吗？\n\n此操作将：\n• 用云端数据覆盖本地数据\n• 丢失所有本地未同步的更改\n• 不可撤销！')) {
-        setIsRestoring(true);
-        
-        const forceRestoreFromCloud = async () => {
-          try {
-            const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-            let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
-            
-            if (!targetGistId) {
-              const latestGist = await getLatestStudyTrackerGist(token);
-              if (latestGist) {
-                targetGistId = latestGist.id;
-                localStorage.setItem('github_gist_id', targetGistId);
-              } else {
-                throw new Error('未找到云端备份数据');
-              }
-            }
-
-            const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (!response.ok) throw new Error(`获取失败: ${response.status}`);
-
-            const gist = await response.json();
-            const content = gist.files['study-tracker-data.json']?.content;
-            const backupData = JSON.parse(content);
-
-            await handleRestoreData(backupData, 'overwrite');
-            
-          } catch (error) {
-            console.error('恢复失败:', error);
-            alert('恢复失败: ' + error.message);
-          } finally {
-            setIsRestoring(false);
-          }
-        };
-        
-        forceRestoreFromCloud();
-      }
-    }}
-    style={{
-      cursor: isRestoring ? "not-allowed" : "pointer",
-      opacity: isRestoring ? 0.5 : 1,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "28px",
-      height: "28px",
-      borderRadius: "50%",
-      
-      transition: "none"
-    }}
-    title="从云端恢复"
-  >
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
-      <polyline points="10.5 12.5 12 14 13.5 12.5"/>
-      <line x1="12" x2="12" y1="10" y2="14"/>
-    </svg>
-  </div>
+  {/* 恢复云端按钮 */}
+{/* 恢复云端按钮 */}
+<div
+  onClick={async (e) => {
+    e.preventDefault();
+    if (isRestoring) return;
+    
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      alert('请先设置 GitHub Token');
+      setShowGitHubSyncModal(true);
+      return;
+    }
+    
+    setIsRestoring(true);
+    
+    try {
+      // ✅ 改用 window.forceRestoreFromCloud()
+      await window.forceRestoreFromCloud();
+    } catch (error) {
+      console.error('恢复失败:', error);
+      alert('恢复失败: ' + error.message);
+    } finally {
+      setIsRestoring(false);
+    }
+  }}
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "4px 6px",
+    backgroundColor: isRestoring ? "#ccc" : "#61A2Da",
+    color: isRestoring ? "#999" : "#fff",
+    fontSize: 11,
+    borderRadius: 6,
+    width: "60px",
+    height: "28px",
+    cursor: isRestoring ? "not-allowed" : "pointer",
+    userSelect: "none",
+    boxSizing: "border-box",
+    flexShrink: 0,
+    opacity: isRestoring ? 0.6 : 1
+  }}
+>
+  {isRestoring ? "恢复中..." : "恢复云端"}
+</div>
 
 
 
@@ -26728,68 +26983,28 @@ onSave={(newConfig) => {
 {/* 恢复云端按钮 */}
 {/* 覆盖云端按钮 */}
 {/* 覆盖云端按钮 - 恢复过程中变灰 */}
+{/* 恢复云端按钮 */}
 <div
   onClick={(e) => {
     e.preventDefault();
-    if (isRestoring) return; // 恢复中不允许点击
+    if (isRestoring) return;
     
-    const token = localStorage.getItem(PAGE_ID + '_github_token');
+    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
     if (!token) {
       alert('请先设置 GitHub Token');
       setShowGitHubSyncModal(true);
       return;
     }
     
-    if (window.confirm('⚠️ 确定要从云端覆盖本地数据吗？\n\n此操作将：\n• 用云端数据完全替换本地数据\n• 丢失所有本地未同步的更改\n• 不可撤销！')) {
-      setIsRestoring(true); // 开始恢复，按钮变灰
-      
-      const forceRestoreFromCloud = async () => {
-        try {
-          const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-          let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
-          
-          if (!targetGistId) {
-            const latestGist = await getLatestStudyTrackerGist(token);
-            if (latestGist) {
-              targetGistId = latestGist.id;
-              localStorage.setItem('github_gist_id', targetGistId);
-            } else {
-              throw new Error('未找到云端备份数据');
-            }
-          }
-
-          const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) throw new Error(`获取失败: ${response.status}`);
-
-          const gist = await response.json();
-          const content = gist.files['study-tracker-data.json']?.content;
-          const backupData = JSON.parse(content);
-
-          await handleRestoreData(backupData, 'overwrite');
-          
-        } catch (error) {
-          console.error('覆盖失败:', error);
-          alert('覆盖失败: ' + error.message);
-        } finally {
-          setIsRestoring(false); // 恢复完成或失败，按钮恢复
-        }
-      };
-      
-      forceRestoreFromCloud();
-    }
+    setIsRestoring(true);
+    forceRestoreFromCloud();
   }}
   style={{
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "4px 6px",
-    backgroundColor: isRestoring ? "#ccc" : "#61A2Da", // 恢复中变灰
+    backgroundColor: isRestoring ? "#ccc" : "#61A2Da",
     color: isRestoring ? "#999" : "#fff",
     fontSize: 11,
     borderRadius: 6,
