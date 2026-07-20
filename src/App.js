@@ -6357,6 +6357,9 @@ const getBackupList = () => {
 // ========================================
 // 从 localStorage 恢复备份
 // ========================================
+// ========================================
+// 恢复备份（恢复后自动同步到 GitHub）
+// ========================================
 const restoreBackup = async (backupKey) => {
   try {
     const backupData = JSON.parse(localStorage.getItem(backupKey));
@@ -6368,120 +6371,104 @@ const restoreBackup = async (backupKey) => {
     const taskCount = backupData.tasks ? Object.keys(backupData.tasks).length : 
                       backupData.tasksByDate ? Object.keys(backupData.tasksByDate).length : 0;
     
-    if (!window.confirm(`确定要恢复此备份吗？\n\n📊 任务天数: ${taskCount}\n📦 包含数据: ${Object.keys(backupData).join(', ')}\n\n⚠️ 当前数据将被覆盖！`)) {
+    if (!window.confirm(`确定要恢复此备份吗？\n\n📊 任务天数: ${taskCount}\n\n⚠️ 恢复后将自动同步到 GitHub，防止刷新丢失！`)) {
       return;
     }
 
     console.log('🔄 开始恢复备份...');
 
     // ========================================
-    // 恢复所有数据（从 localStorage）
+    // 1. 恢复所有数据到 localStorage
     // ========================================
 
-    // 1. 任务数据 - 兼容 tasks 和 tasksByDate
+    let tasksData = null;
+
     if (backupData.tasks) {
+      tasksData = backupData.tasks;
       localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasks));
       console.log('✅ 恢复 tasks');
     } else if (backupData.tasksByDate) {
+      tasksData = backupData.tasksByDate;
       localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasksByDate));
       console.log('✅ 恢复 tasksByDate');
-    } else {
-      // 尝试直接恢复
-      localStorage.setItem('tasks_monthly', JSON.stringify(backupData));
-      console.log('✅ 恢复整个备份');
     }
 
-    // 2. 每日评分
+    // 恢复其他数据
     if (backupData.dailyRatings) {
       localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(backupData.dailyRatings));
     }
-
-    // 3. 每日复盘
     if (backupData.dailyReflections) {
       localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
     }
-
-    // 4. 学习结束时间
     if (backupData.studyEndTimes) {
       localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
     }
-
-    // 5. 本月任务
     if (backupData.monthTasks) {
       localStorage.setItem(`${STORAGE_KEY}_monthTasks`, JSON.stringify(backupData.monthTasks));
     }
-
-    // 6. 成绩记录
     if (backupData.grades) {
       localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(backupData.grades));
     }
-
-    // 7. 分类
     if (backupData.categories) {
       localStorage.setItem(`${STORAGE_KEY}_categories`, JSON.stringify(backupData.categories));
     }
-
-    // 8. 经验数据
     if (backupData.expData) {
       localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
     }
-
-    // 9. 每日提醒
     if (backupData.reminderText !== undefined) {
       localStorage.setItem('daily_reminder', backupData.reminderText);
     }
-
-    // 10. 学期结束日期
     if (backupData.semesterEndDate) {
       localStorage.setItem('semester_end_date', backupData.semesterEndDate);
     }
-
-    // 11. 任务排序
-    if (backupData.taskOrders) {
-      Object.entries(backupData.taskOrders).forEach(([key, value]) => {
-        localStorage.setItem(key, JSON.stringify(value));
-      });
-    }
-
-    // 12. 子分类颜色
-    if (backupData.subCategoryColors) {
-      localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
-    }
-
-    // 13. 类别颜色
-    if (backupData.categoryColors) {
-      localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
-    }
-
-    // 14. 科目待办
-    if (backupData.subjectTodoEntries) {
-      localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
-    }
-
-    // 15. 每周计划
     if (backupData.weekPlans) {
       localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
     }
-
-    // 16. 每月计划
     if (backupData.monthPlans) {
       localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
     }
-
-    // 17. 每日任务模板
     if (backupData.dailyTaskTemplates) {
       localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
     }
-
-    // 18. 成绩子分类
+    if (backupData.subCategoryColors) {
+      localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
+    }
+    if (backupData.categoryColors) {
+      localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
+    }
+    if (backupData.subjectTodoEntries) {
+      localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
+    }
     if (backupData.gradeSubCategories) {
       localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
     }
 
-    console.log('✅ 备份恢复完成！');
-    
+    console.log('✅ 数据已恢复到 localStorage');
+
+    // ========================================
+    // 2. 自动同步到 GitHub（防止刷新丢失）
+    // ========================================
+
+    if (tasksData && Object.keys(tasksData).length > 0) {
+      console.log('📤 正在同步到 GitHub...');
+      const sha = localStorage.getItem('github_sha') || null;
+      const newSha = await saveToGitHub(tasksData, sha);
+      if (newSha) {
+        localStorage.setItem('github_sha', newSha);
+        console.log('✅ 备份数据已同步到 GitHub');
+      } else {
+        console.warn('⚠️ 同步到 GitHub 失败，请手动点击"立即同步"');
+      }
+    } else {
+      console.warn('⚠️ 没有任务数据可同步');
+    }
+
+    // ========================================
+    // 3. 重新加载页面
+    // ========================================
+
     setTimeout(() => {
-      alert('✅ 备份恢复成功！页面将重新加载。');
+      alert('✅ 备份恢复成功！已同步到 GitHub，页面将重新加载。');
       window.location.reload();
     }, 500);
 
@@ -20017,6 +20004,13 @@ const isSavingRef = useRef(false);
 // ========================================
 const saveTimeoutRef = useRef(null);
 
+
+
+// 修复其他数据的保存
+// ========================================
+// ❌ 禁用：自动同步到 GitHub
+// ========================================
+/*
 useEffect(() => {
   if (!isInitialized) return;
   
@@ -20043,9 +20037,7 @@ useEffect(() => {
     }
   };
 }, [tasksByDate, isInitialized]);
-
-// 修复其他数据的保存
-
+*/
 
 
 
@@ -20071,22 +20063,43 @@ useEffect(() => {
         }
       }
       
-      // 2. 从 GitHub 加载最新数据
-      const { tasksByDate: cloudData, sha } = await loadFromGitHub();
-      
-      // 3. 合并数据（云端优先）
-      let mergedTasks = {};
-      if (cloudData && Object.keys(cloudData).length > 0) {
-        mergedTasks = { ...localTasks, ...cloudData };
-        console.log('✅ 从 GitHub 加载数据完成，合并后共', Object.keys(mergedTasks).length, '天');
-        localStorage.setItem('github_sha', sha || '');
-      } else if (Object.keys(localTasks).length > 0) {
-        mergedTasks = localTasks;
-        console.log('📂 使用本地数据，共', Object.keys(mergedTasks).length, '天');
-      } else {
-        mergedTasks = {};
-        console.log('📂 无任何数据，初始化为空');
-      }
+     // ========================================
+// ❌ 禁用：从 GitHub 加载最新数据
+// ========================================
+/*
+// 2. 从 GitHub 加载最新数据
+const { tasksByDate: cloudData, sha } = await loadFromGitHub();
+
+// 3. 合并数据（云端优先）
+if (cloudData && Object.keys(cloudData).length > 0) {
+  mergedTasks = { ...localTasks, ...cloudData };
+  console.log('✅ 从 GitHub 加载数据完成，合并后共', Object.keys(mergedTasks).length, '天');
+  localStorage.setItem('github_sha', sha || '');
+} else if (Object.keys(localTasks).length > 0) {
+  mergedTasks = localTasks;
+  console.log('📂 使用本地数据，共', Object.keys(mergedTasks).length, '天');
+} else {
+  mergedTasks = {};
+  console.log('📂 无任何数据，初始化为空');
+}
+*/
+
+// ========================================
+// ✅ 只从 localStorage 加载（不拉取云端）
+// ========================================
+
+let mergedTasks = {};
+if (localData) {
+  try {
+    mergedTasks = JSON.parse(localData);
+    console.log('📂 从 localStorage 加载数据，共', Object.keys(mergedTasks).length, '天');
+  } catch (e) {
+    console.error('解析本地数据失败:', e);
+    mergedTasks = {};
+  }
+} else {
+  console.log('📂 无本地数据，初始化为空');
+}
       
       // 4. 设置任务数据
       setTasksByDate(mergedTasks);
@@ -20204,6 +20217,10 @@ useEffect(() => {
 // ✅ 修复后 - 使用 useRef 保证只执行一次
 const hasBackedUpTodayRef = useRef(false);
 
+// ========================================
+// ❌ 禁用：每天自动备份
+// ========================================
+/*
 useEffect(() => {
   if (!isInitialized) return;
   if (hasBackedUpTodayRef.current) return;
@@ -20222,8 +20239,8 @@ useEffect(() => {
     
     return () => clearTimeout(timer);
   }
-}, [isInitialized]); // 只依赖 isInitialized
- 
+}, [isInitialized]);
+*/
 
 
 // 添加这个 useEffect 在下面
@@ -23260,79 +23277,77 @@ const generateDailyLog = () => {
 
 
 
-
+// ========================================
+// 导出数据（兼容新格式）
+// ========================================
 const handleExportData = async () => {
   try {
-    // 获取所有数据
-    const tasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks') || '{}');
-    const dailyRatings = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings') || '{}');
-    const monthTasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks') || '[]');
-    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '[]');
-    
-    // 获取所有日期并排序
-    const dates = Object.keys(tasks).sort();
-    const totalDays = dates.length;
-    
-    console.log(`总天数: ${totalDays}`);
-    
-    // 分成2份
-    const midPoint = Math.ceil(totalDays / 2);
-    const firstHalfDates = dates.slice(0, midPoint);
-    const secondHalfDates = dates.slice(midPoint);
-    
-    // 第一份数据
-    const firstHalf = {};
-    firstHalfDates.forEach(date => {
-      firstHalf[date] = tasks[date];
-    });
-    
-    // 第二份数据
-    const secondHalf = {};
-    secondHalfDates.forEach(date => {
-      secondHalf[date] = tasks[date];
-    });
-    
-    // 导出第一份
-    const firstJson = JSON.stringify(firstHalf, null, 2);
-    const firstBlob = new Blob([firstJson], { type: 'application/json' });
-    const firstUrl = URL.createObjectURL(firstBlob);
-    const firstLink = document.createElement('a');
-    firstLink.href = firstUrl;
-    firstLink.download = `study-tracker-part1_${firstHalfDates[0]}_to_${firstHalfDates[firstHalfDates.length-1]}.json`;
-    firstLink.click();
-    URL.revokeObjectURL(firstUrl);
-    
-    // 等待一下
-    await new Promise(r => setTimeout(r, 500));
-    
-    // 导出第二份
-    const secondJson = JSON.stringify(secondHalf, null, 2);
-    const secondBlob = new Blob([secondJson], { type: 'application/json' });
-    const secondUrl = URL.createObjectURL(secondBlob);
-    const secondLink = document.createElement('a');
-    secondLink.href = secondUrl;
-    secondLink.download = `study-tracker-part2_${secondHalfDates[0]}_to_${secondHalfDates[secondHalfDates.length-1]}.json`;
-    secondLink.click();
-    URL.revokeObjectURL(secondUrl);
-    
-    // 导出成绩（单独文件）
-    if (grades.length > 0) {
-      setTimeout(() => {
-        const gradesJson = JSON.stringify(grades, null, 2);
-        const gradesBlob = new Blob([gradesJson], { type: 'application/json' });
-        const gradesUrl = URL.createObjectURL(gradesBlob);
-        const gradesLink = document.createElement('a');
-        gradesLink.href = gradesUrl;
-        gradesLink.download = `study-tracker-grades_${new Date().toISOString().slice(0, 10)}.json`;
-        gradesLink.click();
-        URL.revokeObjectURL(gradesUrl);
-      }, 500);
-    }
-    
-    alert(`导出完成！\n\n第1份: ${firstHalfDates.length} 天\n第2份: ${secondHalfDates.length} 天\n\n成绩: ${grades.length} 条`);
-    
+    // 读取当前所有数据
+    const tasksMonthly = JSON.parse(localStorage.getItem('tasks_monthly') || '{}');
+    const dailyRatings = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_dailyRatings`) || '{}');
+    const dailyReflections = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_dailyReflections`) || '{}');
+    const studyEndTimes = JSON.parse(localStorage.getItem('daily_study_end_times') || '{}');
+    const monthTasks = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_monthTasks`) || '[]');
+    const grades = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_grades`) || '[]');
+    const categories = JSON.parse(localStorage.getItem(`${STORAGE_KEY}_categories`) || JSON.stringify(baseCategories));
+    const expData = JSON.parse(localStorage.getItem('exp_data_v2') || '{"daily":{},"total":{}}');
+    const reminderText = localStorage.getItem('daily_reminder') || '';
+    const semesterEndDate = localStorage.getItem('semester_end_date') || '2026-07-05';
+    const weekPlans = JSON.parse(localStorage.getItem('week_plans') || '[]');
+    const monthPlans = JSON.parse(localStorage.getItem('month_plans') || '[]');
+    const dailyTaskTemplates = JSON.parse(localStorage.getItem('daily_task_templates') || '[]');
+    const subCategoryColors = JSON.parse(localStorage.getItem('subcategory_colors') || '{}');
+    const categoryColors = JSON.parse(localStorage.getItem('category_colors') || '{}');
+    const subjectTodoEntries = JSON.parse(localStorage.getItem('subject_todo_entries_v2') || '{}');
+    const gradeSubCategories = localStorage.getItem('grade_subcategories') || '{}';
+
+    // 构建导出数据（包含新旧两种格式，保证兼容）
+    const exportData = {
+      // ✅ 新格式（主要）
+      tasksMonthly: tasksMonthly,
+      tasksByDate: tasksMonthly,  // 别名，方便识别
+      
+      // ✅ 旧格式（兼容旧版导入）
+      tasks: tasksMonthly,
+      
+      dailyRatings: dailyRatings,
+      dailyReflections: dailyReflections,
+      studyEndTimes: studyEndTimes,
+      monthTasks: monthTasks,
+      grades: grades,
+      categories: categories,
+      expData: expData,
+      reminderText: reminderText,
+      semesterEndDate: semesterEndDate,
+      weekPlans: weekPlans,
+      monthPlans: monthPlans,
+      dailyTaskTemplates: dailyTaskTemplates,
+      subCategoryColors: subCategoryColors,
+      categoryColors: categoryColors,
+      subjectTodoEntries: subjectTodoEntries,
+      gradeSubCategories: gradeSubCategories,
+      
+      // 元数据
+      exportTime: new Date().toISOString(),
+      version: '2.0',
+      note: '包含新旧两种格式，兼容所有版本'
+    };
+
+    // 导出为 JSON 文件
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `study-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    console.log('✅ 数据导出成功！');
+    alert(`✅ 数据导出成功！\n📊 包含 ${Object.keys(tasksMonthly).length} 天的任务数据`);
+
   } catch (error) {
-    console.error('导出失败:', error);
+    console.error('❌ 导出失败:', error);
     alert('导出失败: ' + error.message);
   }
 };
@@ -27719,66 +27734,104 @@ onSave={(newConfig) => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const importedData = JSON.parse(event.target.result);
+reader.onload = async (event) => {
+  try {
+    const importedData = JSON.parse(event.target.result);
+    console.log('📦 导入数据包含:', Object.keys(importedData));
 
-
-          // ✅ 新增：恢复科目指导数据
-    if (importedData.subjectGuideEntries) {
-      localStorage.setItem('subject_guide_entries', JSON.stringify(importedData.subjectGuideEntries));
-      // 如果 SubjectGuideModal 组件有状态需要同步，可以在这里 setState
+    if (!importedData.tasksMonthly && !importedData.tasks && !importedData.tasksByDate) {
+      throw new Error('无效的数据格式：找不到任务数据');
     }
 
-        if (!importedData.tasks || !importedData.version) {
-          throw new Error('无效的数据文件格式');
-        }
+    // 获取任务数据
+    let tasksData = {};
+    if (importedData.tasksMonthly) {
+      tasksData = importedData.tasksMonthly;
+    } else if (importedData.tasksByDate) {
+      tasksData = importedData.tasksByDate;
+    } else if (importedData.tasks) {
+      tasksData = importedData.tasks;
+    }
 
-        const importStats = {
-          任务天数: Object.keys(importedData.tasks || {}).length,
-          模板数量: (importedData.templates || []).length,
-          成就数量: (importedData.customAchievements || []).length,
-          版本: importedData.version || '未知',
-          每日提醒: importedData.reminderText ? '有' : '无'  // 添加统计
-        };
-        
-        const confirmMessage = `确定要导入以下数据吗？\n` +
-          `• 任务天数: ${importStats.任务天数}\n` +
-          `• 模板数量: ${importStats.模板数量}\n` +
-          `• 成就数量: ${importStats.成就数量}\n` +
-          `• 每日提醒: ${importStats.每日提醒}\n` +
-          `• 数据版本: ${importStats.版本}\n\n` +
-          `这将覆盖当前所有数据！`;
+    const taskCount = Object.keys(tasksData).length;
+    
+    if (!window.confirm(`确定要导入数据吗？\n\n📊 ${taskCount} 天的任务数据\n\n⚠️ 这将覆盖当前所有数据，并自动同步到 GitHub！`)) {
+      return;
+    }
 
-        if (window.confirm(confirmMessage)) {
-          
-          await saveMainData('tasks', importedData.tasks || {});
-          await saveMainData('templates', importedData.templates || []);
-          await saveMainData('customAchievements', importedData.customAchievements || []);
-          await saveMainData('unlockedAchievements', importedData.unlockedAchievements || []);
-          await saveMainData('categories', importedData.categories || baseCategories);
-          
-          // 恢复每日提醒
-          if (importedData.reminderText !== undefined) {
-            setReminderText(importedData.reminderText);
-            localStorage.setItem('daily_reminder', importedData.reminderText);
-          }
-          
-          setTasksByDate(importedData.tasks || {});
-          
-          setCategories(importedData.categories || baseCategories);
-          
-          
-          setTimeout(() => {
-            alert('数据导入成功！页面将重新加载以应用更改。');
-            window.location.reload();
-          }, 1000);
-        }
-      } catch (error) {
-        console.error('导入失败:', error);
-        alert(`导入失败：${error.message || '文件格式不正确'}`);
-      }
-    };
+    // 1. 恢复所有数据到 localStorage
+    localStorage.setItem('tasks_monthly', JSON.stringify(tasksData));
+
+    if (importedData.dailyRatings) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(importedData.dailyRatings));
+    }
+    if (importedData.dailyReflections) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(importedData.dailyReflections));
+    }
+    if (importedData.studyEndTimes) {
+      localStorage.setItem('daily_study_end_times', JSON.stringify(importedData.studyEndTimes));
+    }
+    if (importedData.monthTasks) {
+      localStorage.setItem(`${STORAGE_KEY}_monthTasks`, JSON.stringify(importedData.monthTasks));
+    }
+    if (importedData.grades) {
+      localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(importedData.grades));
+    }
+    if (importedData.categories) {
+      localStorage.setItem(`${STORAGE_KEY}_categories`, JSON.stringify(importedData.categories));
+    }
+    if (importedData.expData) {
+      localStorage.setItem('exp_data_v2', JSON.stringify(importedData.expData));
+    }
+    if (importedData.reminderText !== undefined) {
+      localStorage.setItem('daily_reminder', importedData.reminderText);
+    }
+    if (importedData.semesterEndDate) {
+      localStorage.setItem('semester_end_date', importedData.semesterEndDate);
+    }
+    if (importedData.weekPlans) {
+      localStorage.setItem('week_plans', JSON.stringify(importedData.weekPlans));
+    }
+    if (importedData.monthPlans) {
+      localStorage.setItem('month_plans', JSON.stringify(importedData.monthPlans));
+    }
+    if (importedData.dailyTaskTemplates) {
+      localStorage.setItem('daily_task_templates', JSON.stringify(importedData.dailyTaskTemplates));
+    }
+    if (importedData.subCategoryColors) {
+      localStorage.setItem('subcategory_colors', JSON.stringify(importedData.subCategoryColors));
+    }
+    if (importedData.categoryColors) {
+      localStorage.setItem('category_colors', JSON.stringify(importedData.categoryColors));
+    }
+    if (importedData.subjectTodoEntries) {
+      localStorage.setItem('subject_todo_entries_v2', JSON.stringify(importedData.subjectTodoEntries));
+    }
+    if (importedData.gradeSubCategories) {
+      localStorage.setItem('grade_subcategories', importedData.gradeSubCategories);
+    }
+
+    console.log('✅ 数据已恢复到 localStorage');
+
+    // ✅ 关键：自动上传到 GitHub，防止刷新被覆盖
+    console.log('📤 正在同步到 GitHub...');
+    const sha = localStorage.getItem('github_sha') || null;
+    const newSha = await saveToGitHub(tasksData, sha);
+    if (newSha) {
+      localStorage.setItem('github_sha', newSha);
+      console.log('✅ 导入数据已同步到 GitHub');
+    } else {
+      console.warn('⚠️ 同步到 GitHub 失败，请手动点击"立即同步"');
+    }
+
+    alert('✅ 数据导入成功！已同步到 GitHub，页面将重新加载。');
+    setTimeout(() => window.location.reload(), 1000);
+
+  } catch (error) {
+    console.error('❌ 导入失败:', error);
+    alert(`导入失败：${error.message || '文件格式不正确'}`);
+  }
+};
 
     reader.onerror = () => {
       alert('文件读取失败，请重试');
