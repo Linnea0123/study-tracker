@@ -491,6 +491,28 @@
       "reminderTime": null
     },
     {
+      "id": "1778126941795_2026-05-08",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    },
+    {
       "id": "1778222265669_jqeodpi3_2026-05-08_0",
       "text": "1.看课作P48、49错题（全对12人：12、14、18、19、21、25、30、34、39、40、44、45）",
       "category": "校内",
@@ -2274,6 +2296,26 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1773361876095_2026-03-10",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
     }
   ],
   "2026-03-11": [
@@ -2420,6 +2462,26 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1773361876095_2026-03-11",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
     }
   ],
   "2026-03-12": [
@@ -2530,9 +2592,49 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1773361876095_2026-03-12",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
     }
   ],
   "2026-03-13": [
+    {
+      "id": "1773361876095_2026-03-13",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
+    },
     {
       "id": "import_1773399849772_1_vhuyc",
       "text": "1️⃣复习语文园地一，背诵《祖国多么广大》，《春晓》。",
@@ -2678,6 +2780,50 @@
       "scheduledTime": ""
     }
   ],
+  "2026-03-14": [
+    {
+      "id": "1773361876095_2026-03-14",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
+    }
+  ],
+  "2026-03-15": [
+    {
+      "id": "1773361876095_2026-03-15",
+      "text": "写字纸3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-08T16:00:00.000Z"
+    }
+  ],
   "2026-03-16": [
     {
       "id": "import_1773647369428_1_4k5pr",
@@ -2810,6 +2956,26 @@
   ],
   "2026-03-17": [
     {
+      "id": "1773648978788_2026-03-17",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
+    {
       "id": "import_1773743210206_1_oqjokxxp7",
       "text": "1️⃣背诵《热爱中国共产党》，熟读课课贴词语。",
       "category": "校内",
@@ -2938,6 +3104,26 @@
   ],
   "2026-03-18": [
     {
+      "id": "1773648978788_2026-03-18",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
+    {
       "id": "import_1773919484122_1_byl0xzwny",
       "text": "1️⃣准备《热爱中国共产党》生字笔顺过关，词语听写。",
       "category": "校内",
@@ -3048,6 +3234,26 @@
   ],
   "2026-03-19": [
     {
+      "id": "1773648978788_2026-03-19",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
+    {
       "id": "import_1773919188123_1_wiohhv9yz",
       "text": "1.第二单元练习卷和今日口算订正并签名。",
       "category": "校内",
@@ -3157,6 +3363,26 @@
     }
   ],
   "2026-03-20": [
+    {
+      "id": "1773648978788_2026-03-20",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
     {
       "id": "import_1774003831703_4_uwh5q6zp7",
       "text": "2️⃣复习巩固《吃水不忘挖井人》过关纸，家长签字。",
@@ -3358,6 +3584,26 @@
   ],
   "2026-03-21": [
     {
+      "id": "1773648978788_2026-03-21",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
+    {
       "id": "completed_1774100412557_uyluk",
       "text": "RAZ B 朗读",
       "category": "英语",
@@ -3377,6 +3623,26 @@
     }
   ],
   "2026-03-22": [
+    {
+      "id": "1773648978788_2026-03-22",
+      "text": "写字作业3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 3,
+        "initial": 0,
+        "target": 3,
+        "unit": "页"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-15T16:00:00.000Z"
+    },
     {
       "id": "1774186097047",
       "text": "RAZ B  朗读",
@@ -3548,6 +3814,28 @@
   ],
   "2026-03-24": [
     {
+      "id": "1774235500571_2026-03-24",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
+    },
+    {
       "id": "import_1774341287030_1_e9q1gswcn",
       "text": "1️⃣借助《课堂作业本》和《生字抄写本》复习第二单元，准备《汉语拼音字母表》过关，准备第二单元生字注音过关。",
       "category": "校内",
@@ -3676,6 +3964,28 @@
   ],
   "2026-03-25": [
     {
+      "id": "1774235500571_2026-03-25",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
+    },
+    {
       "id": "import_1774573362064_1_ph4bpi0uh",
       "text": "1️⃣准备第二单元过关练习。",
       "category": "校内",
@@ -3786,6 +4096,28 @@
   ],
   "2026-03-26": [
     {
+      "id": "1774235500571_2026-03-26",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
+    },
+    {
       "id": "import_1774573334278_1_0op0ma4io",
       "text": "1️⃣准备《小公鸡和小鸭子》生字笔顺，词语听写过关，格式如前。词语:飞走、走开、江河、河水、说出、小说、让开、让位、自己、自立、先人后己、己见",
       "category": "校内",
@@ -3895,6 +4227,28 @@
     }
   ],
   "2026-03-27": [
+    {
+      "id": "1774235500571_2026-03-27",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
+    },
     {
       "id": "import_1774858554000_1_leibg8flo",
       "text": "1.巩固课作第三单元错题（数轴上找数、根据个位十位要求写数、根据百数表排列规律填数等）",
@@ -4074,6 +4428,54 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    }
+  ],
+  "2026-03-28": [
+    {
+      "id": "1774235500571_2026-03-28",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
+    }
+  ],
+  "2026-03-29": [
+    {
+      "id": "1774235500571_2026-03-29",
+      "text": "写字3张",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-03-22T16:00:00.000Z",
+      "targetCategory": "语文",
+      "targetSubCategory": ""
     }
   ],
   "2026-03-30": [
@@ -4964,9 +5366,92 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1775698188489_2026-04-07",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    }
+  ],
+  "2026-04-08": [
+    {
+      "id": "1775698188489_2026-04-08",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-04-09": [
+    {
+      "id": "1775698188489_2026-04-09",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    },
     {
       "id": "1775732407748_45aj8yjn",
       "text": "1️⃣准备课文7《静夜思》的生字笔顺、生字注音、词语听写过关。",
@@ -5102,6 +5587,33 @@
     }
   ],
   "2026-04-10": [
+    {
+      "id": "1775698188489_2026-04-10",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    },
     {
       "id": "1775817510868_2df4juqx_2026-04-10",
       "text": "1️⃣熟读课文8《夜色》，准备生字笔顺、生字注音、词语听写过关。",
@@ -5322,6 +5834,33 @@
     }
   ],
   "2026-04-11": [
+    {
+      "id": "1775698188489_2026-04-11",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    },
     {
       "id": "1775817510868_sx6lelyi_2026-04-11",
       "text": "1️⃣熟读课文8《夜色》，准备生字笔顺、生字注音、词语听写过关。",
@@ -5547,6 +6086,33 @@
     }
   ],
   "2026-04-12": [
+    {
+      "id": "1775698188489_2026-04-12",
+      "text": "讲解比赛",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "pinned": true,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 27,
+        "month": 4,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-04-05T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
+    },
     {
       "id": "1775817510868_coq1ygcp_2026-04-12",
       "text": "1️⃣熟读课文8《夜色》，准备生字笔顺、生字注音、词语听写过关。",
@@ -9843,6 +10409,28 @@
       "scheduledTime": ""
     },
     {
+      "id": "1778126941795_2026-05-04",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    },
+    {
       "id": "moved_1781485354195_816lcmo1",
       "text": "学习少先队员六知六会",
       "category": "校内",
@@ -10060,6 +10648,28 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1778126941795_2026-05-05",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
     }
   ],
   "2026-05-06": [
@@ -10226,11 +10836,255 @@
         "reason": "没时间",
         "timestamp": "2026-05-07T04:07:45.005Z"
       }
+    },
+    {
+      "id": "1778126941795_2026-05-06",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-09": [
+    {
+      "id": "1778126941795_2026-05-09",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-10": [
+    {
+      "id": "1778126941795_2026-05-10",
+      "text": "学习少先队员六知六会",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "5月12日进行六知六会的笔试过关，5月14日开展六知六会的现场考核，请孩子们做好准备。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "isWeekTask": true,
+      "weekStart": "2026-05-03T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
     }
   ],
   "2026-05-11": [
     {
       "id": "1778142159920_2026-05-11",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-12": [
+    {
+      "id": "1778142159920_2026-05-12",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-13": [
+    {
+      "id": "1778142159920_2026-05-13",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-14": [
+    {
+      "id": "1778142159920_2026-05-14",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-15": [
+    {
+      "id": "1778142159920_2026-05-15",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-16": [
+    {
+      "id": "1778142159920_2026-05-16",
+      "text": "活动时间：5月14日周四8:00—10:20。",
+      "category": "本周任务",
+      "subCategory": "其他",
+      "done": false,
+      "timeSpent": 0,
+      "note": "温馨提醒：一户一家长，绿色出行，并凭邀请函入校；校门口会安排引导老师。",
+      "reflection": "",
+      "pinned": false,
+      "progress": {
+        "current": 0,
+        "initial": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": {
+        "day": 13,
+        "month": 5,
+        "year": 2026
+      },
+      "isWeekTask": true,
+      "weekStart": "2026-05-10T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "其他"
+    }
+  ],
+  "2026-05-17": [
+    {
+      "id": "1778142159920_2026-05-17",
       "text": "活动时间：5月14日周四8:00—10:20。",
       "category": "本周任务",
       "subCategory": "其他",
@@ -10422,6 +11276,31 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1779206418545_2026-05-18",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
     }
   ],
   "2026-05-19": [
@@ -10589,9 +11468,59 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1779206418545_2026-05-19",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
     }
   ],
   "2026-05-21": [
+    {
+      "id": "1779206418545_2026-05-21",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
     {
       "id": "1779347962898_dp4p71le_2026-05-21_0",
       "text": "1.看课作P59、60、61错题。",
@@ -10705,6 +11634,31 @@
     }
   ],
   "2026-05-22": [
+    {
+      "id": "1779206418545_2026-05-22",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
     {
       "id": "1779436623736_2yilerbc_2026-05-22_0",
       "text": "1️⃣准备看图写话过关。",
@@ -10890,6 +11844,31 @@
   ],
   "2026-05-23": [
     {
+      "id": "1779206418545_2026-05-23",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
+    {
       "id": "1779436623736_vg93jtx5_2026-05-23_0",
       "text": "1️⃣准备看图写话过关。",
       "category": "校内",
@@ -11073,6 +12052,31 @@
     }
   ],
   "2026-05-24": [
+    {
+      "id": "1779206418545_2026-05-24",
+      "text": "bdpq记忆",
+      "category": "本周任务",
+      "subCategory": "语文",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-05-17T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": "语文"
+    },
     {
       "id": "1779436623736_8buf57u3_2026-05-24_0",
       "text": "1️⃣准备看图写话过关。",
@@ -13849,6 +14853,31 @@
         "unit": ""
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1780908829393_2026-06-08",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-09": [
@@ -14022,6 +15051,31 @@
         "unit": "%"
       },
       "scheduledTime": ""
+    },
+    {
+      "id": "1780908829393_2026-06-09",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-10": [
@@ -14211,6 +15265,31 @@
       },
       "scheduledTime": "",
       "reminderTime": null
+    },
+    {
+      "id": "1780908829393_2026-06-10",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-11": [
@@ -14382,6 +15461,31 @@
       },
       "scheduledTime": "",
       "reminderTime": null
+    },
+    {
+      "id": "1780908829393_2026-06-11",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-12": [
@@ -14583,6 +15687,31 @@
         "2026-06-14"
       ],
       "actualCompletedDate": null
+    },
+    {
+      "id": "1780908829393_2026-06-12",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-13": [
@@ -14781,6 +15910,31 @@
         "2026-06-14"
       ],
       "actualCompletedDate": "2026-06-13"
+    },
+    {
+      "id": "1780908829393_2026-06-13",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-14": [
@@ -14999,6 +16153,31 @@
         "2026-06-14"
       ],
       "actualCompletedDate": null
+    },
+    {
+      "id": "1780908829393_2026-06-14",
+      "text": "下周的美术课上孩子们将一起来做期末游考的面具，请协助孩子准备好以下材料[送花花]：\n1.彩色卡纸和软彩纸各5张（颜色不限）\n2.剪刀胶水\n3.有弹性的绳子一根（长度能绕孩子脑袋一圈就行）\n4.美术1号本（带目录）",
+      "category": "本周任务",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "isWeekTask": true,
+      "weekStart": "2026-06-07T16:00:00.000Z",
+      "targetCategory": "校内",
+      "targetSubCategory": ""
     }
   ],
   "2026-06-15": [
@@ -17313,123 +18492,17 @@
       "scheduledTime": ""
     }
   ],
-  "2026-07-08": [
+  "2026-07-09": [
     {
-      "id": "1783528718399_wgf8n2br",
-      "text": "课本第三单元《彩虹》预习",
-      "category": "语文",
-      "subCategory": "",
-      "done": true,
-      "timeSpent": 0,
-      "note": "",
-      "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
-      "timeRecords": [],
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "scheduledTime": ""
-    },
-    {
-      "id": "1783528718399_r07knimi",
-      "text": "课本第二单元生词笔顺书写过关",
-      "category": "语文",
-      "subCategory": "",
-      "done": true,
-      "timeSpent": 0,
-      "note": "",
-      "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
-      "timeRecords": [],
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "scheduledTime": ""
-    },
-    {
-      "id": "1783528718399_86j9qf45",
-      "text": "阅读《写给儿童的中国历史》13近代史",
-      "category": "语文",
-      "subCategory": "",
-      "done": true,
-      "timeSpent": 0,
-      "note": "",
-      "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
-      "timeRecords": [],
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "scheduledTime": "",
-      "reminderTime": null
-    },
-    {
-      "id": "1783528718399_9ugbq1zm",
-      "text": "计算练习",
+      "id": "1783597479010_xhbgulkl",
+      "text": "二 1~6的表内乘法 洋葱学园",
       "category": "数学",
       "subCategory": "",
       "done": true,
       "timeSpent": 0,
       "note": "",
       "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
-      "timeRecords": [],
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "scheduledTime": ""
-    },
-    {
-      "id": "1783528718399_100bi8we",
-      "text": "RAZ E 2本",
-      "category": "英语",
-      "subCategory": "",
-      "done": true,
-      "timeSpent": 0,
-      "note": "",
-      "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
-      "timeRecords": [],
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "scheduledTime": ""
-    },
-    {
-      "id": "1783528718399_ri285w00",
-      "text": "桥梁书 Fly Guy 1本",
-      "category": "英语",
-      "subCategory": "",
-      "done": true,
-      "timeSpent": 0,
-      "note": "",
-      "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
+      "createdAt": "2026-07-09T11:44:39.010Z",
       "timeRecords": [],
       "pinned": false,
       "tags": [],
@@ -17443,15 +18516,37 @@
       "reminderTime": null
     },
     {
-      "id": "1783528718399_yuulbj7c",
-      "text": "跳高100下",
-      "category": "运动",
+      "id": "1783597479010_57vt3tt1",
+      "text": "RAZ E 朗读 3本",
+      "category": "英语",
       "subCategory": "",
       "done": true,
       "timeSpent": 0,
       "note": "",
       "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
+      "createdAt": "2026-07-09T11:44:39.010Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1783597479010_zzkrh0ab",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T11:44:39.010Z",
       "timeRecords": [],
       "pinned": false,
       "tags": [],
@@ -17464,7 +18559,7 @@
       "scheduledTime": ""
     },
     {
-      "id": "1783528718399_ijrrork0",
+      "id": "1783597479010_zty9rn4s",
       "text": "跳绳",
       "category": "运动",
       "subCategory": "",
@@ -17472,7 +18567,53 @@
       "timeSpent": 0,
       "note": "",
       "reflection": "",
-      "createdAt": "2026-07-08T16:38:38.399Z",
+      "createdAt": "2026-07-09T11:44:39.010Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1783597479010_lxopmaz8",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T11:44:39.010Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-06-29": [
+    {
+      "id": "1783606933004",
+      "text": "动画片 Bluey S2 3集 26.27.28",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "updatedAt": "2026-07-09T14:22:13.004Z",
+      "createdAt": "2026-07-09T14:22:13.004Z",
       "timeRecords": [],
       "pinned": false,
       "tags": [],
@@ -17486,186 +18627,19 @@
       "reminderTime": null
     }
   ],
-  "2026-06-28": [
-    {
-      "id": "1783567290984_2026-06-28",
-      "text": "古诗2首",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290984_2026-06-28",
-      "text": "练字3张",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290985_2026-06-28",
-      "text": "看图写话1篇",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    }
-  ],
-  "2026-06-29": [
-    {
-      "id": "1783567290984_2026-06-29",
-      "text": "古诗2首",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290984_2026-06-29",
-      "text": "练字3张",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290985_2026-06-29",
-      "text": "看图写话1篇",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    }
-  ],
   "2026-06-30": [
     {
-      "id": "1783567290984_2026-06-30",
-      "text": "古诗2首",
-      "category": "本周任务",
+      "id": "1783606957758",
+      "text": "RAZ E 29",
+      "category": "英语",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:22:37.758Z",
+      "createdAt": "2026-07-09T14:22:37.758Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17674,25 +18648,21 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
     },
     {
-      "id": "1783567290984_2026-06-30",
-      "text": "练字3张",
-      "category": "本周任务",
+      "id": "1783606989236",
+      "text": "课本 一 分类与整理 洋葱学园 001 - 003",
+      "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:23:09.236Z",
+      "createdAt": "2026-07-09T14:23:09.236Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17701,25 +18671,21 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
     },
     {
-      "id": "1783567290985_2026-06-30",
-      "text": "看图写话1篇",
-      "category": "本周任务",
+      "id": "1783607005334",
+      "text": "课外阅读《写给儿童的中国历史》12 清 20m",
+      "category": "语文",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:23:25.334Z",
+      "createdAt": "2026-07-09T14:23:25.334Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17728,27 +18694,46 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1783607018948",
+      "text": "预习课本第一单元《小蝌蚪找妈妈》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "updatedAt": "2026-07-09T14:23:38.948Z",
+      "createdAt": "2026-07-09T14:23:38.948Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
     }
   ],
   "2026-07-01": [
     {
-      "id": "1783567290984_2026-07-01",
-      "text": "古诗2首",
-      "category": "本周任务",
+      "id": "1783607061031",
+      "text": "预习课本第一单元《我是什么》",
+      "category": "语文",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:24:21.031Z",
+      "createdAt": "2026-07-09T14:24:21.031Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17757,25 +18742,21 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
     },
     {
-      "id": "1783567290984_2026-07-01",
-      "text": "练字3张",
-      "category": "本周任务",
+      "id": "1783607085100",
+      "text": "课本一 分类与整理 洋葱学园 004",
+      "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:24:45.100Z",
+      "createdAt": "2026-07-09T14:24:45.100Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17784,25 +18765,21 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
     },
     {
-      "id": "1783567290985_2026-07-01",
-      "text": "看图写话1篇",
-      "category": "本周任务",
+      "id": "1783607097417",
+      "text": "100以内加减法计算",
+      "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:24:57.417Z",
+      "createdAt": "2026-07-09T14:24:57.417Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17811,54 +18788,20 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    }
-  ],
-  "2026-07-02": [
-    {
-      "id": "1783567290984_2026-07-02",
-      "text": "古诗2首",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
       "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "reminderTime": null
     },
     {
-      "id": "1783567290984_2026-07-02",
-      "text": "练字3张",
-      "category": "本周任务",
+      "id": "1783607131044_ctoqcjtm",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "createdAt": "2026-07-09T14:25:31.044Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17867,25 +18810,19 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": ""
     },
     {
-      "id": "1783567290985_2026-07-02",
-      "text": "看图写话1篇",
-      "category": "本周任务",
+      "id": "1783607131044_i8l9ab9p",
+      "text": "Bluey S2 2集 29 30",
+      "category": "英语",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "createdAt": "2026-07-09T14:25:31.044Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17894,27 +18831,65 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1783607131044_31pehrg3",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:25:31.044Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607131044_3m7tentm",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:25:31.044Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
     }
   ],
   "2026-07-03": [
     {
-      "id": "1783567290984_2026-07-03",
-      "text": "古诗2首",
-      "category": "本周任务",
+      "id": "1783607231522",
+      "text": "美术课",
+      "category": "综合",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
       "note": "",
       "reflection": "",
-      "image": null,
-      "scheduledTime": "",
+      "updatedAt": "2026-07-09T14:27:11.522Z",
+      "createdAt": "2026-07-09T14:27:11.522Z",
+      "timeRecords": [],
       "pinned": false,
       "tags": [],
       "progress": {
@@ -17923,157 +18898,1463 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290984_2026-07-03",
-      "text": "练字3张",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
       "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290985_2026-07-03",
-      "text": "看图写话1篇",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "reminderTime": null
     }
   ],
   "2026-07-04": [
     {
-      "id": "1783567290984_2026-07-04",
-      "text": "古诗2首",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290984_2026-07-04",
-      "text": "练字3张",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    },
-    {
-      "id": "1783567290985_2026-07-04",
-      "text": "看图写话1篇",
-      "category": "本周任务",
-      "subCategory": "",
-      "done": false,
-      "timeSpent": 0,
-      "timeRecords": [],
-      "subTasks": [],
-      "note": "",
-      "reflection": "",
-      "image": null,
-      "scheduledTime": "",
-      "pinned": false,
-      "tags": [],
-      "progress": {
-        "initial": 0,
-        "current": 0,
-        "target": 0,
-        "unit": "%"
-      },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-06-28",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
-    }
-  ],
-  "2026-07-09": [
-    {
-      "id": "1783582835632_dwau4ypz",
-      "text": "预习",
+      "id": "1783607338140_1jek3pc6",
+      "text": "课本第一单元《植物妈妈有办法》预习",
       "category": "语文",
       "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607338140_u0qzksoj",
+      "text": "课本第一单元《我是什么》生字听写",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607338140_ed71y31e",
+      "text": "课外阅读《普通人改变世界》2本",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607338140_ers14cve",
+      "text": "课本第二单元 1~6的表内乘法 预习 （李老头）",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607338140_8v7ivvnc",
+      "text": "100以内加减法计算",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607338140_swkag7vl",
+      "text": "RAZ E 朗读 2本 34 35",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:28:58.140Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-07-05": [
+    {
+      "id": "1783607498274_00f7bk2j",
+      "text": "课本第一单元《语文园地一》预习",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_1vhki1ld",
+      "text": "课本第一单元《植物妈妈有办法》生字听写",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_gleuquve",
+      "text": "课外阅读《逗逗镇的成语故事》刻舟求剑 凿壁借光 三心二意 胡说八道",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_oh61zwj2",
+      "text": "100以内加减法计算 2组 全对",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_6ns70b94",
+      "text": "RAZ E 朗读 3篇 36 37 38",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_uk6ud0rv",
+      "text": "Bluey S2 1集 33",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_d1mtt56t",
+      "text": "Fly Guy 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_do9tvfal",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607498274_m59tc63m",
+      "text": "斑马百科 欧洲文明 2/12",
+      "category": "通识",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:31:38.274Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-07-06": [
+    {
+      "id": "1783607807103_r4fyojh9",
+      "text": "预习课本第二单元《场景歌》《拍手歌》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607807103_xf3s4ail",
+      "text": "小古文《司马光》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607807103_dg7djpe7",
+      "text": "课外阅读《写给儿童的中国历史》12 清",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    },
+    {
+      "id": "1783607807103_wxx14v0d",
+      "text": "课本第二单元 1~6的表内乘法 （李老头）",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607807103_dh49a94j",
+      "text": "计算练习 2列全对",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607807103_qg6y81x2",
+      "text": "RAZ E 朗读 2本 39 40",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607807103_hq5hiucm",
+      "text": "跳高200下",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:36:47.103Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null
+    }
+  ],
+  "2026-07-07": [
+    {
+      "id": "1783607889261_twf0pv24",
+      "text": "预习课本第二单元《田家四季歌》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_sx035hub",
+      "text": "课本第二单元 生字拼音过关",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_ezng2vo0",
+      "text": "课外阅读《写给儿童的中国历史》12 清",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_x6kq1edi",
+      "text": "写字课作业1张",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_sacwaqn8",
+      "text": "100以内加减法计算2 50题全对",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_gh4hoory",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607889261_ciiwnjt8",
+      "text": "跳绳",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:38:09.261Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-07-08": [
+    {
+      "id": "1783607968072_eb8hdwgo",
+      "text": "预习课本第三单元 《彩虹》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:39:28.072Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607968072_q5v5fe6r",
+      "text": "课本第二单元 生词书写",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:39:28.072Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607968072_l3qddi8o",
+      "text": "课外阅读《写给儿童的中国历史》13 近代",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:39:28.072Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607968072_8ooqkgf6",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:39:28.072Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    },
+    {
+      "id": "1783607968072_v01z35ah",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-09T14:39:28.072Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": ""
+    }
+  ],
+  "2026-07-10": [
+    {
+      "id": "1783686340326_4g84m65y",
+      "text": "第二单元生词订正",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-10T12:25:40.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783686340326_du64nysj",
+      "text": "《实验班》乘法 P10-12",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-10T12:25:40.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 3,
+      "image": null
+    },
+    {
+      "id": "1783686340326_b1z5owkk",
+      "text": "计算练习 3列过关",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-10T12:25:40.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783686340326_s9r1uqh9",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-10T12:25:40.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783686340326_53xgf4q6",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-10T12:25:40.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783687652648",
+      "text": "RAZ A 97 单词",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "updatedAt": "2026-07-10T12:47:32.648Z",
+      "createdAt": "2026-07-10T12:47:32.648Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null,
+      "isRepeating": false,
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "2026-07-11": [
+    {
+      "id": "1783729846326_hyz1v7bj",
+      "text": "《337晨读 一年级》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783729846326_8lqq4gkj",
+      "text": "小古文《王戎不取道旁李》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783729846326_f2ep3ldo",
+      "text": "乘法口诀背诵",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 300,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [
+        {
+          "time": "08:42",
+          "change": 5,
+          "previousTotal": 0,
+          "newTotal": 5,
+          "note": "",
+          "timestamp": "2026-07-11T00:42:10.345Z"
+        }
+      ],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783729846326_idu1l6w3",
+      "text": "计算练习 45题全对",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783729846326_umujusu0",
+      "text": "RAZ E 朗读 2本 48 49",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783729846326_9u5vurv4",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
       "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783729846326_djgyr2tq",
+      "text": "Fly Guy 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783729846326_j61hx8vy",
+      "text": "单词默写 复习",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 1,
+      "image": null
+    },
+    {
+      "id": "1783729846326_5fdi5c1b",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "image": null
+    },
+    {
+      "id": "1783729846326_cdq8g7g0",
+      "text": "跳高200下",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-11T00:30:46.326Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783730549321",
+      "text": "《实验班》乘法 P13-14",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "今天做得不太理想。",
+      "reflection": "",
+      "updatedAt": "2026-07-11T00:42:29.321Z",
+      "createdAt": "2026-07-11T00:42:29.321Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null,
+      "isRepeating": false,
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "2026-07-12": [
+    {
+      "id": "1783834574100_fufryhzg",
+      "text": "一本阅读题 1篇",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_04323qx9",
+      "text": "一本看图写话 1篇",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_wb01blz8",
+      "text": "《实验班》乘法",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_fms3ag7e",
+      "text": "计算练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_0k6zp7ma",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_9b1haken",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_c8i1o4wj",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_ujdo7uvr",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_dn3eg0l5",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "1783834574100_o4ygeffj",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "createdAt": "2026-07-12T05:36:14.100Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "expValue": 2,
+      "image": null
+    },
+    {
+      "id": "moved_1783834606972_a5waco4u",
+      "text": "写字3张",
+      "category": "校内",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "updatedAt": "2026-07-12T05:36:46.972Z",
+      "createdAt": "2026-07-12T05:36:46.972Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 1,
+        "target": 3,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "image": null
+    },
+    {
+      "id": "1783834625651",
+      "text": "练字",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "note": "",
+      "reflection": "",
+      "updatedAt": "2026-07-12T05:37:05.651Z",
+      "createdAt": "2026-07-12T05:37:05.651Z",
+      "timeRecords": [],
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "scheduledTime": "",
+      "reminderTime": null,
+      "expValue": 2,
+      "image": null,
+      "isRepeating": false,
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "2026-07-13": [
+    {
+      "id": "1783941911644_qhl3vt8i",
+      "text": "第二单元《彩虹》生字拼音过关",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18089,10 +20370,12 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z",
+      "reminderTime": null
     },
     {
-      "id": "1783582835632_dasa7kcr",
+      "id": "1783941911644_1m7h65n6",
       "text": "古诗古文",
       "category": "语文",
       "subCategory": "",
@@ -18112,14 +20395,15 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_b3e48vr3",
-      "text": "二 乘法",
+      "id": "1783941911644_b7f2l8ai",
+      "text": "《实验班》乘法P17",
       "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18135,14 +20419,16 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z",
+      "reminderTime": null
     },
     {
-      "id": "1783582835632_11oqwpi7",
+      "id": "1783941911644_ye9vni21",
       "text": "计算练习",
       "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18158,14 +20444,15 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_fugwgdvl",
+      "id": "1783941911644_59captap",
       "text": "RAZ E 朗读 2本",
       "category": "英语",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18181,10 +20468,11 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_b469thkc",
+      "id": "1783941911644_12td8x6u",
       "text": "Bluey S2 2集",
       "category": "英语",
       "subCategory": "",
@@ -18204,10 +20492,11 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_tpg52a04",
+      "id": "1783941911644_27lkjw8d",
       "text": "Fly Guy 1本",
       "category": "英语",
       "subCategory": "",
@@ -18227,10 +20516,11 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_wfvfm77q",
+      "id": "1783941911644_cq25g0j4",
       "text": "单词 5个",
       "category": "英语",
       "subCategory": "",
@@ -18250,14 +20540,15 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835632_qlko7beq",
-      "text": "跳绳3组",
+      "id": "1783941911644_9i1hc81v",
+      "text": "跳绳3组 140个",
       "category": "运动",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18273,10 +20564,12 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z",
+      "reminderTime": null
     },
     {
-      "id": "1783582835632_cr5mceyu",
+      "id": "1783941911644_ctcezi19",
       "text": "跳高100下",
       "category": "运动",
       "subCategory": "",
@@ -18296,12 +20589,123 @@
         "target": 0,
         "unit": "%"
       },
-      "createdAt": "2026-07-09T07:40:35.632Z"
+      "expValue": 2,
+      "createdAt": "2026-07-13T11:25:11.644Z"
     },
     {
-      "id": "1783582835643_tbh5s94z",
-      "text": "古诗2首",
-      "category": "本周任务",
+      "id": "1783942060824",
+      "text": "阅读《写给儿童的中国历史》14 近代",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 1800,
+      "timeRecords": [
+        {
+          "time": "19:27",
+          "change": 30,
+          "previousTotal": 0,
+          "newTotal": 30,
+          "note": "",
+          "timestamp": "2026-07-13T11:27:53.663Z"
+        }
+      ],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-13T11:27:40.824Z",
+      "updatedAt": "2026-07-13T11:27:40.824Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    },
+    {
+      "id": "1783942141758",
+      "text": "预习《数星星的孩子》",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-13T11:29:01.758Z",
+      "updatedAt": "2026-07-13T11:29:01.758Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    }
+  ],
+  "2026-07-14": [
+    {
+      "id": "1784204312321_wsb6jhhs",
+      "text": "第2单元生词过关",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204312321_xkldyft2",
+      "text": "古诗古文",
+      "category": "语文",
       "subCategory": "",
       "done": false,
       "timeSpent": 0,
@@ -18319,18 +20723,15 @@
         "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-07-05",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
     },
     {
-      "id": "1783582835643_67st68ma",
-      "text": "练字3张",
-      "category": "本周任务",
+      "id": "1784204312321_nwfd1qkw",
+      "text": "二 乘法《实验班》",
+      "category": "数学",
       "subCategory": "",
-      "done": false,
+      "done": true,
       "timeSpent": 0,
       "timeRecords": [],
       "subTasks": [],
@@ -18342,21 +20743,66 @@
       "tags": [],
       "progress": {
         "initial": 0,
-        "current": 1,
-        "target": 3,
+        "current": 0,
+        "target": 0,
         "unit": "%"
       },
-      "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-07-05",
-      "targetCategory": "语文",
-      "targetSubCategory": "",
-      "expValue": 2
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z",
+      "reminderTime": null
     },
     {
-      "id": "1783582835643_5x0k3hrv",
-      "text": "看图写话1篇",
-      "category": "本周任务",
+      "id": "1784204312321_9lh1d8ef",
+      "text": "计算练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_11wis9jx",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_v086d4zf",
+      "text": "Bluey S2 2集",
+      "category": "英语",
       "subCategory": "",
       "done": false,
       "timeSpent": 0,
@@ -18374,11 +20820,964 @@
         "target": 0,
         "unit": "%"
       },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_79wdscwg",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_23ccgv1c",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_nx528kvo",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    },
+    {
+      "id": "1784204312321_an1pg5fd",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:32.321Z"
+    }
+  ],
+  "2026-07-15": [
+    {
+      "id": "1784204314700_1v86isti",
+      "text": "《语文园地三》生字拼音过关",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204314700_fxmj8j23",
+      "text": "古诗古文",
+      "category": "语文",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z"
+    },
+    {
+      "id": "1784204314700_wre4zw5a",
+      "text": "二 乘法 《实验班》",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204314700_jd06vx3t",
+      "text": "计算练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z"
+    },
+    {
+      "id": "1784204314700_uqb3kiyo",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z"
+    },
+    {
+      "id": "1784204314700_0wsg31hz",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z"
+    },
+    {
+      "id": "1784204314700_wviooa62",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.700Z"
+    },
+    {
+      "id": "1784204314701_np1oexhf",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.701Z"
+    },
+    {
+      "id": "1784204314701_pbmqdggb",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.701Z"
+    },
+    {
+      "id": "1784204314701_zlu4pjr3",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:34.701Z"
+    }
+  ],
+  "2026-07-16": [
+    {
+      "id": "1784204317534_cmtkqutv",
+      "text": "练字1张",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204317534_fd854ugk",
+      "text": "古诗古文",
+      "category": "语文",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204317534_phtw40h4",
+      "text": "二 乘法《实验班》",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784204317534_hw64bi95",
+      "text": "计算练习",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_bepfom95",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_lg1hvgjg",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_kyp0pab4",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_ebick4zm",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_iqaz7vwr",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    },
+    {
+      "id": "1784204317534_zqvp4yp2",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-16T12:18:37.534Z"
+    }
+  ],
+  "2026-07-17": [
+    {
+      "id": "1784283724367",
+      "text": "美术课（第四节）",
+      "category": "综合",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
       "reminderTime": null,
-      "isWeekTask": true,
-      "weekStart": "2026-07-05",
-      "targetCategory": "语文",
-      "targetSubCategory": ""
+      "createdAt": "2026-07-17T10:22:04.367Z",
+      "updatedAt": "2026-07-17T10:22:04.367Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    },
+    {
+      "id": "1784292335938",
+      "text": "洋葱学院 除法 16 17",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-17T12:45:35.938Z",
+      "updatedAt": "2026-07-17T12:45:35.938Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    },
+    {
+      "id": "1784294682737",
+      "text": "Bluey 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-17T13:24:42.737Z",
+      "updatedAt": "2026-07-17T13:24:42.737Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    }
+  ],
+  "2026-07-18": [
+    {
+      "id": "1784388746821_iios639k",
+      "text": "练字1张",
+      "category": "语文",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784388746821_ysffbr8g",
+      "text": "二 乘法 洋葱学园",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784388746821_6uywytzy",
+      "text": "计算练习 100以内加减法和乘法",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z",
+      "reminderTime": null
+    },
+    {
+      "id": "1784388746821_mllrx4c8",
+      "text": "RAZ E 朗读 2本",
+      "category": "英语",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388746821_d6o76e4q",
+      "text": "Bluey S2 2集",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388746821_ze12vlij",
+      "text": "Fly Guy 1本",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388746821_anspfxep",
+      "text": "单词 5个",
+      "category": "英语",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388746821_dxoox90n",
+      "text": "跳绳3组",
+      "category": "运动",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388746821_fwsp1ywi",
+      "text": "跳高100下",
+      "category": "运动",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "expValue": 2,
+      "createdAt": "2026-07-18T15:32:26.821Z"
+    },
+    {
+      "id": "1784388823035",
+      "text": "《实验班》乘法",
+      "category": "数学",
+      "subCategory": "",
+      "done": true,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-18T15:33:43.035Z",
+      "updatedAt": "2026-07-18T15:33:43.035Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
     }
   ]
 }
