@@ -508,13 +508,14 @@
         "yundong": 2
       },
       "2026-07-20": {
-        "yundong": 2
+        "yundong": 4,
+        "yuwen": 2
       }
     },
     "total": {
       "yingyu": 51,
-      "yuwen": 64,
-      "yundong": 30,
+      "yuwen": 66,
+      "yundong": 32,
       "shuxue": 65,
       "chuangzao": 4,
       "tongshi": 2
@@ -544,6 +545,6 @@
   },
   "subjectTodoEntries": {},
   "gradeSubCategories": {},
-  "syncTime": "2026-07-20T07:26:08.128Z",
+  "syncTime": "2026-07-20T07:28:22.501Z",
   "version": "2.0"
 }
