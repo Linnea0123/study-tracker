@@ -3797,5 +3797,44 @@
       ],
       "isRepeating": false
     }
+  ],
+  "2026-07-21": [
+    {
+      "id": "1784532952793",
+      "text": "22",
+      "category": "生活",
+      "subCategory": "",
+      "done": false,
+      "timeSpent": 0,
+      "timeRecords": [],
+      "subTasks": [],
+      "note": "",
+      "reflection": "",
+      "image": null,
+      "expValue": 2,
+      "scheduledTime": "",
+      "pinned": false,
+      "tags": [],
+      "progress": {
+        "initial": 0,
+        "current": 0,
+        "target": 0,
+        "unit": "%"
+      },
+      "reminderTime": null,
+      "createdAt": "2026-07-20T07:35:52.793Z",
+      "updatedAt": "2026-07-20T07:35:52.793Z",
+      "repeatFrequency": "",
+      "repeatDays": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "isRepeating": false
+    }
   ]
 }
