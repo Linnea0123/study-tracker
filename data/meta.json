@@ -504,12 +504,12 @@
       },
       "2026-07-19": {
         "shuxue": 4,
-        "yingyu": 4,
+        "yingyu": 2,
         "yundong": 2
       }
     },
     "total": {
-      "yingyu": 53,
+      "yingyu": 51,
       "yuwen": 64,
       "yundong": 28,
       "shuxue": 65,
@@ -541,6 +541,6 @@
   },
   "subjectTodoEntries": {},
   "gradeSubCategories": {},
-  "syncTime": "2026-07-20T07:12:20.235Z",
+  "syncTime": "2026-07-20T07:16:49.885Z",
   "version": "2.0"
 }
