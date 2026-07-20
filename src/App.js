@@ -6348,35 +6348,158 @@ const getBackupList = () => {
 };
 
 
+// ========================================
+// 恢复备份（兼容所有格式）
+// ========================================
 const restoreBackup = async (backupKey) => {
   try {
     const backupData = JSON.parse(localStorage.getItem(backupKey));
     if (!backupData) {
-      alert('备份文件不存在');
+      alert('❌ 备份文件不存在');
       return;
     }
 
-    if (window.confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
-      console.log('🔄 开始恢复备份...');
-      
-      // 保存所有关键数据到 localStorage
-      await saveMainData('tasks', backupData.tasks || {});
-      await saveMainData('templates', backupData.templates || []);
-      await saveMainData('customAchievements', backupData.customAchievements || []);
-      await saveMainData('unlockedAchievements', backupData.unlockedAchievements || []);
-      await saveMainData('categories', backupData.categories || baseCategories);
-      await saveMainData('monthTasks', backupData.monthTasks || []);
-      await saveMainData('grades', backupData.grades || []);  // 恢复成绩记录
-      
-      console.log('✅ 所有数据已保存到 localStorage');
-      
-      setTimeout(() => {
-        alert('备份恢复成功！页面将重新加载。');
-        window.location.reload();
-      }, 500);
+    // 显示备份信息
+    const taskCount = backupData.tasks ? Object.keys(backupData.tasks).length : 
+                      backupData.tasksByDate ? Object.keys(backupData.tasksByDate).length : 0;
+    
+    if (!window.confirm(`确定要恢复此备份吗？\n\n📊 任务天数: ${taskCount}\n📦 包含数据: ${Object.keys(backupData).join(', ')}\n\n⚠️ 当前数据将被覆盖！`)) {
+      return;
     }
+
+    console.log('🔄 开始恢复备份...');
+    console.log('📦 备份数据包含:', Object.keys(backupData));
+
+    // ========================================
+    // 恢复所有数据（不管什么格式）
+    // ========================================
+
+    // 1. 任务数据（兼容 tasks 和 tasksByDate 两种格式）
+    if (backupData.tasks) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasks));
+      console.log(`✅ 恢复 tasks (${Object.keys(backupData.tasks).length} 天)`);
+    } else if (backupData.tasksByDate) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasksByDate));
+      console.log(`✅ 恢复 tasksByDate (${Object.keys(backupData.tasksByDate).length} 天)`);
+    } else {
+      // 如果都不是，尝试直接恢复
+      localStorage.setItem('tasks_monthly', JSON.stringify(backupData));
+      console.log('✅ 恢复整个备份数据');
+    }
+
+    // 2. 每日评分
+    if (backupData.dailyRatings) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(backupData.dailyRatings));
+      console.log('✅ 恢复 dailyRatings');
+    }
+
+    // 3. 每日复盘
+    if (backupData.dailyReflections) {
+      localStorage.setItem(`${STORAGE_KEY}_dailyReflections`, JSON.stringify(backupData.dailyReflections));
+      console.log('✅ 恢复 dailyReflections');
+    }
+
+    // 4. 学习结束时间
+    if (backupData.studyEndTimes) {
+      localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
+      console.log('✅ 恢复 studyEndTimes');
+    }
+
+    // 5. 本月任务
+    if (backupData.monthTasks) {
+      localStorage.setItem(`${STORAGE_KEY}_monthTasks`, JSON.stringify(backupData.monthTasks));
+      console.log('✅ 恢复 monthTasks');
+    }
+
+    // 6. 成绩记录
+    if (backupData.grades) {
+      localStorage.setItem(`${STORAGE_KEY}_grades`, JSON.stringify(backupData.grades));
+      console.log('✅ 恢复 grades');
+    }
+
+    // 7. 分类
+    if (backupData.categories) {
+      localStorage.setItem(`${STORAGE_KEY}_categories`, JSON.stringify(backupData.categories));
+      console.log('✅ 恢复 categories');
+    }
+
+    // 8. 每日提醒
+    if (backupData.reminderText !== undefined) {
+      localStorage.setItem('daily_reminder', backupData.reminderText);
+      console.log('✅ 恢复 reminderText');
+    }
+
+    // 9. 经验数据
+    if (backupData.expData) {
+      localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+      console.log('✅ 恢复 expData');
+    }
+
+    // 10. 学期结束日期
+    if (backupData.semesterEndDate) {
+      localStorage.setItem('semester_end_date', backupData.semesterEndDate);
+      console.log('✅ 恢复 semesterEndDate');
+    }
+
+    // 11. 任务排序顺序
+    if (backupData.taskOrders) {
+      Object.entries(backupData.taskOrders).forEach(([key, value]) => {
+        localStorage.setItem(key, JSON.stringify(value));
+      });
+      console.log('✅ 恢复 taskOrders');
+    }
+
+    // 12. 子分类颜色
+    if (backupData.subCategoryColors) {
+      localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
+      console.log('✅ 恢复 subCategoryColors');
+    }
+
+    // 13. 类别颜色
+    if (backupData.categoryColors) {
+      localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
+      console.log('✅ 恢复 categoryColors');
+    }
+
+    // 14. 科目待办
+    if (backupData.subjectTodoEntries) {
+      localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
+      console.log('✅ 恢复 subjectTodoEntries');
+    }
+
+    // 15. 每周计划
+    if (backupData.weekPlans) {
+      localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
+      console.log('✅ 恢复 weekPlans');
+    }
+
+    // 16. 每月计划
+    if (backupData.monthPlans) {
+      localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
+      console.log('✅ 恢复 monthPlans');
+    }
+
+    // 17. 每日任务模板
+    if (backupData.dailyTaskTemplates) {
+      localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+      console.log('✅ 恢复 dailyTaskTemplates');
+    }
+
+    // 18. GitHub SHA（用于后续同步）
+    if (backupData.githubSha) {
+      localStorage.setItem('github_sha', backupData.githubSha);
+      console.log('✅ 恢复 github_sha');
+    }
+
+    console.log('✅ 所有数据恢复完成！');
+    
+    setTimeout(() => {
+      alert('✅ 备份恢复成功！页面将重新加载。');
+      window.location.reload();
+    }, 500);
+
   } catch (error) {
-    console.error('恢复备份失败:', error);
+    console.error('❌ 恢复备份失败:', error);
     alert('恢复备份失败：' + error.message);
   }
 };
