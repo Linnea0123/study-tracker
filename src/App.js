@@ -5708,173 +5708,7 @@ const handleRestore = async (backupKey) => {
 
 
 
-const GitHubSyncModal = ({ config, onSave, onClose }) => {
-  const [token, setToken] = useState(config.token || '');
-  const [autoSync, setAutoSync] = useState(config.autoSync !== undefined ? config.autoSync : false);
-  const [gistId, setGistId] = useState(config.gistId || '46c9f5bb3a6a62057759293b0399a15c');
 
-  // 获取 Token 后四位
-  const getTokenSuffix = (tokenValue) => {
-    if (!tokenValue || tokenValue.length < 4) return '';
-    return tokenValue.slice(-4);
-  };
-
-  const expectedSuffix = 'ocb0';
-  const hasAutoSavedRef = useRef(false);
-
-  const handleSave = () => {
-    if (!token.trim()) {
-      alert('请输入 GitHub Token');
-      return;
-    }
-    
-    const suffix = getTokenSuffix(token);
-    if (suffix !== expectedSuffix) {
-      alert(`Token 后四位是 "${suffix}"，不是 "${expectedSuffix}"！\n请检查 Token 是否正确。`);
-      return;
-    }
-    
-    onSave({ token, autoSync, gistId });
-    onClose();
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '90%',
-        maxWidth: 400
-      }}>
-        <h3 style={{ textAlign: 'center', marginBottom: 15, color: '#1a73e8' }}>
-          ☁️ GitHub 同步设置
-        </h3>
-        
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
-            GitHub Personal Access Token:
-          </label>
-          <input
-            type="text"
-            value={token}
-            onChange={(e) => {
-              setToken(e.target.value);
-              hasAutoSavedRef.current = false;
-            }}
-            placeholder="输入 GitHub Token"
-            style={{
-              width: '100%',
-              padding: 8,
-              border: '1px solid #ccc',
-              borderRadius: 6,
-              fontSize: 14,
-              boxSizing: 'border-box'
-            }}
-          />
-          
-          {token.length >= 4 && (
-            <div style={{ 
-              fontSize: 12, 
-              marginTop: 5,
-              color: getTokenSuffix(token) === expectedSuffix ? '#4caf50' : '#f44336'
-            }}>
-              Token 后四位: <strong>{getTokenSuffix(token)}</strong>
-              {getTokenSuffix(token) === expectedSuffix ? ' ✓ 正确' : ' ✗ 不正确（应为 ocb0）'}
-            </div>
-          )}
-          
-          {token.length > 0 && token.length < 4 && (
-            <div style={{ fontSize: 12, marginTop: 5, color: '#ff9800' }}>
-              Token 至少需要4位（当前{token.length}位）
-            </div>
-          )}
-          
-          <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
-            需要 gist 权限。获取地址：<br/>
-            https://github.com/settings/tokens
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
-            Gist ID:
-          </label>
-          <input
-            type="text"
-            value={gistId}
-            onChange={(e) => setGistId(e.target.value)}
-            placeholder="已有 Gist ID，留空则新建"
-            style={{
-              width: '100%',
-              padding: 8,
-              border: '1px solid #ccc',
-              borderRadius: 6,
-              fontSize: 14,
-              boxSizing: 'border-box'
-            }}
-          />
-          <div style={{ fontSize: 12, color: '#666', marginTop: 5 }}>
-            💡 默认 Gist ID: 46c9f5bb3a6a62057759293b0399a15c
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={autoSync}
-              onChange={(e) => setAutoSync(e.target.checked)}
-            />
-            <span>自动同步（数据变化后5秒自动同步）</span>
-          </label>
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: 10,
-              background: '#ccc',
-              color: '#000',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
-            }}
-          >
-            取消
-          </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: 10,
-              background: '#1a73e8',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
-            }}
-          >
-            保存
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 // 在 GitHubSyncModal 组件后面添加：
@@ -16609,7 +16443,7 @@ const getTaskCompletionType = useCallback((task, date) => {
   return { completed: task.done, type: task.done ? 'synced' : 'none' };
 }, [tasksByDate]);
 
-  const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
+ 
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const hasAttemptedRestore = useRef(false);  // 添加这一行
@@ -17049,10 +16883,14 @@ const restoreFromGitHub = useCallback(async () => {
   console.log('Gist ID:', gistId || '未设置');
   
   if (!token) {
-    alert('请先设置 GitHub Token');
-    setShowGitHubSyncModal(true);
-    return;
+  const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+  if (newToken && newToken.trim()) {
+    localStorage.setItem('github_token', newToken.trim());
+    alert('✅ Token 已保存，请重新点击恢复');
   }
+  setIsRestoring(false);
+  return;
+}
 
   // 如果没有 Gist ID，让用户输入
   if (!gistId) {
@@ -17536,7 +17374,13 @@ if (backupData.expData) {
   saveMainData
 ]);  
 
-// 替换 syncToGitHub 函数
+
+// 立即同步：对比云端，有差异才上传
+// ========================================
+// ========================================
+// 同步所有数据到 GitHub 仓库 data/
+// ========================================
+
 const syncToGitHub = useCallback(async (silent = false) => {
   if (isSyncing) {
     console.log('⏳ 同步进行中，请稍候...');
@@ -17545,116 +17389,395 @@ const syncToGitHub = useCallback(async (silent = false) => {
 
   const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
   if (!token) {
-    alert('请先设置 GitHub Token');
-    setShowGitHubSyncModal(true);
+    const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+    if (newToken && newToken.trim()) {
+      localStorage.setItem('github_token', newToken.trim());
+      localStorage.setItem('PAGE_A_github_token', newToken.trim());
+      alert('✅ Token 已保存，请重新点击同步');
+    }
+    setIsSyncing(false);
     return false;
   }
 
   setIsSyncing(true);
 
   try {
-    // 使用默认 Gist ID
-    const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
-    const targetGistId = DEFAULT_GIST_ID;
-    
-    localStorage.setItem('github_gist_id', targetGistId);
-    localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
+    const owner = 'Linnea0123';
+    const repo = 'study-tracker';
 
-    // 准备要同步的数据
-    const syncData = {
-      tasksByDate: tasksByDate,
+    // ========================================
+    // 1. 读取所有本地数据
+    // ========================================
+    const allTasks = JSON.parse(localStorage.getItem('tasks_monthly') || '{}');
+    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '{}');
+    const gradeSubCategories = localStorage.getItem('grade_subcategories') || '{}';
+    const dailyRatings = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings') || '{}');
+    const dailyReflections = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyReflections') || '{}');
+    const studyEndTimes = JSON.parse(localStorage.getItem('daily_study_end_times') || '{}');
+    const monthTasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_monthTasks') || '[]');
+    const categories = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_categories') || '[]');
+    const expData = JSON.parse(localStorage.getItem('exp_data_v2') || '{"daily":{},"total":{}}');
+    const reminderText = localStorage.getItem('daily_reminder') || '';
+    const semesterEndDate = localStorage.getItem('semester_end_date') || '2026-07-05';
+    const weekPlans = JSON.parse(localStorage.getItem('week_plans') || '[]');
+    const monthPlans = JSON.parse(localStorage.getItem('month_plans') || '[]');
+    const dailyTaskTemplates = JSON.parse(localStorage.getItem('daily_task_templates') || '[]');
+    const subCategoryColors = JSON.parse(localStorage.getItem('subcategory_colors') || '{}');
+    const categoryColors = JSON.parse(localStorage.getItem('category_colors') || '{}');
+    const subjectTodoEntries = JSON.parse(localStorage.getItem('subject_todo_entries_v2') || '{}');
+
+    if (Object.keys(allTasks).length === 0) {
+      const toast = document.createElement('div');
+      toast.textContent = '⚠️ 没有数据需要同步';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ffc107;
+        color: #333;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 3000;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 1500);
+      setIsSyncing(false);
+      return false;
+    }
+
+    // ========================================
+    // 2. 按月份分组任务数据
+    // ========================================
+    const monthsData = {};
+    Object.keys(allTasks).forEach(date => {
+      const month = date.substring(0, 7);
+      if (!monthsData[month]) {
+        monthsData[month] = {};
+      }
+      monthsData[month][date] = allTasks[date];
+    });
+
+    // ========================================
+    // 3. 计算本地完整数据的哈希值
+    // ========================================
+    const localFullData = {
+      tasks: allTasks,
+      grades: grades,
+      meta: {
+        dailyRatings, dailyReflections, studyEndTimes, monthTasks,
+        categories, expData, reminderText, semesterEndDate,
+        weekPlans, monthPlans, dailyTaskTemplates, subCategoryColors,
+        categoryColors, subjectTodoEntries, gradeSubCategories
+      }
+    };
+    const localHash = JSON.stringify(localFullData);
+
+    // ========================================
+    // 4. 从云端获取当前的哈希值
+    // ========================================
+    let cloudHash = null;
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/data/meta.json`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        const meta = JSON.parse(content);
+        cloudHash = meta.dataHash || null;
+        console.log('📡 云端 meta.json 已存在，哈希:', cloudHash ? cloudHash.substring(0, 50) + '...' : '无');
+      } else if (response.status === 404) {
+        console.log('📡 云端 meta.json 不存在');
+      } else {
+        console.log('📡 读取 meta.json 失败:', response.status);
+      }
+    } catch (e) {
+      console.log('📡 读取 meta.json 异常:', e.message);
+    }
+
+    // ========================================
+    // 5. 对比哈希值，判断是否需要同步
+    // ========================================
+   // ========================================
+// 5. 对比哈希值，判断是否需要同步
+// ========================================
+// ========================================
+// 5. 对比哈希值，判断是否需要同步
+// ========================================
+if (cloudHash === localHash) {
+  console.log('⏭️ 本地和云端数据一致，无需同步');
+  console.log('📋 逐月检查确认...');
+  let allConsistent = true;
+  
+  for (const [month, tasks] of Object.entries(monthsData)) {
+    const path = `data/${month}.json`;
+    console.log(`⏭️ ${path} 内容一致（与 meta 哈希一致）`);
+  }
+  
+  console.log('✅ 所有月份数据确认一致');
+  
+  // 👇 这部分是 "toast" 提示代码（就是你之前看到的页面底部弹窗）
+  const toast = document.createElement('div');
+  toast.textContent = '⏭️ 数据已是最新，无需同步';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffc107;
+    color: #333;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 3000;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 1500);
+  
+  setIsSyncing(false);
+  return true;  // ← 函数返回，结束同步
+}
+
+    console.log('🔄 检测到数据变更，开始同步...');
+    let successCount = 0;
+
+    // ========================================
+    // 6. 逐个月份上传任务数据
+    // ========================================
+    for (const [month, tasks] of Object.entries(monthsData)) {
+      const path = `data/${month}.json`;
+      const content = JSON.stringify(tasks, null, 2);
+      
+      let sha = null;
+      let cloudContent = null;
+      try {
+        const checkRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        );
+        if (checkRes.ok) {
+          const fileData = await checkRes.json();
+          sha = fileData.sha;
+          cloudContent = decodeURIComponent(escape(atob(fileData.content)));
+        }
+      } catch (e) {}
+
+      // 如果内容相同，跳过
+      if (cloudContent === content) {
+        console.log(`⏭️ ${path} 无变更，跳过`);
+        continue;
+      }
+
+      const body = {
+        message: `更新 ${month} 任务数据 - ${new Date().toLocaleString()}`,
+        content: btoa(unescape(encodeURIComponent(content)))
+      };
+      if (sha) body.sha = sha;
+
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+          }
+        );
+        if (response.ok) {
+          successCount++;
+          console.log(`✅ ${path} 同步成功 (${Object.keys(tasks).length} 天)`);
+        } else {
+          const error = await response.json();
+          console.error(`❌ ${path} 同步失败:`, error);
+        }
+      } catch (error) {
+        console.error(`❌ ${path} 请求失败:`, error);
+      }
+    }
+
+    // ========================================
+    // 7. 上传成绩数据
+    // ========================================
+    const gradesPath = 'data/grades.json';
+    const gradesContent = JSON.stringify(grades, null, 2);
+    let gradesSha = null;
+    let gradesCloudContent = null;
+    try {
+      const checkRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${gradesPath}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (checkRes.ok) {
+        const fileData = await checkRes.json();
+        gradesSha = fileData.sha;
+        gradesCloudContent = decodeURIComponent(escape(atob(fileData.content)));
+      }
+    } catch (e) {}
+
+    if (gradesCloudContent !== gradesContent && Object.keys(grades).length > 0) {
+      const body = {
+        message: `更新成绩数据 - ${new Date().toLocaleString()}`,
+        content: btoa(unescape(encodeURIComponent(gradesContent)))
+      };
+      if (gradesSha) body.sha = gradesSha;
+
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${gradesPath}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+          }
+        );
+        if (response.ok) {
+          successCount++;
+          console.log(`✅ ${gradesPath} 同步成功`);
+        }
+      } catch (error) {
+        console.error(`❌ ${gradesPath} 同步失败:`, error);
+      }
+    } else {
+      console.log(`⏭️ ${gradesPath} 无变更或为空，跳过`);
+    }
+
+    // ========================================
+    // 8. 上传元数据
+    // ========================================
+    const metaData = {
       dailyRatings: dailyRatings,
       dailyReflections: dailyReflections,
       studyEndTimes: studyEndTimes,
       monthTasks: monthTasks,
-      grades: grades,
       categories: categories,
       expData: expData,
-      semesterEndDate: semesterEndDate,
       reminderText: reminderText,
+      semesterEndDate: semesterEndDate,
       weekPlans: weekPlans,
       monthPlans: monthPlans,
       dailyTaskTemplates: dailyTaskTemplates,
       subCategoryColors: subCategoryColors,
       categoryColors: categoryColors,
-      gradeSubCategories: JSON.stringify(localStorage.getItem('grade_subcategories') || '{}'),
-      subjectTodoEntries: JSON.parse(localStorage.getItem('subject_todo_entries_v2') || '{}'),
+      subjectTodoEntries: subjectTodoEntries,
+      gradeSubCategories: JSON.parse(gradeSubCategories || '{}'),
+      dataHash: localHash,
       syncTime: new Date().toISOString(),
       version: '2.0'
     };
 
-    // 获取现有的 Gist
-    const getResponse = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    const metaPath = 'data/meta.json';
+    const metaContent = JSON.stringify(metaData, null, 2);
 
-    let method = 'POST';
-    let url = 'https://api.github.com/gists';
-
-    if (getResponse.ok) {
-      method = 'PATCH';
-      url = `https://api.github.com/gists/${targetGistId}`;
-    } else if (getResponse.status === 404) {
-      method = 'POST';
-      url = 'https://api.github.com/gists';
-    } else {
-      throw new Error(`获取 Gist 失败: ${getResponse.status}`);
-    }
-
-    // 构建请求体
-    const requestBody = {
-      description: '学习跟踪器数据备份',
-      public: false,
-      files: {
-        'study-tracker-data.json': {
-          content: JSON.stringify(syncData, null, 2)
+    let metaSha = null;
+    try {
+      const checkRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${metaPath}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
         }
+      );
+      if (checkRes.ok) {
+        const fileData = await checkRes.json();
+        metaSha = fileData.sha;
+        console.log(`📂 ${metaPath} 已存在`);
+      } else if (checkRes.status === 404) {
+        console.log(`📂 ${metaPath} 不存在，将创建`);
       }
-    };
-
-    const syncResponse = await fetch(url, {
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!syncResponse.ok) {
-      const errorData = await syncResponse.json();
-      throw new Error(`同步失败: ${syncResponse.status} - ${errorData.message || '未知错误'}`);
+    } catch (e) {
+      console.log(`📂 检查 ${metaPath} 失败`);
     }
 
-    const result = await syncResponse.json();
+    const body = {
+      message: `更新元数据 - ${new Date().toLocaleString()}`,
+      content: btoa(unescape(encodeURIComponent(metaContent)))
+    };
+    if (metaSha) {
+      body.sha = metaSha;
+    }
 
-    // 更新同步时间
-    const syncTime = new Date().toISOString();
-    localStorage.setItem('PAGE_A_github_last_sync', syncTime);
-    localStorage.setItem('github_last_sync', syncTime);
-    localStorage.setItem('PAGE_A_github_gist_id', result.id);
-    localStorage.setItem('github_gist_id', result.id);
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${metaPath}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(body)
+        }
+      );
+      
+      if (response.ok) {
+        successCount++;
+        console.log(`✅ ${metaPath} 同步成功`);
+      } else {
+        const error = await response.json();
+        console.error(`❌ ${metaPath} 同步失败:`, error);
+      }
+    } catch (error) {
+      console.error(`❌ ${metaPath} 请求失败:`, error);
+    }
 
-    // ✅ 只显示同步成功提示（浮动 Toast）
+    // ========================================
+    // 9. 完成
+    // ========================================
+    console.log(`\n✅ 同步完成！成功: ${successCount} 个文件`);
+
     const toast = document.createElement('div');
-    toast.textContent = '✅ 同步成功！';
+    toast.textContent = successCount > 0 ? `✅ 同步成功！${successCount} 个文件已更新` : '⏭️ 所有数据已是最新';
     toast.style.cssText = `
       position: fixed;
       bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      background: #4caf50;
-      color: white;
+      background: ${successCount > 0 ? '#4caf50' : '#ffc107'};
+      color: ${successCount > 0 ? 'white' : '#333'};
       padding: 10px 24px;
       border-radius: 8px;
       font-size: 14px;
       font-weight: bold;
       z-index: 3000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      animation: fadeIn 0.3s ease;
     `;
     document.body.appendChild(toast);
     setTimeout(() => {
@@ -17663,11 +17786,10 @@ const syncToGitHub = useCallback(async (silent = false) => {
       setTimeout(() => toast.remove(), 300);
     }, 2000);
 
-    // ✅ 同时更新 lastSyncStatus（用于"其他设置"中显示）
     setLastSyncStatus({
       success: true,
-      time: syncTime,
-      message: `✅ 同步成功`
+      time: new Date().toISOString(),
+      message: successCount > 0 ? `✅ 同步成功 (${successCount} 个文件)` : '⏭️ 数据已是最新'
     });
 
     return true;
@@ -17675,7 +17797,6 @@ const syncToGitHub = useCallback(async (silent = false) => {
   } catch (error) {
     console.error('❌ 同步失败:', error);
     
-    // ❌ 失败时显示错误提示
     const toast = document.createElement('div');
     toast.textContent = `❌ 同步失败: ${error.message}`;
     toast.style.cssText = `
@@ -17690,7 +17811,6 @@ const syncToGitHub = useCallback(async (silent = false) => {
       font-size: 14px;
       font-weight: bold;
       z-index: 3000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       max-width: 90%;
       text-align: center;
     `;
@@ -17712,112 +17832,238 @@ const syncToGitHub = useCallback(async (silent = false) => {
   } finally {
     setIsSyncing(false);
   }
-}, [
-  tasksByDate,
-  dailyRatings,
-  dailyReflections,
-  studyEndTimes,
-  monthTasks,
-  grades,
-  categories,
-  expData,
-  semesterEndDate,
-  reminderText,
-  weekPlans,
-  monthPlans,
-  dailyTaskTemplates,
-  subCategoryColors,
-  categoryColors,
-  isSyncing
-]);
-
-// 在 syncToGitHub 函数后面添加这个函数
+}, [isSyncing]);
+// 从 GitHub 恢复所有数据（有变更才恢复）
+// ========================================
+// ========================================
+// 从 GitHub 恢复所有月份的数据
+// ========================================
+// ========================================
+// 从 GitHub 恢复所有数据（对比哈希值）
+// ========================================
+// ========================================
+// 从 GitHub 恢复所有数据（对比哈希值）
+// ========================================
+// ========================================
+// 从 GitHub 恢复所有数据（对比哈希值）
+// ========================================
+// ========================================
+// 从 GitHub 恢复所有数据（带调试日志）
+// ========================================
 const forceRestoreFromCloud = async () => {
   try {
     const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
     if (!token) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
-    }
-
-    let targetGistId = localStorage.getItem('github_gist_id') || localStorage.getItem('PAGE_A_github_gist_id');
-    
-    // 如果没有保存的 Gist ID，使用默认值
-    if (!targetGistId) {
-      targetGistId = '46c9f5bb3a6a62057759293b0399a15c';
-      localStorage.setItem('github_gist_id', targetGistId);
-      localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
-    }
-
-    console.log('📡 正在从 Gist 获取数据:', targetGistId);
-
-    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击恢复');
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`获取失败: ${response.status} - ${response.statusText}`);
-    }
-
-    const gist = await response.json();
-    console.log('✅ Gist 获取成功');
-
-    // 检查文件是否存在
-    const fileContent = gist.files?.['study-tracker-data.json']?.content;
-    if (!fileContent) {
-      throw new Error('未找到 study-tracker-data.json 文件');
-    }
-
-    console.log('📄 文件内容长度:', fileContent.length);
-
-    // 尝试解析 JSON
-    let backupData;
-    try {
-      backupData = JSON.parse(fileContent);
-    } catch (parseError) {
-      console.error('❌ JSON 解析失败:', parseError);
-      const preview = fileContent.substring(0, 200) + '...';
-      console.log('📄 文件内容预览:', preview);
-      throw new Error(`数据格式错误: ${parseError.message}\n请检查 Gist 中的数据是否完整。`);
-    }
-
-    // 验证数据完整性
-    if (!backupData.tasksByDate && !backupData.tasks) {
-      throw new Error('无效的数据格式：缺少 tasksByDate 或 tasks 字段');
-    }
-
-    console.log('✅ 数据解析成功，包含字段:', Object.keys(backupData));
-
-    // 显示数据概览
-    const taskCount = Object.keys(backupData.tasksByDate || backupData.tasks || {}).length;
-    const confirmMsg = `确定要从云端恢复数据吗？\n\n` +
-      `📊 数据概览：\n` +
-      `• 任务天数: ${taskCount}\n` +
-      `• 包含评分: ${backupData.dailyRatings ? '✅' : '❌'}\n` +
-      `• 包含复盘: ${backupData.dailyReflections ? '✅' : '❌'}\n` +
-      `• 包含经验数据: ${backupData.expData ? '✅' : '❌'}\n` +
-      `• 同步时间: ${backupData.syncTime ? new Date(backupData.syncTime).toLocaleString() : '未知'}\n\n` +
-      `⚠️ 这将覆盖当前所有本地数据！`;
-
-    if (!window.confirm(confirmMsg)) {
       setIsRestoring(false);
       return;
     }
 
-    // 执行恢复
-    await handleRestoreData(backupData, 'overwrite');
+    const owner = 'Linnea0123';
+    const repo = 'study-tracker';
+
+    console.log('📡 ========== 开始恢复流程 ==========');
+
+    // ========================================
+    // 1. 先读取本地数据（作为基准）
+    // ========================================
+    const localTasksRaw = localStorage.getItem('tasks_monthly') || '{}';
+    const localTasks = JSON.parse(localTasksRaw);
+    console.log('📂 本地任务数据:', Object.keys(localTasks).length, '天');
+    console.log('📂 本地数据大小:', localTasksRaw.length, '字符');
+
+    // ========================================
+    // 2. 获取云端所有月份的数据文件
+    // ========================================
+    let monthFiles = [];
+    let cloudTasks = {};
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/data`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const files = await response.json();
+        monthFiles = files.filter(file => 
+          file.name.match(/^\d{4}-\d{2}\.json$/)
+        );
+        console.log(`📂 找到 ${monthFiles.length} 个月份数据文件:`, monthFiles.map(f => f.name));
+      } else {
+        console.log('📂 云端没有 data 目录');
+      }
+    } catch (e) {
+      console.log('📂 获取 data 目录失败:', e);
+    }
+
+    // ========================================
+    // 3. 读取所有云端任务数据
+    // ========================================
+    for (const file of monthFiles) {
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/data/${file.name}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const content = decodeURIComponent(escape(atob(data.content)));
+          const tasks = JSON.parse(content);
+          Object.assign(cloudTasks, tasks);
+          console.log(`📥 读取 ${file.name} (${Object.keys(tasks).length} 天)`);
+        }
+      } catch (e) {
+        console.warn(`⚠️ 读取 ${file.name} 失败:`, e);
+      }
+    }
+
+    console.log('📊 云端任务总天数:', Object.keys(cloudTasks).length);
+
+    // ========================================
+    // 4. 🔥 关键修复：移除任务中的时间戳字段再对比
+    // ========================================
+    const normalizeTask = (task) => {
+      // 只保留核心字段，忽略时间戳
+      const { id, text, category, subCategory, done, abandoned, pinned, timeSpent, subTasks, note, reflection } = task;
+      return {
+        id,
+        text,
+        category,
+        subCategory: subCategory || '',
+        done: done || false,
+        abandoned: abandoned || false,
+        pinned: pinned || false,
+        timeSpent: timeSpent || 0,
+        // 子任务只保留核心字段
+        subTasks: (subTasks || []).map(st => ({
+          text: st.text,
+          done: st.done || false
+        })),
+        note: note || '',
+        reflection: reflection || ''
+      };
+    };
+
+    const normalizeTasks = (tasks) => {
+      const result = {};
+      Object.keys(tasks).sort().forEach(date => {
+        result[date] = tasks[date].map(t => normalizeTask(t));
+      });
+      return result;
+    };
+
+    const cloudNormalized = normalizeTasks(cloudTasks);
+    const localNormalized = normalizeTasks(localTasks);
+
+    // ========================================
+    // 5. 对比标准化后的数据
+    // ========================================
+    const cloudHash = JSON.stringify(cloudNormalized);
+    const localHash = JSON.stringify(localNormalized);
+
+    console.log('📊 云端哈希 (标准化后):', cloudHash.substring(0, 80) + '...');
+    console.log('📊 本地哈希 (标准化后):', localHash.substring(0, 80) + '...');
+    console.log('📊 哈希是否相同:', cloudHash === localHash ? '✅ 是' : '❌ 否');
+
+    // 如果不同，找出差异
+    if (cloudHash !== localHash) {
+      // 找出哪些日期不同
+      const cloudDates = Object.keys(cloudNormalized);
+      const localDates = Object.keys(localNormalized);
+      
+      console.log('📅 云端日期:', cloudDates);
+      console.log('📅 本地日期:', localDates);
+      
+      // 找出差异
+      const allDates = new Set([...cloudDates, ...localDates]);
+      allDates.forEach(date => {
+        const cloudTaskCount = cloudNormalized[date]?.length || 0;
+        const localTaskCount = localNormalized[date]?.length || 0;
+        if (cloudTaskCount !== localTaskCount) {
+          console.log(`⚠️ 日期 ${date}: 云端 ${cloudTaskCount} 个任务, 本地 ${localTaskCount} 个任务`);
+        }
+      });
+    }
+
+    // ========================================
+    // 6. 根据对比结果决定是否恢复
+    // ========================================
+    if (cloudHash === localHash) {
+      console.log('⏭️ 云端和本地任务数据完全一致，无需恢复');
+      
+      const toast = document.createElement('div');
+      toast.textContent = '✅ 云端和本地数据一致，无需恢复';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4caf50;
+        color: white;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 3000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+      
+      setIsRestoring(false);
+      return;
+    }
+
+    // ========================================
+    // 7. 数据不同，弹出确认框
+    // ========================================
+    const taskCount = Object.keys(cloudTasks).length;
+    const localTaskCount = Object.keys(localTasks).length;
     
+    if (!window.confirm(`检测到云端数据与本地不同，确定要恢复吗？\n\n📊 云端任务: ${taskCount} 天\n📊 本地任务: ${localTaskCount} 天\n⚠️ 这将覆盖当前所有本地任务数据！`)) {
+      setIsRestoring(false);
+      return;
+    }
+
+    console.log('🔄 开始恢复任务数据...');
+
+    // ========================================
+    // 8. 恢复任务数据
+    // ========================================
+    if (Object.keys(cloudTasks).length > 0) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(cloudTasks));
+      console.log(`✅ 恢复任务数据 (${Object.keys(cloudTasks).length} 天)`);
+    }
+
+    alert(`✅ 恢复完成！\n📊 恢复了 ${taskCount} 天任务\n🔄 页面即将刷新...`);
+    setTimeout(() => window.location.reload(), 1000);
+
   } catch (error) {
     console.error('❌ 恢复失败:', error);
-    alert(`恢复失败: ${error.message}\n\n请检查：\n1. 网络连接是否正常\n2. Gist ID 是否正确\n3. Token 是否有 gist 权限`);
+    alert(`恢复失败: ${error.message}`);
     setIsRestoring(false);
   }
-};  
-
+};
 // ✅ 在这里插入 smartSyncAllMonths 函数
 // ========================================
 // 智能同步：只上传有变化的月份
@@ -18084,68 +18330,70 @@ const showRestoreChoiceModal = useCallback(() => {
   modalDiv.appendChild(contentDiv);
   document.body.appendChild(modalDiv);
   
-  // ========== 恢复云端数据 ==========
   const restoreBtn = contentDiv.querySelector('#restore-btn');
-  restoreBtn.onclick = async () => {
-    document.body.removeChild(modalDiv);
-    localStorage.setItem('last_cloud_restore_date', today);
-    setSilentSyncEnabled(true);
-    
-    // 检查是否有 token
-    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-    if (!token) {
-      // 没有 token，先弹出设置弹窗
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
-    }
-    
-    // 有 token，执行恢复
-    await performCloudRestore();
-  };
+restoreBtn.onclick = async () => {
+  document.body.removeChild(modalDiv);
+  localStorage.setItem('last_cloud_restore_date', today);
+  setSilentSyncEnabled(true);
   
-  // ========== 上传本地数据到云端 ==========
-  const uploadBtn = contentDiv.querySelector('#upload-btn');
-  uploadBtn.onclick = async () => {
-    document.body.removeChild(modalDiv);
-    localStorage.setItem('last_cloud_restore_date', today);
-    setSilentSyncEnabled(true);
-    
-    // 检查是否有 token
-    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
-    if (!token) {
-      // 没有 token，先弹出设置弹窗
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
+  // 检查是否有 token
+  const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+  if (!token) {
+    const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+    if (newToken && newToken.trim()) {
+      localStorage.setItem('github_token', newToken.trim());
+      localStorage.setItem('PAGE_A_github_token', newToken.trim());
+      alert('✅ Token 已保存，请重新点击恢复');
     }
-    
-    // 有 token，执行上传
-    const loadingToast = document.createElement('div');
-    loadingToast.textContent = '⏳ 正在上传到云端...';
-    loadingToast.style.cssText = `
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #61A2Da;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      z-index: 20000;
-    `;
-    document.body.appendChild(loadingToast);
-    
-    try {
-      await syncToGitHub(false);
-      loadingToast.textContent = '✅ 上传成功！';
-      setTimeout(() => loadingToast.remove(), 2000);
-    } catch (error) {
-      loadingToast.textContent = '❌ 上传失败';
-      setTimeout(() => loadingToast.remove(), 2000);
+    return;
+  }
+  
+  // 有 token，执行恢复
+  await performCloudRestore();
+};
+  
+ const uploadBtn = contentDiv.querySelector('#upload-btn');
+uploadBtn.onclick = async () => {
+  document.body.removeChild(modalDiv);
+  localStorage.setItem('last_cloud_restore_date', today);
+  setSilentSyncEnabled(true);
+  
+  const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+  if (!token) {
+    const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+    if (newToken && newToken.trim()) {
+      localStorage.setItem('github_token', newToken.trim());
+      localStorage.setItem('PAGE_A_github_token', newToken.trim());
+      alert('✅ Token 已保存，请重新点击上传');
     }
-  };
+    return;
+  }
+  
+  const loadingToast = document.createElement('div');
+  loadingToast.textContent = '⏳ 正在上传到云端...';
+  loadingToast.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #61A2Da;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 20000;
+  `;
+  document.body.appendChild(loadingToast);
+  
+  try {
+    await syncToGitHub(false);
+    loadingToast.textContent = '✅ 上传成功！';
+    setTimeout(() => loadingToast.remove(), 2000);
+  } catch (error) {
+    loadingToast.textContent = '❌ 上传失败';
+    setTimeout(() => loadingToast.remove(), 2000);
+  }
+};
   
   // ========== 今天不再提醒 ==========
   const skipBtn = contentDiv.querySelector('#skip-btn');
@@ -18182,47 +18430,172 @@ const performCloudRestore = useCallback(async () => {
   try {
     const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
     if (!token) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击恢复');
+      }
       return;
     }
     
-    // ✅ 强制使用默认 Gist ID
-    const DEFAULT_GIST_ID = '46c9f5bb3a6a62057759293b0399a15c';
-    const targetGistId = DEFAULT_GIST_ID;  // 直接使用默认值
+    const owner = 'Linnea0123';
+    const repo = 'study-tracker';
     
-    console.log('📁 恢复使用默认 Gist ID:', targetGistId);
+    console.log('📡 开始从仓库恢复数据...');
     
-    // 强制保存默认值
-    localStorage.setItem('github_gist_id', targetGistId);
-    localStorage.setItem('PAGE_A_github_gist_id', targetGistId);
+    // ========================================
+    // 1. 获取所有月份的数据文件
+    // ========================================
+    let allTasks = {};
+    let restoredCount = 0;
     
-    const response = await fetch(`https://api.github.com/gists/${targetGistId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/data`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const files = await response.json();
+        const monthFiles = files.filter(file => 
+          file.name.match(/^\d{4}-\d{2}\.json$/)
+        );
+        
+        console.log(`📂 找到 ${monthFiles.length} 个月份数据文件`);
+        
+        for (const file of monthFiles) {
+          try {
+            const fileRes = await fetch(
+              `https://api.github.com/repos/${owner}/${repo}/contents/data/${file.name}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Accept': 'application/vnd.github.v3+json'
+                }
+              }
+            );
+            if (fileRes.ok) {
+              const data = await fileRes.json();
+              const content = decodeURIComponent(escape(atob(data.content)));
+              const tasks = JSON.parse(content);
+              Object.assign(allTasks, tasks);
+              restoredCount++;
+              console.log(`✅ 恢复 ${file.name} (${Object.keys(tasks).length} 天)`);
+            }
+          } catch (e) {
+            console.warn(`⚠️ 恢复 ${file.name} 失败:`, e);
+          }
+        }
       }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`获取失败: ${response.status}`);
+    } catch (e) {
+      console.warn('⚠️ 获取 data 目录失败:', e);
     }
     
-    const gist = await response.json();
-    const content = gist.files['study-tracker-data.json']?.content;
-    
-    if (!content) {
-      throw new Error('未找到数据文件');
+    if (restoredCount === 0) {
+      alert('📭 云端没有数据可以恢复');
+      return;
     }
     
-    const backupData = JSON.parse(content);
-    await handleRestoreData(backupData, 'overwrite');
+    // ========================================
+    // 2. 恢复 grades.json
+    // ========================================
+    let grades = {};
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/data/grades.json`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        grades = JSON.parse(content);
+        console.log(`✅ 恢复 grades.json (${Object.keys(grades).length} 条)`);
+      }
+    } catch (e) {}
+    
+    // ========================================
+    // 3. 恢复 meta.json
+    // ========================================
+    let meta = {};
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/data/meta.json`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        meta = JSON.parse(content);
+        console.log('✅ 恢复 meta.json');
+      }
+    } catch (e) {}
+    
+    // ========================================
+    // 4. 确认恢复
+    // ========================================
+    const taskCount = Object.keys(allTasks).length;
+    const gradeCount = Object.keys(grades).length;
+    
+    if (!window.confirm(`确定要从云端恢复所有数据吗？\n\n📊 任务天数: ${taskCount}\n📊 成绩条数: ${gradeCount}\n\n⚠️ 这将覆盖当前所有本地数据！`)) {
+      return;
+    }
+    
+    // ========================================
+    // 5. 恢复所有数据到 localStorage
+    // ========================================
+    if (taskCount > 0) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(allTasks));
+      console.log(`✅ 恢复任务数据 (${taskCount} 天)`);
+    }
+    
+    if (gradeCount > 0) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_grades', JSON.stringify(grades));
+      console.log(`✅ 恢复成绩数据 (${gradeCount} 条)`);
+    }
+    
+    if (Object.keys(meta).length > 0) {
+      if (meta.dailyRatings) localStorage.setItem('study-tracker-PAGE_A-v2_dailyRatings', JSON.stringify(meta.dailyRatings));
+      if (meta.dailyReflections) localStorage.setItem('study-tracker-PAGE_A-v2_dailyReflections', JSON.stringify(meta.dailyReflections));
+      if (meta.studyEndTimes) localStorage.setItem('daily_study_end_times', JSON.stringify(meta.studyEndTimes));
+      if (meta.monthTasks) localStorage.setItem('study-tracker-PAGE_A-v2_monthTasks', JSON.stringify(meta.monthTasks));
+      if (meta.categories) localStorage.setItem('study-tracker-PAGE_A-v2_categories', JSON.stringify(meta.categories));
+      if (meta.expData) localStorage.setItem('exp_data_v2', JSON.stringify(meta.expData));
+      if (meta.reminderText !== undefined) localStorage.setItem('daily_reminder', meta.reminderText);
+      if (meta.semesterEndDate) localStorage.setItem('semester_end_date', meta.semesterEndDate);
+      if (meta.weekPlans) localStorage.setItem('week_plans', JSON.stringify(meta.weekPlans));
+      if (meta.monthPlans) localStorage.setItem('month_plans', JSON.stringify(meta.monthPlans));
+      if (meta.dailyTaskTemplates) localStorage.setItem('daily_task_templates', JSON.stringify(meta.dailyTaskTemplates));
+      if (meta.subCategoryColors) localStorage.setItem('subcategory_colors', JSON.stringify(meta.subCategoryColors));
+      if (meta.categoryColors) localStorage.setItem('category_colors', JSON.stringify(meta.categoryColors));
+      if (meta.subjectTodoEntries) localStorage.setItem('subject_todo_entries_v2', JSON.stringify(meta.subjectTodoEntries));
+      if (meta.gradeSubCategories) localStorage.setItem('grade_subcategories', JSON.stringify(meta.gradeSubCategories));
+      console.log('✅ 恢复 meta 数据');
+    }
+    
+    alert(`✅ 恢复完成！\n📊 恢复了 ${taskCount} 天任务\n📊 ${gradeCount} 条成绩\n🔄 页面即将刷新...`);
+    setTimeout(() => window.location.reload(), 1000);
     
   } catch (error) {
-    console.error('恢复失败:', error);
+    console.error('❌ 恢复失败:', error);
     alert('恢复失败: ' + error.message);
   }
-}, [handleRestoreData, setShowGitHubSyncModal]);
+}, [handleRestoreData]);
 // 调试函数验证星期对应关系
 window.testWeekDays = () => {
   console.log('=== 星期对应关系测试 ===');
@@ -19692,7 +20065,8 @@ useEffect(() => {
     triggerConfetti: triggerConfetti,
     setConfettiParts: setConfettiParts,
     getTasksByDate: () => tasksByDate,
-    getExpData: () => expData
+    getExpData: () => expData,
+    syncToGitHub: syncToGitHub
   };
   
   // ✅ 在这里添加这行！
@@ -23708,22 +24082,7 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
 
 
 
-{showGitHubSyncModal && (
-  <GitHubSyncModal
-    config={syncConfig}
-onSave={(newConfig) => {
-  localStorage.setItem(PAGE_ID + '_github_token', newConfig.token);
-  localStorage.setItem('github_token', newConfig.token);  // ✅ 添加这一行
-  localStorage.setItem(PAGE_ID + '_github_auto_sync', newConfig.autoSync.toString());
-  localStorage.setItem('github_auto_sync', newConfig.autoSync.toString()); 
-  localStorage.setItem(PAGE_ID + '_github_gist_id', newConfig.gistId);
-  localStorage.setItem('github_gist_id', newConfig.gistId);  // ✅ 添加这一行
-  setSyncConfig({ ...syncConfig, ...newConfig });
-  setShowGitHubSyncModal(false);
-}}
-    onClose={() => setShowGitHubSyncModal(false)}
-  />
-)}
+
 
 
 {showRestoreModal && (
@@ -24948,81 +25307,94 @@ onSave={(newConfig) => {
 
  {/* 同步按钮 */}
   <div
-    onClick={(e) => {
-      e.stopPropagation();
-      if (isSyncing) {
-        alert('正在同步中，请稍候...');
+  onClick={async () => {
+    if (isSyncing) return;
+    
+    let token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击同步');
+        token = newToken.trim();
+      } else {
         return;
       }
-      syncToGitHub();
-    }}
-    style={{
-      cursor: isSyncing ? "not-allowed" : "pointer",
-      opacity: isSyncing ? 0.5 : 1,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "28px",
-      height: "28px",
-      borderRadius: "50%",
-      
-      transition: "none"
-    }}
-    title="同步到云端"
-  >
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
-      <polyline points="10.5 11.5 12 10 13.5 11.5"/>
-      <line x1="12" x2="12" y1="10" y2="14"/>
-    </svg>
-  </div>
+    }
+    
+    try {
+      await syncToGitHub();
+    } catch (error) {
+      console.error('同步失败:', error);
+    }
+  }}
+  style={{
+    cursor: isSyncing ? "not-allowed" : "pointer",
+    opacity: isSyncing ? 0.5 : 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    transition: "none"
+  }}
+  title="同步到云端"
+>
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
+    <polyline points="10.5 11.5 12 10 13.5 11.5"/>
+    <line x1="12" x2="12" y1="10" y2="14"/>
+  </svg>
+</div>
 
   {/* 恢复按钮 */}
   {/* 恢复云端按钮 */}
-{/* 恢复云端按钮 */}
+{/* 恢复云端按钮 - 只有蓝色线条图标，无背景色 */}
 <div
-  onClick={async (e) => {
-    e.preventDefault();
+  onClick={async () => {
     if (isRestoring) return;
     
-    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    let token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
     if (!token) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击恢复');
+        token = newToken.trim();
+      } else {
+        return;
+      }
     }
     
     setIsRestoring(true);
-    
     try {
-      // ✅ 改用 window.forceRestoreFromCloud()
-      await window.forceRestoreFromCloud();
+      await forceRestoreFromCloud();
     } catch (error) {
       console.error('恢复失败:', error);
-      alert('恢复失败: ' + error.message);
-    } finally {
       setIsRestoring(false);
     }
   }}
   style={{
-    display: "inline-flex",
+    cursor: isRestoring ? "not-allowed" : "pointer",
+    opacity: isRestoring ? 0.5 : 1,
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "4px 6px",
-    backgroundColor: isRestoring ? "#ccc" : "#61A2Da",
-    color: isRestoring ? "#999" : "#fff",
-    fontSize: 11,
-    borderRadius: 6,
-    width: "60px",
+    width: "28px",
     height: "28px",
-    cursor: isRestoring ? "not-allowed" : "pointer",
-    userSelect: "none",
-    boxSizing: "border-box",
-    flexShrink: 0,
-    opacity: isRestoring ? 0.6 : 1
+    borderRadius: "50%",
+    transition: "none"
   }}
+  title="从云端恢复"
 >
-  {isRestoring ? "恢复中..." : "恢复云端"}
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#61A2Da" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17,10a3.1,3.1,0,0,0-.54.05,4.48,4.48,0,0,0-8.92,0A3.1,3.1,0,0,0,7,10a3,3,0,0,0,0,6H17a3,3,0,0,0,0-6Z"/>
+    <polyline points="10.5 12.5 12 14 13.5 12.5"/>
+    <line x1="12" x2="12" y1="10" y2="14"/>
+  </svg>
 </div>
 
 
@@ -27140,54 +27512,80 @@ onSave={(newConfig) => {
   </div>
 
   {/* 立即同步按钮 */}
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      if (isSyncing) {
-        alert('正在同步中，请稍候...');
+ <div
+  onClick={async (e) => {
+    e.preventDefault();
+    if (isSyncing) return;
+    
+    let token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    if (!token) {
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击同步');
+        token = newToken.trim();
+      } else {
         return;
       }
-      syncToGitHub();
-    }}
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "4px 6px",
-      backgroundColor: isSyncing ? "#ccc" : "#61A2Da",
-      color: "#fff",
-      fontSize: 11,
-      borderRadius: 6,
-      width: "60px",
-      height: "28px",
-      cursor: isSyncing ? "not-allowed" : "pointer",
-      userSelect: "none",
-      boxSizing: "border-box",
-      opacity: isSyncing ? 0.7 : 1,
-      flexShrink: 0
-    }}
-  >
-    {isSyncing ? "同步中..." : "立即同步"}
-  </div>
+    }
+    
+    try {
+      await syncToGitHub();
+    } catch (error) {
+      console.error('同步失败:', error);
+    }
+  }}
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "4px 6px",
+    backgroundColor: isSyncing ? "#ccc" : "#61A2Da",
+    color: isSyncing ? "#999" : "#fff",
+    fontSize: 11,
+    borderRadius: 6,
+    width: "60px",
+    height: "28px",
+    cursor: isSyncing ? "not-allowed" : "pointer",
+    userSelect: "none",
+    boxSizing: "border-box",
+    flexShrink: 0,
+    opacity: isSyncing ? 0.6 : 1
+  }}
+>
+  {isSyncing ? "同步中..." : "立即同步"}
+</div>
 
 {/* 恢复云端按钮 */}
 {/* 覆盖云端按钮 */}
 {/* 覆盖云端按钮 - 恢复过程中变灰 */}
 {/* 恢复云端按钮 */}
 <div
-  onClick={(e) => {
+  onClick={async (e) => {
     e.preventDefault();
     if (isRestoring) return;
     
-    const token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
+    let token = localStorage.getItem('github_token') || localStorage.getItem('PAGE_A_github_token');
     if (!token) {
-      alert('请先设置 GitHub Token');
-      setShowGitHubSyncModal(true);
-      return;
+      const newToken = prompt('🔑 请先设置 GitHub Token：\n\n1. 访问 https://github.com/settings/tokens\n2. 生成新 Token（勾选 repo 权限）\n3. 复制 Token 粘贴到这里');
+      if (newToken && newToken.trim()) {
+        localStorage.setItem('github_token', newToken.trim());
+        localStorage.setItem('PAGE_A_github_token', newToken.trim());
+        alert('✅ Token 已保存，请重新点击恢复');
+        token = newToken.trim();
+      } else {
+        return;
+      }
     }
     
     setIsRestoring(true);
-    forceRestoreFromCloud();
+    try {
+      await forceRestoreFromCloud();
+    } catch (error) {
+      console.error('恢复失败:', error);
+      setIsRestoring(false);
+    }
   }}
   style={{
     display: "inline-flex",
@@ -27656,26 +28054,7 @@ onSave={(newConfig) => {
           备份管理
         </div>
 
-        {/* 同步设置 */}
-        <div
-          onClick={() => {
-            setShowGitHubSyncModal(true);
-            setShowSettingsMenu(false);
-          }}
-          style={{
-            padding: '12px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span style={{ fontSize: '18px' }}>⚙️</span>
-          同步设置
-        </div>
+       
 
         {/* 管理类别 */}
         <div
