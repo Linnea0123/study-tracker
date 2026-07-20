@@ -5266,6 +5266,7 @@ const loadMainData = async (key) => {
 
 
 // 备份管理模态框组件
+
 const BackupManagerModal = ({ onClose }) => {
   const [backups, setBackups] = useState([]);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(null);
@@ -5284,58 +5285,207 @@ const BackupManagerModal = ({ onClose }) => {
     }
   };
 
-
-  
   useEffect(() => {
     loadBackups();
   }, []);
-const handleManualBackup = async () => {
-  setIsLoading(true);
-  try {
-    // 设置标记，让 autoBackup 知道这是手动备份
-    window.__manualBackup = true;
-    await autoBackup();
-    window.__manualBackup = false;
-    
-    // 延迟加载，确保数据已写入
-    setTimeout(() => {
-      loadBackups();
-      alert('✅ 手动备份已创建！');
-    }, 500);
-  } catch (error) {
-    console.error('备份失败:', error);
-    alert('❌ 备份失败: ' + error.message);
-    window.__manualBackup = false;
-  } finally {
-    setIsLoading(false);
-  }
-};
 
-  const handleDeleteBackup = (backupKey) => {
-    if (window.confirm('确定要删除这个备份吗？')) {
-      localStorage.removeItem(backupKey);
-      loadBackups(); // 立即刷新列表
+  // ========================================
+  // 手动备份
+  // ========================================
+  const handleManualBackup = async () => {
+    setIsLoading(true);
+    try {
+      window.__manualBackup = true;
+      await autoBackup();
+      window.__manualBackup = false;
+      setTimeout(() => {
+        loadBackups();
+        alert('✅ 手动备份已创建！');
+      }, 500);
+    } catch (error) {
+      console.error('备份失败:', error);
+      alert('❌ 备份失败: ' + error.message);
+      window.__manualBackup = false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
-  
-
-  useEffect(() => {
-
-    // 获取备份列表
-    setBackups(getBackupList());
-  }, []);
-
-  const handleRestore = async (backupKey) => {
-    await restoreBackup(backupKey);
-    onClose();
+  // ========================================
+  // 删除备份
+  // ========================================
+  const handleDeleteBackup = (backupKey) => {
+    if (window.confirm('确定要删除这个备份吗？')) {
+      localStorage.removeItem(backupKey);
+      loadBackups();
+    }
   };
 
- 
+  // ========================================
+  // ✅ 恢复备份（从 localStorage 恢复）
+// ========================================
+// ✅ 恢复备份（只恢复到 localStorage，不自动同步）
+// ========================================
+const handleRestore = async (backupKey) => {
+  try {
+    const backupData = JSON.parse(localStorage.getItem(backupKey));
+    if (!backupData) {
+      alert('❌ 备份数据不存在');
+      return;
+    }
 
+    const taskCount = backupData.tasks ? Object.keys(backupData.tasks).length : 
+                      backupData.tasksByDate ? Object.keys(backupData.tasksByDate).length : 0;
 
+    console.log('📦 恢复数据包含:', Object.keys(backupData));
+
+    // ✅ 恢复任务数据（不调用 saveToGitHub）
+    if (backupData.tasks) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasks));
+      console.log('✅ 恢复 tasks');
+    } else if (backupData.tasksByDate) {
+      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasksByDate));
+      console.log('✅ 恢复 tasksByDate');
+    }
+
+    // 恢复其他数据
+    if (backupData.dailyRatings) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_dailyRatings', JSON.stringify(backupData.dailyRatings));
+    }
+    if (backupData.dailyReflections) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_dailyReflections', JSON.stringify(backupData.dailyReflections));
+    }
+    if (backupData.studyEndTimes) {
+      localStorage.setItem('daily_study_end_times', JSON.stringify(backupData.studyEndTimes));
+    }
+    if (backupData.monthTasks) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_monthTasks', JSON.stringify(backupData.monthTasks));
+    }
+    if (backupData.grades) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_grades', JSON.stringify(backupData.grades));
+    }
+    if (backupData.categories) {
+      localStorage.setItem('study-tracker-PAGE_A-v2_categories', JSON.stringify(backupData.categories));
+    }
+    if (backupData.expData) {
+      localStorage.setItem('exp_data_v2', JSON.stringify(backupData.expData));
+    }
+    if (backupData.reminderText !== undefined) {
+      localStorage.setItem('daily_reminder', backupData.reminderText);
+    }
+    if (backupData.weekPlans) {
+      localStorage.setItem('week_plans', JSON.stringify(backupData.weekPlans));
+    }
+    if (backupData.monthPlans) {
+      localStorage.setItem('month_plans', JSON.stringify(backupData.monthPlans));
+    }
+    if (backupData.dailyTaskTemplates) {
+      localStorage.setItem('daily_task_templates', JSON.stringify(backupData.dailyTaskTemplates));
+    }
+    if (backupData.subCategoryColors) {
+      localStorage.setItem('subcategory_colors', JSON.stringify(backupData.subCategoryColors));
+    }
+    if (backupData.categoryColors) {
+      localStorage.setItem('category_colors', JSON.stringify(backupData.categoryColors));
+    }
+    if (backupData.subjectTodoEntries) {
+      localStorage.setItem('subject_todo_entries_v2', JSON.stringify(backupData.subjectTodoEntries));
+    }
+    if (backupData.gradeSubCategories) {
+      localStorage.setItem('grade_subcategories', backupData.gradeSubCategories);
+    }
+
+    console.log('✅ 备份恢复完成！');
+    alert(`✅ 备份恢复成功！\n\n📊 恢复了 ${taskCount} 天的数据\n\n⚠️ 请点击"立即同步"上传到 GitHub！`);
+    
+    setShowRestoreConfirm(null);
+    onClose();
+    
+    // 刷新页面显示数据
+    setTimeout(() => window.location.reload(), 500);
+
+  } catch (error) {
+    console.error('❌ 恢复失败:', error);
+    alert('恢复失败: ' + error.message);
+  }
+};
+  // ========================================
+  // ✅ 导出实际备份数据（不是列表）
+  // ========================================
+  const handleExportBackupData = () => {
+    const allKeys = Object.keys(localStorage);
+    const backupKeys = allKeys.filter(key => key.includes('auto_backup_'));
+    
+    if (backupKeys.length === 0) {
+      alert('❌ 没有找到任何备份数据');
+      return;
+    }
+
+    // 让用户选择导出哪个备份
+    let message = '📋 选择要导出的备份：\n\n';
+    backupKeys.forEach((key, i) => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        const days = data.tasks ? Object.keys(data.tasks).length : 
+                     data.tasksByDate ? Object.keys(data.tasksByDate).length : 0;
+        message += `  ${i+1}. ${key}\n     天数: ${days}\n\n`;
+      } catch(e) {
+        message += `  ${i+1}. ${key} (损坏)\n\n`;
+      }
+    });
+    message += `   a. 导出所有备份\n   c. 取消`;
+
+    const choice = prompt(message);
+    if (!choice || choice.toLowerCase() === 'c') {
+      return;
+    }
+
+    let selectedKeys = [];
+    if (choice.toLowerCase() === 'a') {
+      selectedKeys = backupKeys;
+    } else {
+      const index = parseInt(choice) - 1;
+      if (isNaN(index) || index < 0 || index >= backupKeys.length) {
+        alert('❌ 无效的选择');
+        return;
+      }
+      selectedKeys = [backupKeys[index]];
+    }
+
+    // 收集选中的备份数据
+    const exportData = {};
+    let totalDays = 0;
+    
+    selectedKeys.forEach(key => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        exportData[key] = data;
+        const days = data.tasks ? Object.keys(data.tasks).length : 
+                     data.tasksByDate ? Object.keys(data.tasksByDate).length : 0;
+        totalDays += days;
+        console.log(`✅ 添加 ${key} (${days}天)`);
+      } catch(e) {
+        console.warn(`⚠️ 跳过损坏的备份: ${key}`);
+      }
+    });
+
+    if (Object.keys(exportData).length === 0) {
+      alert('❌ 没有可导出的数据');
+      return;
+    }
+
+    // 导出为 JSON 文件
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `backup-data-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    alert(`✅ 导出成功！\n\n📦 导出 ${Object.keys(exportData).length} 个备份\n📊 共 ${totalDays} 天的数据`);
+  };
 
   return (
     <div style={{
@@ -5406,7 +5556,6 @@ const handleManualBackup = async () => {
           </div>
         </div>
 
-
         {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
           <button
@@ -5426,22 +5575,7 @@ const handleManualBackup = async () => {
             💾 立即备份
           </button>
           <button
-            onClick={() => {
-              // 导出所有备份信息
-              const backupInfo = {
-                total: backups.length,
-                backups: backups,
-                exportTime: new Date().toISOString()
-              };
-              const dataStr = JSON.stringify(backupInfo, null, 2);
-              const dataBlob = new Blob([dataStr], { type: 'application/json' });
-              const url = URL.createObjectURL(dataBlob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `backup-list_${new Date().toISOString().slice(0, 10)}.json`;
-              link.click();
-              URL.revokeObjectURL(url);
-            }}
+            onClick={handleExportBackupData}
             style={{
               flex: 1,
               padding: '10px 16px',
@@ -5454,97 +5588,98 @@ const handleManualBackup = async () => {
               fontWeight: 'bold'
             }}
           >
-            📋 导出列表
+            📋 导出备份数据
           </button>
         </div>
 
-        
-
-{/* 备份列表 */}
-<div style={{ marginBottom: 15 }}>
-  <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>
-    备份记录 ({backups.length})
-  </div>
-  
-  {backups.length === 0 ? (
-    <div style={{
-      textAlign: 'center',
-      padding: 20,
-      color: '#666',
-      backgroundColor: '#f8f9fa',
-      borderRadius: 6
-    }}>
-      暂无备份记录
-    </div>
-  ) : (
-    <div style={{ maxHeight: 300, overflow: 'auto' }}>
-      {backups.map((backup, index) => {
-  return (
-    <div
-      key={backup.key}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px',
-        border: '1px solid #e0e0e0',
-        borderRadius: 6,
-        marginBottom: 8,
-        backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
-          {backup.displayTime || new Date(backup.time).toLocaleString()}
-          {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
-        </div>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
-          任务天数: {backup.tasksCount || 0} | 版本: {backup.version || '1.0'}
-        </div>
-        <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
-          {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
-        </div>
-      
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => setShowRestoreConfirm(backup.key)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#ffc107',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 12
-                }}
-              >
-                恢复
-              </button>
-              <button
-                onClick={() => handleDeleteBackup(backup.key)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 12
-                }}
-              >
-                删除
-              </button>
-            </div>
+        {/* 备份列表 */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>
+            备份记录 ({backups.length})
           </div>
-        );
-      })}
-    </div>
-  )}
-</div>
-
-
-
+          
+          {backups.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: 20,
+              color: '#666',
+              backgroundColor: '#f8f9fa',
+              borderRadius: 6
+            }}>
+              暂无备份记录
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
+              {backups.map((backup, index) => {
+                return (
+                  <div
+                    key={backup.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 6,
+                      marginBottom: 8,
+                      backgroundColor: index === 0 ? '#e8f5e8' : '#fff'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+                        {backup.displayTime || new Date(backup.time).toLocaleString()}
+                        {index === 0 && <span style={{ color: '#28a745', marginLeft: 8 }}>最新</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
+                        任务天数: {backup.tasksCount || 0} | 版本: {backup.version || '1.0'}
+                      </div>
+                      <div style={{ fontSize: 11, color: backup.hasAchievements ? '#28a745' : '#ffc107' }}>
+                        {backup.hasAchievements ? '✅ 包含成就数据' : '⚠️ 无成就数据'}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => {
+                          const backupData = JSON.parse(localStorage.getItem(backup.key));
+                          const taskCount = backupData.tasks ? Object.keys(backupData.tasks).length : 
+                                            backupData.tasksByDate ? Object.keys(backupData.tasksByDate).length : 0;
+                          if (window.confirm(`确定要恢复此备份吗？\n\n📊 任务天数: ${taskCount}\n\n⚠️ 恢复后请手动点击"立即同步"上传到 GitHub！`)) {
+                            handleRestore(backup.key);
+                          }
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#ffc107',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        恢复
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBackup(backup.key)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#dc3545',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* 使用说明 */}
         <div style={{
@@ -5556,85 +5691,15 @@ const handleManualBackup = async () => {
           lineHeight: 1.4
         }}>
           <strong>💡 使用说明：</strong><br/>
-          • 系统每30分钟自动备份一次<br/>
-          • 最多保留7个备份，旧的会自动删除<br/>
-          • 恢复备份会覆盖当前所有数据<br/>
-          • 建议重要操作前手动备份
+          • 点击"立即备份"手动创建备份<br/>
+          • 点击"导出备份数据"导出完整的备份文件<br/>
+          • 点击"恢复"从本地备份恢复数据<br/>
+          • 恢复后请点击"立即同步"上传到 GitHub
         </div>
-
-
-
-
-
-
-
-        {/* 恢复确认模态框 */}
-        {showRestoreConfirm && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1001
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              padding: 20,
-              borderRadius: 10,
-              width: '80%',
-              maxWidth: 300
-            }}>
-              <h4 style={{ textAlign: 'center', marginBottom: 15, color: '#d32f2f' }}>
-                确认恢复备份？
-              </h4>
-              <p style={{ textAlign: 'center', marginBottom: 15, fontSize: 14, lineHeight: 1.4 }}>
-                这将覆盖当前所有数据，且无法撤销！
-              </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => setShowRestoreConfirm(null)}
-                  style={{
-                    flex: 1,
-                    padding: 10,
-                    backgroundColor: '#ccc',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14
-                  }}
-                >
-                  取消
-                </button>
-                <button
-                  onClick={() => handleRestore(showRestoreConfirm)}
-                  style={{
-                    flex: 1,
-                    padding: 10,
-                    backgroundColor: '#d32f2f',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14
-                  }}
-                >
-                  确认恢复
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 };
-
 
 
 
