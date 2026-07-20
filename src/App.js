@@ -5350,13 +5350,13 @@ const handleRestore = async (backupKey) => {
     console.log('📦 恢复数据包含:', Object.keys(backupData));
 
     // ✅ 恢复任务数据（不调用 saveToGitHub）
-    if (backupData.tasks) {
-      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasks));
-      console.log('✅ 恢复 tasks');
-    } else if (backupData.tasksByDate) {
-      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasksByDate));
-      console.log('✅ 恢复 tasksByDate');
-    }
+   if (backupData.tasks) {
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(backupData.tasks));
+  console.log('✅ 恢复 tasks');
+} else if (backupData.tasksByDate) {
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(backupData.tasksByDate));
+  console.log('✅ 恢复 tasksByDate');
+}
 
     // 恢复其他数据
     if (backupData.dailyRatings) {
@@ -5567,40 +5567,50 @@ const handleRestore = async (backupKey) => {
         </div>
 
         {/* 操作按钮 */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
-          <button
-            onClick={handleManualBackup}
-            style={{
-              flex: 1,
-              padding: '10px 16px',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold'
-            }}
-          >
-            💾 立即备份
-          </button>
-          <button
-            onClick={handleExportBackupData}
-            style={{
-              flex: 1,
-              padding: '10px 16px',
-              backgroundColor: '#17a2b8',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold'
-            }}
-          >
-            📋 导出备份数据
-          </button>
-        </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
+  <div
+    onClick={handleManualBackup}
+    style={{
+      flex: 1,
+      padding: '10px 16px',
+      backgroundColor: '#28a745',
+      color: '#fff',
+      borderRadius: 6,
+      fontSize: 14,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      cursor: 'pointer',
+      userSelect: 'none',
+      transition: 'none',
+      transform: 'none',
+      boxShadow: 'none',
+      outline: 'none'
+    }}
+  >
+    💾 立即备份
+  </div>
+  <div
+    onClick={handleExportBackupData}
+    style={{
+      flex: 1,
+      padding: '10px 16px',
+      backgroundColor: '#17a2b8',
+      color: '#fff',
+      borderRadius: 6,
+      fontSize: 14,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      cursor: 'pointer',
+      userSelect: 'none',
+      transition: 'none',
+      transform: 'none',
+      boxShadow: 'none',
+      outline: 'none'
+    }}
+  >
+    📋 导出备份数据
+  </div>
+</div>
 
         {/* 备份列表 */}
         <div style={{ marginBottom: 15 }}>
@@ -6293,14 +6303,14 @@ const restoreBackup = async (backupKey) => {
     let tasksData = null;
 
     if (backupData.tasks) {
-      tasksData = backupData.tasks;
-      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasks));
-      console.log('✅ 恢复 tasks');
-    } else if (backupData.tasksByDate) {
-      tasksData = backupData.tasksByDate;
-      localStorage.setItem('tasks_monthly', JSON.stringify(backupData.tasksByDate));
-      console.log('✅ 恢复 tasksByDate');
-    }
+  tasksData = backupData.tasks;
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(backupData.tasks));
+  console.log('✅ 恢复 tasks');
+} else if (backupData.tasksByDate) {
+  tasksData = backupData.tasksByDate;
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(backupData.tasksByDate));
+  console.log('✅ 恢复 tasksByDate');
+}
 
     // 恢复其他数据
     if (backupData.dailyRatings) {
@@ -9075,35 +9085,64 @@ const MonthTaskPage = ({ tasks, onClose, onAddTask, onUpdateProgress, onEditTask
   const categories = ['校内', '语文', '数学', '英语', '通识', '综合', '运动', '生活', '心理'];
   const subCategories = ['数学', '语文', '英语', '运动'];
 
-  const handleAddTask = () => {
-    if (!newTaskText.trim()) {
-      alert('请输入任务内容');
-      return;
-    }
+  // 第一个 handleAddTask - 用于弹窗添加
+const handleAddTask = () => {
+  if (!newTaskText.trim()) {
+    alert('请输入任务内容');
+    return;
+  }
 
-    const newTask = {
-  id: Date.now().toString(),
-  text: newTaskText.trim(),
-  category: selectedCategory,
-  subCategory: selectedSubCategory,
-  progress: 0,
-  timeSpent: 0,
-  target: target,
-  createdAt: new Date().toISOString()
-};
-
-    if (onAddTask) {
-      onAddTask(newTask);
-    }
-
-    setNewTaskText('');
-    setSelectedCategory('校内');
-    setSelectedSubCategory('');
-    
-    setTarget(100);
-   
-    setShowAddForm(false);
+  const newTask = {
+    id: Date.now().toString(),
+    text: newTaskText.trim(),
+    category: newTaskCategory,
+    subCategory: newTaskSubCategory || '',
+    done: false,
+    timeSpent: 0,
+    timeRecords: [],
+    subTasks: [],
+    note: "",
+    reflection: "",
+    image: null,
+    expValue: newTaskExpValue || 2,
+    scheduledTime: "",
+    pinned: false,
+    tags: bulkTags || [],
+    progress: {
+      initial: 0,
+      current: 0,
+      target: 0,
+      unit: "%"
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
+
+  console.log('📝 [弹窗] 添加任务:', newTask.text, '到日期:', selectedDate);
+
+  // ✅ 构建新数据
+  const newTasksByDate = {
+    ...tasksByDate,
+    [selectedDate]: [...(tasksByDate[selectedDate] || []), newTask]
+  };
+
+  // ✅ 只保存到新格式
+  try {
+    localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(newTasksByDate));
+    
+    console.log('💾 [弹窗] 已保存到新格式');
+  } catch (error) {
+    console.error('❌ 保存失败:', error);
+  }
+
+  // ✅ 再更新 state
+  setTasksByDate(newTasksByDate);
+
+  // 清空输入
+  setNewTaskText('');
+  setNewTaskSubCategory('');
+  setShowAddTaskModal(false);
+};
 // 添加计划
 
 
@@ -17428,8 +17467,7 @@ const syncToGitHub = useCallback(async (silent = false) => {
     // ========================================
     // 1. 读取所有本地数据
     // ========================================
-    const allTasks = JSON.parse(localStorage.getItem('tasks_monthly') || '{}');
-    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '{}');
+const allTasks = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks') || '{}');    const grades = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_grades') || '{}');
     const gradeSubCategories = localStorage.getItem('grade_subcategories') || '{}';
     const dailyRatings = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyRatings') || '{}');
     const dailyReflections = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_dailyReflections') || '{}');
@@ -17961,12 +17999,12 @@ const forceRestoreFromCloud = async () => {
     // ========================================
     
     // ✅ 恢复任务数据
-    if (taskCount > 0) {
-      localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(allTasks));
-      localStorage.setItem('tasks_monthly', JSON.stringify(allTasks));
-      setTasksByDate(allTasks);
-      console.log(`✅ 恢复任务数据 (${taskCount} 天)`);
-    }
+   // ✅ 恢复任务数据
+if (taskCount > 0) {
+  localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(allTasks));
+  
+  console.log(`✅ 恢复任务数据 (${taskCount} 天)`);
+}
     
     // ✅ 恢复成绩数据
     if (gradeCount > 0) {
@@ -18596,9 +18634,9 @@ const performCloudRestore = useCallback(async () => {
     // 5. 恢复所有数据到 localStorage
     // ========================================
     if (taskCount > 0) {
-      localStorage.setItem('tasks_monthly', JSON.stringify(allTasks));
-      console.log(`✅ 恢复任务数据 (${taskCount} 天)`);
-    }
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(allTasks));
+  
+}
     
     if (gradeCount > 0) {
       localStorage.setItem('study-tracker-PAGE_A-v2_grades', JSON.stringify(grades));
@@ -19460,7 +19498,67 @@ if (newDoneState === false) {
 };
 
 // ===== 更新任务经验值 =====
+// ========================================
+// 切换子任务完成状态
+// ========================================
+const toggleSubTask = (task, subTaskIndex) => {
+  const updateTaskWithSubTasks = (t) => {
+    // 确保 subTasks 存在
+    const currentSubTasks = t.subTasks || [];
+    
+    const newSubTasks = currentSubTasks.map((st, index) => 
+      index === subTaskIndex ? { ...st, done: !st.done } : st
+    );
+    
+    // 检查是否所有子任务都完成了
+    const allSubTasksDone = newSubTasks.length > 0 && newSubTasks.every(st => st.done);
+    
+    return {
+      ...t,
+      subTasks: newSubTasks,
+      done: allSubTasksDone // 自动设置主任务完成状态
+    };
+  };
 
+  // ✅ 先构建更新后的数据
+  let updatedTasksByDate = { ...tasksByDate };
+
+  if (task.isWeekTask) {
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.isWeekTask && t.text === task.text && t.weekStart === task.weekStart
+          ? updateTaskWithSubTasks(t)
+          : t
+      );
+    });
+  } else if (task.crossDateId) {
+    // 跨日期任务：更新所有关联日期
+    Object.keys(updatedTasksByDate).forEach(date => {
+      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
+        t.crossDateId === task.crossDateId ? updateTaskWithSubTasks(t) : t
+      );
+    });
+  } else {
+    updatedTasksByDate = {
+      ...updatedTasksByDate,
+      [selectedDate]: (updatedTasksByDate[selectedDate] || []).map(t =>
+        t.id === task.id ? updateTaskWithSubTasks(t) : t
+      )
+    };
+  }
+
+  // ✅ 先保存到 localStorage
+  try {
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(updatedTasksByDate));
+  
+  console.log('💾 [子任务] 已保存到新格式');
+} catch (error) {
+  console.error('❌ 保存失败:', error);
+}
+
+  // ✅ 再更新 state
+  setTasksByDate(updatedTasksByDate);
+};
 
 
 // 检测撒花函数 - 接收当前日期的所有任务
@@ -21547,6 +21645,7 @@ const deletePlan = (type, id) => {
 };
 
 // 添加任务函数
+// 第二个 handleAddTask - 用于快速添加（包含重复任务、计划时间等）
 const handleAddTask = () => {
   if (!newTaskText.trim()) {
     alert('请输入任务内容');
@@ -21560,18 +21659,17 @@ const handleAddTask = () => {
     scheduledTime = `${repeatConfig.startHour.padStart(2, '0')}:${repeatConfig.startMinute.padStart(2, '0')}-${repeatConfig.endHour.padStart(2, '0')}:${repeatConfig.endMinute.padStart(2, '0')}`;
   }
 
- // 在 handleAddTask 函数中（约在第 1620 行附近）
-// 构建提醒时间 - 只有在有月和日时才创建
-let reminderTime = null;
-if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
-  reminderTime = {
-    year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
-    month: parseInt(repeatConfig.reminderMonth),
-    day: parseInt(repeatConfig.reminderDay),
-    hour: parseInt(repeatConfig.reminderHour) || 0,
-    minute: parseInt(repeatConfig.reminderMinute) || 0
-  };
-}
+  // 构建提醒时间
+  let reminderTime = null;
+  if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
+    reminderTime = {
+      year: repeatConfig.reminderYear ? parseInt(repeatConfig.reminderYear) : new Date().getFullYear(),
+      month: parseInt(repeatConfig.reminderMonth),
+      day: parseInt(repeatConfig.reminderDay),
+      hour: parseInt(repeatConfig.reminderHour) || 0,
+      minute: parseInt(repeatConfig.reminderMinute) || 0
+    };
+  }
 
   const newTask = {
     id: Date.now().toString(),
@@ -21580,12 +21678,12 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     subCategory: newTaskSubCategory || '',
     done: false,
     timeSpent: 0,
-    timeRecords: [] , // 👈 添加这一行
+    timeRecords: [],
     subTasks: [],
     note: "",
     reflection: "",
     image: null,
-   expValue: newTaskExpValue || 2,
+    expValue: newTaskExpValue || 2,
     scheduledTime: scheduledTime,
     pinned: false,
     tags: bulkTags || [],
@@ -21597,106 +21695,31 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
     },
     reminderTime: reminderTime,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString() ,
+    updatedAt: new Date().toISOString(),
     repeatFrequency: repeatConfig.frequency || '',
     repeatDays: repeatConfig.days || [false, false, false, false, false, false, false],
     isRepeating: !!(repeatConfig.frequency)
   };
 
-  // 如果是重复任务，创建重复任务
-  if (newTask.isRepeating) {
-    const repeatId = `repeat_${Date.now()}`;
-    newTask.repeatId = repeatId;
+  console.log('📝 [快速] 添加任务:', newTask.text, '到日期:', selectedDate);
+
+  // ✅ 构建新数据
+  const newTasksByDate = {
+    ...tasksByDate,
+    [selectedDate]: [...(tasksByDate[selectedDate] || []), newTask]
+  };
+
+  // ✅ 只保存到新格式
+  try {
+    localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(newTasksByDate));
     
-    const startDate = new Date(selectedDate);
-    
-    if (repeatConfig.frequency === 'daily') {
-      // 每日重复 - 未来7天
-      setTasksByDate(prev => {
-        const newTasksByDate = { ...prev };
-        
-        for (let i = 0; i < 7; i++) {
-          const date = new Date(startDate);
-          date.setDate(startDate.getDate() + i);
-          const dateStr = date.toISOString().split("T")[0];
-          
-          if (!newTasksByDate[dateStr]) {
-            newTasksByDate[dateStr] = [];
-          }
-          
-          const existingTask = newTasksByDate[dateStr].find(
-            t => t.repeatId === repeatId
-          );
-          
-          if (!existingTask) {
-            newTasksByDate[dateStr].push({
-              ...newTask,
-              id: `${repeatId}_${dateStr}`,
-              repeatId: repeatId
-            });
-          }
-        }
-        
-        return newTasksByDate;
-      });
-    } else if (repeatConfig.frequency === 'weekly') {
-      // 每周重复 - 未来4周
-      for (let week = 0; week < 4; week++) {
-        const weekStart = new Date(startDate);
-        weekStart.setDate(startDate.getDate() + (week * 7));
-        const weekMonday = getMonday(weekStart);
-        
-        repeatConfig.days.forEach((isSelected, dayIndex) => {
-          if (isSelected) {
-            const taskDate = new Date(weekMonday);
-            taskDate.setDate(weekMonday.getDate() + dayIndex);
-            
-            const dateStr = taskDate.toISOString().split("T")[0];
-            const today = new Date(selectedDate);
-            today.setHours(0, 0, 0, 0);
-            const taskDateClean = new Date(taskDate);
-            taskDateClean.setHours(0, 0, 0, 0);
-            
-            if (taskDateClean >= today) {
-              setTasksByDate(prev => {
-                const newTasksByDate = { ...prev };
-                if (!newTasksByDate[dateStr]) {
-                  newTasksByDate[dateStr] = [];
-                }
-                
-                const existingTask = newTasksByDate[dateStr].find(
-                  t => t.repeatId === repeatId
-                );
-                
-                if (!existingTask) {
-                  newTasksByDate[dateStr].push({
-                    ...newTask,
-                    id: `${repeatId}_${dateStr}`,
-                    repeatId: repeatId
-                  });
-                }
-                
-                return newTasksByDate;
-              });
-            }
-          }
-        });
-      }
-    }
-    
-    // 同时添加今天的任务
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
-    
-  } else {
-    // 普通任务：只添加到当前日期
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask]
-    }));
+    console.log('💾 [快速] 已保存到新格式');
+  } catch (error) {
+    console.error('❌ 保存失败:', error);
   }
+
+  // ✅ 再更新 state
+  setTasksByDate(newTasksByDate);
 
   // 清空输入
   setNewTaskText('');
@@ -21716,7 +21739,7 @@ if (repeatConfig.reminderMonth && repeatConfig.reminderDay) {
   });
   setShowAddInput(false);
   
-  console.log('✅ 任务添加成功:', newTask);
+  console.log('✅ [快速] 任务添加完成');
 };
 
 // 在 handleAddTask 函数后面添加这个函数
@@ -22408,8 +22431,6 @@ const parseBulkTextToPreview = useCallback(() => {
 }, [bulkText, bulkDateRange, bulkDateRangeStart, bulkDateRangeEnd, categories, bulkTags]);
 
 
-// 修复批量导入中的图片识别功能 - 图片标记作用于上一个任务（标记行在上，任务在下）
-// 修复批量导入中的图片识别功能 - 图片标记作用于上面的任务（标记行在下，任务在上）
 
 // 修改函数定义，接收 currentSelectedDate 参数
 const handleImportTasksWithDuration = (currentSelectedDate) => {
@@ -22630,100 +22651,98 @@ const handleImportTasksWithDuration = (currentSelectedDate) => {
     
     i++;
   }
+  
   // 判断是否为每天任务的函数
-const isDailyTask = (taskText) => {
-  const dailyKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '口算','阅读', '听英语'];
-  const excludePatterns = ['订正', '改正', '修改', '纠正', '更正', '改错'];
-  
-  // 先检查排除词
-  for (const exclude of excludePatterns) {
-    if (taskText.includes(exclude)) {
-      return false;
+  const isDailyTask = (taskText) => {
+    const dailyKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '口算','阅读', '听英语'];
+    const excludePatterns = ['订正', '改正', '修改', '纠正', '更正', '改错'];
+    
+    // 先检查排除词
+    for (const exclude of excludePatterns) {
+      if (taskText.includes(exclude)) {
+        return false;
+      }
     }
-  }
-  
-  // 口算特殊处理（只有纯口算才是每天任务）
-  if (taskText === '口算' || taskText === '口算题' || taskText === '口算练习') {
-    return true;
-  }
-  
-  // 检查每天任务关键词
-  for (const keyword of dailyKeywords) {
-    if (taskText.includes(keyword)) {
+    
+    // 口算特殊处理（只有纯口算才是每天任务）
+    if (taskText === '口算' || taskText === '口算题' || taskText === '口算练习') {
       return true;
     }
-  }
-  
-  return false;
-};
- 
- // 在 handleImportTasksWithDuration 函数中，找到创建任务的循环部分
-// 大约在第 16840 行附近
-
-// 在 taskInfos.forEach 循环中，找到这段代码：
-taskInfos.forEach((taskInfo, idx) => {
-  const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
-  
-  // 定义排除词列表
-  const excludeKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语', '打卡', '晨读', '晚读'];
-  const hasExcludeKeyword = excludeKeywords.some(keyword => taskText.includes(keyword));
-  
-  // 🔑 关键修复：包含排除词的任务 → 独立创建（每个日期单独创建，不关联）
-  // 不包含排除词且有多日期 → 创建跨日期关联任务
-  const shouldCreateCrossDate = !hasExcludeKeyword && taskDates.length > 1;
-  const crossDateId = shouldCreateCrossDate 
-    ? `cross_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 8)}` 
-    : null;
-  
-  console.log(`📌 任务 "${taskText}": 包含排除词=${hasExcludeKeyword}, 日期数=${taskDates.length}, 跨日期=${!!crossDateId}`);
-  
-  // ✅ 无论什么情况，都要创建任务！
-  taskDates.forEach(date => {
-    if (!allTasksByDate[date]) {
-      allTasksByDate[date] = [];
+    
+    // 检查每天任务关键词
+    for (const keyword of dailyKeywords) {
+      if (taskText.includes(keyword)) {
+        return true;
+      }
     }
     
-    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}_${idx}`;
+    return false;
+  };
+  
+  // 在 taskInfos.forEach 循环中创建任务
+  taskInfos.forEach((taskInfo, idx) => {
+    const { text: taskText, note, dates: taskDates, hasImage } = taskInfo;
     
-    const newTask = {
-      id: uniqueId,
-      text: taskText,
-      category: category,
-      subCategory: subCategory,
-      done: false,
-      timeSpent: 0,
-      timeRecords: [],
-      note: note,
-      image: null,
-      hasImage: hasImage,
-      scheduledTime: "",
-      pinned: false,
-      reflection: "",
-      tags: [...(bulkTags || [])],
-      subTasks: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      },
-      expValue: 2,  // ✅ 添加这行
-      createdAt: new Date().toISOString()
-    };
+    // 定义排除词列表
+    const excludeKeywords = ['课外阅读', '每天', '每日', '运动', '背单词', '练字', '写字', '阅读', '听英语', '打卡', '晨读', '晚读'];
+    const hasExcludeKeyword = excludeKeywords.some(keyword => taskText.includes(keyword));
     
-    // 只有满足条件时才添加跨日期关联字段
-    if (crossDateId) {
-      newTask.crossDateId = crossDateId;
-      newTask.isCrossDate = true;
-      newTask.crossDates = [...taskDates];
-      console.log(`  ✅ 在 ${date} 创建关联任务 (跨日期), ID: ${crossDateId}`);
-    } else {
-      console.log(`  ✅ 在 ${date} 创建独立任务 (不关联)`);
-    }
+    // 🔑 关键修复：包含排除词的任务 → 独立创建（每个日期单独创建，不关联）
+    // 不包含排除词且有多日期 → 创建跨日期关联任务
+    const shouldCreateCrossDate = !hasExcludeKeyword && taskDates.length > 1;
+    const crossDateId = shouldCreateCrossDate 
+      ? `cross_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 8)}` 
+      : null;
     
-    allTasksByDate[date].push(newTask);
+    console.log(`📌 任务 "${taskText}": 包含排除词=${hasExcludeKeyword}, 日期数=${taskDates.length}, 跨日期=${!!crossDateId}`);
+    
+    // ✅ 无论什么情况，都要创建任务！
+    taskDates.forEach(date => {
+      if (!allTasksByDate[date]) {
+        allTasksByDate[date] = [];
+      }
+      
+      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}_${date}_${idx}`;
+      
+      const newTask = {
+        id: uniqueId,
+        text: taskText,
+        category: category,
+        subCategory: subCategory,
+        done: false,
+        timeSpent: 0,
+        timeRecords: [],
+        note: note,
+        image: null,
+        hasImage: hasImage,
+        scheduledTime: "",
+        pinned: false,
+        reflection: "",
+        tags: [...(bulkTags || [])],
+        subTasks: [],
+        progress: {
+          initial: 0,
+          current: 0,
+          target: 0,
+          unit: "%"
+        },
+        expValue: 2,
+        createdAt: new Date().toISOString()
+      };
+      
+      // 只有满足条件时才添加跨日期关联字段
+      if (crossDateId) {
+        newTask.crossDateId = crossDateId;
+        newTask.isCrossDate = true;
+        newTask.crossDates = [...taskDates];
+        console.log(`  ✅ 在 ${date} 创建关联任务 (跨日期), ID: ${crossDateId}`);
+      } else {
+        console.log(`  ✅ 在 ${date} 创建独立任务 (不关联)`);
+      }
+      
+      allTasksByDate[date].push(newTask);
+    });
   });
-});
   
   const totalTasksCount = Object.values(allTasksByDate).reduce((sum, tasks) => sum + tasks.length, 0);
   
@@ -22731,18 +22750,48 @@ taskInfos.forEach((taskInfo, idx) => {
     alert('没有创建任何任务');
     return;
   }
+
+  console.log('📊 批量导入：共', Object.keys(allTasksByDate).length, '天，', totalTasksCount, '个任务');
+
+  // ========================================
+  // ✅ 关键修复：先保存到 localStorage，再更新 state
+  // ========================================
   
-  setTasksByDate(prev => {
-    const updated = { ...prev };
-    Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
-      if (!updated[date]) {
-        updated[date] = [];
-      }
-      updated[date] = [...updated[date], ...newTasks];
-    });
-    return updated;
+  // 1. 构建完整数据
+  const updatedTasks = { ...tasksByDate };
+  Object.entries(allTasksByDate).forEach(([date, newTasks]) => {
+    if (!updatedTasks[date]) {
+      updatedTasks[date] = [];
+    }
+    updatedTasks[date] = [...updatedTasks[date], ...newTasks];
   });
+
+  // 2. ✅ 先保存到 localStorage
+try {
+  // ✅ 只保存到新格式
+  localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(updatedTasks));
   
+  console.log('💾 批量导入已保存到新格式，共', Object.keys(updatedTasks).length, '天');
+  
+  // ✅ 验证保存（从新格式读取）
+  const saved = JSON.parse(localStorage.getItem('study-tracker-PAGE_A-v2_tasks') || '{}');
+  console.log('✅ 验证：当前共', Object.keys(saved).length, '天数据');
+  
+  // 检查当前日期是否保存成功
+  const dateToCheck = currentSelectedDate || selectedDate;
+  if (saved[dateToCheck]) {
+    console.log(`✅ 验证成功：${dateToCheck} 已保存 ${saved[dateToCheck].length} 个任务`);
+  }
+} catch (error) {
+  console.error('❌ 保存失败:', error);
+  alert('保存失败: ' + error.message);
+  return;
+}
+
+  // 3. ✅ 再更新 React state
+  setTasksByDate(updatedTasks);
+
+  // 清空输入
   setBulkText("");
   setBulkTags([]);
   setBulkDateRange("today");
@@ -22751,144 +22800,6 @@ taskInfos.forEach((taskInfo, idx) => {
   setShowBulkImportModal(false);
   
   alert(`✅ 导入成功！\n\n📌 位置：${category} / ${subCategory}\n📝 任务：${taskInfos.length} 个\n📅 实例：${totalTasksCount} 个`);
-};
-
-
-
-
-const handleImportTasks = () => {
-  console.log('🎯 === 开始批量导入 ===');
-  
-  if (!bulkText.trim()) {
-    alert('请输入要导入的任务内容');
-    return;
-  }
-
-  const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
-  
-  if (lines.length < 2) {
-    alert('请至少输入一行分类和一行任务内容');
-    return;
-  }
-
-  // 从第一行识别子分类
-  const firstLine = lines[0];
-  const category = "校内";
-  let subCategory = "未分类";
-  
-  const schoolSubCategories = categories
-    .find(c => c.name === '校内')
-    ?.subCategories || ['语文', '数学', '英语', '运动'];
-  
-  for (const subCat of schoolSubCategories) {
-    if (firstLine.includes(subCat)) {
-      subCategory = subCat;
-      break;
-    }
-  }
-
-  // 处理任务的主循环
-  const allProcessedTasks = [];
-  let lastTaskHasImage = false;  // ✅ 新增：标记上一个任务是否有图片
-  
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    
-    
-    
-    // 处理任务行
-    let taskText = line;
-    let note = "";
-    
-    const parts = line.split("|").map(s => s.trim());
-    if (parts.length >= 2) {
-      taskText = parts[0];
-      note = parts[1];
-    }
-    
-    // 清理任务文本
-    taskText = taskText.replace(/@所有家长[，,、.\s]*/g, '');
-    taskText = taskText.replace(/@\d{1,2}[./月]\d{1,2}[日]?-\d{1,2}[./月]\d{1,2}[日]?/g, '');
-    taskText = taskText.replace(/@周末/g, '');
-    taskText = taskText.trim();
-    
-    if (!taskText) {
-      taskText = `导入任务${i}`;
-    }
-    
-    const taskId = `import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // ✅ 创建任务时带上 hasImage 标记
-    allProcessedTasks.push({
-      id: taskId,
-      text: taskText,
-      category: category,
-      subCategory: subCategory,
-      done: false,
-      timeSpent: 0,
-      note: note,
-      image: null,
-      hasImage: lastTaskHasImage,  // ✅ 使用标记
-      scheduledTime: "",
-      pinned: false,
-      reflection: "",
-       tags: [...(bulkTags || [])],  
-      subTasks: [],
-      progress: {
-        initial: 0,
-        current: 0,
-        target: 0,
-        unit: "%"
-      },
-      dateRange: null,
-      createdAt: new Date().toISOString()
-    });
-    
-    console.log(`✅ 添加任务: "${taskText}", hasImage: ${lastTaskHasImage}`);
-    lastTaskHasImage = false;  // ✅ 重置标记
-  }
-
-  // ... 后续添加任务的代码保持不变
-};
-
-
-
-// 修复 toggleSubTask 函数
-const toggleSubTask = (task, subTaskIndex) => {
-  const updateTaskWithSubTasks = (t) => {
-    // 确保 subTasks 存在
-    const currentSubTasks = t.subTasks || [];
-    
-    const newSubTasks = currentSubTasks.map((st, index) => 
-      index === subTaskIndex ? { ...st, done: !st.done } : st
-    );
-    
-    // 检查是否所有子任务都完成了
-    const allSubTasksDone = newSubTasks.length > 0 && newSubTasks.every(st => st.done);
-    
-    return {
-      ...t,
-      subTasks: newSubTasks,
-      done: allSubTasksDone // 自动设置主任务完成状态
-    };
-  };
-
-  if (task.isWeekTask) {
-    const updatedTasksByDate = { ...tasksByDate };
-    Object.keys(updatedTasksByDate).forEach(date => {
-      updatedTasksByDate[date] = updatedTasksByDate[date].map(t =>
-        t.isWeekTask && t.text === task.text ? updateTaskWithSubTasks(t) : t
-      );
-    });
-    setTasksByDate(updatedTasksByDate);
-  } else {
-    setTasksByDate(prev => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate].map(t =>
-        t.id === task.id ? updateTaskWithSubTasks(t) : t
-      )
-    }));
-  }
 };
 
 
@@ -28218,6 +28129,35 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
   <span style={{ fontSize: '18px' }}>🎁</span>
   兑换记录
 </div>
+
+{/* 清除 GitHub Token */}
+<div
+  onClick={() => {
+    if (window.confirm('确定要清除 GitHub Token 吗？\n\n清除后，下次同步需要重新输入 Token。')) {
+      localStorage.removeItem('github_token');
+      localStorage.removeItem('PAGE_A_github_token');
+      localStorage.removeItem('github_owner');
+      localStorage.removeItem('github_repo');
+      alert('✅ GitHub Token 已清除！');
+      setShowSettingsMenu(false);
+    }
+  }}
+  style={{
+    padding: '12px',
+    backgroundColor: '#f5f5f5',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: '#f44336'
+  }}
+>
+  <span style={{ fontSize: '18px' }}>🔑</span>
+  清除 GitHub Token
+</div>
+
         {/* 清空数据 - 红色文字 */}
         <div
           onClick={() => {
@@ -28301,7 +28241,7 @@ reader.onload = async (event) => {
     }
 
     // 1. 恢复所有数据到 localStorage
-    localStorage.setItem('tasks_monthly', JSON.stringify(tasksData));
+    localStorage.setItem('study-tracker-PAGE_A-v2_tasks', JSON.stringify(tasksData));
 
     if (importedData.dailyRatings) {
       localStorage.setItem(`${STORAGE_KEY}_dailyRatings`, JSON.stringify(importedData.dailyRatings));
