@@ -25579,34 +25579,36 @@ if (isInitialized && Object.keys(tasksByDate).length === 0) {
         </div>
         
         {/* 任务数量显示 */}
-        {showNumber && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: "4px"
-          }}>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "1px 6px",
-              backgroundColor: "#fff",
-              borderRadius: "4px",
-              border: `0.5px solid ${numberColor}`,
-              width: "36px"
-            }}>
-              <span style={{
-                fontSize: "9px",
-                fontWeight: "bold",
-                color: numberColor,
-                fontFamily: "sans-serif"
-              }}>
-                {completedCount}/{totalCount}
-              </span>
-            </div>
-          </div>
-        )}
+       {/* 任务数量显示 */}
+{showNumber && (
+  <div style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "4px"
+  }}>
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "1px 6px",
+      backgroundColor: "#fff",
+      borderRadius: "4px",
+      border: `0.5px solid ${numberColor}`,
+      width: "36px"
+    }}>
+      <span style={{
+        fontSize: "9px",
+        fontWeight: "bold",
+        color: numberColor,
+        fontFamily: "sans-serif"
+      }}>
+        {/* ✅ 修改这里：暑假模式只显示已完成数量 */}
+        {appMode === 'summer' ? completedCount : `${completedCount}/${totalCount}`}
+      </span>
+    </div>
+  </div>
+)}
         
         {/* 结束时间显示 */}
         {studyEndTime && (() => {
