@@ -528,13 +528,27 @@
         "shuxue": 4,
         "yingyu": 4,
         "yundong": 2
+      },
+      "2026-07-25": {
+        "shuxue": 2,
+        "yingyu": 2,
+        "yuwen": 2
+      },
+      "2026-07-24": {
+        "yuwen": 2,
+        "shuxue": 2
+      },
+      "2026-07-26": {
+        "yuwen": 2,
+        "shuxue": 2,
+        "yingyu": 2
       }
     },
     "total": {
-      "yingyu": 61,
-      "yuwen": 76,
+      "yingyu": 65,
+      "yuwen": 82,
       "yundong": 36,
-      "shuxue": 81,
+      "shuxue": 87,
       "chuangzao": 4,
       "tongshi": 2
     }
@@ -563,6 +577,6 @@
   },
   "subjectTodoEntries": {},
   "gradeSubCategories": {},
-  "syncTime": "2026-07-24T03:26:18.901Z",
+  "syncTime": "2026-07-27T00:28:55.241Z",
   "version": "2.0"
 }
